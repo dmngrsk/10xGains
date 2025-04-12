@@ -14,12 +14,14 @@ __metadata:
     "@analogjs/vitest-angular": "npm:^1.15.1"
     "@angular-devkit/build-angular": "npm:^19.2.7"
     "@angular/build": "npm:^19.2.7"
+    "@angular/cdk": "npm:19.2.9"
     "@angular/cli": "npm:^19.2.7"
     "@angular/common": "npm:^19.2.0"
     "@angular/compiler": "npm:^19.2.0"
     "@angular/compiler-cli": "npm:^19.2.0"
     "@angular/core": "npm:^19.2.0"
     "@angular/forms": "npm:^19.2.0"
+    "@angular/material": "npm:19.2.9"
     "@angular/platform-browser": "npm:^19.2.0"
     "@angular/platform-browser-dynamic": "npm:^19.2.0"
     "@angular/router": "npm:^19.2.0"
@@ -468,6 +470,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@angular/cdk@npm:19.2.9":
+  version: 19.2.9
+  resolution: "@angular/cdk@npm:19.2.9"
+  dependencies:
+    parse5: "npm:^7.1.2"
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/common": ^19.0.0 || ^20.0.0
+    "@angular/core": ^19.0.0 || ^20.0.0
+    rxjs: ^6.5.3 || ^7.4.0
+  checksum: 10c0/33f0e33bccb1da7717e1dd6e6e6689f1f7080e563ce8d2bb760ee33a00c1078aeb3b59583098ad6269a4957162ad52f2523b90f9d27712994b868fb0ace9af73
+  languageName: node
+  linkType: hard
+
 "@angular/cli@npm:^19.2.7":
   version: 19.2.7
   resolution: "@angular/cli@npm:19.2.7"
@@ -562,6 +578,22 @@ __metadata:
     "@angular/platform-browser": 19.2.6
     rxjs: ^6.5.3 || ^7.4.0
   checksum: 10c0/6eefc49a4f364f9f961392c244d594a146cbd7f1748387f3b5210ad87c73a92161c7215a752a57e913a07baf2431963de3fa49dce40a5bdaa02aed8bd3bf51d1
+  languageName: node
+  linkType: hard
+
+"@angular/material@npm:19.2.9":
+  version: 19.2.9
+  resolution: "@angular/material@npm:19.2.9"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/cdk": 19.2.9
+    "@angular/common": ^19.0.0 || ^20.0.0
+    "@angular/core": ^19.0.0 || ^20.0.0
+    "@angular/forms": ^19.0.0 || ^20.0.0
+    "@angular/platform-browser": ^19.0.0 || ^20.0.0
+    rxjs: ^6.5.3 || ^7.4.0
+  checksum: 10c0/a2d8207c0f6f4be76e555f1f4b448cbed072307fe8f3f37974f943935391da295edd2c1f3a759e89e70e1969fb5f9ddf1970f5aae7aec4c250f8630cde95a00d
   languageName: node
   linkType: hard
 
