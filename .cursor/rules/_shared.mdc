@@ -1,0 +1,59 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# AI Rules for 10xGains
+
+## Tech stack
+
+- Angular 19
+- Tailwind CSS 4
+- Angular Material Design 3
+- Supabase
+
+## Project Structure
+
+When introducing changes to the project, think in **features** when organizing files. Each feature resides in `./src/app/features/` in its dedicated feature folder.
+
+Each feature should contain a `routes.ts` file with a routing config.
+```ts
+export const MY_FEATURE_ROUTES: Route[] = [
+  {
+    path: '',
+    pathMatch: 'full',
+    component: MyFeatureComponent,
+    canActivate: [ /* ... */ ]
+  }
+];
+```
+
+Such configs will be imported in `./src/app/app.routes.ts` with the following syntax for lazy loading:
+```ts
+{
+  path: 'my-feature',
+  loadChildren: () => import('./my-feature/my-feature.routes').then(m => m.MY_FEATURE_ROUTES),
+  canActivate: [ /* ... */ ]
+},
+```
+
+Additionally, each feature folder will include a `shared/` directory for storing mutual files and a `service/` directory for services that connect to the backend, together with their associated contract models.
+
+For everything else in a given feature folder, use the standard Angular guidelines and all other other rules provided to you.
+
+## Guidelines for clean code
+
+- Use feedback from linters to improve the code when making changes.
+- Prioritize error handling and edge cases.
+- Handle errors and edge cases at the beginning of functions.
+- Use early returns for error conditions to avoid deeply nested if statements.
+- Place the happy path last in the function for improved readability.
+- Avoid unnecessary else statements; use if-return pattern instead.
+- Use guard clauses to handle preconditions and invalid states early.
+- Implement proper error logging and user-friendly error messages.
+- Consider using custom error types or error factories for consistent error handling.
+
+## Additional notes
+
+- Use `yarn` instead of `npm` for all package-related commands.
+- When not sure about a solution to a problem, just ask me for feedback! Do not make anything up.

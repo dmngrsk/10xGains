@@ -1,0 +1,17 @@
+---
+description: 
+globs: *.ts,*.html,*.scss
+alwaysApply: false
+---
+### Additional guidelines for Angular
+
+- Import necessary Material modules in components that use a given control.
+- Use theme mixins to customize component styles instead of overriding CSS.
+- Implement OnPush change detection for performance critical components.
+- Leverage the CDK (Component Development Kit) for custom component behaviors.
+- Use Material's form field components with reactive forms for consistent validation UX.
+- Implement accessibility attributes and ARIA labels for interactive components.
+- Use the new Material 3 design system updates where available.
+- Leverage the Angular Material theming system for consistent branding.
+- Implement proper typography hierarchy using the Material typography system.
+- Use Angular Material's built-in a11y features like focus indicators and keyboard navigation.
