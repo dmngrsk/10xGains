@@ -1,27 +1,59 @@
-# 10xGains (MVP)
+# SupabaseAngular
 
-![10xGains Logotype](https://i.imgur.com/0azmM90.png)
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.7.
 
-## Main Problem
+## Development server
 
-There is a significant entry barrier to powerlifting and weightlifting due to the overwhelming number of training plans available. With 10xGains, we aim to reduce this gap and support individuals in achieving their fitness goals.
+To start a local development server, run:
 
-## Minimum Set of Features
+```bash
+ng serve
+```
 
-- **User Account System**: A simple system for associating users with their training plans.
-- **Training Plan Creation**: A view where users can add exercises (predefined or custom) and assign a specific number of sets and reps for each exercise.
-- **Active Workout Menu**: A feature for tracking completed sets and reps during a workout session. The system will automatically adjust weights for each exercise between workouts based on the history of successful or unsuccessful sessions.
-- **Workout History Page**: A straightforward page displaying summaries of past workout sessions.
-- **AI Integration**: An AI-driven tool for building training plans tailored to users' preferences, goals, and capabilities.
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
 
-## Features NOT Included in the MVP
+## Code scaffolding
 
-- **AI Progress Tracking**: An assistant for monitoring progress and suggesting program adjustments.
-- **Body Metrics Tracking**: Tools for tracking body weight, measurements, and basic body fat percentage calculations (e.g., Jackson & Pollock method).
-- **Progress Analytics**: Diagrams showing exercise volume trends over time, factoring in body weight as a benchmark.
-- **Gamification**: In-app achievements to reward consistent training and enhance user engagement.
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
 
-## Success Criteria
+```bash
+ng generate component component-name
+```
 
-- **Training Plan Creation**: 90% of users should be able to create a personalized training plan that meets their needs.
-- **Workout Tracking**: 75% of users who create a training plan should actively track their workout sessions on a weekly basis.
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+
+```bash
+ng generate --help
+```
+
+## Building
+
+To build the project run:
+
+```bash
+ng build
+```
+
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
