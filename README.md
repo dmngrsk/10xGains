@@ -1,69 +1,71 @@
 # 10xGains
+![10xGains Banner](https://i.imgur.com/0azmM90.png)
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.7.
+## Table of Contents
+- [Project Name](#project-name)
+- [Project Description](#project-description)
+- [Tech Stack](#tech-stack)
+- [Getting Started Locally](#getting-started-locally)
+- [Available Scripts](#available-scripts)
+- [Project Scope](#project-scope)
+- [Project Status](#project-status)
+- [License](#license)
 
-## Development server
+## Project Name
+**10xGains**
 
-To start a local development server, run:
+## Project Description
+10xGains is a streamlined platform designed to lower the entry barrier for powerlifting and weightlifting. The application enables users to create, customize, and track personalized training plans with AI-driven suggestions, ensuring safe and effective workout routines. Key features include secure user registration/login, flexible training plan creation, active workout session tracking, and comprehensive workout history.
 
-```bash
-ng serve
-```
+## Tech Stack
+- **Frontend**: Angular 19, Angular Material Design 3, Tailwind CSS 4
+- **Backend**: Supabase (for PostgreSQL and authentication)
+- **AI Integration**: Perplexity API (Sonar model) for AI-driven training plan suggestions
+- **CI/CD and Hosting**: GitHub Actions, Azure Static Web Apps
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Getting Started Locally
+### Prerequisites
+- **Node.js**: Version specified in `.nvmrc` (22.14.0)
+- **Yarn**: Please use Yarn for managing packages
 
-## Code scaffolding
+### Installation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/dmngrsk/10xGains.git
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd 10xGains
+   ```
+3. Install dependencies:
+   ```bash
+   yarn install
+   ```
+4. Start the development server:
+   ```bash
+   yarn start
+   ```
+5. Open your browser and navigate to `http://localhost:4200`
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Available Scripts
+In the project directory, you can run:
+- `ng serve` or `yarn start`: Runs the app in development mode.
+- `ng build` or `yarn build`: Builds the app for production.
+- `ng lint` or `yarn lint`: Lints and fixes the code.
+- `yarn test`: Runs tests using Vitest.
+- `yarn test:coverage`: Generates a test coverage report.
+- `yarn watch`: Rebuilds the project on file changes.
 
-```bash
-ng generate component component-name
-```
+## Project Scope
+The current MVP scope includes:
+- **User Account System**: Secure user registration and login.
+- **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
+- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers and detailed editing capabilities.
+- **Workout History**: Chronological record of past workout sessions.
+- **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Project Status
+The project is currently in early development (MVP stage) with version `0.1.0`. Features are actively being developed and refined.
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with [Vitest](https://vitest.dev/), use the following commands:
-
-```bash
-# Run tests once
-yarn test
-
-# Run tests with coverage report
-yarn test:coverage
-
-# Run tests in watch mode
-yarn test:watch
-
-# Run tests for CI environments
-yarn test:ci
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## License
+This project is licensed under the MIT License. 
