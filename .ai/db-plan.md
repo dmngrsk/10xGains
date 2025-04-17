@@ -2,16 +2,16 @@
 
 ## 1. Tables
 
-### 1.1. users
-- id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
-- login: VARCHAR(255) NOT NULL UNIQUE
-- display_name: VARCHAR(255) NOT NULL
-- password_hash: TEXT NOT NULL
+### 1.1. user_profiles
+- id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
+- first_name: VARCHAR(255) NOT NULL
 - active_training_plan_id: UUID NULL REFERENCES training_plans(id)
+- created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+- updated_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 ### 1.2. training_plans
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
-- user_id: UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+- user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 - name: VARCHAR(255) NOT NULL
 - created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
@@ -59,7 +59,7 @@
 
 ### 1.8. training_sessions
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
-- user_id: UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
+- user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 - training_plan_id: UUID NOT NULL REFERENCES training_plans(id) ON DELETE CASCADE
 - training_plan_day_id: UUID REFERENCES training_plan_days(id)
 - session_date: TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -77,39 +77,44 @@
 
 ## 2. Relationships Between Tables
 
-- Each user (`users`) can have many training plans (`training_plans`), and each plan belongs to a single user.
-- Each training plan (`training_plans`) contains multiple training days (`training_plan_days`), each with a specific order.
-- Each training day (`training_plan_days`) contains multiple entries in the junction table `training_plan_exercises`, which defines the exercises and their order.
-- Each entry in `training_plan_exercises` refers to a single exercise in the `exercises` table.
-- Each exercise in a training plan (`training_plan_exercises`) has multiple sets defined in `training_plan_exercise_sets` with individual weights and rep counts.
-- Each exercise in a training plan has progression rules defined in `training_plan_exercise_progressions` (one progression per exercise per training plan).
-- Each training plan (`training_plans`) can be used in many training sessions (`training_sessions`), with each session assigned to a specific user and training day.
-- Each training session (`training_sessions`) contains multiple sets recorded in the `session_sets` table for the respective exercises included in the plan.
-- Each set in `session_sets` refers to an entry in `training_plan_exercises` and records the actual performance.
+- User authentication is managed by Supabase Auth (`auth.users`)
+- Each user (`auth.users`) has one profile (`user_profiles`) with additional profile data
+- Each user (`auth.users`) can have many training plans (`training_plans`), and each plan belongs to a single user
+- Each training plan (`training_plans`) contains multiple training days (`training_plan_days`), each with a specific order
+- Each training day (`training_plan_days`) contains multiple entries in the junction table `training_plan_exercises`, which defines the exercises and their order
+- Each entry in `training_plan_exercises` refers to a single exercise in the `exercises` table
+- Each exercise in a training plan (`training_plan_exercises`) has multiple sets defined in `training_plan_exercise_sets` with individual weights and rep counts
+- Each exercise in a training plan has progression rules defined in `training_plan_exercise_progressions` (one progression per exercise per training plan)
+- Each training plan (`training_plans`) can be used in many training sessions (`training_sessions`), with each session assigned to a specific user and training day
+- Each training session (`training_sessions`) contains multiple sets recorded in the `session_sets` table for the respective exercises included in the plan
+- Each set in `session_sets` refers to an entry in `training_plan_exercises` and records the actual performance
 
 ## 3. Indexes
 
-- Index on `users(login)` for fast user lookup.
-- Index on `training_plans(user_id)` to optimize queries related to user plans.
-- Index on `training_plan_days(training_plan_id)` for efficient lookup of days in a plan.
-- Index on `training_plan_exercises(training_plan_day_id)` and a unique index on `(training_plan_day_id, order_index)` to ensure unique exercise order in a day.
-- Index on `training_plan_exercise_sets(training_plan_exercise_id)` for efficient set lookup.
-- Index on `training_plan_exercise_progressions(training_plan_id, exercise_id)` for efficient progression lookup.
-- Index on `training_sessions(user_id, session_date)` for efficient queries of a user's training sessions.
-- Index on `session_sets(training_session_id)` for optimized lookup of sets for a given session.
+- Index on `user_profiles(id)` for fast user lookup
+- Index on `training_plans(user_id)` to optimize queries related to user plans
+- Index on `training_plan_days(training_plan_id)` for efficient lookup of days in a plan
+- Index on `training_plan_exercises(training_plan_day_id)` and a unique index on `(training_plan_day_id, order_index)` to ensure unique exercise order in a day
+- Index on `training_plan_exercise_sets(training_plan_exercise_id)` for efficient set lookup
+- Index on `training_plan_exercise_progressions(training_plan_id, exercise_id)` for efficient progression lookup
+- Index on `training_sessions(user_id, session_date)` for efficient queries of a user's training sessions
+- Index on `session_sets(training_session_id)` for optimized lookup of sets for a given session
 
 ## 4. PostgreSQL and RLS Policies
 
-- Row-Level Security (RLS) should be configured for tables containing user data, such as `training_plans`, `training_plan_days`, `training_sessions`, and `session_sets`. RLS policies should restrict data access based on `user_id`, ensuring that users can only access their own data.
-- Example RLS policy (to be implemented separately):
+- Row-Level Security (RLS) is enabled on all tables containing user data
+- All tables have appropriate RLS policies to restrict access based on user identity
+- Example RLS policy:
   ```sql
-  ALTER TABLE training_sessions ENABLE ROW LEVEL SECURITY;
-  CREATE POLICY user_training_sessions ON training_sessions
-      USING (user_id = auth.uid());
+  ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "user_profiles_authenticated_select" ON user_profiles
+      FOR SELECT TO authenticated
+      USING (id = auth.uid());
   ```
 
 ## 5. Additional Notes
 
-- The schema has been designed in accordance with the PRD requirements and the decisions made during the planning session.
-- The chosen data types (NUMERIC(7,3) for weights and SMALLINT for sets and reps) ensure precise data storage.
-- All NOT NULL constraints, CHECK conditions, and foreign key relationships have been applied to ensure data integrity and to support RLS mechanisms in the system. 
+- Authentication is managed by Supabase's auth schema
+- The schema has been designed in accordance with the PRD requirements and the decisions made during the planning session
+- The chosen data types (NUMERIC(7,3) for weights and SMALLINT for sets and reps) ensure precise data storage
+- All NOT NULL constraints, CHECK conditions, and foreign key relationships have been applied to ensure data integrity and to support RLS mechanisms in the system
