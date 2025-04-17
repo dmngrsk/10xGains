@@ -65,7 +65,7 @@
 - session_date: TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 - status: VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS' CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 
-### 1.9. session_series
+### 1.9. session_sets
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - training_session_id: UUID NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE
 - training_plan_exercise_id: UUID NOT NULL REFERENCES training_plan_exercises(id) ON DELETE CASCADE
@@ -84,8 +84,8 @@
 - Each exercise in a training plan (`training_plan_exercises`) has multiple sets defined in `training_plan_exercise_sets` with individual weights and rep counts.
 - Each exercise in a training plan has progression rules defined in `training_plan_exercise_progressions` (one progression per exercise per training plan).
 - Each training plan (`training_plans`) can be used in many training sessions (`training_sessions`), with each session assigned to a specific user and training day.
-- Each training session (`training_sessions`) contains multiple sets recorded in the `session_series` table for the respective exercises included in the plan.
-- Each set in `session_series` refers to an entry in `training_plan_exercises` and records the actual performance.
+- Each training session (`training_sessions`) contains multiple sets recorded in the `session_sets` table for the respective exercises included in the plan.
+- Each set in `session_sets` refers to an entry in `training_plan_exercises` and records the actual performance.
 
 ## 3. Indexes
 
@@ -96,11 +96,11 @@
 - Index on `training_plan_exercise_sets(training_plan_exercise_id)` for efficient set lookup.
 - Index on `training_plan_exercise_progressions(training_plan_id, exercise_id)` for efficient progression lookup.
 - Index on `training_sessions(user_id, session_date)` for efficient queries of a user's training sessions.
-- Index on `session_series(training_session_id)` for optimized lookup of sets for a given session.
+- Index on `session_sets(training_session_id)` for optimized lookup of sets for a given session.
 
 ## 4. PostgreSQL and RLS Policies
 
-- Row-Level Security (RLS) should be configured for tables containing user data, such as `training_plans`, `training_plan_days`, `training_sessions`, and `session_series`. RLS policies should restrict data access based on `user_id`, ensuring that users can only access their own data.
+- Row-Level Security (RLS) should be configured for tables containing user data, such as `training_plans`, `training_plan_days`, `training_sessions`, and `session_sets`. RLS policies should restrict data access based on `user_id`, ensuring that users can only access their own data.
 - Example RLS policy (to be implemented separately):
   ```sql
   ALTER TABLE training_sessions ENABLE ROW LEVEL SECURITY;
