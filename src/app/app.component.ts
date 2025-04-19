@@ -4,6 +4,7 @@ import { TestComponentComponent } from './test-component/test-component.componen
 
 @Component({
   selector: 'txg-root',
+  standalone: true,
   imports: [RouterOutlet, TestComponentComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
