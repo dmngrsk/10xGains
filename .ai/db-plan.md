@@ -13,6 +13,7 @@
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 - name: VARCHAR(255) NOT NULL
+- description: TEXT
 - created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 ### 1.3. exercises
