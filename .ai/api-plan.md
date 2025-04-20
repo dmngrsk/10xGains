@@ -28,7 +28,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
 
 ### User Profiles
 
-- **GET /user-profiles/{id}**
+- **GET /profiles/{id}**
   - Description: Retrieve the authenticated user's profile. The provided `{id}` must match the authenticated user's ID.
   - Example Response:
     ```json
@@ -43,7 +43,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 403 Forbidden
 
-- **PUT /user-profiles/{id}**
+- **PUT /profiles/{id}**
   - Description: Update profile details for the authenticated user. The `{id}` must match the authenticated user's ID.
   - Request Body:
     ```json

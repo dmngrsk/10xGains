@@ -8,4 +8,7 @@ alwaysApply: false
 - Use Supabase for backend services, including authentication and database interactions.
 - Follow Supabase guidelines for security and performance.
 - Use Zod schemas to validate data exchanged with the backend.
+- Each API method MUST be implemented as a Supabase Edge Function, keep that in mind when planning and implementing the actual endpoint.
+- Each API method MUST have its own `index.ts` file saved in the `supabase/functions/{method/path}` directory, as well as its own `deno.json` file.
+- Use entities from the `supabase/functions/_shared` directory as baseline REST API models.
 - Use dedicated `*.service.ts` data services for communication in Angular components (implement them when necessary), rather than directly using `@supabase/supabase-js`.

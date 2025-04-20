@@ -6,7 +6,7 @@
 - Angular Material Design 3: Prebuilt UI component library.
 
 ## Backend
-- Supabase: Provides PostgreSQL, built-in authentication, and comprehensive SDK support.
+- Supabase: PostgreSQL database, authentication, and Edge Functions for custom REST API endpoints.
 
 ## AI
 - Perplexity API (Sonar model): Cost-effective AI-driven training suggestions.

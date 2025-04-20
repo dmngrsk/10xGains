@@ -17,7 +17,8 @@
     "test:watch": "vitest --watch",
     "test:ci": "vitest run --reporter=default --reporter=junit --outputFile=reports/junit.xml",
     "lint": "ng lint",
-    "lint:fix": "ng lint --fix"
+    "lint:fix": "ng lint --fix",
+    "copy-api-types": "node ./scripts/copy-api-types.js"
   },
   "private": true,
   "dependencies": {
