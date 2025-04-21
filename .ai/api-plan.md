@@ -364,7 +364,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
 
 ### Training Plan Exercises
 
-- **GET /training-plan-days/{dayId}/exercises**
+- **GET /training-plans/{planId}/days/{dayId}/exercises**
   - Description: List all exercises for a given training day. The day must belong to the authenticated user.
   - Example Response:
     ```json
@@ -380,7 +380,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **POST /training-plan-days/{dayId}/exercises**
+- **POST /training-plans/{planId}/days/{dayId}/exercises**
   - Description: Add an exercise to a training day owned by the authenticated user.
   - Request Body:
     ```json
@@ -401,7 +401,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 201 Created
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **GET /training-plan-days/{dayId}/exercises/{exerciseId}**
+- **GET /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}**
   - Description: Retrieve details of a specific training plan exercise for a day owned by the authenticated user.
   - Example Response:
     ```json
@@ -415,7 +415,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **PUT /training-plan-days/{dayId}/exercises/{exerciseId}**
+- **PUT /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}**
   - Description: Update a training plan exercise (e.g., change order) for a day owned by the authenticated user.
   - Request Body:
     ```json
@@ -433,12 +433,12 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **DELETE /training-plan-days/{dayId}/exercises/{exerciseId}**
+- **DELETE /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}**
   - Description: Remove an exercise from a training day owned by the authenticated user.
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **PATCH /training-plan-days/{dayId}/exercises/{exerciseId}/reorder**
+- **PATCH /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/reorder**
   - Description: Update the order index to reorder exercises within a training day owned by the authenticated user.
   - Request Body:
     ```json
@@ -458,7 +458,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
 
 ### Training Plan Exercise Sets
 
-- **GET /training-plan-exercises/{exerciseId}/sets**
+- **GET /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets**
   - Description: Retrieve all sets for a specific training plan exercise belonging to a training plan of the authenticated user.
   - Example Response:
     ```json
@@ -475,7 +475,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **POST /training-plan-exercises/{exerciseId}/sets**
+- **POST /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets**
   - Description: Create a set for an exercise in a training plan belonging to the authenticated user.
   - Request Body:
     ```json
@@ -498,7 +498,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 201 Created
   - Errors: 400 Bad Request, 401 Unauthorized, 404 Not Found
 
-- **GET /training-plan-exercises/{exerciseId}/sets/{setId}**
+- **GET /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}**
   - Description: Retrieve details of a specific set for an exercise in a training plan owned by the authenticated user.
   - Example Response:
     ```json
@@ -513,7 +513,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **PUT /training-plan-exercises/{exerciseId}/sets/{setId}**
+- **PUT /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}**
   - Description: Update a set for an exercise in a training plan belonging to the authenticated user.
   - Request Body:
     ```json
@@ -536,7 +536,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **DELETE /training-plan-exercises/{exerciseId}/sets/{setId}**
+- **DELETE /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}**
   - Description: Delete a set for an exercise in a training plan owned by the authenticated user.
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
