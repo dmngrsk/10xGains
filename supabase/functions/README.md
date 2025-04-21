@@ -14,6 +14,43 @@ The Edge Functions are organized into the following structure:
   - `api-types.ts` - Shared API type definitions (auto-generated)
   - `api-helpers.ts` - Helper types, CORS headers, and utility functions for API responses
 
+## API Handler Framework
+
+The Edge Functions use a unified API handler framework that simplifies implementing endpoints with consistent patterns for:
+
+- Authentication and authorization
+- Path parameter extraction using patterns like `['profiles', '{id}']`
+- Resource ownership validation
+- Error handling and response formatting
+- HTTP method routing
+
+This approach ensures consistent behavior across all API endpoints and reduces boilerplate code. Example usage:
+
+```typescript
+const apiHandler = createApiHandler(
+  createSupabaseClient,
+  {
+    allowedMethods: ['GET', 'PUT'],
+    resourcePath: ['profiles', '{id}'],
+    requireAuth: true,
+    ownershipValidation: {
+      'user_profiles': { paramName: 'id', userField: 'id' }
+    }
+  },
+  {
+    GET: handleGetUserProfile,
+    PUT: handleUpdateUserProfile
+  }
+);
+```
+
+The handler function provides a consistent context object with:
+- Authenticated user
+- Extracted path parameters
+- Request details
+- Supabase client
+- Error logging utilities
+
 ## Type Synchronization
 
 To maintain a single source of truth for types, we automatically copy types from the Angular frontend to the Supabase Edge Functions before deployment:

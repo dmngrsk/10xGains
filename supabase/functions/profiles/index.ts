@@ -2,10 +2,16 @@
 // Handles GET and PUT requests to /profiles/{id}
 
 import { serve } from 'std/http/server.ts';
-import { createClient, SupabaseClient } from 'supabase';
+import { createClient } from 'supabase';
 import { z } from 'zod';
 import { UserProfileDto, UpdateUserProfileCommand } from 'shared/api-types.ts';
-import { corsHeaders, createErrorResponse, createSuccessResponse, createRequestInfo } from 'shared/api-helpers.ts';
+import {
+  createApiHandler,
+  createErrorResponse,
+  createSuccessResponse,
+  ApiHandlerContext,
+  SupabaseClientInterface
+} from 'shared/api-helpers.ts';
 import { Database } from 'shared/database-types.ts';
 
 // Define validation schema for the UpdateUserProfileCommand
@@ -14,126 +20,26 @@ const updateUserProfileSchema = z.object({
   active_training_plan_id: z.string().uuid().optional(),
 });
 
-// UUID validation regex
-const uuidRegex =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-// Main handler for the API endpoint
-serve(async (req: Request) => {
-  // Store request info for error logging
-  const requestInfo = createRequestInfo(req);
-
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  try {
-    // Extract the user ID from the URL path
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split('/');
-    const idIndex = pathParts.findIndex((part) => part === 'profiles') + 1;
-
-    if (idIndex <= 0 || idIndex >= pathParts.length) {
-      return createErrorResponse(
-        400,
-        'Invalid URL path. Expected /profiles/{id}',
-        undefined,
-        'INVALID_PATH',
-        undefined,
-        requestInfo
-      );
+// Create a function to initialize the Supabase client
+const createSupabaseClient = (req: Request): SupabaseClientInterface => {
+  return createClient<Database>(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    {
+      global: {
+        headers: { Authorization: req.headers.get('Authorization')! },
+      },
     }
-
-    const userId = pathParts[idIndex];
-
-    // Validate that userId is a valid UUID before proceeding
-    if (!uuidRegex.test(userId)) {
-      return createErrorResponse(
-        400,
-        'Invalid user ID format. Must be a valid UUID.',
-        undefined,
-        'INVALID_UUID',
-        undefined,
-        requestInfo
-      );
-    }
-
-    // Create Supabase client
-    const supabaseClient = createClient<Database>(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
-    );
-
-    // Authenticate the user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser();
-
-    if (authError || !user) {
-      return createErrorResponse(
-        401,
-        'Unauthorized: Authentication required',
-        undefined,
-        'AUTH_REQUIRED',
-        authError,
-        requestInfo
-      );
-    }
-
-    // Verify that the user is only accessing their own profile
-    if (user.id !== userId) {
-      return createErrorResponse(
-        403,
-        "Forbidden: Cannot access another user's profile",
-        { requestedId: userId, userId: user.id },
-        'FORBIDDEN_ACCESS',
-        undefined,
-        requestInfo
-      );
-    }
-
-    // Handle the request based on the HTTP method
-    switch (req.method) {
-      case 'GET':
-        return await handleGetUserProfile(supabaseClient, userId, requestInfo);
-      case 'PUT':
-        return await handleUpdateUserProfile(supabaseClient, userId, req, requestInfo);
-      default:
-        return createErrorResponse(
-          405,
-          'Method not allowed',
-          { allowedMethods: ['GET', 'PUT'] },
-          'METHOD_NOT_ALLOWED',
-          undefined,
-          requestInfo
-        );
-    }
-  } catch (error) {
-    return createErrorResponse(
-      500,
-      'Internal server error',
-      undefined,
-      'SERVER_ERROR',
-      error,
-      requestInfo
-    );
-  }
-});
+  );
+};
 
 // Handler for GET requests to retrieve user profile
 async function handleGetUserProfile(
-  supabaseClient: SupabaseClient<Database>,
-  userId: string,
-  requestInfo: ReturnType<typeof createRequestInfo>
+  { supabaseClient, params, requestInfo }: ApiHandlerContext
 ): Promise<Response> {
   try {
+    const userId = params.id;
+
     const { data, error } = await supabaseClient
       .from('user_profiles')
       .select('*')
@@ -180,12 +86,11 @@ async function handleGetUserProfile(
 
 // Handler for PUT requests to create or update user profile
 async function handleUpdateUserProfile(
-  supabaseClient: SupabaseClient<Database>,
-  userId: string,
-  req: Request,
-  requestInfo: ReturnType<typeof createRequestInfo>
+  { supabaseClient, params, req, requestInfo }: ApiHandlerContext
 ): Promise<Response> {
   try {
+    const userId = params.id;
+
     // Parse and validate request body
     const requestBody = await req.json();
     const validationResult = updateUserProfileSchema.safeParse(requestBody);
@@ -266,3 +171,25 @@ async function handleUpdateUserProfile(
     );
   }
 }
+
+// Define the API handler for profiles endpoint
+const apiHandler = createApiHandler(
+  createSupabaseClient,
+  {
+    allowedMethods: ['GET', 'PUT'],
+    resourcePath: ['profiles', '{id}'],
+    requireAuth: true,
+    ownershipValidation: {
+      // This validates that the user can only access their own profile
+      // by checking that the ID in the URL matches their user ID
+      'user_profiles': { paramName: 'id', userField: 'id' }
+    }
+  },
+  {
+    GET: handleGetUserProfile,
+    PUT: handleUpdateUserProfile
+  }
+);
+
+// Export the API handler for the Deno runtime
+serve(apiHandler);
