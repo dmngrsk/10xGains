@@ -13,6 +13,7 @@ __metadata:
     "@analogjs/vite-plugin-angular": "npm:^1.15.1"
     "@analogjs/vitest-angular": "npm:^1.15.1"
     "@angular-devkit/build-angular": "npm:^19.2.7"
+    "@angular/animations": "npm:19.2.7"
     "@angular/build": "npm:^19.2.7"
     "@angular/cdk": "npm:19.2.9"
     "@angular/cli": "npm:^19.2.7"
@@ -46,6 +47,7 @@ __metadata:
     vite: "npm:^6.0.0"
     vite-tsconfig-paths: "npm:^4.2.0"
     vitest: "npm:^3.1.1"
+    zod: "npm:^3.24.3"
     zone.js: "npm:~0.15.0"
   languageName: unknown
   linkType: soft
@@ -398,6 +400,18 @@ __metadata:
     eslint: ^8.57.0 || ^9.0.0
     typescript: "*"
   checksum: 10c0/997fa1f8f6cf54aad0f552cba5f01ec59a9b11461dab1155475af84d69320d86c5e8a871e07855e51fc550f72845ba4cdc63429c78cc013e9f8db847814c031d
+  languageName: node
+  linkType: hard
+
+"@angular/animations@npm:19.2.7":
+  version: 19.2.7
+  resolution: "@angular/animations@npm:19.2.7"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/common": 19.2.7
+    "@angular/core": 19.2.7
+  checksum: 10c0/c0da9602bdcef48d6a9d6b32326be0a26967a400e24bf29debaa6c57a6bbbd7c227f1ee9e855df530fe78cc67c7d8f5964a3a5759f71633a2dcd6f70a73cdd64
   languageName: node
   linkType: hard
 
@@ -17418,6 +17432,13 @@ __metadata:
     compress-commons: "npm:^6.0.2"
     readable-stream: "npm:^4.0.0"
   checksum: 10c0/50f2fb30327fb9d09879abf7ae2493705313adf403e794b030151aaae00009162419d60d0519e807673ec04d442e140c8879ca14314df0a0192de3b233e8f28b
+  languageName: node
+  linkType: hard
+
+"zod@npm:^3.24.3":
+  version: 3.24.3
+  resolution: "zod@npm:3.24.3"
+  checksum: 10c0/ab0369810968d0329a1a141e9418e01e5c9c2a4905cbb7cb7f5a131d6e9487596e1400e21eeff24c4a8ee28dacfa5bd6103893765c055b7a98c2006a5a4fc68d
   languageName: node
   linkType: hard
 

@@ -1,0 +1,18 @@
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+  <txg-email-input [parentForm]="loginForm"></txg-email-input>
+
+  <txg-password-input [parentForm]="loginForm"></txg-password-input>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    class="mt-4 h-12 text-base font-medium"
+    [disabled]="loginForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span>Logging in...</span>
+    } @else {
+      <span>Login</span>
+    }
+  </button>
+</form>

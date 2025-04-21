@@ -3,3 +3,8 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+.mat-app-background { background: var(--mat-sys-surface); }
+
+/* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
+.mdc-notched-outline__notch { border-right: none; }
