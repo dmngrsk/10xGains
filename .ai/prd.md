@@ -53,6 +53,8 @@ US-001: Secure User Registration and Login
   - A registration form with necessary fields (e.g., email, password) is provided.
   - Secure authentication is required before accessing personalized content.
   - Proper error messages are displayed for invalid registration or login attempts.
+  - We do not use any third-party login services (such as GitHub or Google).
+  - Password retrieval via email should be possible.
 
 US-002: Training Plan Creation and Customization
 - Title: Create and Customize Training Plan
@@ -61,6 +63,7 @@ US-002: Training Plan Creation and Customization
   - Users can add, edit, and remove exercises from their training plan.
   - The interface allows specification of sets, reps, and weight parameters.
   - The system validates all inputs and provides user feedback on errors.
+  - Plan modification is not possible without signing in to the system (US-001).
 
 US-003: AI-Driven Training Plan Suggestions and Educational Resources
 - Title: Receive AI-Driven Training Suggestions and Access Educational Resources
@@ -70,6 +73,7 @@ US-003: AI-Driven Training Plan Suggestions and Educational Resources
   - The AI provides relevant and actionable training suggestions based on user inputs.
   - The AI is capable of looking up publicly available educational resources, providing brief summaries and direct links during the interaction.
   - Users have the ability to edit and refine AI recommendations before finalizing their plan.
+  - Querying and using AI suggestions is not possible without signing in to the system (US-001).
 
 US-004: Active Workout Session Tracking
 - Title: Track and Manage Active Workout Sessions
@@ -79,6 +83,7 @@ US-004: Active Workout Session Tracking
   - Each exercise displays its sets in a row as clickable bubbles, enabling single-tap progress marking.
   - Detailed pop-ups allow users to update set and rep information along with manual weight adjustments.
   - Automated weight progression is applied (increase by a constant value defined in the exercise upon success, 10% deload after three failures).
+  - Workout session tracking is not possible without signing in to the system (US-001).
 
 US-005: Workout History Overview
 - Title: View Past Workout Sessions
@@ -87,6 +92,7 @@ US-005: Workout History Overview
   - A history page displays a chronological list of past sessions with key workout details.
   - Each entry includes information on exercises performed, sets, reps, and weight adjustments.
   - The history updates automatically as new sessions are recorded.
+  - Accessing the workout history is not possible without signing in to the system (US-001).
 
 ## 6. Success Metrics
 - 90% of users should be able to create a personalized training plan that meets their needs.
