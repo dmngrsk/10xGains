@@ -1,5 +1,4 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
@@ -62,20 +61,18 @@ const mapError = (error: AuthError): string => {
 
 /**
  * Login service responsible for authentication state management
- * and navigation after successful login
  */
 @Injectable({
   providedIn: 'root'
 })
 export class LoginService {
   private authService = inject(AuthService);
-  private router = inject(Router);
 
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
   public isLoading$ = this.isLoadingSubject.asObservable();
 
   /**
-   * Logs user in and redirects to appropriate page based on authentication status
+   * Logs user in with provided credentials
    * @param credentials User login credentials
    * @returns Promise that resolves when login completes
    * @throws Error with mapped user-friendly message
@@ -89,9 +86,6 @@ export class LoginService {
     try {
       this.isLoadingSubject.next(true);
       await this.authService.login(credentials);
-
-      // Success - navigate to home page
-      await this.router.navigate(['/home']);
     } catch (error) {
       console.error('Login error:', error);
       // Map the error to a user-friendly message and re-throw
@@ -102,25 +96,21 @@ export class LoginService {
   }
 
   /**
-   * Redirects user to appropriate route based on authentication status
-   * If user is authenticated, redirects to home
-   * If not authenticated, stays on current page
+   * Checks if the user is currently authenticated
+   * @returns Promise that resolves to a boolean indicating authentication status
    */
-  async redirectIfAuthenticated(): Promise<void> {
+  async isAuthenticated(): Promise<boolean> {
     this.isLoadingSubject.next(true);
 
     try {
-      const isAuthenticated = await firstValueFrom(
+      return await firstValueFrom(
         this.authService.isAuthenticated().pipe(
           finalize(() => this.isLoadingSubject.next(false))
         )
       );
-
-      if (isAuthenticated) {
-        await this.router.navigate(['/home']);
-      }
     } catch (error) {
       console.error('Error checking authentication status:', error);
+      return false;
     } finally {
       this.isLoadingSubject.next(false);
     }

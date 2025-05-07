@@ -36,8 +36,7 @@ class MockActionsComponent {}
 
 // Mock services
 const mockLoginService = {
-  login: vi.fn(),
-  redirectIfAuthenticated: vi.fn()
+  login: vi.fn()
 };
 
 const mockRouter = {
@@ -97,10 +96,6 @@ describe('LoginComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should redirect if authenticated on init', () => {
-    expect(mockLoginService.redirectIfAuthenticated).toHaveBeenCalled();
-  });
-
   describe('onFormSubmit', () => {
     const validForm: LoginFormValues = {
       email: 'test@example.com',
@@ -111,7 +106,7 @@ describe('LoginComponent', () => {
       vi.resetAllMocks();
     });
 
-    it('should login successfully', async () => {
+    it('should login successfully and navigate', async () => {
       mockLoginService.login.mockResolvedValue(undefined);
 
       await component.onFormSubmit(validForm);
@@ -121,6 +116,7 @@ describe('LoginComponent', () => {
         email: validForm.email,
         password: validForm.password
       });
+      expect(mockRouter.navigate).toHaveBeenCalledWith(['/home']);
       expect(loginForm.setLoading).toHaveBeenCalledWith(false);
 
       // No snackbar should be shown on success as we're redirecting
@@ -144,6 +140,7 @@ describe('LoginComponent', () => {
         'Close',
         { duration: 5000 }
       );
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
 
     it('should handle generic error', async () => {
@@ -162,6 +159,7 @@ describe('LoginComponent', () => {
         'Close',
         { duration: 5000 }
       );
+      expect(mockRouter.navigate).not.toHaveBeenCalled();
     });
   });
 });
