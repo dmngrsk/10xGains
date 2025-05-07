@@ -6,8 +6,8 @@ import { MatCardModule } from '@angular/material/card';
 
 import { EmailInputComponent } from '../email-input/email-input.component';
 import { PasswordInputComponent } from '../password-input/password-input.component';
-import { LoginFormValues, loginFormSchema } from '../../shared/types';
-import { zodFormGroupValidator } from '../../../../shared/utils/form-validation';
+import { LoginFormValues, loginFormSchema } from '../../../shared/types';
+import { zodFormGroupValidator } from '../../../../../shared/utils/form-validation';
 
 @Component({
   selector: 'txg-login-form',

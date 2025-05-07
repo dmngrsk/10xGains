@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { expect, describe, it, beforeEach, vi } from 'vitest';
 
-import { LoginService } from './login.service';
+import { LoginService } from '../components/login/services/login.service';
 import { AuthService, LoginResponse } from '../../../shared/services/auth.service';
 import { User, Session } from '@supabase/supabase-js';
 

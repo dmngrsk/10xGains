@@ -2,11 +2,11 @@ import { Component, OnInit, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
-import { LoginFormComponent } from './components/login-form/login-form.component';
-import { ActionsComponent } from './components/actions/actions.component';
+import { LoginFormComponent } from './login-form/login-form.component';
+import { ActionsComponent } from './actions/actions.component';
 import { LoginService } from './services/login.service';
-import { LoginFormValues } from './shared/types';
+import { LoginFormValues } from '../../shared/types';
+import { AuthLayoutComponent } from '../shared/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'txg-login',
@@ -14,6 +14,7 @@ import { LoginFormValues } from './shared/types';
   imports: [
     CommonModule,
     MatCardModule,
+    AuthLayoutComponent,
     LoginFormComponent,
     ActionsComponent
   ],

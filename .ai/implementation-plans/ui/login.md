@@ -4,146 +4,221 @@
 Widok logowania umożliwia użytkownikom uwierzytelnienie się w aplikacji poprzez podanie adresu email i hasła, z możliwością przejścia do widoku rejestracji. Zapewnia walidację pól, wyświetlanie komunikatów błędów oraz obsługę pokazywania/ukrywania hasła.
 
 ## 2. Routing widoku
-- Ścieżka: `/login`
+- Ścieżka: `/auth/login`
 - Lazy loading: W `app.routes.ts` dodaj:
   ```ts
   {
-    path: 'login',
-    loadChildren: () => import('./features/login/login.routes').then(m => m.LOGIN_ROUTES)
+    path: 'auth',
+    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   }
+  ```
+- W `auth.routes.ts`:
+  ```ts
+  export const AUTH_ROUTES: Routes = [
+    { 
+      path: 'login', 
+      loadComponent: () => import('./components/login/login.component').then(c => c.LoginComponent), 
+      canActivate: [noAuthGuard] 
+    },
+    // inne ścieżki auth (register, forgot-password, reset-password)
+    { 
+      path: '', 
+      redirectTo: 'login', 
+      pathMatch: 'full' 
+    }
+  ];
   ```
 
 ## 3. Struktura komponentów
 ```
-LoginPageComponent
-└── LoginFormComponent
-    ├── EmailInputComponent (MatInput)
-    ├── PasswordInputComponent (MatInput + toggle show/hide)
-    └── ActionsComponent (SubmitButton + RegisterLink)
+src/
+└── app/
+    └── features/
+        └── auth/
+            ├── auth.routes.ts                      # Routing modułu auth
+            ├── components/
+            │   ├── shared/
+            │   │   └── auth-layout/                # Wspólny layout dla stron autoryzacji
+            │   │       ├── auth-layout.component.ts
+            │   │       └── auth-layout.component.html
+            │   └── login/                          # Komponent strony logowania
+            │       ├── login.component.ts
+            │       ├── login.component.html
+            │       ├── login-form/                 # Formularz logowania
+            │       │   ├── login-form.component.ts
+            │       │   └── login-form.component.html
+            │       ├── email-input/                # Komponent pola email
+            │       │   ├── email-input.component.ts
+            │       │   └── email-input.component.html
+            │       ├── password-input/             # Komponent pola hasła
+            │       │   ├── password-input.component.ts
+            │       │   └── password-input.component.html
+            │       └── actions/                    # Komponent akcji (linki do rejestracji, itp.)
+            │           ├── actions.component.ts
+            │           └── actions.component.html
+            ├── guards/
+            │   └── no-auth.guard.ts                # Guard blokujący dostęp dla zalogowanych
+            └── shared/
+                └── types.ts                        # Wspólne typy i walidatory
 ```
 
 ## 4. Szczegóły komponentów
 
-### LoginPageComponent
-- Opis: Kontener dla logiki i stylu strony logowania.
-- Główne elementy: `<app-login-form>`
-- Obsługiwane zdarzenia: Nie bezpośrednio; przekazuje callback z `LoginFormComponent`.
-- Propsy: brak (feature module wstrzykuje routing i guardy).
+### AuthLayoutComponent
+- Opis: Wspólny layout dla wszystkich stron autoryzacji, zapewniający spójny wygląd.
+- Główne elementy: Nagłówek, kontener na zawartość stron auth.
+- Propsy:
+  - `@Input() title: string = '10xGains'`
+  - `@Input() subtitle: string = ''`
+
+### LoginComponent
+- Opis: Kontener dla logiki i stylu strony logowania, wykorzystujący AuthLayoutComponent.
+- Główne elementy: `<txg-auth-layout>`, `<txg-login-form>`, `<txg-login-actions>`
+- Obsługiwane zdarzenia: `formSubmit` z LoginFormComponent.
+- Zewnętrzne zależności: AuthService do uwierzytelniania, Router do nawigacji.
 
 ### LoginFormComponent
-- Opis: Formularz logowania oparty na ReactiveForm z walidacją Zod.
+- Opis: Formularz logowania oparty na ReactiveForm z podwójną walidacją: Angular + Zod.
 - Główne elementy:
   - `<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">`
-  - `<mat-form-field>` dla email i dla hasła
-  - `<mat-icon-button>` do przełączania widoczności hasła
-  - `<button mat-raised-button type="submit" [disabled]="loginForm.invalid || loading">Zaloguj się</button>`
-  - `<a routerLink="/register">Zarejestruj się</a>`
+  - `<txg-email-input [parentForm]="loginForm">`
+  - `<txg-password-input [parentForm]="loginForm">`
+  - `<button mat-raised-button type="submit">`
 - Obsługiwane interakcje:
   - Wpisywanie email i hasła
-  - Kliknięcie ikonki show/hide
   - Submit formularza
 - Obsługiwana walidacja:
-  - email: required, format email (Zod.email())
-  - password: required, minLength 8
+  - email: required, format email (Angular + Zod)
+  - password: required
 - Typy:
   - `LoginFormValues { email: string; password: string; }`
 - Propsy:
-  - `@Output() login = new EventEmitter<LoginFormValues>()`
+  - `@Output() formSubmit = new EventEmitter<LoginFormValues>()`
 
 ### EmailInputComponent
 - Opis: Wrapper nad `mat-form-field` i `matInput` dla pola email.
-- Główne elementy: `<input matInput formControlName="email" type="email">`
+- Główne elementy: `<input matInput [formControl]="getFormControl()" type="email">`
 - Obsługiwane interakcje: focus, blur, change
-- Walidacja: required, format email
-- Propsy: `formControlName`
+- Walidacja: 
+  - Angular: required, Validators.email
+  - Zod: required, email (.email())
+- Propsy: 
+  - `@Input() parentForm: FormGroup`
+  - `@Input() controlName: string = 'email'`
 
 ### PasswordInputComponent
 - Opis: Wrapper nad `mat-form-field` i `matInput` z toggle show/hide.
 - Główne elementy:
-  - `<input matInput [type]="hide ? 'password' : 'text'" formControlName="password">`
+  - `<input matInput [type]="hide ? 'password' : 'text'" [formControl]="getFormControl()">`
   - `<button mat-icon-button (click)="toggleHide()">`
 - Obsługiwane interakcje: toggleHide()
-- Walidacja: required, minLength 8
-- Propsy: `formControlName`
+- Walidacja: required
+- Propsy: 
+  - `@Input() parentForm: FormGroup`
+  - `@Input() controlName: string = 'password'`
 
 ### ActionsComponent
-- Opis: Zawiera przycisk submit i link do rejestracji.
+- Opis: Zawiera linki do innych stron autoryzacji (rejestracja, odzyskiwanie hasła).
 - Główne elementy:
-  - SubmitButton
-  - RouterLink do `/register`
-- Obsługiwane interakcje: `click submit`, `navigate to register`
-- Propsy: `loading: boolean`
+  - RouterLink do `/auth/register`
+  - RouterLink do `/auth/forgot-password`
+- Obsługiwane interakcje: nawigacja do innych widoków
 
 ## 5. Typy
 ```ts
-// DTO wysyłane do API
-type LoginRequest = {
-  email: string;
-  password: string;
-};
+// Modele w auth/shared/types.ts
 
-// Odpowiedź z API
-type LoginResponse = {
-  user: User;
-  session: Session;
-};
-
-// Typy formularza
-interface LoginFormValues {
+// Modele żądań
+export interface AuthRequest {
   email: string;
   password: string;
 }
+
+// Modele formularzy
+export interface LoginFormValues {
+  email: string;
+  password: string;
+}
+
+// Schematy walidacji Zod
+export const loginFormSchema = z.object({
+  email: z.string()
+    .min(1, { message: 'Email is required' })
+    .email({ message: 'Please enter a valid email address' }),
+  password: z.string()
+    .min(1, { message: 'Password is required' })
+});
 ```
 
 ## 6. Zarządzanie stanem
-- Formularz: `FormGroup` w komponencie `LoginFormComponent`.
-- Loading i error: użycie lokalnych `BehaviorSubject<boolean>`/`Subject<string>` lub `loading` i `errorMessage` w komponencie.
-- Opcjonalnie: Custom hook `useLoginState()` (service Angularowy), zarządza stanem ładowania i błędów.
+- Formularz: `FormGroup` w komponencie `LoginFormComponent` z użyciem FormBuilder.
+- Loading: użycie `signal(false)` w `LoginFormComponent`.
+- Obsługa błędów: MatSnackBar w `LoginComponent`.
+- Autentykacja: wstrzykiwanie SharedAuthService.
 
 ## 7. Integracja API
-- Serwis: `AuthService.login(request: LoginRequest): Promise<LoginResponse>` oparte na `SupabaseService.auth.signInWithPassword`.
-- W `LoginFormComponent.onSubmit()`:
+- Serwis: Używamy `AuthService` z `src/app/shared/services/auth.service.ts`, który korzysta z Supabase.
+- W `LoginComponent.onFormSubmit()`:
   ```ts
-  this.loading = true;
-  this.authService.login(this.loginForm.value)
-    .then(res => this.router.navigate(['/home']))
-    .catch(err => this.errorMessage = mapError(err))
-    .finally(() => this.loading = false);
+  async onFormSubmit(formValues: LoginFormValues): Promise<void> {
+    if (this.loginFormComponent) {
+      this.loginFormComponent.setLoading(true);
+    }
+
+    try {
+      await this.authService.login({
+        email: formValues.email,
+        password: formValues.password
+      });
+      // Po zalogowaniu, przekierowanie do /home
+    } catch (error) {
+      // Wyświetlenie błędu w snackbar
+      this.snackBar.open(
+        error instanceof Error ? error.message : 'An error occurred. Please try again later.',
+        'Close',
+        { duration: 5000 }
+      );
+    } finally {
+      if (this.loginFormComponent) {
+        this.loginFormComponent.setLoading(false);
+      }
+    }
+  }
   ```
 
 ## 8. Interakcje użytkownika
 1. Użytkownik wpisuje email i hasło.
-2. Formularz waliduje pola w locie (ngModelChange + Zod).
-3. Kliknięcie przycisku "Zaloguj się" wywołuje `onSubmit()`.
-4. Podczas oczekiwania przycisk zablokowany, może pojawić się spinner.
+2. Formularz waliduje pola w locie (Angular + Zod).
+3. Kliknięcie przycisku "Login" wywołuje `onSubmit()`.
+4. Podczas oczekiwania przycisk zablokowany, wyświetla się tekst "Logging in...".
 5. Po sukcesie: przekierowanie do `/home`.
-6. Po błędzie: wyświetlenie komunikatu np. w `<mat-error>` lub `<mat-snackbar>`.
+6. Po błędzie: wyświetlenie komunikatu w MatSnackBar.
 
 ## 9. Warunki i walidacja
 - Pola wymagane: email, password.
-- email: zgodny z regex `/.+@.+\..+/`
-- password: minLength 8.
+- Podwójna walidacja email:
+  - Angular: Validators.required, Validators.email
+  - Zod: .min(1), .email()
+- Komunikaty błędów:
+  - Email is required
+  - Please enter a valid email address
+  - Password is required
 - FormGroup invalid -> przycisk submit disabled.
-- Walidacja wykonywana zarówno na poziomie Zod jak i Angular.
 
 ## 10. Obsługa błędów
-- Błędne dane logowania: komunikat "Nieprawidłowy email lub hasło."
-- Błąd sieci: "Błąd połączenia. Spróbuj ponownie później."
-- Timeout: pokaż spinner do 5s, potem błąd.
-- Każdy błąd tłumaczony przez `mapError()` w `AuthService`.
+- Błędy wyświetlane jako:
+  - Inline errors w FormFields
+  - MatSnackBar dla błędów z API
+- Mapowanie błędów API na przyjazne komunikaty
+- Obsługa różnych przypadków błędów (invalid credentials, network error, etc.)
 
 ## 11. Kroki implementacji
-1. Utworzyć folder `src/app/features/login` oraz plik `login.routes.ts` z konfiguracją routingu.
-2. W `app.routes.ts` dodać lazy loading dla ścieżki `/login`.
-3. Wygenerować komponenty: `LoginPageComponent`, `LoginFormComponent`, `EmailInputComponent`, `PasswordInputComponent`, `ActionsComponent`.
-4. Zainstalować i skonfigurować `zod` oraz integrację z Angular ReactiveForms.
-5. Utworzyć typy DTO (`LoginRequest`, `LoginResponse`) w `shared/services/auth.service.ts`.
-6. Utworzyć typy DTO (`LoginFormValues`) w `src/app/features/login/shared/types.ts`.
-7. Zaimplementować `AuthService` w `shared/services/auth.service.ts`, używający `SupabaseService`.
-8. Utworzyć szkielet formularza w `LoginFormComponent`, dodać pola i walidację Zod.
-9. Dodać obsługę toggla hasła w `PasswordInputComponent`.
-10. Podłączyć `AuthService.login()` w `onSubmit()`, zarządzać stanem `loading` i `errorMessage`.
-11. Dodać markup Angular Material oraz Tailwind klasy dla responsywności i dostępności.
-12. Przetestować scenariusze: sukces, błąd walidacji, błąd sieci.
-13. Dodać e2e testy i unit testy dla `LoginFormComponent`.
-14. Code review i merge do głównego brancha.
+1. Utworzyć strukturę katalogów dla auth feature.
+2. Zaimplementować AuthLayoutComponent jako wspólny layout.
+3. Utworzyć plik types.ts ze schematami walidacji Zod.
+4. Zaimplementować noAuthGuard dla zabezpieczenia widoków auth.
+5. Skonfigurować routing w auth.routes.ts i app.routes.ts.
+6. Zaimplementować komponenty: EmailInput, PasswordInput, LoginForm, Actions, Login.
+7. Dodać podwójną walidację: Angular + Zod.
+8. Przeprowadzić testy wszystkich scenariuszy (poprawne dane, błędne dane, rozłączenie).
+9. Upewnić się, że wszystkie testy przechodzą i widok działa zgodnie z oczekiwaniami.

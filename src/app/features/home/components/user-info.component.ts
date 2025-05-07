@@ -35,7 +35,7 @@ export class UserInfoComponent {
 
   logout(): void {
     this.authService.logout().then(() => {
-      this.router.navigate(['/login']);
+      this.router.navigate(['/auth/login']);
     }).catch(error => {
       console.error('Error during logout:', error);
     });
