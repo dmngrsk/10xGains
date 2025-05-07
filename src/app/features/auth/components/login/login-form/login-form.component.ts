@@ -4,8 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 
-import { EmailInputComponent } from '../email-input/email-input.component';
-import { PasswordInputComponent } from '../password-input/password-input.component';
+import { EmailInputComponent } from '../../shared/form-inputs/email-input/email-input.component';
+import { PasswordInputComponent } from '../../shared/form-inputs/password-input/password-input.component';
 import { LoginFormValues, loginFormSchema } from '../../../shared/types';
 import { zodFormGroupValidator } from '../../../../../shared/utils/form-validation';
 

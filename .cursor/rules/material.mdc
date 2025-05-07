@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: *.ts,*.html,*.scss
 alwaysApply: false
 ---
@@ -15,3 +15,4 @@ alwaysApply: false
 - Leverage the Angular Material theming system for consistent branding.
 - Implement proper typography hierarchy using the Material typography system.
 - Use Angular Material's built-in a11y features like focus indicators and keyboard navigation.
+- Do NOT use Tailwind classes to style Angular Material components directly.

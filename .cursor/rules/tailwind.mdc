@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: *.ts,*.html,*.scss
 alwaysApply: false
 ---
@@ -15,3 +15,4 @@ alwaysApply: false
 - Implement dark mode with the dark: variant
 - Use responsive variants (sm:, md:, lg:, etc.) for adaptive designs
 - Leverage state variants (hover:, focus:, active:, etc.) for interactive elements
+- Do NOT use Tailwind classes to style Angular Material components directly
