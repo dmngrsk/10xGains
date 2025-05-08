@@ -10,7 +10,7 @@ import { AuthService } from '../../../shared/services/auth.service';
   imports: [CommonModule, MatButtonModule],
   template: `
     <div class="p-4 border rounded shadow-sm">
-      <div *ngIf="(currentUser$ | async) as user; else loading">
+      <div *ngIf="authService.currentUser() as user; else loading">
         <p class="mb-2">Signed in as: <strong>{{ user.email }}</strong></p>
         <div class="mt-4">
           <button mat-button color="warn" (click)="logout()">Wyloguj</button>
@@ -28,10 +28,8 @@ import { AuthService } from '../../../shared/services/auth.service';
   `]
 })
 export class UserInfoComponent {
-  private authService = inject(AuthService);
+  protected authService = inject(AuthService);
   private router = inject(Router);
-
-  currentUser$ = this.authService.currentUser$;
 
   logout(): void {
     this.authService.logout().then(() => {

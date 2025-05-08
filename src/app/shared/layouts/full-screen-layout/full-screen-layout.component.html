@@ -1,0 +1,10 @@
+<mat-toolbar color="primary">
+  <button mat-icon-button (click)="goBack()" aria-label="Go back">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <span>{{ title }}</span>
+</mat-toolbar>
+
+<main class="layout-content">
+  <ng-content></ng-content>
+</main>

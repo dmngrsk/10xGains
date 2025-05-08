@@ -4,8 +4,8 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
-import { EmailInputComponent } from '../../shared/form-inputs/email-input/email-input.component';
-import { PasswordInputComponent } from '../../shared/form-inputs/password-input/password-input.component';
+import { EmailInputComponent } from '../../shared/email-input/email-input.component';
+import { PasswordInputComponent } from '../../shared/password-input/password-input.component';
 import { ConfirmPasswordInputComponent } from '../confirm-password-input/confirm-password-input.component';
 import { passwordMatchValidator } from '../../../shared/validators/password-match.validator';
 

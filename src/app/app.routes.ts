@@ -14,6 +14,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'plans',
+    loadChildren: () => import('./features/plans/plans.routes').then(m => m.PLANS_ROUTES),
+    canActivate: [authGuard]
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'

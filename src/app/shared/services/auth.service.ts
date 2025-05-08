@@ -1,7 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
+import { map, first } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { SupabaseService } from '../db/supabase.service';
 import { Session, User } from '@supabase/supabase-js';
 
@@ -21,25 +22,46 @@ export interface LoginResponse {
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  public readonly currentUser = toSignal(this.currentUser$, { initialValue: null });
 
-  constructor(
-    private supabaseService: SupabaseService,
-    private router: Router
-  ) {
-    this.initializeUser();
+  private authStateInitialized = new ReplaySubject<boolean>(1);
+  public authStateInitialized$ = this.authStateInitialized.asObservable();
+
+  private supabaseService = inject(SupabaseService);
+  private router = inject(Router);
+
+  constructor() {
+    this.supabaseService.client.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null;
+      this.currentUserSubject.next(user);
+      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
+        this.authStateInitialized.next(true);
+      }
+    }).catch(() => {
+      this.currentUserSubject.next(null);
+      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
+        this.authStateInitialized.next(true);
+      }
+    });
+
+    this.supabaseService.client.auth.onAuthStateChange((event, session) => {
+      const user = session?.user ?? null;
+      this.currentUserSubject.next(user);
+      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
+        this.authStateInitialized.next(true);
+      }
+    });
   }
 
-  private async initializeUser(): Promise<void> {
-    try {
-      const { data } = await this.supabaseService.client.auth.getSession();
-
-      if (data?.session?.user) {
-        this.currentUserSubject.next(data.session.user);
-      }
-    } catch (error) {
-      console.error('Error initializing user:', error);
-      this.currentUserSubject.next(null);
+  private isReplaySubjectEmitted(subject: ReplaySubject<boolean>): boolean {
+    let emitted = false;
+    const sub = subject.pipe(first()).subscribe(() => {
+      emitted = true;
+    });
+    if (!emitted) {
+      sub.unsubscribe();
     }
+    return emitted;
   }
 
   login(request: LoginRequest): Promise<LoginResponse> {
@@ -53,32 +75,25 @@ export class AuthService {
           reject(error);
           return;
         }
-
-        if (data?.user) {
-          this.currentUserSubject.next(data.user);
+        if (data?.user && data.session) {
           resolve({ user: data.user, session: data.session });
         } else {
-          reject(new Error('Login failed: No user data returned'));
+          const errMsg = 'Login failed: No user data or session returned';
+          reject(new Error(errMsg));
         }
       })
-      .catch(reject);
+      .catch(err => {
+        reject(err);
+      });
     });
   }
 
-  logout(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.supabaseService.client.auth.signOut()
-        .then(({ error }) => {
-          if (error) {
-            reject(error);
-            return;
-          }
-
-          this.currentUserSubject.next(null);
-          resolve();
-        })
-        .catch(reject);
-    });
+  async logout(): Promise<void> {
+    const { error } = await this.supabaseService.client.auth.signOut();
+    if (error) {
+      throw error;
+    }
+    this.router.navigate(['/auth/login']);
   }
 
   isAuthenticated(): Observable<boolean> {

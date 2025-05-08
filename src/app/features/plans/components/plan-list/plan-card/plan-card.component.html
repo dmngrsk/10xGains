@@ -1,0 +1,20 @@
+<mat-card
+  class="mb-4 cursor-pointer"
+  (click)="onCardClick()"
+  role="button"
+  tabindex="0">
+  <mat-card-content>
+    <p class="!text-base text-[var(--mat-sys-primary)]">{{ plan.title }}</p>
+    @if (plan.description) {
+      <p class="mt-1 mb-5 text-sm">{{ plan.description }}</p>
+    }
+    @if (plan.exerciseDescriptions!.length > 0) {
+      @for (exerciseDescription of plan.exerciseDescriptions!; track exerciseDescription) {
+        <p class="mt-3 text-xs">Day {{ $index + 1 }}:</p>
+        <p class="mt-1 text-xs text-gray-600">{{ exerciseDescription ?? 'No exercises found' }}</p>
+      }
+    } @else {
+      <p class="mt-3 text-xs text-gray-600">No exercise days found</p>
+    }
+  </mat-card-content>
+</mat-card>
