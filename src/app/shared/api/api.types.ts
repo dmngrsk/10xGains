@@ -27,7 +27,7 @@ export type UpdateUserProfileCommand = Pick<UserProfileDto, "first_name" | "acti
 
 // 2. Training Plan DTO and Commands
 export type TrainingPlanDto = Database["public"]["Tables"]["training_plans"]["Row"] & {
-  training_days?: TrainingPlanDayDto[]; // nested training plan days
+  days?: TrainingPlanDayDto[]; // nested training plan days
 };
 
 export type CreateTrainingPlanCommand = Pick<Database["public"]["Tables"]["training_plans"]["Insert"], "name" | "description">;
@@ -54,7 +54,9 @@ export type CreateExerciseCommand = Pick<Database["public"]["Tables"]["exercises
 export type UpdateExerciseCommand = Pick<Database["public"]["Tables"]["exercises"]["Update"], "name" | "description">;
 
 // 5. Training Plan Exercise DTO and Commands
-export type TrainingPlanExerciseDto = Database["public"]["Tables"]["training_plan_exercises"]["Row"];
+export type TrainingPlanExerciseDto = Database["public"]["Tables"]["training_plan_exercises"]["Row"] & {
+  sets?: TrainingPlanExerciseSetDto[]; // nested sets
+};
 
 // For creation, omit id and training_plan_day_id (provided via route)
 export type CreateTrainingPlanExerciseCommand = Omit<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "id" | "training_plan_day_id">;

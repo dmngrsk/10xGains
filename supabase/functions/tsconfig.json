@@ -25,7 +25,7 @@
       "std/*": ["./node_modules/@types/deno-std/*"],
       "supabase": ["./node_modules/@supabase/supabase-js"],
       "zod": ["./node_modules/zod"],
-      "_shared/*": ["./_shared/*"]
+      "shared/*": ["./shared/*"]
     },
     "lib": ["ES2020", "DOM"]
   },

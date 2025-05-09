@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-04-20T23:39:48.789Z
+ * Last updated: 2025-05-09T18:58:08.907Z
  */
 
 export type Json =

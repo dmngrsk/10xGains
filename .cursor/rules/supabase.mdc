@@ -10,7 +10,67 @@ alwaysApply: false
 - Use Zod schemas to validate data exchanged with the backend.
 - Each API method MUST be implemented as a Supabase Edge Function, keep that in mind when planning and implementing the actual endpoint.
 - Each API method MUST have its own `index.ts` file saved in the `supabase/functions/{resource}` directory, as well as its own `deno.json` file.
-- Use entities from the `supabase/functions/_shared` directory as baseline REST API models.
+- Use entities from the `supabase/functions/shared` directory as baseline REST API models.
 - Use the API handler framework from `api-helpers.ts` for consistent implementation patterns. Define resource paths using patterns (e.g., `['profiles', '{id}']`) that follow the API plan found in `.ai/api-plan.md`.
 - Maintain endpoint documentation in the `supabase/functions/README.md` file after implementing new endpoints.
 - Use dedicated `*.service.ts` data services for communication in Angular components (implement them when necessary), rather than directly using `@supabase/supabase-js`.
+
+### Advanced Modular Structure for Supabase Edge Functions Handling Multiple Routes and Methods
+
+For comprehensive API resources that span multiple related path patterns (e.g., `/resource`, `/resource/{id}`, `/resource/{id}/sub-resource`), a unified Supabase Edge Function should be created for the base resource. This function will employ a layered routing mechanism to handle various paths and HTTP methods in a modular and maintainable way.
+
+**1. Main Function Directory (e.g., `supabase/functions/resource/`)**
+   - This directory represents a single deployable Supabase Edge Function.
+   - It contains the primary `deno.json` configuration.
+   - **`index.ts` (Main Router / Entry Point):**
+     - This file serves as the main entry point for all requests to `/resource/*`.
+     - It imports a primary routing utility, typically `createMainRouterHandler` from a shared location (e.g., `supabase/functions/shared/api-routing.ts`).
+     - It also imports "Path Handler" functions from a dedicated `handlers/` subdirectory (see point 2).
+     - It initializes `createMainRouterHandler` with an array of these Path Handlers and the base mount path for the function (e.g., `/resource`).
+     - `createMainRouterHandler` is responsible for:
+       - Initial CORS handling (e.g., OPTIONS requests).
+       - JWT authentication: Extracting and validating the user token. If authentication fails, it returns a `401 Unauthorized` response.
+       - Creating a Supabase client instance authenticated with the user's context.
+       - Packaging `user`, `supabaseClient`, `request`, `url`, and `requestInfo` into an `ApiHandlerContext` object.
+       - Iterating through the registered Path Handlers, passing the `request` and `ApiHandlerContext` to each, until one successfully handles the request (does not return a special "pass" indicator).
+       - Returning a final `404 Not Found` if no Path Handler matches the request.
+
+**2. Path Handlers Directory (e.g., `supabase/functions/resource/handlers/`)**
+   - This subdirectory contains modules, each responsible for a specific path pattern within the main resource.
+   - For example:
+     - `resource/handler.ts` (handles `/resource`)
+     - `resource-id/handler.ts` (handles `/resource/{id}`)
+   - **Each Path Handler File (e.g., `resource-id/handler.ts`):**
+     - Exports an asynchronous "Path Handler" function (e.g., `handleResourceByIdRoute`).
+     - This function accepts `(req: Request, context: ApiHandlerContext)` as parameters.
+     - Defines an `ABSOLUTE_PATH_PATTERN` constant specific to the path it manages (e.g., `/resource/:id`). This pattern is used for matching and extracting path parameters.
+     - Imports "Method Handler" functions from a nested `methods/` subdirectory (see point 3).
+     - Utilizes a secondary routing utility, typically `routeRequestToMethods` from the shared routing helpers.
+     - `routeRequestToMethods` is called with the `req`, `ABSOLUTE_PATH_PATTERN`, a map of HTTP methods to their corresponding Method Handler functions, and the received `ApiHandlerContext`.
+     - `routeRequestToMethods` is responsible for:
+       - Matching the `req.url.pathname` against the `ABSOLUTE_PATH_PATTERN`.
+       - If it matches, extracting `rawPathParams` from the URL.
+       - Augmenting the `ApiHandlerContext` with these `rawPathParams`.
+       - Dispatching the request to the correct Method Handler based on `req.method`.
+       - If the path doesn't match, it returns a special indicator (e.g., `PASS_ROUTE_INDICATOR`) to signal the main router (`createMainRouterHandler`) to try the next registered Path Handler.
+
+**3. Method Handlers Directory (e.g., `supabase/functions/resource/handlers/resource-id/methods/`)**
+   - This subdirectory, nested within a specific Path Handler's directory, contains the actual implementation logic for each supported HTTP method.
+   - For example:
+     - `get.ts`
+     - `put.ts`
+     - `delete.ts`
+   - **Each Method Handler File (e.g., `get.ts`):**
+     - Exports an asynchronous "Method Handler" function (e.g., `handleGetResourceById`).
+     - This function accepts the (potentially augmented) `ApiHandlerContext` as its parameter. This context provides access to `supabaseClient`, `user`, `rawPathParams`, `req`, `url`, and `requestInfo`.
+     - Contains the core business logic:
+       - Validation of `rawPathParams` and request body (if any) using Zod schemas.
+       - Database interactions using `supabaseClient` from the context.
+       - **Crucially, for operations on specific resources (e.g., identified by an ID), these handlers must explicitly include `user.id` in database queries (e.g., `.eq('user_id', user.id)`) to enforce ownership, in addition to relying on RLS.** This ensures consistent `404 Not Found` responses for non-existent or unauthorized resources directly from the application logic.
+       - Construction of success or error responses using helper functions like `createSuccessResponse(statusCode, data, message)` and `createErrorResponse`.
+
+This layered routing approach provides a clear separation of concerns:
+- The main `index.ts` handles top-level function setup and primary routing.
+- Path Handlers manage specific URL patterns and delegate to method-specific logic.
+- Method Handlers implement the detailed business logic for each endpoint.
+- Shared utilities in `api-routing.ts` and `api-helpers.ts` provide common functionalities like authentication, response formatting, and routing primitives.

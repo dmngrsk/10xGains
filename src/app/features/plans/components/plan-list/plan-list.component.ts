@@ -179,7 +179,7 @@ export class PlanListComponent implements OnDestroy, AfterViewInit {
       throw new Error('Training plan DTO is required');
     }
 
-    const trainingDays = dto.training_days || [];
+    const trainingDays = dto.days || [];
     const exerciseDescriptions: string[] = [];
 
     if (trainingDays.length > 0) {

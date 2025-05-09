@@ -40,7 +40,7 @@ export class PlanService {
       .from('training_plans')
       .select(`
         *,
-        training_days:training_plan_days (
+        days:training_plan_days (
           *,
           exercises:training_plan_exercises (
             *

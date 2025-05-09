@@ -23,7 +23,7 @@ const path = require("path");
 // Paths
 const API_SOURCE_FILE = path.join(__dirname, "../src/app/shared/api/api.types.ts");
 const DB_SOURCE_FILE = path.join(__dirname, "../src/app/shared/db/database.types.ts");
-const TARGET_DIR = path.join(__dirname, "../supabase/functions/_shared");
+const TARGET_DIR = path.join(__dirname, "../supabase/functions/shared");
 const API_TARGET_FILE = path.join(TARGET_DIR, "api-types.ts");
 const DB_TARGET_FILE = path.join(TARGET_DIR, "database-types.ts");
 

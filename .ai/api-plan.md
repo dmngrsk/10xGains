@@ -77,7 +77,58 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
         "name": "Plan Name",
         "description": "Optional description",
         "user_id": "uuid",
-        "created_at": "2023-01-01T00:00:00Z"
+        "created_at": "2023-01-01T00:00:00Z",
+        "days": [
+          {
+            "id": "uuid",
+            "name": "Day 1",
+            "description": "Optional description",
+            "order_index": 1,
+            "exercises": [
+              {
+                "id": "uuid",
+                "exercise_id": "uuid",
+                "order_index": 1,
+                "sets": [
+                  {
+                    "id": "uuid",
+                    "set_index": 1,
+                    "expected_reps": 5,
+                    "expected_weight": 20,
+                    "training_plan_exercise_id": "uuid"
+                  },
+                  {
+                    "id": "uuid",
+                    "set_index": 2,
+                    "expected_reps": 5,
+                    "expected_weight": 20,
+                    "training_plan_exercise_id": "uuid"
+                  },
+                ]
+              },
+              {
+                "id": "uuid",
+                "exercise_id": "uuid",
+                "order_index": 2
+              }
+            ]
+          },
+          {
+            "id": "uuid",
+            "name": "Day 2",
+            "description": "Optional description",
+            "order_index": 2,
+            "exercises": []
+          }
+        ]
+      },
+      {
+        "id": "uuid",
+        "name": "Plan Name 2",
+        "description": "Optional description",
+        "user_id": "uuid",
+        "created_at": "2023-01-01T00:00:00Z",
+        "days": []
       }
     ]
     ```
@@ -115,7 +166,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "description": "Optional description",
       "user_id": "uuid",
       "created_at": "2023-01-01T00:00:00Z",
-      "training_days": [
+      "days": [
         {
           "id": "uuid",
           "name": "Day 1",
@@ -125,7 +176,23 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
             {
               "id": "uuid",
               "exercise_id": "uuid",
-              "order_index": 1
+              "order_index": 1,
+              "sets": [
+                {
+                  "id": "uuid",
+                  "set_index": 1,
+                  "expected_reps": 5,
+                  "expected_weight": 20,
+                  "training_plan_exercise_id": "uuid"
+							  },
+                {
+                  "id": "uuid",
+                  "set_index": 2,
+                  "expected_reps": 5,
+                  "expected_weight": 20,
+                  "training_plan_exercise_id": "uuid"
+							  },
+              ]
             },
             {
               "id": "uuid",
@@ -813,7 +880,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
         "description": "Optional description",
         "user_id": "uuid",
         "created_at": "2023-01-01T00:00:00Z",
-        "training_days": [
+        "days": [
           {
             "id": "uuid",
             "name": "Day 1",
