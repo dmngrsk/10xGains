@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import type { TrainingPlanDto } from 'shared/api-types.ts';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 
 export const listTrainingPlansQuerySchema = z.object({
   limit: z.preprocess(
@@ -16,12 +16,12 @@ export const listTrainingPlansQuerySchema = z.object({
 });
 
 export async function handleGetTrainingPlans(
-  { supabaseClient, user, url, requestInfo }: ApiHandlerContext 
+  { supabaseClient, user, url, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'url' | 'requestInfo'>
 ): Promise<Response> {
   if (!user) {
     return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
   }
-  
+
   const queryParams = Object.fromEntries(url.searchParams);
   const validationResult = listTrainingPlansQuerySchema.safeParse(queryParams);
 
@@ -89,10 +89,10 @@ export async function handleGetTrainingPlans(
     return createErrorResponse(
       500,
       'An unexpected error occurred while fetching training plans',
-      { details: (e instanceof Error ? e.message : String(e)) }, 
+      { details: (e instanceof Error ? e.message : String(e)) },
       undefined,
       e,
       requestInfo
     );
   }
-} 
+}

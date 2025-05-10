@@ -1,10 +1,10 @@
 // Placeholder for DELETE /training-plans/:planId/days/:dayId
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 
 export async function handleDeleteTrainingPlanDayById(
-  { supabaseClient, user, rawPathParams }: ApiHandlerContext
+  { supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams'>
 ) {
   const paramsValidation = z.object({
     planId: z.string().uuid({ message: 'Invalid planId format.' }),

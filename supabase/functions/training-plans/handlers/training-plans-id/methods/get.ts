@@ -1,6 +1,6 @@
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import type { TrainingPlanDto } from 'shared/api-types.ts';
 
 const paramsSchema = z.object({
@@ -8,7 +8,7 @@ const paramsSchema = z.object({
 });
 
 export async function handleGetTrainingPlanById(
-  { supabaseClient, rawPathParams, requestInfo, user }: ApiHandlerContext 
+  { supabaseClient, rawPathParams, requestInfo, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'requestInfo' | 'user'>
 ) {
   if (!rawPathParams) {
       return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);
@@ -21,8 +21,8 @@ export async function handleGetTrainingPlanById(
   const paramsValidation = paramsSchema.safeParse(rawPathParams);
   if (!paramsValidation.success) {
     return createErrorResponse(
-      400, 
-      'Invalid path parameters', 
+      400,
+      'Invalid path parameters',
       paramsValidation.error.flatten(),
       undefined,
       undefined,
@@ -62,4 +62,4 @@ export async function handleGetTrainingPlanById(
   }
 
   return createSuccessResponse<TrainingPlanDto>(200, data as TrainingPlanDto);
-} 
+}

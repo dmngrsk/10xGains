@@ -1,5 +1,5 @@
 ---
-description: 
+description:
 globs: *.ts
 alwaysApply: false
 ---
@@ -11,7 +11,8 @@ alwaysApply: false
 - Each API method MUST be implemented as a Supabase Edge Function, keep that in mind when planning and implementing the actual endpoint.
 - Each API method MUST have its own `index.ts` file saved in the `supabase/functions/{resource}` directory, as well as its own `deno.json` file.
 - Use entities from the `supabase/functions/shared` directory as baseline REST API models.
-- Use the API handler framework from `api-helpers.ts` for consistent implementation patterns. Define resource paths using patterns (e.g., `['profiles', '{id}']`) that follow the API plan found in `.ai/api-plan.md`.
+- Use the API handler framework from `api-handler.ts` for consistent implementation patterns. Define resource paths using patterns (e.g., `['profiles', '{id}']`) that follow the API plan found in `.ai/api-plan.md`.
+- Maintain consistent implementation between different handlers across the Edge Functions, feel free to use existing endpoints as a baseline for implementing new ones.
 - Maintain endpoint documentation in the `supabase/functions/README.md` file after implementing new endpoints.
 - Use dedicated `*.service.ts` data services for communication in Angular components (implement them when necessary), rather than directly using `@supabase/supabase-js`.
 
@@ -24,7 +25,7 @@ For comprehensive API resources that span multiple related path patterns (e.g., 
    - It contains the primary `deno.json` configuration.
    - **`index.ts` (Main Router / Entry Point):**
      - This file serves as the main entry point for all requests to `/resource/*`.
-     - It imports a primary routing utility, typically `createMainRouterHandler` from a shared location (e.g., `supabase/functions/shared/api-routing.ts`).
+     - It imports a primary routing utility, typically `createMainRouterHandler` from a shared location (e.g., `supabase/functions/shared/api-handler.ts`).
      - It also imports "Path Handler" functions from a dedicated `handlers/` subdirectory (see point 2).
      - It initializes `createMainRouterHandler` with an array of these Path Handlers and the base mount path for the function (e.g., `/resource`).
      - `createMainRouterHandler` is responsible for:
@@ -73,4 +74,4 @@ This layered routing approach provides a clear separation of concerns:
 - The main `index.ts` handles top-level function setup and primary routing.
 - Path Handlers manage specific URL patterns and delegate to method-specific logic.
 - Method Handlers implement the detailed business logic for each endpoint.
-- Shared utilities in `api-routing.ts` and `api-helpers.ts` provide common functionalities like authentication, response formatting, and routing primitives.
+- Shared utilities in `api-handler.ts` and `api-helpers.ts` provide common functionalities like authentication, response formatting, and routing primitives.

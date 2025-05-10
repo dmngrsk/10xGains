@@ -1,13 +1,13 @@
 import { createSuccessResponse, createErrorResponse } from 'shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid(),
 });
 
 export async function handleDeleteTrainingPlanById(
-  { supabaseClient, rawPathParams, requestInfo, user }: ApiHandlerContext
+  { supabaseClient, rawPathParams, requestInfo, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'requestInfo' | 'user'>
 ) {
   if (!rawPathParams) {
       return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);

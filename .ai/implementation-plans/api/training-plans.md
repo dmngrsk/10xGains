@@ -165,7 +165,7 @@ Główne typy DTO i Command Models z `supabase/functions/shared/api-types.ts` (l
 
 ## 5. Przepływ danych
 1.  Klient wysyła żądanie do punktu końcowego Supabase Edge Function `supabase/functions/training-plans/`.
-2.  Główny plik `index.ts` tej funkcji wykorzystuje `createMainRouterHandler` (z `shared/api-routing.ts`).
+2.  Główny plik `index.ts` tej funkcji wykorzystuje `createMainRouterHandler` (z `shared/api-handler.ts`).
 3.  `createMainRouterHandler`:
     a.  Obsługuje żądania `OPTIONS` dla CORS.
     b.  Weryfikuje token JWT. Jeśli nieprawidłowy lub brak, zwraca `401 Unauthorized`. Tworzy klienta Supabase z uwierzytelnieniem użytkownika.
@@ -173,7 +173,7 @@ Główne typy DTO i Command Models z `supabase/functions/shared/api-types.ts` (l
     d.  Iteruje przez zarejestrowane `ApiRouterHandler` (np. `handleTrainingPlansRoute`, `handleTrainingPlanByIdRoute`), próbując dopasować ścieżkę żądania.
 4.  Dopasowany `ApiRouterHandler` (np. `handleTrainingPlanByIdRoute` z `handlers/training-plans-id/handler.ts`):
     a.  Definiuje swój `ABSOLUTE_PATH_PATTERN` (np. `/training-plans/:planId`).
-    b.  Wykorzystuje `routeRequestToMethods` (z `shared/api-routing.ts`) do:
+    b.  Wykorzystuje `routeRequestToMethods` (z `shared/api-handler.ts`) do:
         i.  Dalszego dopasowania ścieżki i wyekstrahowania `rawPathParams`.
         ii. Rozesłania żądania do odpowiedniej funkcji obsługującej metodę HTTP (np. `handleGetTrainingPlanById` z `methods/get.ts`) na podstawie `req.method`.
 5.  Funkcja obsługująca konkretną metodę (np. `handleGetTrainingPlanById`):
@@ -224,7 +224,7 @@ Cały zasób `/training-plans` (włącznie z `/training-plans/{planId}`) jest ob
 
 2.  **Implementacja Głównej Funkcji i Routingu (`supabase/functions/training-plans/`):**
     *   **`index.ts` (Główny Router):**
-        *   Importuje `createMainRouterHandler` z `supabase/functions/shared/api-routing.ts`.
+        *   Importuje `createMainRouterHandler` z `supabase/functions/shared/api-handler.ts`.
         *   Importuje dedykowane funkcje obsługujące trasy (np. `handleTrainingPlansRoute`, `handleTrainingPlanByIdRoute`) z podkatalogu `handlers/`.
         *   Definiuje tablicę `routeHandlers` zawierającą te funkcje.
         *   Wywołuje `createMainRouterHandler(routeHandlers, '/training-plans')` do utworzenia głównego serwera obsługującego żądania.
@@ -236,7 +236,7 @@ Cały zasób `/training-plans` (włącznie z `/training-plans/{planId}`) jest ob
         *   **`handler.ts` (np. `handleTrainingPlanByIdRoute.ts`):**
             *   Definiuje stałą `ABSOLUTE_PATH_PATTERN` (np. `'/training-plans/:planId'`).
             *   Eksportuje asynchroniczną funkcję (np. `handleTrainingPlanByIdRoute`) przyjmującą `(req: Request, context: ApiHandlerContext)`.
-            *   Wykorzystuje `routeRequestToMethods` (z `shared/api-routing.ts`), przekazując `req`, `ABSOLUTE_PATH_PATTERN`, mapę metod HTTP do funkcji obsługujących oraz `context`.
+            *   Wykorzystuje `routeRequestToMethods` (z `shared/api-handler.ts`), przekazując `req`, `ABSOLUTE_PATH_PATTERN`, mapę metod HTTP do funkcji obsługujących oraz `context`.
         *   **Podkatalog `methods/`:**
             *   Zawiera pliki `.ts` dla każdej metody HTTP (np. `get.ts`, `put.ts`, `delete.ts`).
             *   **Każdy plik w `methods/` (np. `methods/get.ts`):**

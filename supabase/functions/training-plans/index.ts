@@ -1,5 +1,5 @@
 import { serve } from 'std/http/server.ts';
-import { createMainRouterHandler, type ApiRouterHandler } from 'shared/api-routing.ts';
+import { createMainRouterHandler, type ApiRouterHandler } from 'shared/api-handler.ts';
 
 import { handleTrainingPlansRoute } from './handlers/training-plans/handler.ts';
 import { handleTrainingPlanByIdRoute } from './handlers/training-plans-id/handler.ts';

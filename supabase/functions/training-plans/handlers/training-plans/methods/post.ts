@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import type { CreateTrainingPlanCommand, TrainingPlanDto } from 'shared/api-types.ts';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 
 export const createTrainingPlanBodySchema = z.object({
   name: z.string().min(1).max(255),
@@ -9,7 +9,7 @@ export const createTrainingPlanBodySchema = z.object({
 });
 
 export async function handleCreateTrainingPlan(
-  { supabaseClient, user, req, requestInfo }: ApiHandlerContext
+  { supabaseClient, user, req, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'requestInfo'>
 ): Promise<Response> {
   if (!user) {
     return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
@@ -77,4 +77,4 @@ export async function handleCreateTrainingPlan(
       requestInfo
     );
   }
-} 
+}

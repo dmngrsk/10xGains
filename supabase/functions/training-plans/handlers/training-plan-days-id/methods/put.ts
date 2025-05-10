@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import type { TrainingPlanDayDto } from 'shared/api-types.ts';
 
@@ -13,7 +13,7 @@ const UpdateTrainingPlanDayCommandSchema = z.object({
 );
 
 export async function handlePutTrainingPlanDayById(
-  { supabaseClient, user, req, rawPathParams }: ApiHandlerContext
+  { supabaseClient, user, req, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'rawPathParams'>
 ) {
 
   const paramsValidation = z.object({

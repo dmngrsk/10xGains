@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import type { TrainingPlanDayDto } from 'shared/api-types.ts';
 
@@ -10,7 +10,7 @@ const CreateTrainingPlanDayCommandSchema = z.object({
 });
 
 export async function handlePostTrainingPlanDay(
-  { supabaseClient, user, req, requestInfo, rawPathParams }: ApiHandlerContext
+  { supabaseClient, user, req, requestInfo, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'requestInfo' | 'rawPathParams'>
 ): Promise<Response> {
   if (!user) {
     return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);

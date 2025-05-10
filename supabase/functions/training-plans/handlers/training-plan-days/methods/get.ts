@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import type { TrainingPlanDayDto } from 'shared/api-types.ts';
 
@@ -7,9 +7,9 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 const DEFAULT_OFFSET = 0;
 
-export async function handleGetTrainingPlanDays(context: ApiHandlerContext) {
-  const { supabaseClient, user, rawPathParams, url } = context;
-
+export async function handleGetTrainingPlanDays(
+  { supabaseClient, user, rawPathParams, url }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams' | 'url'>
+) {
   const planIdValidation = z.string().uuid().safeParse(rawPathParams?.planId);
   if (!planIdValidation.success) {
     const errorMessages = planIdValidation.error.errors.map(e => e.message).join(', ');
