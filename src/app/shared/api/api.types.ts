@@ -76,7 +76,7 @@ export type UpdateTrainingPlanExerciseSetCommand = Pick<Database["public"]["Tabl
 // 7. Training Plan Exercise Progression DTO and Command
 export type TrainingPlanExerciseProgressionDto = Database["public"]["Tables"]["training_plan_exercise_progressions"]["Row"];
 
-export type UpdateTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "current_weight">;
+export type UpdateTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "current_weight" | "consecutive_failures" | "deload_percentage" | "deload_strategy" | "reference_set_index">;
 
 // 8. Training Session DTO and Commands
 export type TrainingSessionDto = Database["public"]["Tables"]["training_sessions"]["Row"];

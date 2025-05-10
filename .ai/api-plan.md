@@ -662,7 +662,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     }
     ```
   - Business Logic: Apply automated weight increment on success or a 10% deload after three consecutive failures.
-  - Success: 200 OK
+  - Success: 200 OK, 201 Created
   - Errors: 401 Unauthorized, 404 Not Found
 
 ### Training Sessions

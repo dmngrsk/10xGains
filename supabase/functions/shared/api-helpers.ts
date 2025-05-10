@@ -251,3 +251,26 @@ export const createSupabaseClient = (req: Request): SupabaseClient<Database> => 
     }
   );
 };
+
+/**
+ * Takes an object and returns a new object containing only the properties
+ * from the input object that are not undefined.
+ * Useful for preparing data for partial updates to avoid unintentionally
+ * setting fields to null in the database.
+ * @param data The input object.
+ * @returns A new object with undefined properties removed.
+ */
+export function stripUndefinedValues<T extends Record<string, unknown>>(
+  data: T
+): Partial<T> {
+  const result: Partial<T> = {};
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      const K = key as keyof T;
+      if (data[K] !== undefined) {
+        result[K] = data[K];
+      }
+    }
+  }
+  return result;
+}
