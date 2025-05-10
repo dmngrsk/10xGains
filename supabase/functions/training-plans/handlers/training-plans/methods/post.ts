@@ -66,7 +66,7 @@ export async function handleCreateTrainingPlan(
       );
     }
 
-    return createSuccessResponse<TrainingPlanDto>(201, data as TrainingPlanDto, 'Training plan created successfully.');
+    return createSuccessResponse<TrainingPlanDto>(201, data as TrainingPlanDto);
   } catch (e) {
     return createErrorResponse(
       500,

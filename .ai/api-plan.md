@@ -259,12 +259,29 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
           {
             "id": "uuid",
             "exercise_id": "uuid",
-            "order_index": 1
+            "order_index": 1,
+            "sets": [
+              {
+                "id": "uuid",
+                "set_index": 1,
+                "expected_reps": 5,
+                "expected_weight": 20,
+                "training_plan_exercise_id": "uuid"
+              },
+              {
+                "id": "uuid",
+                "set_index": 2,
+                "expected_reps": 5,
+                "expected_weight": 20,
+                "training_plan_exercise_id": "uuid"
+              },
+            ]
           },
           {
             "id": "uuid",
             "exercise_id": "uuid",
-            "order_index": 2
+            "order_index": 2,
+            "sets": []
           }
         ]
       }
@@ -273,13 +290,12 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
 
 - **POST /training-plans/{planId}/days**
-  - Description: Create a new day within a training plan that belongs to the authenticated user.
+  - Description: Create a new day for the authenticated user's training plan. The server automatically manages `order_index` – appends if not provided by the client, or inserts at the specified `order_index` and shifts subsequent days accordingly.
   - Request Body:
     ```json
     {
       "name": "Day Name",
-      "description": "Optional description",
-      "order_index": 1
+      "description": "Optional description"
     }
     ```
   - Example Response:
@@ -304,20 +320,48 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "name": "Day Name",
       "description": "Optional description",
       "order_index": 1,
-      "training_plan_id": "uuid"
+      "training_plan_id": "uuid",
+      "exercises": [
+        {
+          "id": "uuid",
+          "exercise_id": "uuid",
+          "order_index": 1,
+          "sets": [
+            {
+              "id": "uuid",
+              "set_index": 1,
+              "expected_reps": 5,
+              "expected_weight": 20,
+              "training_plan_exercise_id": "uuid"
+            },
+            {
+              "id": "uuid",
+              "set_index": 2,
+              "expected_reps": 5,
+              "expected_weight": 20,
+              "training_plan_exercise_id": "uuid"
+            },
+          ]
+        },
+        {
+          "id": "uuid",
+          "exercise_id": "uuid",
+          "order_index": 2,
+          "sets": []
+        }
+      ]
     }
     ```
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /training-plans/{planId}/days/{dayId}**
-  - Description: Update a day for a training plan belonging to the authenticated user.
+  - Description: Update a day for a training plan belonging to the authenticated user. If `order_index` is changed, other days in the plan will be re-indexed automatically by the server.
   - Request Body:
     ```json
     {
       "name": "Updated Day Name",
-      "description": "Updated description",
-      "order_index": 2
+      "description": "Updated description"
     }
     ```
   - Example Response:
@@ -334,26 +378,8 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **DELETE /training-plans/{planId}/days/{dayId}**
-  - Description: Delete a day within a training plan owned by the authenticated user.
+  - Description: Delete a day within a training plan owned by the authenticated user. Subsequent days in the plan will be re-indexed automatically by the server.
   - Success: 204 No Content
-  - Errors: 401 Unauthorized, 404 Not Found
-
-- **PATCH /training-plans/{planId}/days/{dayId}/reorder**
-  - Description: Update the order index to reorder days within a training plan owned by the authenticated user.
-  - Request Body:
-    ```json
-    {
-      "order_index": 3
-    }
-    ```
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "order_index": 3
-    }
-    ```
-  - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
 ### Exercises
@@ -448,12 +474,11 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **POST /training-plans/{planId}/days/{dayId}/exercises**
-  - Description: Add an exercise to a training day owned by the authenticated user.
+  - Description: Add an exercise to a training day owned by the authenticated user. The server automatically manages `order_index` – appends if not provided by the client, or inserts at the specified `order_index` and shifts subsequent exercises accordingly.
   - Request Body:
     ```json
     {
-      "exercise_id": "uuid",
-      "order_index": 1
+      "exercise_id": "uuid"
     }
     ```
   - Example Response:
@@ -483,7 +508,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}**
-  - Description: Update a training plan exercise (e.g., change order) for a day owned by the authenticated user.
+  - Description: Update a training plan exercise (e.g., change order) for a day owned by the authenticated user. If `order_index` is changed, other exercises in the day will be re-indexed automatically by the server.
   - Request Body:
     ```json
     {
@@ -501,26 +526,8 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **DELETE /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}**
-  - Description: Remove an exercise from a training day owned by the authenticated user.
+  - Description: Remove an exercise from a training day owned by the authenticated user. Subsequent exercises in the day will be re-indexed automatically by the server.
   - Success: 204 No Content
-  - Errors: 401 Unauthorized, 404 Not Found
-
-- **PATCH /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/reorder**
-  - Description: Update the order index to reorder exercises within a training day owned by the authenticated user.
-  - Request Body:
-    ```json
-    {
-      "order_index": 3
-    }
-    ```
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "order_index": 3
-    }
-    ```
-  - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
 ### Training Plan Exercise Sets
@@ -543,11 +550,10 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **POST /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets**
-  - Description: Create a set for an exercise in a training plan belonging to the authenticated user.
+  - Description: Create a set for an exercise in a training plan belonging to the authenticated user. The server automatically manages `set_index` – appends if not provided by the client, or inserts at the specified `set_index` and shifts subsequent sets accordingly.
   - Request Body:
     ```json
     {
-      "set_index": 1,
       "expected_reps": 10,
       "expected_weight": 50.0
     }
@@ -581,7 +587,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}**
-  - Description: Update a set for an exercise in a training plan belonging to the authenticated user.
+  - Description: Update a set for an exercise in a training plan belonging to the authenticated user. If `set_index` is changed, other sets for this exercise will be re-indexed automatically by the server.
   - Request Body:
     ```json
     {
@@ -604,7 +610,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **DELETE /training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}**
-  - Description: Delete a set for an exercise in a training plan owned by the authenticated user.
+  - Description: Delete a set for an exercise in a training plan owned by the authenticated user. Subsequent sets for this exercise will be re-indexed automatically by the server.
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
 
@@ -945,6 +951,11 @@ All endpoints require that the client is authenticated. This means all data is v
   - `order_index`, `set_index`, and other numeric fields are validated to ensure uniqueness and proper sequencing.
 
 - **Business Logic**:
+  - **Automated `order_index` Management**: For list-based entities like `Training Plan Days` (within a plan), `Training Plan Exercises` (within a day), and `Training Plan Exercise Sets` (within an exercise), the API will automatically manage the `order_index` (or `set_index` for sets) to ensure a dense, sequential order.
+    - On **creation (POST)**, if an `order_index` is provided, the item will be inserted at that position, and subsequent items in the same list will have their `order_index` incremented. If no `order_index` is provided, the item will be appended to the end of the list.
+    - On **update (PUT/PATCH)** where an item's `order_index` is changed, the API will adjust the `order_index` of other items in the list to maintain sequence.
+    - On **deletion (DELETE)**, the `order_index` of subsequent items in the same list will be decremented to close any gaps.
+    This simplifies client-side logic and maintains data integrity.
   - **Automated Weight Progression**: Upon successful completion of all sets in a training session, the system will update the corresponding training plan exercise progression by increasing the weight by the defined `weight_increment`. If a user records three consecutive failures on an exercise, a 10% deload is automatically applied (using the `deload_percentage` and `deload_strategy`).
   - **Active Session Tracking**: As users mark sets as completed (via the PATCH endpoints), the session and related metrics are updated in real-time.
   - **Reordering**: Endpoints that modify the order of days or exercises (using PATCH requests) allow users to customize the flow of their training plan.

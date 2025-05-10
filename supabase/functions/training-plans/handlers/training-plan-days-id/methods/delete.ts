@@ -1,0 +1,41 @@
+// Placeholder for DELETE /training-plans/:planId/days/:dayId
+import { z } from 'zod';
+import type { ApiHandlerContext } from 'shared/api-routing.ts';
+import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+
+export async function handleDeleteTrainingPlanDayById(
+  { supabaseClient, user, rawPathParams }: ApiHandlerContext
+) {
+  const paramsValidation = z.object({
+    planId: z.string().uuid({ message: 'Invalid planId format.' }),
+    dayId: z.string().uuid({ message: 'Invalid dayId format.' }),
+  }).safeParse(rawPathParams);
+
+  if (!paramsValidation.success) {
+    const errorDetails = paramsValidation.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('; ');
+    return createErrorResponse(400, `Invalid path parameters: ${errorDetails}`);
+  }
+  const { dayId } = paramsValidation.data;
+
+  try {
+    const { error: rpcError } = await supabaseClient.rpc('delete_training_plan_day', {
+      p_user_id: user.id,
+      p_day_id: dayId,
+    });
+
+    if (rpcError) {
+      console.error('RPC error deleting training plan day:', rpcError);
+      // Check for specific error messages from RPC, e.g., day not found
+      if (rpcError.message.includes('training plan day not found')) {
+        return createErrorResponse(404, 'Training plan day not found or no access.', undefined, undefined, rpcError);
+      }
+      return createErrorResponse(500, 'Could not delete training plan day.', undefined, undefined, rpcError);
+    }
+
+    return createSuccessResponse(204, null);
+
+  } catch (error) {
+    console.error('Unexpected error in handleDeleteTrainingPlanDay:', error);
+    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+  }
+}

@@ -1,4 +1,4 @@
-import { createErrorResponse } from 'shared/api-helpers.ts';
+import { createSuccessResponse, createErrorResponse } from 'shared/api-helpers.ts';
 import { z } from 'zod';
 import type { ApiHandlerContext } from 'shared/api-routing.ts';
 
@@ -12,7 +12,7 @@ export async function handleDeleteTrainingPlanById(
   if (!rawPathParams) {
       return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);
   }
-  
+
   if (!user) {
       return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
   }
@@ -45,5 +45,5 @@ export async function handleDeleteTrainingPlanById(
     return createErrorResponse(404, 'Training plan not found.', undefined, undefined, undefined, requestInfo);
   }
 
-  return createSuccessResponse(204, null, 'Training plan deleted successfully.');
-} 
+  return createSuccessResponse(204, null);
+}

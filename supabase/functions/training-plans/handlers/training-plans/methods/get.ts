@@ -84,7 +84,7 @@ export async function handleGetTrainingPlans(
         requestInfo
       );
     }
-    return createSuccessResponse<TrainingPlanDto[]>(200, data || [], 'Training plans retrieved successfully.');
+    return createSuccessResponse<TrainingPlanDto[]>(200, data || []);
   } catch (e) {
     return createErrorResponse(
       500,

@@ -87,5 +87,5 @@ export async function handlePutTrainingPlanById(
     return createErrorResponse(404, 'Training plan not found or update failed (no data returned).', undefined, undefined, undefined, requestInfo);
   }
 
-  return createSuccessResponse<TrainingPlanDto>(200, data as TrainingPlanDto, 'Training plan updated successfully.');
+  return createSuccessResponse<TrainingPlanDto>(200, data as TrainingPlanDto);
 } 

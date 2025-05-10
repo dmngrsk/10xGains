@@ -259,3 +259,164 @@ Deletes a specific training plan by its ID, if it belongs to the authenticated u
 -   **URL Path Parameter**: `planId` (UUID) - The ID of the training plan to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user for deletion.
+
+### Training Plan Days API
+
+Manages days within a specific training plan. All endpoints require Bearer token authorization.
+
+#### GET /training-plans/{planId}/days
+
+Retrieves a list of all training days for a specified training plan. Includes nested exercise and set data.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `planId` (UUID, required): The ID of the training plan.
+-   **URL Query Parameters**:
+    -   `limit` (optional, integer, default: 20, max: 100): Number of days to return.
+    -   `offset` (optional, integer, default: 0): Offset for pagination.
+-   **Response (200 OK)**: An array of `TrainingPlanDayDto` objects.
+    ```json
+    [
+      {
+        "id": "uuid",
+        "name": "Day 1: Push",
+        "description": "Chest, Shoulders, Triceps",
+        "order_index": 1,
+        "training_plan_id": "uuid",
+        "created_at": "timestamp",
+        "updated_at": "timestamp",
+        "exercises": [
+          {
+            "id": "uuid",
+            "exercise_id": "uuid",
+            "training_plan_day_id": "uuid",
+            "order_index": 1,
+            "notes": "Focus on form",
+            "created_at": "timestamp",
+            "updated_at": "timestamp",
+            "sets": [
+              {
+                "id": "uuid",
+                "training_plan_exercise_id": "uuid",
+                "set_index": 1,
+                "expected_reps": 10,
+                "expected_weight": 50.5,
+                "notes": "Warm-up set",
+                "created_at": "timestamp",
+                "updated_at": "timestamp"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+    ```
+-   **Response (400 Bad Request)**: If `planId` format is invalid or pagination parameters are incorrect.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan with `planId` is not found or not accessible to the user.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### POST /training-plans/{planId}/days
+
+Creates a new training day within a specified training plan. `order_index` is managed by the backend.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `planId` (UUID, required): The ID of the training plan.
+-   **Request Body**: `CreateTrainingPlanDayCommand`
+    ```json
+    {
+      "name": "string (required)",
+      "description": "string | null (optional)",
+      "order_index": "integer (optional, positive)"
+    }
+    ```
+-   **Response (201 Created)**: The newly created `TrainingPlanDayDto` object (without nested exercises).
+    ```json
+    {
+      "id": "uuid",
+      "name": "Day 2: Pull",
+      "description": "Back, Biceps",
+      "order_index": 2,
+      "training_plan_id": "uuid",
+      "created_at": "timestamp",
+      "updated_at": "timestamp"
+    }
+    ```
+-   **Response (400 Bad Request)**: If `planId` format is invalid or the request body is invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan with `planId` is not found or not accessible.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### GET /training-plans/{planId}/days/{dayId}
+
+Retrieves details for a specific training day, including nested exercise and set data.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the training plan.
+    -   `dayId` (UUID, required): The ID of the training plan day.
+-   **Response (200 OK)**: The `TrainingPlanDayDto` object, including `exercises` and their `sets`.
+    ```json
+    {
+      "id": "uuid",
+      "name": "Day 1: Push",
+      "description": "Chest, Shoulders, Triceps",
+      "order_index": 1,
+      "training_plan_id": "uuid",
+      "created_at": "timestamp",
+      "updated_at": "timestamp",
+      "exercises": [ /* ... as in GET /training-plans/{planId}/days ... */ ]
+    }
+    ```
+-   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### PUT /training-plans/{planId}/days/{dayId}
+
+Updates an existing training day. If `order_index` is changed, reordering of other days occurs.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the training plan.
+    -   `dayId` (UUID, required): The ID of the training plan day to update.
+-   **Request Body**: `UpdateTrainingPlanDayCommand` (at least one field must be present)
+    ```json
+    {
+      "name": "string (optional)",
+      "description": "string | null (optional)",
+      "order_index": "integer (optional, positive)"
+    }
+    ```
+-   **Response (200 OK)**: The updated `TrainingPlanDayDto` object (without nested exercises).
+    ```json
+    {
+      "id": "uuid",
+      "name": "Day 1: Upper Body Push",
+      "description": "Focus on compound movements",
+      "order_index": 1,
+      "training_plan_id": "uuid",
+      "created_at": "timestamp", 
+      "updated_at": "timestamp"
+    }
+    ```
+-   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid, or the request body is invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### DELETE /training-plans/{planId}/days/{dayId}
+
+Deletes a specific training day. Reordering of subsequent days occurs automatically.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the training plan.
+    -   `dayId` (UUID, required): The ID of the training plan day to delete.
+-   **Response (204 No Content)**: Indicates successful deletion with no response body.
+-   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.

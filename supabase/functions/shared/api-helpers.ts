@@ -5,7 +5,7 @@
  * that aren't defined in the main api.types.ts file.
  */
 
-import { createClient, type SupabaseClient } from 'supabase';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from './database-types.ts';
 
 // CORS headers for all Supabase Edge Functions
@@ -171,6 +171,15 @@ export function createSuccessResponse<T>(
   data: T,
   message?: string
 ): Response {
+  // For 204 No Content responses, don't include a body
+  if (status === 204) {
+    return new Response(null, {
+      status,
+      headers: corsHeaders
+    });
+  }
+
+  // For all other success responses, include the JSON body
   const response: ApiSuccessResponse<T> = {
     data,
     ...(message && { message }),
