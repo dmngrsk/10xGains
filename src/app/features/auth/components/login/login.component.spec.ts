@@ -1,17 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { Component, EventEmitter, Output } from '@angular/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
+import { ActionsComponent } from './actions/actions.component';
+import { LoginFormComponent } from './login-form/login-form.component';
 import { LoginComponent } from './login.component';
 import { LoginService } from './services/login.service';
-import { LoginFormValues } from '@shared/types';
-import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
-import { LoginFormComponent } from './login-form/login-form.component';
-import { ActionsComponent } from './actions/actions.component';
+import { LoginFormValues } from '../../shared/types';
 
-// Mock components
 @Component({
   selector: 'txg-auth-layout',
   template: '<ng-content></ng-content>'
@@ -34,7 +33,6 @@ class MockLoginFormComponent {
 })
 class MockActionsComponent {}
 
-// Mock services
 const mockLoginService = {
   login: vi.fn()
 };
@@ -86,7 +84,6 @@ describe('LoginComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    // Get a reference to the mocked form component
     loginForm = fixture.debugElement.query(
       sel => sel.name === 'txg-login-form'
     )?.componentInstance;
@@ -119,7 +116,6 @@ describe('LoginComponent', () => {
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/home']);
       expect(loginForm.setLoading).toHaveBeenCalledWith(false);
 
-      // No snackbar should be shown on success as we're redirecting
       expect(mockSnackBar.open).not.toHaveBeenCalled();
     });
 

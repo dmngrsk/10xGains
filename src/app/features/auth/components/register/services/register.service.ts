@@ -30,7 +30,6 @@ export class RegisterService {
    */
   async registerAndSignIn(credentials: RegistrationCredentials): Promise<RegistrationResult> {
     try {
-      // Step 1: Register the user
       const { error: signUpError } = await this.supabaseService.client.auth.signUp(credentials);
 
       if (signUpError) {
@@ -40,7 +39,6 @@ export class RegisterService {
         };
       }
 
-      // Step 2: Sign in the user
       try {
         await this.authService.login({
           email: credentials.email,

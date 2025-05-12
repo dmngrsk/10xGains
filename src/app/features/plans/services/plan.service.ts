@@ -99,7 +99,6 @@ export class PlanService {
     if (!command || !command.name || command.name.trim() === '') {
       return throwError(() => new Error('Day name in command is required'));
     }
-    // Add any other validation for CreateTrainingPlanDayCommand if necessary
 
     const url = `training-plans/${planId}/days`;
     return this.apiService.post<CreateTrainingPlanDayCommand, TrainingPlanDayDto>(url, command);
@@ -119,7 +118,6 @@ export class PlanService {
     if (!payload) {
       return throwError(() => new Error('Payload is required for update'));
     }
-    // Add validation for payload contents if needed
 
     const url = `training-plans/${planId}/days/${dayId}`;
     return this.apiService.put<UpdateTrainingPlanDayCommand, TrainingPlanDayDto>(url, payload);
@@ -179,7 +177,6 @@ export class PlanService {
     if (command.set_index !== undefined && command.set_index < 0) {
       return throwError(() => new Error('Set index must be non-negative if provided'));
     }
-    // Add other command validations (e.g. positive reps/weight)
 
     const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets`;
     return this.apiService.post<CreateTrainingPlanExerciseSetCommand, TrainingPlanExerciseSetDto>(url, command);
@@ -223,7 +220,6 @@ export class PlanService {
     if (!payload || (payload.expected_reps === undefined && payload.expected_weight === undefined && payload.set_index === undefined)) {
       return throwError(() => new Error('Payload with set_index, expected_reps, or expected_weight is required for update'));
     }
-    // Add further validation for payload contents if needed (e.g., positive reps/weight, non-negative index)
     if (payload.expected_reps !== undefined && payload.expected_reps <= 0) {
       return throwError(() => new Error('Expected reps must be positive if provided'));
     }
@@ -318,8 +314,6 @@ export class PlanService {
     if (!command) {
       return throwError(() => new Error('Command payload is required for updating progression'));
     }
-    // TODO: Add specific command payload validation if necessary
-    // e.g., check for required fields in UpdateTrainingPlanExerciseProgressionCommand
 
     const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;
     return this.apiService.put<UpdateTrainingPlanExerciseProgressionCommand, TrainingPlanExerciseProgressionDto>(url, command);

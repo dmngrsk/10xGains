@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -5,13 +6,12 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import type { TrainingPlanExerciseProgressionDto } from '@shared/api/api.types';
+import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { integerValidator } from '@shared/utils/forms/validators/integer.validator';
 import { numericValidator } from '@shared/utils/forms/validators/numeric.validator';
-import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
-import type { TrainingPlanExerciseProgressionDto } from '@shared/api/api.types';
 
 export type EditExerciseProgressionDialogValue = Pick<TrainingPlanExerciseProgressionDto, 'weight_increment' | 'deload_strategy' | 'reference_set_index' | 'failure_count_for_deload' | 'deload_percentage'>;
 export type EditExerciseProgressionDialogData = Partial<EditExerciseProgressionDialogValue>;
@@ -21,7 +21,7 @@ export type EditExerciseProgressionDialogCloseResult =
 
 export const DELOAD_STRATEGIES = [
   { value: 'PROPORTIONAL', viewValue: 'Proportional' },
-  { value: 'REFERENCE_SET', viewValue: 'Reference Set' }
+  { value: 'REFERENCE_SET', viewValue: 'Reference set' }
 ];
 
 @Component({

@@ -1,13 +1,12 @@
-import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
+import { passwordMatchValidator } from '../../../shared/validators/password-match.validator';
 import { EmailInputComponent } from '../../shared/email-input/email-input.component';
 import { PasswordInputComponent } from '../../shared/password-input/password-input.component';
 import { ConfirmPasswordInputComponent } from '../confirm-password-input/confirm-password-input.component';
-import { passwordMatchValidator } from '../../../shared/validators/password-match.validator';
 
 export interface RegisterFormValues {
   email: string;
@@ -55,7 +54,6 @@ export class RegisterFormComponent {
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
-      // Mark all fields as touched to show validation errors
       this.registerForm.markAllAsTouched();
       return;
     }

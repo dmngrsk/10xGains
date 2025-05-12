@@ -1,17 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
+import { ActionsComponent } from './actions/actions.component';
+import { RegisterFormValues , RegisterFormComponent } from './register-form/register-form.component';
 import { RegisterComponent } from './register.component';
 import { RegisterService } from './services/register.service';
-import { RegisterFormValues } from './register-form/register-form.component';
-import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
-import { RegisterFormComponent } from './register-form/register-form.component';
-import { ActionsComponent } from './actions/actions.component';
 
-// Mock components
 @Component({
   selector: 'txg-auth-layout',
   template: '<ng-content></ng-content>'
@@ -38,7 +36,6 @@ class MockRegisterFormComponent {
 })
 class MockActionsComponent {}
 
-// Mock services
 const mockRegisterService = {
   registerAndSignIn: vi.fn()
 };
@@ -90,7 +87,6 @@ describe('RegisterComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
 
-    // Get a reference to the mocked form component
     registerForm = fixture.debugElement.query(
       sel => sel.name === 'txg-register-form'
     )?.componentInstance;

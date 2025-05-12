@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
-import { UserInfoComponent } from './components/user-info.component';
-import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
+import { UserInfoComponent } from './components/user-info.component';
 
 @Component({
   selector: 'txg-home-page',

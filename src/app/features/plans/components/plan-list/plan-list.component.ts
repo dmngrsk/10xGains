@@ -1,25 +1,25 @@
-import { Component, OnDestroy, AfterViewInit, ElementRef, ViewChild, signal, WritableSignal, inject, ChangeDetectionStrategy, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Component, OnDestroy, AfterViewInit, ElementRef, ViewChild, signal, WritableSignal, inject, ChangeDetectionStrategy, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { Router, RouterModule } from '@angular/router';
 import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
+import { TrainingPlanDto, TrainingPlanDayDto, CreateTrainingPlanCommand } from '@shared/api/api.types';
+import { AuthService } from '@shared/services/auth.service';
+import { ExerciseService } from '@shared/services/exercise.service';
+import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
 import { PlanCardComponent } from './plan-card/plan-card.component';
 import { PlanCardSkeletonComponent } from './plan-card-skeleton/plan-card-skeleton.component';
-import { PlanService, PlanServiceResponse } from '../../services/plan.service';
-import { AuthService } from '@shared/services/auth.service';
-import { PlanListItemViewModel } from '../../shared/models/plan-list-item.view-model';
-import { TrainingPlanDto, TrainingPlanDayDto, CreateTrainingPlanCommand } from '@shared/api/api.types';
-import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
 import { PlanListEmptyComponent } from './plan-list-empty/plan-list-empty.component';
-import { ExerciseService } from '@shared/services/exercise.service';
-import { MatDialog } from '@angular/material/dialog';
+import { PlanService, PlanServiceResponse } from '../../services/plan.service';
+import { PlanListItemViewModel } from '../../shared/models/plan-list-item.view-model';
 import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogCloseResult } from '../plan-edit/dialogs/add-edit-plan/add-edit-plan-dialog.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'txg-plan-list',

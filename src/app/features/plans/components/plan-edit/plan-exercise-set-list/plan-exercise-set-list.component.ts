@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, Input, Signal, signal } from '@angular/core';
+import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { TrainingPlanExerciseSetDto } from '@shared/api/api.types';
-import { PlanExerciseSetItemComponent } from '../plan-exercise-set-item/plan-exercise-set-item.component';
+import { ChangeDetectionStrategy, Component, Input, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { TrainingPlanExerciseSetDto } from '@shared/api/api.types';
+import { PlanExerciseSetItemComponent } from '../plan-exercise-set-item/plan-exercise-set-item.component';
 
 @Component({
   selector: 'txg-plan-exercise-set-list',

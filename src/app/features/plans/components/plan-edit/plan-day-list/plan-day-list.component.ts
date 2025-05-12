@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, Input, signal, effect, Signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatExpansionModule } from '@angular/material/expansion';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Input, signal, effect, Signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
 import { TrainingPlanDayDto } from '@shared/api/api.types';
 import { PlanDayItemComponent } from '../plan-day-item/plan-day-item.component';
 

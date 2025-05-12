@@ -1,13 +1,13 @@
+import { CommonModule } from '@angular/common';
 import { Component, Inject, inject, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { CommonModule } from '@angular/common';
 import { TrainingPlanDto } from '@shared/api/api.types';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 export type AddEditPlanDialogValue = Pick<TrainingPlanDto, 'name' | 'description'>;

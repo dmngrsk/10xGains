@@ -1,7 +1,7 @@
-import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { Router } from '@angular/router';
 import { AuthService } from '@shared/services/auth.service';
 
 @Component({

@@ -1,5 +1,5 @@
-import { Component, Input, ChangeDetectionStrategy, Signal, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, Input, ChangeDetectionStrategy, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TrainingPlanDayDto } from '@shared/api/api.types';

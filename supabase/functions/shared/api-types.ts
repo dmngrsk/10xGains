@@ -130,6 +130,6 @@ export interface ResourceLinkDto {
 
 export interface AITrainingSuggestionDto {
   response: string;
-  training_plan: TrainingPlanDto; // Detailed training plan with nested days and exercises
+  training_plan: TrainingPlanDto;
   resource_links: ResourceLinkDto[];
 }

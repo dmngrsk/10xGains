@@ -12,7 +12,8 @@
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended",
         "plugin:@angular-eslint/recommended",
-        "plugin:@angular-eslint/template/process-inline-templates"
+        "plugin:@angular-eslint/template/process-inline-templates",
+        "plugin:import/recommended"
       ],
       "rules": {
         "@angular-eslint/directive-selector": [
@@ -30,6 +31,37 @@
             "prefix": "txg",
             "style": "kebab-case"
           }
+        ],
+        "import/order": [
+          "error",
+          {
+            "groups": [
+              ["builtin", "external"],
+              ["internal"],
+              ["parent", "sibling", "index"],
+              ["object", "type"]
+            ],
+            "pathGroups": [
+              {
+                "pattern": "@angular/**",
+                "group": "external",
+                "position": "before"
+              },
+              {
+                "pattern": "rxjs",
+                "group": "external",
+                "position": "after"
+              },
+              {
+                "pattern": "@shared/**",
+                "group": "internal",
+                "position": "before"
+              }
+            ],
+            "pathGroupsExcludedImportTypes": ["builtin"],
+            "alphabetize": { "order": "asc", "caseInsensitive": true },
+            "newlines-between": "never"
+          }
         ]
       }
     },
@@ -42,5 +74,18 @@
       ],
       "rules": {}
     }
-  ]
+  ],
+  "plugins": ["import"],
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": [
+          "./tsconfig.json",
+          "./tsconfig.app.json",
+          "./tsconfig.spec.json"
+        ]
+      }
+    }
+  }
 }

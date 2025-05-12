@@ -1,18 +1,18 @@
-import { ChangeDetectionStrategy, Component, Inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, Inject, OnInit, signal } from '@angular/core';
+import { FormsModule, ReactiveFormsModule, Validators, FormControl, FormBuilder, FormGroup } from '@angular/forms';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { FormsModule, ReactiveFormsModule, Validators, FormControl, FormBuilder, FormGroup } from '@angular/forms';
-import { ExerciseDto } from '@shared/api/api.types';
-import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
-import { Observable, of } from 'rxjs';
-import { startWith, map, debounceTime, switchMap } from 'rxjs/operators';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { startWith, map, debounceTime, switchMap } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { ExerciseDto } from '@shared/api/api.types';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 interface AddExerciseDialogAutocompleteOption {

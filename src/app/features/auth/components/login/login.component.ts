@@ -1,13 +1,13 @@
-import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, ViewChild, inject } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
-import { LoginFormComponent } from './login-form/login-form.component';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { ActionsComponent } from './actions/actions.component';
+import { LoginFormComponent } from './login-form/login-form.component';
 import { LoginService } from './services/login.service';
 import { LoginFormValues } from '../../shared/types';
-import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'txg-login',
@@ -39,10 +39,8 @@ export class LoginComponent {
         password: formValues.password
       });
 
-      // Navigate to home page after successful login
       await this.router.navigate(['/home']);
     } catch (error) {
-      // Display error message from service
       this.snackBar.open(
         error instanceof Error ? error.message : 'An error occurred. Please try again later.',
         'Close',

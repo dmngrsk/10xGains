@@ -1,14 +1,14 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { CommonModule } from '@angular/common';
 import { TrainingPlanExerciseSetDto } from '@shared/api/api.types';
+import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { integerValidator } from '@shared/utils/forms/validators/integer.validator';
 import { numericValidator } from '@shared/utils/forms/validators/numeric.validator';
-import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 export type AddEditSetDialogValue = Pick<TrainingPlanExerciseSetDto, 'expected_reps' | 'expected_weight'>;
 export type AddEditSetDialogData = Partial<AddEditSetDialogValue> & { isEditMode?: boolean; }

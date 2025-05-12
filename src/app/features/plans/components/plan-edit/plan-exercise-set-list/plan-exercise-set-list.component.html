@@ -1,4 +1,3 @@
-<!-- Template for PlanExerciseSetListComponent -->
 <div class="set-list-container">
   @if (sets && sets.length > 0) {
     <div class="mb-2" cdkDropList [cdkDropListData]="sets" (cdkDropListDropped)="onSetItemDrop($event)" [cdkDropListDisabled]="preview()">

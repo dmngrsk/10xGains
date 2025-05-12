@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 
 import angular from '@analogjs/vite-plugin-angular';
+import path from 'path';
 
 import { defineConfig } from 'vite';
 
@@ -9,8 +10,13 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [
       angular(),
-      
+
     ],
+    resolve: {
+      alias: {
+        '@shared': path.resolve(__dirname, 'src/app/shared'),
+      },
+    },
     test: {
       globals: true,
       environment: 'jsdom',

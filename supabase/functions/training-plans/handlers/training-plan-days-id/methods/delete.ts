@@ -1,4 +1,3 @@
-// Placeholder for DELETE /training-plans/:planId/days/:dayId
 import { z } from 'zod';
 import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
@@ -25,7 +24,6 @@ export async function handleDeleteTrainingPlanDayById(
 
     if (rpcError) {
       console.error('RPC error deleting training plan day:', rpcError);
-      // Check for specific error messages from RPC, e.g., day not found
       if (rpcError.message.includes('training plan day not found')) {
         return createErrorResponse(404, 'Training plan day not found or no access.', undefined, undefined, rpcError);
       }

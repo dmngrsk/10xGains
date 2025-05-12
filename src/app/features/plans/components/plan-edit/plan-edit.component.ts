@@ -1,28 +1,28 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-import { FormsModule } from '@angular/forms';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { PlanService, PlanServiceResponse } from '../../services/plan.service';
-import { TrainingPlanDto } from '@shared/api/api.types';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs'
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs'
+import { TrainingPlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/services/exercise.service';
-import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
-import { PlanDayListComponent } from './plan-day-list/plan-day-list.component';
-import { AddEditPlanDialogComponent } from './dialogs/add-edit-plan/add-edit-plan-dialog.component';
-import { PlanMetadataComponent } from './plan-metadata/plan-metadata.component';
-import { AddEditDayDialogCloseResult, AddEditDayDialogComponent, AddEditDayDialogData } from './dialogs/add-edit-day/add-edit-day-dialog.component';
-import { AddExerciseDialogComponent, AddExerciseDialogData, AddExerciseDialogCloseResult } from './dialogs/add-exercise/add-exercise-dialog.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
+import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
+import { AddEditDayDialogCloseResult, AddEditDayDialogComponent, AddEditDayDialogData } from './dialogs/add-edit-day/add-edit-day-dialog.component';
+import { AddEditPlanDialogComponent } from './dialogs/add-edit-plan/add-edit-plan-dialog.component';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult } from './dialogs/add-edit-set/add-edit-set-dialog.component';
+import { AddExerciseDialogComponent, AddExerciseDialogData, AddExerciseDialogCloseResult } from './dialogs/add-exercise/add-exercise-dialog.component';
 import { EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogData, EditExerciseProgressionDialogCloseResult } from './dialogs/edit-exercise-progression/edit-exercise-progression-dialog.component';
+import { PlanDayListComponent } from './plan-day-list/plan-day-list.component';
+import { PlanMetadataComponent } from './plan-metadata/plan-metadata.component';
+import { PlanService, PlanServiceResponse } from '../../services/plan.service';
 
 @Component({
   selector: 'txg-plan-edit',

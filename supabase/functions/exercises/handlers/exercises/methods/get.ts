@@ -1,7 +1,7 @@
 import type { ApiHandlerContext } from 'shared/api-handler.ts';
 import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ExerciseDto } from 'shared/api-types.ts'; // Import ExerciseDto
+import type { ExerciseDto } from 'shared/api-types.ts';
 
 const DEFAULT_PAGE_LIMIT = 20;
 const MAX_PAGE_LIMIT = 100;

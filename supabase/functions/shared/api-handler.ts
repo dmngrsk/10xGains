@@ -6,7 +6,7 @@ import {
   createErrorResponse,
   createSupabaseClient,
   type SupabaseUser,
-} from './api-helpers.ts'; // Assuming these stay in api-helpers.ts
+} from './api-helpers.ts';
 
 /**
  * A special symbol to indicate that the current route handler did not match the request,
@@ -87,7 +87,7 @@ export async function routeRequestToMethods(
 
   const handlerMethod = methodHandlers[req.method as keyof MethodHandlers];
   if (!handlerMethod) {
-    return PASS_ROUTE_INDICATOR; // Let main router decide on 404/405 if no other route matches
+    return PASS_ROUTE_INDICATOR;
   }
 
   let user: SupabaseUser | undefined = undefined;
@@ -110,6 +110,7 @@ export async function routeRequestToMethods(
   };
 
   try {
+    console.log('handling', req.method, url.pathname);
     return await handlerMethod(context);
   } catch (e) {
     console.error(`Error in handler method for ${req.method} ${absolutePathPattern}:`, e);
@@ -170,4 +171,4 @@ export function createMainRouterHandler(
       requestInfo
     );
   };
-} 
+}

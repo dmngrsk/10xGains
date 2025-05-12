@@ -1,6 +1,6 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { CommonModule } from '@angular/common'; // For @if, @for etc.
 import { PlanListItemViewModel } from '../../../shared/models/plan-list-item.view-model';
 
 @Component({

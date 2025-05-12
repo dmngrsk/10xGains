@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, Input, effect, Signal, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, Input, effect, Signal, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
 import { TrainingPlanExerciseDto } from '@shared/api/api.types';
-import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-item.component';
 import { ExerciseService } from '@shared/services/exercise.service';
+import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-item.component';
 
 @Component({
   selector: 'txg-plan-exercise-list',

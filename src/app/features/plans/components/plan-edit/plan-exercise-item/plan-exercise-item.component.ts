@@ -1,10 +1,10 @@
-import { Component, Input, ChangeDetectionStrategy, inject, Signal, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TrainingPlanExerciseDto } from '@shared/api/api.types';
-import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exercise-set-list.component';
+import { Component, Input, ChangeDetectionStrategy, inject, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { TrainingPlanExerciseDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/services/exercise.service';
+import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exercise-set-list.component';
 
 @Component({
   selector: 'txg-plan-exercise-item',

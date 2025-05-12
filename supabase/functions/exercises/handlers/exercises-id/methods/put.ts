@@ -22,11 +22,6 @@ export async function handlePutExerciseById(
     return createErrorResponse(401, 'Unauthorized: Authentication required.');
   }
 
-  // TODO: Consider adding admin check here, not sure if it's needed
-  // if (!user.app_metadata?.roles?.includes('admin')) {
-  //   return createErrorResponse(403, 'Forbidden: Administrator access required to update an exercise.');
-  // }
-
   const pathValidationResult = PathParamsSchema.safeParse({ id: exerciseId });
   if (!pathValidationResult.success) {
     console.error('Path parameter validation error for PUT /exercises/{id}:', pathValidationResult.error.flatten());

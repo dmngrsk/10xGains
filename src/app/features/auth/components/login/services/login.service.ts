@@ -1,7 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
 import { finalize } from 'rxjs/operators';
-import { firstValueFrom } from 'rxjs';
+import { BehaviorSubject , firstValueFrom } from 'rxjs';
 import { AuthService, LoginRequest } from '@shared/services/auth.service';
 
 /**
@@ -20,9 +19,7 @@ interface AuthError {
  * @returns A user-friendly error message
  */
 const mapError = (error: AuthError): string => {
-  // Check if it's an authentication error with a message
   if (error?.message) {
-    // Supabase specific error messages
     if (error.message.includes('Invalid login credentials')) {
       return 'Invalid email or password.';
     }
@@ -40,12 +37,10 @@ const mapError = (error: AuthError): string => {
     }
   }
 
-  // Network or timeout errors
   if (error?.code === 'NETWORK_ERROR' || error?.name === 'TimeoutError') {
     return 'Connection error. Please try again later.';
   }
 
-  // HTTP Status codes
   if (error?.status) {
     if (error.status === 429) {
       return 'Too many requests. Please try again later.';
@@ -55,7 +50,6 @@ const mapError = (error: AuthError): string => {
     }
   }
 
-  // Default error message for any other errors
   return 'An error occurred. Please try again later.';
 };
 
@@ -78,7 +72,6 @@ export class LoginService {
    * @throws Error with mapped user-friendly message
    */
   async login(credentials: LoginRequest): Promise<void> {
-    // Validate inputs before even trying
     if (!credentials.email || !credentials.password) {
       throw new Error('Email and password are required.');
     }
@@ -88,7 +81,6 @@ export class LoginService {
       await this.authService.login(credentials);
     } catch (error) {
       console.error('Login error:', error);
-      // Map the error to a user-friendly message and re-throw
       throw new Error(mapError(error as AuthError));
     } finally {
       this.isLoadingSubject.next(false);

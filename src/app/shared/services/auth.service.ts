@@ -1,10 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
-import { map, first } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { SupabaseService } from '../db/supabase.service';
+import { Router } from '@angular/router';
 import { Session, User } from '@supabase/supabase-js';
+import { map, first } from 'rxjs/operators';
+import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
+import { SupabaseService } from '../db/supabase.service';
+
 
 export interface LoginRequest {
   email: string;

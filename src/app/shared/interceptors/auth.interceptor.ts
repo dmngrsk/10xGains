@@ -12,9 +12,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return from(supabaseService.client.auth.getSession()).pipe(
     switchMap(({ data }) => {
-      // Only add the Authorization header if we have a session
       if (data?.session?.access_token) {
-        // Clone the request and add the authorization header
         const authReq = req.clone({
           setHeaders: {
             Authorization: `Bearer ${data.session.access_token}`
@@ -23,7 +21,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         return next(authReq);
       }
 
-      // Otherwise, continue with the original request
       return next(req);
     })
   );

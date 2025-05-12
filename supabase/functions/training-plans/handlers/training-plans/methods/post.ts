@@ -45,7 +45,7 @@ export async function handleCreateTrainingPlan(
   const newPlanData = {
     name: validatedData.name,
     description: validatedData.description ?? null,
-    user_id: user.id, // Safe now due to check above
+    user_id: user.id,
   };
 
   try {
