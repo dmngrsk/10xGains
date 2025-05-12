@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
-import { AuthService, LoginRequest } from '../../../../../shared/services/auth.service';
+import { AuthService, LoginRequest } from '@shared/services/auth.service';
 
 /**
  * Type for authentication errors

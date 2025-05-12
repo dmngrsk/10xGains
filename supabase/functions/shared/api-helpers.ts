@@ -5,7 +5,7 @@
  * that aren't defined in the main api.types.ts file.
  */
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from 'supabase';
 import type { Database } from './database-types.ts';
 
 // CORS headers for all Supabase Edge Functions

@@ -84,10 +84,10 @@ Each function has its own `deno.json` file that manages dependencies and Deno-sp
 ```json
 {
   "imports": {
-    "std/": "https://deno.land/std@0.168.0/",
-    "shared/": "../shared/",
     "supabase": "https://esm.sh/@supabase/supabase-js@2",
-    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
+    "std/": "https://deno.land/std@0.168.0/",
+    "shared/": "../shared/"
   }
 }
 ```
@@ -156,9 +156,9 @@ Lists all training plans for the authenticated user. Supports pagination and sor
 
 -   **Authorization**: Bearer token required.
 -   **URL Query Parameters**:
-    -   `limit` (optional, integer): Number of plans to return.
-    -   `offset` (optional, integer): Offset for pagination.
-    -   `sort` (optional, string): Sort criteria (e.g., `name:asc`, `created_at:desc`).
+    -   `limit` (optional, integer, default: 20, max: 100): Number of plans to return.
+    -   `offset` (optional, integer, default: 0): Offset for pagination.
+    -   `sort` (optional, string, default: `created_at:desc`): Sort criteria (e.g., `name:asc`, `created_at:desc`).
 -   **Response (200 OK)**: An array of `TrainingPlanDto` objects.
     ```json
     [

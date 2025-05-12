@@ -1,0 +1,26 @@
+@if (day.description) {
+  <p class="text-sm text-gray-500 px-2 pb-4">{{ day.description }}</p>
+}
+
+<txg-plan-exercise-list
+  [planId]="planId"
+  [dayId]="day.id"
+  [exercises]="day.exercises ?? []"
+  [preview]="preview"
+  [onAddExercise]="onAddExercise"
+  [onReorderExercise]="onReorderExercise"
+  [onDeleteExercise]="onDeleteExercise"
+  [onEditProgression]="onEditProgression"
+  [onAddSet]="onAddSet"
+  [onReorderSet]="onReorderSet"
+  [onEditSet]="onEditSet"
+  [onDeleteSet]="onDeleteSet"
+></txg-plan-exercise-list>
+
+@if (!preview()) {
+  <div class="flex justify-end items-center mt-2 gap-2">
+    <button class="w-full" mat-raised-button color="primary" (click)="onEditDayClick()" aria-label="Edit day metadata">
+      Edit Training Day
+    </button>
+  </div>
+}

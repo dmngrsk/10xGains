@@ -1,0 +1,30 @@
+<!-- Template for PlanExerciseSetItemComponent -->
+
+<mat-card class="mb-2 hover:bg-gray-50 transition-colors duration-150">
+  <mat-card-content>
+    <div class="flex items-center justify-between">
+      <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-gray-400 hover:text-gray-600">
+        <button mat-icon-button>
+          <mat-icon>drag_indicator</mat-icon>
+        </button>
+      </div>
+      <div class="set-details flex-grow">
+        <span class="font-medium text-gray-700">{{ set.expected_reps }}</span>
+        <span class="text-gray-500"> x </span>
+        <span class="font-medium text-gray-700">{{ set.expected_weight }}</span>
+        <span class="text-gray-500 ml-1">kg</span>
+      </div>
+
+      @if (!preview()) {
+        <ng-container>
+          <button *ngIf="onEditSet" mat-icon-button color="primary" (click)="onEditSetClick()" aria-label="Edit set">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button *ngIf="onDeleteSet" mat-icon-button color="warn" (click)="onDeleteSet(set.id, exerciseId, dayId)" aria-label="Delete set">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </ng-container>
+      }
+    </div>
+  </mat-card-content>
+</mat-card>

@@ -1,4 +1,4 @@
-<txg-full-screen-layout [title]="'Training plans'">
+<txg-full-screen-layout [title]="'Training plans'" [backRoute]="'/home'">
   <div class="txg-plan-list-container p-4 md:p-6 pb-20">
     @if (isLoading() && plans().length === 0) {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -18,7 +18,7 @@
     } @else if (!isLoading() && plans().length === 0 && !error()) {
       <div class="flex justify-center items-center min-h-[calc(100vh-200px)]">
         <txg-plan-list-empty
-          (buttonClick)="navigateToCreatePlan()">
+          (buttonClick)="openCreatePlanDialog()">
         </txg-plan-list-empty>
       </div>
     } @else if (plans().length > 0) {
@@ -50,7 +50,7 @@
   @if (plans().length > 0) {
     <button mat-fab
             color="primary"
-            (click)="navigateToCreatePlan()"
+            (click)="openCreatePlanDialog()"
             matTooltip="Add new training plan"
             class="!fixed bottom-6 right-6 z-50">
       <mat-icon>add</mat-icon>

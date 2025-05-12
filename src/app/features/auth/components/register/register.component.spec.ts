@@ -7,7 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RegisterComponent } from './register.component';
 import { RegisterService } from './services/register.service';
 import { RegisterFormValues } from './register-form/register-form.component';
-import { AuthLayoutComponent } from '../shared/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { RegisterFormComponent } from './register-form/register-form.component';
 import { ActionsComponent } from './actions/actions.component';
 

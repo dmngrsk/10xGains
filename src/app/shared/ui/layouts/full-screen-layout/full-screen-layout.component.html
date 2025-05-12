@@ -5,6 +5,14 @@
   <span>{{ title }}</span>
 </mat-toolbar>
 
+<div class="sticky top-0 z-20 h-[4px]">
+  @if (loadingSignal?.()) {
+    <mat-progress-bar mode="indeterminate" color="primary"></mat-progress-bar>
+  } @else {
+    <div class="h-[4px]"></div>
+  }
+</div>
+
 <main class="layout-content">
   <ng-content></ng-content>
 </main>

@@ -63,7 +63,7 @@ export type CreateTrainingPlanExerciseCommand = Omit<Database["public"]["Tables"
 
 export type UpdateTrainingPlanExerciseCommand = Pick<Database["public"]["Tables"]["training_plan_exercises"]["Update"], "order_index">;
 
-export type ReorderTrainingPlanExerciseCommand = UpdateTrainingPlanExerciseCommand;
+export type ReorderTrainingPlanExerciseCommand = Pick<UpdateTrainingPlanExerciseCommand, "order_index">;
 
 // 6. Training Plan Exercise Set DTO and Commands
 export type TrainingPlanExerciseSetDto = Database["public"]["Tables"]["training_plan_exercise_sets"]["Row"];

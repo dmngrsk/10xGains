@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { SupabaseService } from '../../../../../shared/db/supabase.service';
-import { AuthService } from '../../../../../shared/services/auth.service';
+import { SupabaseService } from '@shared/db/supabase.service';
+import { AuthService } from '@shared/services/auth.service';
 
 export interface RegistrationCredentials {
   email: string;

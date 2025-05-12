@@ -1,6 +1,7 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { SupabaseService } from '../db/supabase.service';
-import { ExerciseDto } from '../api/api.types';
+import { Injectable, inject, signal } from '@angular/core';
+import { ExerciseDto, CreateExerciseCommand } from '../api/api.types';
+import { ApiService, ApiServiceResponse } from '../api/api.service';
+import { Observable, tap, firstValueFrom } from 'rxjs';
 
 /**
  * Service to manage exercises from the database
@@ -10,55 +11,32 @@ import { ExerciseDto } from '../api/api.types';
   providedIn: 'root'
 })
 export class ExerciseService {
-  private supabaseService = inject(SupabaseService);
+  private apiService = inject(ApiService);
 
-  // Store all exercises as signals
   private exercises = signal<ExerciseDto[]>([]);
   private loading = signal<boolean>(false);
-  private loaded = signal<boolean>(false);
 
   constructor() {
-    // Load all exercises on initialization
     this.loadAllExercises();
   }
 
-  /**
-   * Finds an exercise by ID
-   * @param id The exercise ID to find
-   * @returns A computed signal with the exercise or undefined if not found
-   */
-  public find(id: string) {
-    const findSignal = computed(() => this.exercises().find(exercise => exercise.id === id));
-    return findSignal();
-  }
+  private async loadAllExercises(): Promise<ExerciseDto[]> {
+    this.loading.set(true);
 
-  /**
-   * Loads all exercises from the database
-   * @returns Promise that resolves when exercises are loaded
-   */
-  public async loadAllExercises(): Promise<ExerciseDto[]> {
     try {
-      if (this.loaded()) {
-        return this.exercises();
+      const response = await firstValueFrom(this.apiService.get<ExerciseDto[]>('exercises'));
+
+      if (response.data) {
+        this.exercises.set(response.data);
+        return response.data;
+      } else {
+        console.error('Error loading exercises via ApiService:', response.error);
+        this.exercises.set([]);
+        throw new Error(response.error || 'Failed to load exercises');
       }
-
-      this.loading.set(true);
-
-      const { data, error } = await this.supabaseService.client
-        .from('exercises')
-        .select('*');
-
-      if (error) {
-        throw error;
-      }
-
-      const exercises = data as ExerciseDto[];
-      this.exercises.set(exercises);
-      this.loaded.set(true);
-
-      return exercises;
     } catch (error) {
-      console.error('Error loading exercises:', error);
+      console.error('Critical error in loadAllExercises:', error);
+      this.exercises.set([]);
       return [];
     } finally {
       this.loading.set(false);
@@ -66,23 +44,42 @@ export class ExerciseService {
   }
 
   /**
+   * Finds an exercise by ID
+   * @param id The exercise ID to find
+   * @returns A computed signal with the exercise or undefined if not found
+   */
+  public find(id: string): ExerciseDto | undefined {
+    return this.exercises().find(exercise => exercise.id === id);
+  }
+
+  /**
+   * Returns all exercises
+   * @returns A computed signal with all exercises
+   */
+  public getAll(): ExerciseDto[] {
+    return this.exercises();
+  }
+
+  /**
    * Refreshes the exercises data from the database
    */
   public async refresh(): Promise<ExerciseDto[]> {
-    this.loaded.set(false);
     return this.loadAllExercises();
   }
 
-  // Public getters for the signals
-  public getExercises() {
-    return this.exercises;
-  }
-
-  public getLoading() {
-    return this.loading;
-  }
-
-  public getLoaded() {
-    return this.loaded;
+  /**
+   * Creates a new global exercise.
+   * @param command The command object containing exercise details (name, description).
+   * @returns Observable with the created exercise data and potential error.
+   */
+  createExercise(command: CreateExerciseCommand): Observable<ApiServiceResponse<ExerciseDto>> {
+    const url = 'exercises';
+    return this.apiService.post<CreateExerciseCommand, ExerciseDto>(url, command).pipe(
+      tap(response => {
+        if (response.data) {
+          this.refresh();
+        }
+      })
+    );
   }
 }

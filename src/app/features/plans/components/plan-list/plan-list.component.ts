@@ -1,22 +1,25 @@
-import { Component, OnDestroy, AfterViewInit, ElementRef, ViewChild, signal, WritableSignal, inject, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, OnDestroy, AfterViewInit, ElementRef, ViewChild, signal, WritableSignal, inject, ChangeDetectionStrategy, effect, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { catchError } from 'rxjs/operators';
+import { MatSnackBarModule, MatSnackBar } from '@angular/material/snack-bar';
+import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { PlanCardComponent } from './plan-card/plan-card.component';
 import { PlanCardSkeletonComponent } from './plan-card-skeleton/plan-card-skeleton.component';
 import { PlanService, PlanServiceResponse } from '../../services/plan.service';
-import { AuthService } from '../../../../shared/services/auth.service';
+import { AuthService } from '@shared/services/auth.service';
 import { PlanListItemViewModel } from '../../shared/models/plan-list-item.view-model';
-import { TrainingPlanDto, TrainingPlanDayDto } from '../../../../shared/api/api.types';
-import { FullScreenLayoutComponent } from '../../../../shared/layouts/full-screen-layout/full-screen-layout.component';
+import { TrainingPlanDto, TrainingPlanDayDto, CreateTrainingPlanCommand } from '@shared/api/api.types';
+import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
 import { PlanListEmptyComponent } from './plan-list-empty/plan-list-empty.component';
-import { ExerciseService } from '../../../../shared/services/exercise.service';
+import { ExerciseService } from '@shared/services/exercise.service';
+import { MatDialog } from '@angular/material/dialog';
+import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogCloseResult } from '../plan-edit/dialogs/add-edit-plan/add-edit-plan-dialog.component';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'txg-plan-list',
@@ -42,9 +45,13 @@ export class PlanListComponent implements OnDestroy, AfterViewInit {
   private readonly exerciseService = inject(ExerciseService);
   private readonly plansService = inject(PlanService);
   private readonly router = inject(Router);
+  private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
+  private readonly destroyRef = inject(DestroyRef);
 
   plans: WritableSignal<PlanListItemViewModel[]> = signal([]);
   isLoading: WritableSignal<boolean> = signal(false);
+  isCreatingPlan: WritableSignal<boolean> = signal(false);
   error: WritableSignal<string | null> = signal(null);
   offset: WritableSignal<number> = signal(0);
   hasMore: WritableSignal<boolean> = signal(true);
@@ -127,19 +134,20 @@ export class PlanListComponent implements OnDestroy, AfterViewInit {
 
     this.isLoading.set(true);
 
-    this.plansService.getPlans(user.id, this.limit, this.offset())
+    this.plansService.getPlans(this.limit, this.offset())
       .pipe(
-        catchError(error => {
-          this.error.set(error.message || 'Failed to connect to the server. Please try again later.');
+        catchError(err => {
+          const errorMessage = (err instanceof Error ? err.message : String(err)) || 'Failed to connect to the server. Please try again later.';
+          this.error.set(errorMessage);
           this.isLoading.set(false);
           this.hasMore.set(false);
-          return of({ data: null, error: { message: error.message } } as PlanServiceResponse);
+          return of({ data: null, error: errorMessage } as PlanServiceResponse<TrainingPlanDto[]>);
         })
       )
       .subscribe({
         next: ({ data, error }) => {
           if (error) {
-            this.error.set(error.message || 'An error occurred while loading plans.');
+            this.error.set(error || 'An error occurred while loading plans.');
             this.hasMore.set(false);
             this.isLoading.set(false);
             return;
@@ -166,12 +174,48 @@ export class PlanListComponent implements OnDestroy, AfterViewInit {
       });
   }
 
-  navigateToCreatePlan(): void {
-    this.router.navigate(['/plans/create']);
+  openCreatePlanDialog(): void {
+    const dialogRef = this.dialog.open<AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogCloseResult>(
+      AddEditPlanDialogComponent,
+      {
+        width: '450px',
+        data: { isEditMode: false },
+        disableClose: true,
+      }
+    );
+
+    dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result && !('delete' in result)) {
+          this.isCreatingPlan.set(true);
+          const createCmd: CreateTrainingPlanCommand = result.value as CreateTrainingPlanCommand;
+          this.plansService.createPlan(createCmd)
+            .pipe(
+              finalize(() => this.isCreatingPlan.set(false)),
+              takeUntilDestroyed(this.destroyRef)
+            )
+            .subscribe({
+              next: (response: PlanServiceResponse<TrainingPlanDto>) => {
+                if (response.data && response.data.id) {
+                  this.snackBar.open('Nowy plan został utworzony.', 'OK', { duration: 3000 });
+                  this.router.navigate(['/plans', response.data.id, 'edit']);
+                  this.loadPlans();
+                } else {
+                  const errorMessage = response.error || 'Nie udało się utworzyć nowego planu.';
+                  this.snackBar.open(errorMessage, 'Zamknij', { duration: 5000 });
+                }
+              },
+              error: (err: Error) => {
+                this.snackBar.open(err.message || 'Wystąpił krytyczny błąd podczas tworzenia planu.', 'Zamknij', { duration: 5000 });
+              }
+            });
+        }
+      });
   }
 
   navigateToPlanDetails(planId: string): void {
-    this.router.navigate(['/plans', planId]);
+    this.router.navigate(['plans', planId, 'edit']);
   }
 
   private mapTrainingPlanDtoToViewModel(dto: TrainingPlanDto): PlanListItemViewModel {

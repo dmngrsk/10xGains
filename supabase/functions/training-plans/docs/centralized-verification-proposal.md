@@ -17,7 +17,7 @@ Proponuje się stworzenie współdzielonej funkcji pomocniczej, np. `verifyResou
 ```typescript
 // Proponowana zawartość dla supabase/functions/shared/verification-helpers.ts
 
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { SupabaseClient, User } from 'supabase';
 import { createErrorResponse } from './api-helpers.ts';
 
 interface HierarchyParams {

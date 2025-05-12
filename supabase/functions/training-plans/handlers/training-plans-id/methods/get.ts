@@ -61,5 +61,13 @@ export async function handleGetTrainingPlanById(
     return createErrorResponse(404, 'Training plan not found.', undefined, undefined, undefined, requestInfo);
   }
 
+  data.days?.sort((a, b) => a.order_index - b.order_index);
+  data.days?.forEach(day => {
+    day.exercises?.sort((a, b) => a.order_index - b.order_index);
+    day.exercises?.forEach(exercise => {
+      exercise.sets?.sort((a, b) => a.set_index - b.set_index);
+    });
+  });
+
   return createSuccessResponse<TrainingPlanDto>(200, data as TrainingPlanDto);
 }

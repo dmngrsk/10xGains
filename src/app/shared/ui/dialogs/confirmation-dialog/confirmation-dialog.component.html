@@ -1,0 +1,14 @@
+<div class="p-6">
+  <h1 mat-dialog-title class="text-2xl font-semibold mb-4">{{ data.title }}</h1>
+  <mat-dialog-content class="mb-6 text-gray-700">
+    <p class="text-justify">{{ data.message }}</p>
+  </mat-dialog-content>
+  <mat-dialog-actions class="flex justify-end space-x-3">
+    <button mat-raised-button (click)="onCancel()">
+      <span>{{ data.cancelButtonText || 'Cancel' }}</span>
+    </button>
+    <button mat-flat-button color="primary" (click)="onConfirm()" cdkFocusInitial>
+      <span>{{ data.confirmButtonText || 'Confirm' }}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

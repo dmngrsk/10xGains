@@ -3,11 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-
 import { EmailInputComponent } from '../../shared/email-input/email-input.component';
 import { PasswordInputComponent } from '../../shared/password-input/password-input.component';
 import { LoginFormValues, loginFormSchema } from '../../../shared/types';
-import { zodFormGroupValidator } from '../../../../../shared/utils/form-validation';
+import { zodFormGroupValidator } from '@shared/utils/form-validation';
 
 @Component({
   selector: 'txg-login-form',

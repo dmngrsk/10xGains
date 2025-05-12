@@ -1,0 +1,39 @@
+<txg-full-screen-layout [title]="'Edit Training Plan'" [backRoute]="'/plans'" [loadingSignal]="loadingSignal">
+  <div class="p-4">
+    @if (errorSignal() !== null) {
+      <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong class="font-bold">Error!</strong>
+        <span class="block sm:inline">{{ errorSignal() }}</span>
+      </div>
+    }
+
+    @if (planSignal()) {
+      <txg-plan-metadata [plan]="planSignal()" [onEditPlan]="editPlan"></txg-plan-metadata>
+
+      <div class="mt-8">
+        <txg-plan-day-list
+          [planId]="planSignal()!.id"
+          [days]="daysSignal()!"
+          [preview]="previewSignal"
+          [onTogglePreview]="togglePreview"
+          [onAddDay]="addDay"
+          [onReorderDay]="reorderDay"
+          [onEditDay]="editDay"
+          [onDeleteDay]="deleteDay"
+          [onAddExercise]="addExercise"
+          [onReorderExercise]="reorderExercise"
+          [onDeleteExercise]="deleteExercise"
+          [onEditProgression]="editProgression"
+          [onAddSet]="addSet"
+          [onReorderSet]="reorderSet"
+          [onEditSet]="editSet"
+          [onDeleteSet]="deleteSet"
+        ></txg-plan-day-list>
+      </div>
+    } @else if (!planSignal() && !loadingSignal()) {
+      <p class="text-gray-500">Initializing new plan...</p>
+    } @else if (!loadingSignal() && errorSignal() === null) {
+      <p>Select a plan to edit or create a new one.</p>
+    }
+  </div>
+</txg-full-screen-layout>

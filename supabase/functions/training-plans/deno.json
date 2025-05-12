@@ -12,9 +12,9 @@
     }
   },
   "imports": {
-    "std/": "https://deno.land/std@0.208.0/",
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.42.0",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.42.0",
+    "std/": "https://deno.land/std@0.208.0/",
     "shared/": "../shared/"
   }
 }

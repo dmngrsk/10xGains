@@ -30,7 +30,11 @@ export async function handleGetTrainingPlanExercises(
       return createErrorResponse(500, 'Failed to fetch training plan exercises', undefined, undefined, error);
     }
 
-    return createSuccessResponse<TrainingPlanExerciseDto[]>(200, data);
+    data?.forEach(exercise => {
+      exercise.sets?.sort((a, b) => a.set_index - b.set_index);
+    });
+
+    return createSuccessResponse<TrainingPlanExerciseDto[]>(200, data ?? []);
   } catch (error) {
     return createErrorResponse(500, 'An unexpected error occurred', undefined, undefined, error);
   }

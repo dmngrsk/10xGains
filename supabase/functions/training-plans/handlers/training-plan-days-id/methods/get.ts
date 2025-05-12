@@ -30,7 +30,7 @@ export async function handleGetTrainingPlanDayById(
       return createErrorResponse(404, 'Training plan not found or user does not have access.', undefined, undefined, planError);
     }
 
-    const { data: day, error: dayError } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('training_plan_days')
       .select(`
         *,
@@ -45,15 +45,20 @@ export async function handleGetTrainingPlanDayById(
       .eq('training_plan_id', planId)
       .single();
 
-    if (dayError || !day) {
-      if (dayError && dayError.code === 'PGRST116' || !day) {
-        return createErrorResponse(404, 'Training plan day not found.', undefined, undefined, dayError);
+    if (error || !data) {
+      if (error && error.code === 'PGRST116' || !day) {
+        return createErrorResponse(404, 'Training plan day not found.', undefined, undefined, error);
       }
-      console.error('Error fetching training plan day detail:', dayError);
-      return createErrorResponse(500, 'Could not fetch training plan day.', undefined, undefined, dayError);
+      console.error('Error fetching training plan day detail:', error);
+      return createErrorResponse(500, 'Could not fetch training plan day.', undefined, undefined, error);
     }
 
-    return createSuccessResponse<TrainingPlanDayDto>(200, day);
+    data.exercises?.sort((a, b) => a.order_index - b.order_index);
+    data.exercises?.forEach(exercise => {
+      exercise.sets?.sort((a, b) => a.set_index - b.set_index);
+    });
+
+    return createSuccessResponse<TrainingPlanDayDto>(200, data as TrainingPlanDayDto);
 
   } catch (error) {
     console.error('Unexpected error in handleGetTrainingPlanDayById:', error);

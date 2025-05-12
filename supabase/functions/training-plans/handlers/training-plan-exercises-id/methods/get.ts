@@ -25,7 +25,7 @@ export async function handleGetTrainingPlanExerciseById(
   const { dayId, exerciseId } = paramsValidation.data;
 
   try {
-    const { data: trainingPlanExercise, error: dbError } = await supabaseClient
+    const { data: data, error: dbError } = await supabaseClient
       .from('training_plan_exercises')
       .select('*, sets:training_plan_exercise_sets(*)')
       .eq('id', exerciseId)
@@ -39,11 +39,13 @@ export async function handleGetTrainingPlanExerciseById(
       return createErrorResponse(500, 'Failed to fetch training plan exercise.', undefined, undefined, dbError);
     }
 
-    if (!trainingPlanExercise) {
+    if (!data) {
       return createErrorResponse(404, 'Training plan exercise not found.');
     }
 
-    return createSuccessResponse(200, trainingPlanExercise as TrainingPlanExerciseDto);
+    data.sets?.sort((a, b) => a.set_index - b.set_index);
+
+    return createSuccessResponse(200, data as TrainingPlanExerciseDto);
   } catch (error) {
     return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
   }

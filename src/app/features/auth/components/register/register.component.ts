@@ -2,7 +2,7 @@ import { Component, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { AuthLayoutComponent } from '../../../../shared/layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { RegisterFormComponent, RegisterFormValues } from './register-form/register-form.component';
 import { ActionsComponent } from './actions/actions.component';
 import { RegisterService } from './services/register.service';

@@ -7,7 +7,7 @@ import { LoginFormComponent } from './login-form/login-form.component';
 import { ActionsComponent } from './actions/actions.component';
 import { LoginService } from './services/login.service';
 import { LoginFormValues } from '../../shared/types';
-import { AuthLayoutComponent } from '../../../../shared/layouts/auth-layout/auth-layout.component';
+import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 
 @Component({
   selector: 'txg-login',

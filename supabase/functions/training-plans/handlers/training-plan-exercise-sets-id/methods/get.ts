@@ -21,23 +21,22 @@ export async function handleGetTrainingPlanExerciseSetById(
   const { exerciseId, setId } = pathParamsParsed.data;
 
   try {
-    const { data: setData, error: setError } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('training_plan_exercise_sets')
       .select('*')
       .eq('id', setId)
       .eq('training_plan_exercise_id', exerciseId)
       .single();
 
-    if (setError) {
-      console.error(`Error fetching exercise set with ID ${setId}:`, setError);
-      return createErrorResponse(500, `Failed to fetch exercise set with ID ${setId}.`, { details: setError.message });
+    if (error || !data) {
+      if (error && error.code === 'PGRST116' || !data) {
+        return createErrorResponse(404, `Exercise set with ID ${setId} not found for exercise ${exerciseId}.`);
+      }
+      console.error(`Error fetching exercise set with ID ${setId}:`, error);
+      return createErrorResponse(500, `Failed to fetch exercise set with ID ${setId}.`, { details: error.message });
     }
 
-    if (!setData) {
-      return createErrorResponse(404, `Exercise set with ID ${setId} not found for exercise ${exerciseId}.`);
-    }
-
-    return createSuccessResponse<TrainingPlanExerciseSetDto>(200, setData);
+    return createSuccessResponse<TrainingPlanExerciseSetDto>(200, data as TrainingPlanExerciseSetDto);
 
   } catch (error) {
     console.error('Error during GET set by ID processing:', error);

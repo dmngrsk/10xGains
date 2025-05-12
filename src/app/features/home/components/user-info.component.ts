@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { AuthService } from '../../../shared/services/auth.service';
+import { AuthService } from '@shared/services/auth.service';
 
 @Component({
   selector: 'txg-user-info',

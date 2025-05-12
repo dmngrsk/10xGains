@@ -8,7 +8,7 @@ const updateProgressionBodySchema = z.object({
   failure_count_for_deload: z.number().int().positive().optional(),
   current_weight: z.number().positive().optional(),
   consecutive_failures: z.number().int().min(0).optional(),
-  deload_percentage: z.number().positive().optional().max(100),
+  deload_percentage: z.number().max(100).positive().optional(),
   deload_strategy: z.enum(['PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM']).optional(),
   reference_set_index: z.number().int().min(0).nullable().optional()
 }).refine(data => Object.keys(data).length > 0, {

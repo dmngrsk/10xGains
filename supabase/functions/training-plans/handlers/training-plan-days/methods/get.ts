@@ -62,7 +62,14 @@ export async function handleGetTrainingPlanDays(
       return createErrorResponse(500, 'Could not fetch training plan days.', undefined, undefined, daysError);
     }
 
-    return createSuccessResponse<TrainingPlanDayDto[]>(200, days);
+    days?.forEach(day => {
+      day.exercises?.sort((a, b) => a.order_index - b.order_index);
+      day.exercises?.forEach(exercise => {
+        exercise.sets?.sort((a, b) => a.set_index - b.set_index);
+      });
+    });
+
+    return createSuccessResponse<TrainingPlanDayDto[]>(200, days ?? []);
 
   } catch (error) {
     console.error('Unexpected error in handleGetTrainingPlanDays:', error);
