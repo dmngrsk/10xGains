@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import type { TrainingPlanExerciseSetDto, CreateTrainingPlanExerciseSetCommand } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseSetDto, CreateTrainingPlanExerciseSetCommand } from '@shared/api-types.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),
@@ -29,7 +29,7 @@ export async function handleCreateTrainingPlanExerciseSet(
   try {
     body = await req.json() as CreateTrainingPlanExerciseSetCommand;
   } catch (error) {
-    return createErrorResponse(400, 'Invalid JSON body', { details: error.message });
+    return createErrorResponse(400, 'Invalid JSON body', { details: (error as Error).message });
   }
 
   const bodyParsed = requestBodySchema.safeParse(body);
@@ -39,14 +39,17 @@ export async function handleCreateTrainingPlanExerciseSet(
   }
   const validatedBody = bodyParsed.data;
 
+  const rpcCommand = {
+    p_user_id: user!.id,
+    p_training_plan_exercise_id: exerciseId,
+    p_expected_reps: validatedBody.expected_reps,
+    p_expected_weight: validatedBody.expected_weight,
+    p_target_set_index: validatedBody.set_index === undefined ? null : validatedBody.set_index
+  };
+
   try {
-    const { data: newSetResult, error: rpcError } = await supabaseClient.rpc('create_training_plan_exercise_set', {
-      p_user_id: user.id,
-      p_training_plan_exercise_id: exerciseId,
-      p_expected_reps: validatedBody.expected_reps,
-      p_expected_weight: validatedBody.expected_weight,
-      p_target_set_index: validatedBody.set_index === undefined ? null : validatedBody.set_index
-    });
+    // @ts-expect-error Parametrized RPC call, not correctly typed in SupabaseClient.d.ts
+    const { data: newSetResult, error: rpcError } = await supabaseClient.rpc('create_training_plan_exercise_set', rpcCommand);
 
     if (rpcError) {
       console.error('RPC error create_training_plan_exercise_set:', rpcError);
@@ -56,7 +59,7 @@ export async function handleCreateTrainingPlanExerciseSet(
       return createErrorResponse(500, 'Failed to create exercise set via RPC.', { details: rpcError.message });
     }
 
-    if (!newSetResult || newSetResult.length === 0) {
+    if (!newSetResult) {
       console.error('RPC create_training_plan_exercise_set did not return the new set or returned an empty array.', newSetResult);
       return createErrorResponse(500, 'RPC create_training_plan_exercise_set did not return the new set as expected.');
     }
@@ -67,6 +70,6 @@ export async function handleCreateTrainingPlanExerciseSet(
 
   } catch (error) {
     console.error('Error during POST set processing (outside RPC call itself):', error);
-    return createErrorResponse(500, 'Internal server error during set creation.', { details: error.message });
+    return createErrorResponse(500, 'Internal server error during set creation.', { details: (error as Error).message });
   }
 }

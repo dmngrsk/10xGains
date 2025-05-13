@@ -1,33 +1,22 @@
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import type { TrainingPlanDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanDto } from '@shared/api-types.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid(),
 });
 
 export async function handleGetTrainingPlanById(
-  { supabaseClient, rawPathParams, requestInfo, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'requestInfo' | 'user'>
+  { supabaseClient, rawPathParams, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'user'>
 ) {
   if (!rawPathParams) {
-      return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);
-  }
-
-  if (!user) {
-    return createErrorResponse(401, 'Unauthorized: User not authenticated.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(500, 'Internal server error: Path parameters missing.');
   }
 
   const paramsValidation = paramsSchema.safeParse(rawPathParams);
   if (!paramsValidation.success) {
-    return createErrorResponse(
-      400,
-      'Invalid path parameters',
-      paramsValidation.error.flatten(),
-      undefined,
-      undefined,
-      requestInfo
-      );
+    return createErrorResponse(400, 'Invalid path parameters', paramsValidation.error.flatten());
   }
   const { planId } = paramsValidation.data;
 
@@ -46,19 +35,19 @@ export async function handleGetTrainingPlanById(
       )
     `)
     .eq('id', planId)
-    .eq('user_id', user.id)
+    .eq('user_id', user!.id)
     .single();
 
   if (error) {
     if (error.code === 'PGRST116') {
-      return createErrorResponse(404, 'Training plan not found.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(404, 'Training plan not found.');
     }
     console.error('Error fetching training plan by ID:', error);
-    return createErrorResponse(500, 'Failed to fetch training plan by ID.', { details: error.message }, undefined, error, requestInfo);
+    return createErrorResponse(500, 'Failed to fetch training plan by ID.', { details: error.message });
   }
 
   if (!data) {
-    return createErrorResponse(404, 'Training plan not found.', undefined, undefined, undefined, requestInfo);
+    return createErrorResponse(404, 'Training plan not found.');
   }
 
   data.days?.sort((a, b) => a.order_index - b.order_index);

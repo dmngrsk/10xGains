@@ -24,8 +24,6 @@
     "paths": {
       "supabase": ["./node_modules/@supabase/supabase-js"],
       "zod": ["./node_modules/zod"],
-      "std/*": ["./node_modules/@types/deno-std/*"],
-      "shared/*": ["./shared/*"]
     },
     "lib": ["ES2020", "DOM"]
   },

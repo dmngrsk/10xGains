@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { TrainingPlanDayDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { TrainingPlanDayDto } from '@shared/api-types.ts';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -35,11 +35,11 @@ export async function handleGetTrainingPlanDays(
       .from('training_plans')
       .select('id')
       .eq('id', planId)
-      .eq('user_id', user.id)
+      .eq('user_id', user!.id)
       .single();
 
     if (planError || !plan) {
-      return createErrorResponse(404, 'Training plan not found or user does not have access.', undefined, undefined, planError);
+      return createErrorResponse(404, 'Training plan not found or user does not have access.', { details: planError?.message });
     }
 
     const { data: days, error: daysError } = await supabaseClient
@@ -59,7 +59,7 @@ export async function handleGetTrainingPlanDays(
 
     if (daysError) {
       console.error('Error fetching training plan days:', daysError);
-      return createErrorResponse(500, 'Could not fetch training plan days.', undefined, undefined, daysError);
+      return createErrorResponse(500, 'Could not fetch training plan days.', { details: daysError.message });
     }
 
     days?.forEach(day => {
@@ -73,6 +73,6 @@ export async function handleGetTrainingPlanDays(
 
   } catch (error) {
     console.error('Unexpected error in handleGetTrainingPlanDays:', error);
-    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

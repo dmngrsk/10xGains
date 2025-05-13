@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-types.ts';
-import type { TrainingPlanExerciseDto } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseDto } from '@shared/api-types.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid('Invalid Plan ID format'),
@@ -14,12 +14,8 @@ const bodySchema = z.object({
 });
 
 export async function handlePutTrainingPlanExerciseById(
-  { supabaseClient, user, rawPathParams, req, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams' | 'req' | 'requestInfo'>
+  { supabaseClient, rawPathParams, req, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'req' | 'user'>
 ): Promise<Response> {
-
-  if (!user) {
-    return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
-  }
 
   const paramsValidation = paramsSchema.safeParse(rawPathParams);
   if (!paramsValidation.success) {
@@ -46,21 +42,21 @@ export async function handlePutTrainingPlanExerciseById(
 
   const { order_index: newOrderIndex } = commandBody;
 
+  const rpcCommand = {
+    p_user_id: user!.id,
+    p_plan_exercise_id: exerciseId,
+    p_target_order_index: newOrderIndex,
+  };
+
   try {
-    const { data: updatedExercise, error: rpcError } = await supabaseClient.rpc(
-      'update_training_plan_exercise_order',
-      {
-        p_user_id: user.id,
-        p_plan_exercise_id: exerciseId,
-        p_target_order_index: newOrderIndex,
-      }
-    ).single();
+    // @ts-expect-error Parametrized RPC call, not correctly typed in SupabaseClient.d.ts
+    const { data: updatedExercise, error: rpcError } = await supabaseClient.rpc('update_training_plan_exercise_order', rpcCommand).single();
 
     if (rpcError) {
       if (rpcError.message.includes('not found') || rpcError.code === 'PGRST116') {
-        return createErrorResponse(404, 'Training plan exercise not found or not authorized.', undefined, undefined, rpcError);
+        return createErrorResponse(404, 'Training plan exercise not found or not authorized.');
       }
-      return createErrorResponse(500, 'Could not update training plan exercise.', undefined, undefined, rpcError);
+      return createErrorResponse(500, 'Could not update training plan exercise.', { details: rpcError.message });
     }
 
     if (!updatedExercise) {
@@ -69,6 +65,6 @@ export async function handlePutTrainingPlanExerciseById(
 
     return createSuccessResponse(200, updatedExercise as TrainingPlanExerciseDto);
   } catch (error) {
-    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

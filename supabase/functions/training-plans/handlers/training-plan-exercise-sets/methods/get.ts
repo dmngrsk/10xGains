@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import type { TrainingPlanExerciseSetDto } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseSetDto } from '@shared/api-types.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),
@@ -36,6 +36,6 @@ export async function handleGetTrainingPlanExerciseSets(
 
   } catch (error) {
     console.error('Error during GET all sets processing:', error);
-    return createErrorResponse(500, 'Internal server error during all sets retrieval.', { details: error.message });
+    return createErrorResponse(500, 'Internal server error during all sets retrieval.', { details: (error as Error).message });
   }
 }

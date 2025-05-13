@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { TrainingPlanDayDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { TrainingPlanDayDto } from '@shared/api-types.ts';
 
 const CreateTrainingPlanDayCommandSchema = z.object({
   name: z.string().min(1, { message: 'Name is required and cannot be empty.' }),
@@ -10,12 +10,8 @@ const CreateTrainingPlanDayCommandSchema = z.object({
 });
 
 export async function handlePostTrainingPlanDay(
-  { supabaseClient, user, req, requestInfo, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'requestInfo' | 'rawPathParams'>
+  { supabaseClient, user, req, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'rawPathParams'>
 ): Promise<Response> {
-  if (!user) {
-    return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
-  }
-
   let command;
   try {
     const body = await req.json();
@@ -31,26 +27,27 @@ export async function handlePostTrainingPlanDay(
         return createErrorResponse(400, 'Invalid JSON format in request body.');
     }
     console.error('Error processing request body:', error);
-    return createErrorResponse(500, 'Failed to process request body.', undefined, undefined, error);
+    return createErrorResponse(500, 'Failed to process request body.', { details: (error as Error).message });
   }
 
   try {
-    console.log('Creating training plan day with command:', command);
-    console.log('rawPathParams:', rawPathParams);
-    const { data: newDay, error: rpcError } = await supabaseClient.rpc('create_training_plan_day', {
-      p_user_id: user.id,
-      p_plan_id: rawPathParams.planId,
+    const rpcCommand = {
+      p_user_id: user!.id,
+      p_plan_id: rawPathParams!.planId,
       p_name: command.name,
       p_description: command.description,
       p_target_order_index: command.order_index,
-    }).single();
+    };
+
+    // @ts-expect-error Parametrized RPC call, not correctly typed in SupabaseClient.d.ts
+    const { data: newDay, error: rpcError } = await supabaseClient.rpc('create_training_plan_day', rpcCommand).single();
 
     if (rpcError) {
       console.error('RPC error creating training plan day:', rpcError);
       if (rpcError.message.includes('Training plan not found')) {
         return createErrorResponse(404, rpcError.message, undefined, undefined, rpcError);
       }
-      return createErrorResponse(500, 'Could not create training plan day.', undefined, undefined, rpcError);
+      return createErrorResponse(500, 'Could not create training plan day.', { details: rpcError.message });
     }
 
     if (!newDay) {
@@ -61,6 +58,6 @@ export async function handlePostTrainingPlanDay(
 
   } catch (error) {
     console.error('Unexpected error in handlePostTrainingPlanDay RPC call:', error);
-    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

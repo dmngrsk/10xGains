@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { TrainingPlanDayDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { TrainingPlanDayDto } from '@shared/api-types.ts';
 
 export async function handleGetTrainingPlanDayById(
   { supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams'>
@@ -23,11 +23,11 @@ export async function handleGetTrainingPlanDayById(
       .from('training_plans')
       .select('id')
       .eq('id', planId)
-      .eq('user_id', user.id)
+      .eq('user_id', user!.id)
       .single();
 
     if (planError || !plan) {
-      return createErrorResponse(404, 'Training plan not found or user does not have access.', undefined, undefined, planError);
+      return createErrorResponse(404, 'Training plan not found or user does not have access.', { details: planError?.message });
     }
 
     const { data, error } = await supabaseClient
@@ -46,11 +46,11 @@ export async function handleGetTrainingPlanDayById(
       .single();
 
     if (error || !data) {
-      if (error && error.code === 'PGRST116' || !day) {
-        return createErrorResponse(404, 'Training plan day not found.', undefined, undefined, error);
+      if (error && error.code === 'PGRST116') {
+        return createErrorResponse(404, 'Training plan day not found.', { details: error.message });
       }
       console.error('Error fetching training plan day detail:', error);
-      return createErrorResponse(500, 'Could not fetch training plan day.', undefined, undefined, error);
+      return createErrorResponse(500, 'Could not fetch training plan day.', { details: error.message });
     }
 
     data.exercises?.sort((a, b) => a.order_index - b.order_index);
@@ -62,6 +62,6 @@ export async function handleGetTrainingPlanDayById(
 
   } catch (error) {
     console.error('Unexpected error in handleGetTrainingPlanDayById:', error);
-    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

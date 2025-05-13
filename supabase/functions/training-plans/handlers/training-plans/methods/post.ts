@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { CreateTrainingPlanCommand, TrainingPlanDto } from 'shared/api-types.ts';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { CreateTrainingPlanCommand, TrainingPlanDto } from '@shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
 
 export const createTrainingPlanBodySchema = z.object({
   name: z.string().min(1).max(255),
@@ -9,43 +9,26 @@ export const createTrainingPlanBodySchema = z.object({
 });
 
 export async function handleCreateTrainingPlan(
-  { supabaseClient, user, req, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'requestInfo'>
+  { supabaseClient, user, req }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req'>
 ): Promise<Response> {
-  if (!user) {
-    return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
-  }
-
+  
   let body;
   try {
     body = await req.json();
   } catch (e) {
-    return createErrorResponse(
-      400,
-      'Invalid JSON body',
-      { details: (e instanceof Error ? e.message : String(e)) },
-      undefined,
-      e,
-      requestInfo
-    );
+    return createErrorResponse(400, 'Invalid JSON body', { details: (e as Error).message });
   }
 
   const validationResult = createTrainingPlanBodySchema.safeParse(body);
   if (!validationResult.success) {
-    return createErrorResponse(
-      400,
-      'Invalid request body',
-      validationResult.error.flatten(),
-      undefined,
-      undefined,
-      requestInfo
-    );
+    return createErrorResponse(400, 'Invalid request body', validationResult.error.flatten());
   }
 
   const validatedData = validationResult.data as CreateTrainingPlanCommand;
   const newPlanData = {
     name: validatedData.name,
     description: validatedData.description ?? null,
-    user_id: user.id,
+    user_id: user!.id,
   };
 
   try {
@@ -56,25 +39,11 @@ export async function handleCreateTrainingPlan(
       .single();
 
     if (dbError) {
-      return createErrorResponse(
-        500,
-        'Failed to create training plan',
-        { details: dbError.message },
-        'DB_ERROR',
-        dbError,
-        requestInfo
-      );
+      return createErrorResponse(500, 'Failed to create training plan', { details: dbError.message });
     }
 
-    return createSuccessResponse<TrainingPlanDto>(201, data as TrainingPlanDto);
+      return createSuccessResponse<TrainingPlanDto>(201, data as TrainingPlanDto);
   } catch (e) {
-    return createErrorResponse(
-      500,
-      'An unexpected error occurred while creating training plan',
-      { details: (e instanceof Error ? e.message : String(e)) },
-      undefined,
-      e,
-      requestInfo
-    );
+    return createErrorResponse(500, 'An unexpected error occurred while creating training plan', { details: (e as Error).message });
   }
 }

@@ -68,8 +68,11 @@
     "vitest": "^3.1.1"
   },
   "lint-staged": {
-    "*.{html,ts}": [
+    "src/**/*.{html,ts}": [
       "eslint --fix"
+    ],
+    "supabase/functions/**/*.ts": [
+      "deno lint"
     ]
   }
 }

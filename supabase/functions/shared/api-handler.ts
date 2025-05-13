@@ -44,7 +44,7 @@ export interface MethodHandlers {
  */
 export type ApiRouterHandler = (
   req: Request,
-  supabaseClient: SupabaseClient<Database>
+  context: ApiHandlerContext
 ) => Promise<Response | typeof PASS_ROUTE_INDICATOR>;
 
 /**
@@ -55,23 +55,21 @@ export async function routeRequestToMethods(
   req: Request,
   absolutePathPattern: string,
   methodHandlers: MethodHandlers,
-  supabaseClient: SupabaseClient<Database>,
+  context: ApiHandlerContext,
   requireAuth = true
 ): Promise<Response | typeof PASS_ROUTE_INDICATOR> {
-  const url = new URL(req.url);
-  const requestInfo = createRequestInfo(req);
-
   const pattern = new URLPattern({ pathname: absolutePathPattern });
-  const pathMatch = pattern.exec(url.pathname, url.origin);
+  const pathMatch = pattern.exec(context.url.pathname, context.url.origin);
 
   if (!pathMatch) {
     return PASS_ROUTE_INDICATOR;
   }
 
+  context.rawPathParams = pathMatch.pathname.groups;
+
   if (req.method === 'OPTIONS') {
     // Prefer specific OPTIONS handler if provided for the route
     if (methodHandlers.OPTIONS) {
-      const context: ApiHandlerContext = { supabaseClient, req, url, rawPathParams: pathMatch.pathname.groups as Record<string, string | undefined>, requestInfo, user: undefined }; // User context might not be relevant for OPTIONS
       return await methodHandlers.OPTIONS(context);
     }
     // Generic OPTIONS response for the matched path
@@ -90,27 +88,18 @@ export async function routeRequestToMethods(
     return PASS_ROUTE_INDICATOR;
   }
 
-  let user: SupabaseUser | undefined = undefined;
   if (requireAuth) {
-    const { data: { user: sessionUser }, error: authError } = await supabaseClient.auth.getUser();
+    const { data: { user: sessionUser }, error: authError } = await context.supabaseClient.auth.getUser();
     if (authError || !sessionUser) {
       console.error('Auth error or no user in session:', authError?.message);
-      return createErrorResponse(401, 'Authentication required', { details: authError?.message || 'No user session' }, 'AUTH_REQUIRED', authError, requestInfo);
+      return createErrorResponse(401, 'Authentication required', { details: authError?.message || 'No user session' }, 'AUTH_REQUIRED', authError, context.requestInfo);
     }
-    user = sessionUser as SupabaseUser;
+    
+    context.user = { id: sessionUser.id, email: sessionUser.email };
   }
 
-  const context: ApiHandlerContext = {
-    supabaseClient,
-    req,
-    url,
-    rawPathParams: pathMatch.pathname.groups as Record<string, string | undefined>,
-    user,
-    requestInfo,
-  };
-
   try {
-    console.log('handling', req.method, url.pathname);
+    console.log('handling', req.method, context.url.pathname);
     return await handlerMethod(context);
   } catch (e) {
     console.error(`Error in handler method for ${req.method} ${absolutePathPattern}:`, e);
@@ -120,7 +109,7 @@ export async function routeRequestToMethods(
       { details: (e instanceof Error) ? e.message : String(e) },
       'METHOD_HANDLER_ERROR',
       e,
-      requestInfo
+      context.requestInfo
     );
   }
 }
@@ -154,7 +143,16 @@ export function createMainRouterHandler(
     const supabaseClient = createSupabaseClient(req);
 
     for (const handler of routeHandlers) {
-      const response = await handler(req, supabaseClient);
+      const url = new URL(req.url);
+      const requestInfo = createRequestInfo(req);
+      const context: ApiHandlerContext = {
+        supabaseClient,
+        req,
+        url,
+        requestInfo,
+        // user and rawPathParams will be added by routeRequestToMethods or auth middleware
+      };
+      const response = await handler(req, context);
       if (response !== PASS_ROUTE_INDICATOR) {
         return response;
       }

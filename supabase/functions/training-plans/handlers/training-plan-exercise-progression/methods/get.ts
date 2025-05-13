@@ -1,7 +1,7 @@
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import type { TrainingPlanExerciseProgressionDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseProgressionDto } from '@shared/api-types.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid(),
@@ -12,11 +12,7 @@ export async function handleGetTrainingPlanExerciseProgression(
   { supabaseClient, rawPathParams, requestInfo, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'requestInfo' | 'user'>
 ) {
   if (!rawPathParams) {
-    return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);
-  }
-
-  if (!user) {
-    return createErrorResponse(401, 'Unauthorized: User not authenticated.', undefined, undefined, undefined, requestInfo);
+    return createErrorResponse(500, 'Internal server error: Path parameters missing.');
   }
 
   const paramsValidation = paramsSchema.safeParse(rawPathParams);
@@ -37,16 +33,16 @@ export async function handleGetTrainingPlanExerciseProgression(
       .from('training_plans')
       .select('id')
       .eq('id', planId)
-      .eq('user_id', user.id)
+      .eq('user_id', user!.id)
       .maybeSingle();
 
     if (planError) {
       console.error('Error verifying training plan:', planError);
-      return createErrorResponse(500, 'Error verifying training plan.', { details: planError.message }, undefined, planError, requestInfo);
+      return createErrorResponse(500, 'Error verifying training plan.', { details: planError.message });
     }
 
     if (!trainingPlan) {
-      return createErrorResponse(404, 'Training plan not found or access denied.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(404, 'Training plan not found or access denied.');
     }
 
     const { data: exercise, error: exerciseError } = await supabaseClient
@@ -57,11 +53,11 @@ export async function handleGetTrainingPlanExerciseProgression(
 
     if (exerciseError) {
       console.error('Error verifying exercise:', exerciseError);
-      return createErrorResponse(500, 'Error verifying exercise.', { details: exerciseError.message }, undefined, exerciseError, requestInfo);
+      return createErrorResponse(500, 'Error verifying exercise.', { details: exerciseError.message });
     }
 
     if (!exercise) {
-      return createErrorResponse(404, 'Exercise not found.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(404, 'Exercise not found.');
     }
 
     const { data: progression, error: progressionError } = await supabaseClient
@@ -73,17 +69,17 @@ export async function handleGetTrainingPlanExerciseProgression(
 
     if (progressionError) {
       console.error('Error fetching training plan exercise progression:', progressionError);
-      return createErrorResponse(500, 'Error fetching progression data.', { details: progressionError.message }, undefined, progressionError, requestInfo);
+      return createErrorResponse(500, 'Error fetching progression data.', { details: progressionError.message });
     }
 
     if (!progression) {
-      return createErrorResponse(404, 'Training plan exercise progression not found.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(404, 'Training plan exercise progression not found.');
     }
 
     return createSuccessResponse<TrainingPlanExerciseProgressionDto>(200, progression);
 
   } catch (e) {
     console.error('Unexpected error in handleGetProgression (verifying plan):', e);
-    return createErrorResponse(500, 'An unexpected error occurred.', { details: e.message }, undefined, e, requestInfo);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });
   }
 }

@@ -1,10 +1,10 @@
-import { type ApiHandlerContext, routeRequestToMethods } from 'shared/api-handler.ts';
+import { type ApiHandlerContext, type MethodHandlers, routeRequestToMethods } from '@shared/api-handler.ts';
 import { handleGetTrainingPlanExerciseSets } from './methods/get.ts';
 import { handleCreateTrainingPlanExerciseSet } from './methods/post.ts';
 
 export const ABSOLUTE_PATH_PATTERN = '/training-plans/:planId/days/:dayId/exercises/:exerciseId/sets';
 
-const methodHandlers: Record<string, ApiHandler> = {
+const methodHandlers: MethodHandlers = {
   GET: handleGetTrainingPlanExerciseSets,
   POST: handleCreateTrainingPlanExerciseSet,
 };

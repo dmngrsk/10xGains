@@ -1,7 +1,7 @@
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ExerciseDto } from 'shared/api-types.ts';
+import type { ExerciseDto } from '@shared/api-types.ts';
 
 const PathParamsSchema = z.object({
   id: z.string().uuid({ message: 'Exercise ID must be a valid UUID.' }),
@@ -34,7 +34,7 @@ export async function handleGetExerciseById(
         return createErrorResponse(404, 'Exercise not found');
       }
       console.error(`Error fetching exercise with ID ${validatedId}:`, error);
-      return createErrorResponse(500, 'Failed to fetch exercise.', error.message);
+      return createErrorResponse(500, 'Failed to fetch exercise.', { details: error.message });
     }
 
     if (!data) {
@@ -46,6 +46,6 @@ export async function handleGetExerciseById(
 
   } catch (e) {
     console.error(`Unexpected error fetching exercise with ID ${validatedId}:`, e);
-    return createErrorResponse(500, 'An unexpected error occurred while fetching the exercise.', (e as Error).message);
+    return createErrorResponse(500, 'An unexpected error occurred while fetching the exercise.', { details: (e as Error).message });
   }
 }

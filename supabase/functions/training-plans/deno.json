@@ -1,9 +1,7 @@
 {
   "compilerOptions": {
-    "allowJs": true,
     "lib": ["deno.window"],
-    "strict": true,
-    "allowImportingTsExtensions": true
+    "strict": true
   },
   "lint": {
     "rules": {
@@ -14,7 +12,6 @@
   "imports": {
     "supabase": "https://esm.sh/@supabase/supabase-js@2.42.0",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts",
-    "std/": "https://deno.land/std@0.208.0/",
-    "shared/": "../shared/"
+    "@shared/": "../shared/"
   }
 }

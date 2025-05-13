@@ -1,6 +1,4 @@
-import { serve } from 'std/http/server.ts';
-import { createMainRouterHandler, type ApiRouterHandler } from 'shared/api-handler.ts';
-
+import { createMainRouterHandler, type ApiRouterHandler } from '@shared/api-handler.ts';
 import { handleTrainingPlansRoute } from './handlers/training-plans/handler.ts';
 import { handleTrainingPlanByIdRoute } from './handlers/training-plans-id/handler.ts';
 import { handleTrainingPlanDaysRoute } from './handlers/training-plan-days/handler.ts';
@@ -27,4 +25,4 @@ const routeHandlers: ApiRouterHandler[] = [
 
 const handler = createMainRouterHandler(routeHandlers, MAIN_FUNCTION_MOUNT_PATH);
 
-serve(handler);
+Deno.serve(handler);

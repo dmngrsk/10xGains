@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { TrainingPlanExerciseSetDto } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { TrainingPlanExerciseSetDto } from '@shared/api-types.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),
@@ -33,13 +33,13 @@ export async function handleGetTrainingPlanExerciseSetById(
         return createErrorResponse(404, `Exercise set with ID ${setId} not found for exercise ${exerciseId}.`);
       }
       console.error(`Error fetching exercise set with ID ${setId}:`, error);
-      return createErrorResponse(500, `Failed to fetch exercise set with ID ${setId}.`, { details: error.message });
+      return createErrorResponse(500, `Failed to fetch exercise set with ID ${setId}.`, { details: (error as Error).message });
     }
 
     return createSuccessResponse<TrainingPlanExerciseSetDto>(200, data as TrainingPlanExerciseSetDto);
 
   } catch (error) {
     console.error('Error during GET set by ID processing:', error);
-    return createErrorResponse(500, 'Internal server error during set retrieval.', { details: error.message });
+    return createErrorResponse(500, 'Internal server error during set retrieval.', { details: (error as Error).message });
   }
 }

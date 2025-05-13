@@ -1,11 +1,11 @@
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { ExerciseDto } from 'shared/api-types.ts';
+import type { ExerciseDto } from '@shared/api-types.ts';
 
 const DEFAULT_PAGE_LIMIT = 20;
 const MAX_PAGE_LIMIT = 100;
-const DEFAULT_SORT_COLUMN = 'id';
+const DEFAULT_SORT_COLUMN = 'name';
 const DEFAULT_SORT_DIRECTION = 'asc';
 
 const ExercisesQuerySchema = z.object({
@@ -53,12 +53,12 @@ export async function handleGetExercises(
 
     if (error) {
       console.error('Error fetching exercises:', error);
-      return createErrorResponse(500, 'Failed to fetch exercises', error.message);
+      return createErrorResponse(500, 'Failed to fetch exercises', { details: error.message });
     }
 
     return createSuccessResponse<ExerciseDto[]>(200, data);
   } catch (e) {
     console.error('Unexpected error in handleGetExercises:', e);
-    return createErrorResponse(500, 'An unexpected error occurred', (e as Error).message);
+    return createErrorResponse(500, 'An unexpected error occurred', { details: (e as Error).message });
   }
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-types.ts';
-import type { TrainingPlanExerciseDto } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseDto } from '@shared/api-types.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid('Invalid Plan ID format'),
@@ -10,12 +10,8 @@ const paramsSchema = z.object({
 });
 
 export async function handleGetTrainingPlanExerciseById(
-  { supabaseClient, user, rawPathParams, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams' | 'requestInfo'>
+  { supabaseClient, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams'>
 ): Promise<Response> {
-
-  if (!user) {
-    return createErrorResponse(401, 'User authentication required.', undefined, 'AUTH_REQUIRED', undefined, requestInfo);
-  }
 
   const paramsValidation = paramsSchema.safeParse(rawPathParams);
   if (!paramsValidation.success) {
@@ -36,7 +32,7 @@ export async function handleGetTrainingPlanExerciseById(
       if (dbError.code === 'PGRST116') {
         return createErrorResponse(404, 'Training plan exercise not found.');
       }
-      return createErrorResponse(500, 'Failed to fetch training plan exercise.', undefined, undefined, dbError);
+      return createErrorResponse(500, 'Failed to fetch training plan exercise.', { details: dbError.message });
     }
 
     if (!data) {
@@ -47,6 +43,6 @@ export async function handleGetTrainingPlanExerciseById(
 
     return createSuccessResponse(200, data as TrainingPlanExerciseDto);
   } catch (error) {
-    return createErrorResponse(500, 'An unexpected error occurred.', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

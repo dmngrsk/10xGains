@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import type { TrainingPlanExerciseProgressionDto, UpdateTrainingPlanExerciseProgressionCommand } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseProgressionDto, UpdateTrainingPlanExerciseProgressionCommand } from '@shared/api-types.ts';
 
 const updateProgressionBodySchema = z.object({
   weight_increment: z.number().positive().optional(),
@@ -21,13 +21,10 @@ const pathParamsSchema = z.object({
 });
 
 export async function handleUpsertTrainingPlanExerciseProgression(
-  { supabaseClient, rawPathParams, req, requestInfo, user }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'req' | 'requestInfo' | 'user'>
+  { supabaseClient, rawPathParams, req, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'req' | 'requestInfo'>
 ) {
   if (!rawPathParams) {
-    return createErrorResponse(500, 'Internal server error: Path parameters missing.', undefined, undefined, undefined, requestInfo);
-  }
-  if (!user) {
-    return createErrorResponse(401, 'Unauthorized: User not authenticated.', undefined, undefined, undefined, requestInfo);
+    return createErrorResponse(500, 'Internal server error: Path parameters missing.');
   }
 
   const pathParamsValidation = pathParamsSchema.safeParse(rawPathParams);
@@ -47,7 +44,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
   try {
     requestBody = await req.json();
   } catch (error) {
-    return createErrorResponse(400, 'Invalid JSON in request body.', { details: error.message }, undefined, error, requestInfo);
+    return createErrorResponse(400, 'Invalid JSON in request body.', { details: (error as Error).message });
   }
 
   const bodyValidation = updateProgressionBodySchema.safeParse(requestBody);
@@ -73,7 +70,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
 
     if (fetchError) {
       console.error('Error fetching existing progression:', fetchError);
-      return createErrorResponse(500, 'Error checking for existing progression.', { details: fetchError.message }, undefined, fetchError, requestInfo);
+      return createErrorResponse(500, 'Error checking for existing progression.', { details: fetchError.message });
     }
 
     let savedProgression: TrainingPlanExerciseProgressionDto | null = null;
@@ -98,7 +95,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
 
       if (error) {
         console.error('Error updating progression:', error);
-        return createErrorResponse(500, 'Failed to update progression data.', { details: error.message }, undefined, error, requestInfo);
+        return createErrorResponse(500, 'Failed to update progression data.', { details: error.message });
       }
       savedProgression = data;
     } else {
@@ -110,8 +107,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
       ) {
         return createErrorResponse(
           400,
-          'Missing required fields for creating a new progression: weight_increment, failure_count_for_deload, and current_weight are required.',
-          undefined, undefined, undefined, requestInfo
+          'Missing required fields for creating a new progression: weight_increment, failure_count_for_deload, and current_weight are required.'
         );
       }
 
@@ -120,7 +116,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
         exercise_id: exerciseId,
         ...changesToApply,
         last_updated: new Date().toISOString(),
-      };
+      } as TrainingPlanExerciseProgressionDto;
 
       const { data, error } = await supabaseClient
         .from('training_plan_exercise_progressions')
@@ -130,20 +126,20 @@ export async function handleUpsertTrainingPlanExerciseProgression(
 
       if (error) {
         console.error('Error creating progression:', error);
-        return createErrorResponse(500, 'Failed to create progression data.', { details: error.message }, undefined, error, requestInfo);
+        return createErrorResponse(500, 'Failed to create progression data.', { details: error.message });
       }
       savedProgression = data;
     }
 
     if (!savedProgression) {
       console.error('Save operation did not return the expected record.');
-      return createErrorResponse(500, 'Failed to retrieve progression data after save.', undefined, undefined, undefined, requestInfo);
+      return createErrorResponse(500, 'Failed to retrieve progression data after save.');
     }
 
-    return createSuccessResponse<TrainingPlanExerciseProgressionDto>(statusCode, savedProgression, null);
+    return createSuccessResponse<TrainingPlanExerciseProgressionDto>(statusCode, savedProgression);
 
   } catch (e) {
     console.error('Unexpected error in handleUpsertTrainingPlanExerciseProgression:', e);
-    return createErrorResponse(500, 'An unexpected error occurred.', { details: e.message }, undefined, e, requestInfo);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });
   }
 }

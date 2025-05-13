@@ -1,5 +1,5 @@
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
 
 const PathParamsSchema = z.object({
@@ -7,14 +7,9 @@ const PathParamsSchema = z.object({
 });
 
 export async function handleDeleteExerciseById(
-  { supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams'>
+  { supabaseClient, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams'>
 ) {
   const exerciseId = rawPathParams?.id;
-
-  if (!user) {
-    console.warn(`DELETE /exercises/${exerciseId}: Attempt to delete without user context.`);
-    return createErrorResponse(401, 'Unauthorized: Authentication required.');
-  }
 
   const pathValidationResult = PathParamsSchema.safeParse({ id: exerciseId });
   if (!pathValidationResult.success) {
@@ -31,13 +26,13 @@ export async function handleDeleteExerciseById(
 
     if (error) {
       console.error(`Error deleting exercise ${validatedId} from database:`, error);
-      return createErrorResponse(500, 'Failed to delete exercise from database.', error.message);
+      return createErrorResponse(500, 'Failed to delete exercise from database.', { details: error.message });
     }
 
     return createSuccessResponse(204, null);
 
   } catch (e) {
     console.error(`Unexpected error during exercise deletion for ID ${validatedId}:`, e);
-    return createErrorResponse(500, 'An unexpected error occurred while deleting the exercise.', (e as Error).message);
+    return createErrorResponse(500, 'An unexpected error occurred while deleting the exercise.', { details: (e as Error).message });
   }
 }

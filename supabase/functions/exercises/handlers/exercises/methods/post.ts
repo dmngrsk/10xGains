@@ -1,7 +1,7 @@
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { CreateExerciseCommand, ExerciseDto } from 'shared/api-types.ts';
+import type { CreateExerciseCommand, ExerciseDto } from '@shared/api-types.ts';
 
 const CreateExerciseSchema = z.object({
   name: z.string().min(1, { message: 'Exercise name cannot be empty.' }),
@@ -9,18 +9,14 @@ const CreateExerciseSchema = z.object({
 });
 
 export async function handlePostExercise(
-  { req, supabaseClient, user }: Pick<ApiHandlerContext, 'req' | 'supabaseClient' | 'user'>
+  { req, supabaseClient }: Pick<ApiHandlerContext, 'req' | 'supabaseClient'>
 ) {
-  if (!user) {
-    return createErrorResponse(401, 'Unauthorized: Authentication required.');
-  }
-
   let body: CreateExerciseCommand;
   try {
     body = await req.json();
   } catch (error) {
     console.error('Error parsing request body for POST /exercises:', error);
-    return createErrorResponse(400, 'Invalid request body: Failed to parse JSON.', (error as Error).message);
+    return createErrorResponse(400, 'Invalid request body: Failed to parse JSON.', { details: (error as Error).message });
   }
 
   const validationResult = CreateExerciseSchema.safeParse(body);
@@ -40,12 +36,12 @@ export async function handlePostExercise(
 
     if (error) {
       console.error('Error creating exercise in database:', error);
-      return createErrorResponse(500, 'Failed to create exercise in database.', error.message);
+      return createErrorResponse(500, 'Failed to create exercise in database.', { details: error.message });
     }
 
     return createSuccessResponse<ExerciseDto>(201, data);
   } catch (e) {
     console.error('Unexpected error during exercise creation:', e);
-    return createErrorResponse(500, 'An unexpected error occurred while creating the exercise.', (e as Error).message);
+    return createErrorResponse(500, 'An unexpected error occurred while creating the exercise.', { details: (e as Error).message });
   }
 }

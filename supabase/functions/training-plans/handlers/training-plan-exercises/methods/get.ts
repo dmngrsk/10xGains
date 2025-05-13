@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { ApiHandlerContext } from 'shared/api-types.ts';
-import type { TrainingPlanExerciseDto } from 'shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import type { TrainingPlanExerciseDto } from '@shared/api-types.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid(),
@@ -27,7 +27,7 @@ export async function handleGetTrainingPlanExercises(
       .order('order_index', { ascending: true });
 
     if (error) {
-      return createErrorResponse(500, 'Failed to fetch training plan exercises', undefined, undefined, error);
+      return createErrorResponse(500, 'Failed to fetch training plan exercises', { details: error.message });
     }
 
     data?.forEach(exercise => {
@@ -36,6 +36,6 @@ export async function handleGetTrainingPlanExercises(
 
     return createSuccessResponse<TrainingPlanExerciseDto[]>(200, data ?? []);
   } catch (error) {
-    return createErrorResponse(500, 'An unexpected error occurred', undefined, undefined, error);
+    return createErrorResponse(500, 'An unexpected error occurred', { details: (error as Error).message });
   }
 }

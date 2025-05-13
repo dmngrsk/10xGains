@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),
@@ -20,10 +20,13 @@ export async function handleDeleteTrainingPlanExerciseSet(
   const { setId } = pathParamsParsed.data;
 
   try {
-    const { error: rpcError } = await supabaseClient.rpc('delete_training_plan_exercise_set', {
-      p_user_id: user.id,
+    const rpcCommand = {
+      p_user_id: user!.id,
       p_set_id: setId
-    });
+    };
+
+    // @ts-expect-error Parametrized RPC call, not correctly typed in SupabaseClient.d.ts
+    const { error: rpcError } = await supabaseClient.rpc('delete_training_plan_exercise_set', rpcCommand);
 
     if (rpcError) {
       console.error('RPC error delete_training_plan_exercise_set:', rpcError);
@@ -37,6 +40,6 @@ export async function handleDeleteTrainingPlanExerciseSet(
 
   } catch (error) {
     console.error('Error during DELETE set processing (outside RPC call itself):', error);
-    return createErrorResponse(500, 'Internal server error during set deletion.', { details: error.message });
+    return createErrorResponse(500, 'Internal server error during set deletion.', { details: (error as Error).message });
   }
 }

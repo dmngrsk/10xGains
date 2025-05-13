@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
-import type { TrainingPlanExerciseSetDto, UpdateTrainingPlanExerciseSetCommand } from 'shared/api-types.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import type { TrainingPlanExerciseSetDto, UpdateTrainingPlanExerciseSetCommand } from '@shared/api-types.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),
@@ -33,7 +33,7 @@ export async function handleUpdateTrainingPlanExerciseSet(
   try {
     body = await req.json() as UpdateTrainingPlanExerciseSetCommand;
   } catch (error) {
-    return createErrorResponse(400, 'Invalid JSON body', { details: error.message });
+    return createErrorResponse(400, 'Invalid JSON body', { details: (error as Error).message });
   }
 
   const bodyParsed = requestBodySchema.safeParse(body);
@@ -44,13 +44,16 @@ export async function handleUpdateTrainingPlanExerciseSet(
   const validatedBody = bodyParsed.data;
 
   try {
-    const { data: updatedSetResult, error: rpcError } = await supabaseClient.rpc('update_training_plan_exercise_set', {
-      p_user_id: user.id,
+    const rpcCommand = {
+      p_user_id: user!.id,
       p_set_id: setId,
       p_expected_reps: validatedBody.expected_reps === undefined ? null : validatedBody.expected_reps,
       p_expected_weight: validatedBody.expected_weight === undefined ? null : validatedBody.expected_weight,
       p_target_set_index: validatedBody.set_index === undefined ? null : validatedBody.set_index
-    });
+    };
+
+    // @ts-expect-error Parametrized RPC call, not correctly typed in SupabaseClient.d.ts
+    const { data: updatedSetResult, error: rpcError } = await supabaseClient.rpc('update_training_plan_exercise_set', rpcCommand).single();
 
     if (rpcError) {
       console.error('RPC error update_training_plan_exercise_set:', rpcError);
@@ -60,17 +63,17 @@ export async function handleUpdateTrainingPlanExerciseSet(
       return createErrorResponse(500, 'Failed to update exercise set via RPC.', { details: rpcError.message });
     }
 
-    if (!updatedSetResult || updatedSetResult.length === 0) {
+    if (!updatedSetResult) {
       console.error('RPC update_training_plan_exercise_set did not return the updated set or returned an empty array.', updatedSetResult);
       return createErrorResponse(500, 'RPC update_training_plan_exercise_set did not return the updated set as expected.');
     }
 
-    const updatedSet = updatedSetResult[0] as TrainingPlanExerciseSetDto;
+    const updatedSet = updatedSetResult as TrainingPlanExerciseSetDto;
 
     return createSuccessResponse<TrainingPlanExerciseSetDto>(200, updatedSet);
 
   } catch (error) {
     console.error('Error during PUT set processing (outside RPC call itself):', error);
-    return createErrorResponse(500, 'Internal server error during set update.', { details: error.message });
+    return createErrorResponse(500, 'Internal server error during set update.', { details: (error as Error).message });
   }
 }

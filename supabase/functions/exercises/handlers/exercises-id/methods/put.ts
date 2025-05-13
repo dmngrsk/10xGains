@@ -1,7 +1,7 @@
-import type { ApiHandlerContext } from 'shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from 'shared/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { UpdateExerciseCommand, ExerciseDto } from 'shared/api-types.ts';
+import type { UpdateExerciseCommand, ExerciseDto } from '@shared/api-types.ts';
 
 const PathParamsSchema = z.object({
   id: z.string().uuid({ message: 'Exercise ID must be a valid UUID.' }),
@@ -13,14 +13,9 @@ const UpdateExerciseSchema = z.object({
 });
 
 export async function handlePutExerciseById(
-  { req, supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'req' | 'supabaseClient' | 'user' | 'rawPathParams'>
+  { req, supabaseClient, rawPathParams }: Pick<ApiHandlerContext, 'req' | 'supabaseClient' | 'rawPathParams'>
 ) {
   const exerciseId = rawPathParams?.id;
-
-  if (!user) {
-    console.warn(`PUT /exercises/${exerciseId}: Attempt to update without user context.`);
-    return createErrorResponse(401, 'Unauthorized: Authentication required.');
-  }
 
   const pathValidationResult = PathParamsSchema.safeParse({ id: exerciseId });
   if (!pathValidationResult.success) {
@@ -34,7 +29,7 @@ export async function handlePutExerciseById(
     body = await req.json();
   } catch (error) {
     console.error(`Error parsing request body for PUT /exercises/${validatedId}:`, error);
-    return createErrorResponse(400, 'Invalid request body: Failed to parse JSON.', (error as Error).message);
+    return createErrorResponse(400, 'Invalid request body: Failed to parse JSON.', { details: (error as Error).message });
   }
 
   const bodyValidationResult = UpdateExerciseSchema.safeParse(body);
@@ -62,7 +57,7 @@ export async function handlePutExerciseById(
         return createErrorResponse(404, 'Exercise not found to update.');
       }
       console.error(`Error updating exercise ${validatedId} in database:`, error);
-      return createErrorResponse(500, 'Failed to update exercise in database.', error.message);
+      return createErrorResponse(500, 'Failed to update exercise in database.', { details: error.message });
     }
 
     if (!data) {
@@ -73,6 +68,6 @@ export async function handlePutExerciseById(
 
   } catch (e) {
     console.error(`Unexpected error during exercise update for ID ${validatedId}:`, e);
-    return createErrorResponse(500, 'An unexpected error occurred while updating the exercise.', (e as Error).message);
+    return createErrorResponse(500, 'An unexpected error occurred while updating the exercise.', { details: (e as Error).message });
   }
 }

@@ -91,17 +91,21 @@ export function logError(error: ErrorDetails): void {
     ...(error.code && { code: error.code }),
     ...(error.context && { context: error.context }),
     ...(error.request && { request: error.request }),
+    errorName: undefined as string | undefined,
+    errorMessage: undefined as string | undefined,
+    stackTrace: undefined as string | undefined,
+    originalError: undefined as unknown | undefined,
   };
 
   if (error.originalError) {
     // For original Error objects, extract useful properties
     if (error.originalError instanceof Error) {
-      logEntry['errorName'] = error.originalError.name;
-      logEntry['errorMessage'] = error.originalError.message;
-      logEntry['stackTrace'] = error.originalError.stack;
+      logEntry.errorName = error.originalError.name;
+      logEntry.errorMessage = error.originalError.message;
+      logEntry.stackTrace = error.originalError.stack;
     } else {
       // For non-Error objects, include the entire object
-      logEntry['originalError'] = error.originalError;
+      logEntry.originalError = error.originalError;
     }
   }
 
