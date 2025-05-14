@@ -12,12 +12,12 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-05-10T15:57:51.185Z
+ * Last updated: 2025-05-14T11:31:59.447Z
  */
 
 /*
   DTO and Command Model Definitions for API
-  Based on database models from src/app/@shared/db/database.types.ts and API plan (api-plan.md)
+  Based on database models from src/app/shared/db/database.types.ts and API plan (api-plan.md)
 
   Each interface directly or indirectly corresponds to a database table:
   - User Profiles           -> Tables<"public", "user_profiles">
@@ -51,19 +51,76 @@ export type CreateTrainingPlanCommand = Pick<Database["public"]["Tables"]["train
 
 export type UpdateTrainingPlanCommand = Pick<Database["public"]["Tables"]["training_plans"]["Update"], "name" | "description">;
 
+// Command for POST /training-plans/{planId}/suggest
+export interface AiSuggestTrainingPlanQueryCommand {
+  query: string;
+}
+
+// DTOs for AI-suggested training plan (POST /training-plans/{planId}/suggest response)
+// These types extend base DTOs with an optional 'is_ai_modified' flag
+export interface AiSuggestedTrainingPlanResponseDto {
+  ai_message: string;
+  ai_plan_modified: boolean;
+  suggested_training_plan?: AiSuggestedTrainingPlanDto; // Can be null if AI only answers a question
+}
+
+export type AiSuggestedTrainingPlanDto = Omit<TrainingPlanDto, 'days'> & {
+  days?: AiSuggestedTrainingPlanDayDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedTrainingPlanDayDto = Omit<TrainingPlanDayDto, 'exercises'> & {
+  exercises?: AiSuggestedTrainingPlanExerciseDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedTrainingPlanExerciseDto = Omit<TrainingPlanExerciseDto, 'sets'> & {
+  sets?: AiSuggestedTrainingPlanExerciseSetDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedTrainingPlanExerciseSetDto = TrainingPlanExerciseSetDto & {
+  is_ai_modified?: boolean;
+};
+
+// Command and constituent data types for POST /training-plans/{planId}/composite
+// For composite updates, 'id' is optional for new items.
+// Days, exercises, sets not included in payload but existing in DB will be DELETED.
+// Order is determined by array position.
+export type CompositeTrainingPlanUpdateCommand =
+  Pick<Database["public"]["Tables"]["training_plans"]["Update"], "name" | "description">
+  & { id?: string; days: CompositeTrainingPlanDayData[]; }; // id of the training plan is via URL parameter {planId}
+
+export type CompositeTrainingPlanDayData =
+  Pick<Database["public"]["Tables"]["training_plan_days"]["Insert"], "name" | "description">
+  & { id?: string; exercises?: CompositeTrainingPlanExerciseData[]; }; // id is optional for new, present for existing
+
+export type CompositeTrainingPlanExerciseData =
+  Pick<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "exercise_id">
+  & { id?: string; sets?: CompositeTrainingPlanExerciseSetData[]; }; // id is optional for new, present for existing
+
+export type CompositeTrainingPlanExerciseSetData =
+  Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight">
+  & { id?: string; }; // id is optional for new, present for existing
+
+// Response DTO for POST /training-plans/{planId}/activate
+export interface ActivateTrainingPlanResponseDto {
+  active_training_plan_id: string; // The ID of the plan that was activated
+}
+
 // 3. Training Plan Day DTO and Commands
 export type TrainingPlanDayDto = Database["public"]["Tables"]["training_plan_days"]["Row"] & {
   exercises?: TrainingPlanExerciseDto[]; // nested exercises
 };
 
-// For creation, omit fields that come from URL (id, training_plan_id)
-export type CreateTrainingPlanDayCommand = Omit<Database["public"]["Tables"]["training_plan_days"]["Insert"], "id" | "training_plan_id">;
+// For creation, omit fields that come from URL (training_plan_id) or are auto-generated (id). order_index is optional.
+export type CreateTrainingPlanDayCommand = Pick<Database["public"]["Tables"]["training_plan_days"]["Insert"], "name" | "description"> & { order_index?: number; };
 
 export type UpdateTrainingPlanDayCommand = Pick<Database["public"]["Tables"]["training_plan_days"]["Update"], "name" | "description" | "order_index">;
 
-export type ReorderTrainingPlanDayCommand = Pick<Database["public"]["Tables"]["training_plan_days"]["Update"], "order_index">;
+// Reorder command is covered by UpdateTrainingPlanDayCommand by sending only order_index.
 
-// 4. Exercise DTO and Commands
+// 4. Exercise DTO and Commands (Global Resource)
 export type ExerciseDto = Database["public"]["Tables"]["exercises"]["Row"];
 
 export type CreateExerciseCommand = Pick<Database["public"]["Tables"]["exercises"]["Insert"], "name" | "description">;
@@ -75,25 +132,27 @@ export type TrainingPlanExerciseDto = Database["public"]["Tables"]["training_pla
   sets?: TrainingPlanExerciseSetDto[]; // nested sets
 };
 
-// For creation, omit id and training_plan_day_id (provided via route)
-export type CreateTrainingPlanExerciseCommand = Omit<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "id" | "training_plan_day_id">;
+// For creation, omit fields from URL (training_plan_day_id) or auto-generated (id). order_index is optional.
+export type CreateTrainingPlanExerciseCommand = Pick<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "exercise_id"> & { order_index?: number; };
 
+// For updating, only order_index is typically changed directly for this linking entity.
 export type UpdateTrainingPlanExerciseCommand = Pick<Database["public"]["Tables"]["training_plan_exercises"]["Update"], "order_index">;
 
-export type ReorderTrainingPlanExerciseCommand = UpdateTrainingPlanExerciseCommand;
+// Reorder command is covered by UpdateTrainingPlanExerciseCommand.
 
 // 6. Training Plan Exercise Set DTO and Commands
 export type TrainingPlanExerciseSetDto = Database["public"]["Tables"]["training_plan_exercise_sets"]["Row"];
 
-// For creation, omit id and training_plan_exercise_id (provided via route)
-export type CreateTrainingPlanExerciseSetCommand = Omit<Database["public"]["Tables"]["training_plan_exercise_sets"]["Insert"], "id" | "training_plan_exercise_id">;
+// For creation, omit fields from URL (training_plan_exercise_id) or auto-generated (id). set_index is optional.
+export type CreateTrainingPlanExerciseSetCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight"> & { set_index?: number; };
 
 export type UpdateTrainingPlanExerciseSetCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Update"], "set_index" | "expected_reps" | "expected_weight">;
 
 // 7. Training Plan Exercise Progression DTO and Command
 export type TrainingPlanExerciseProgressionDto = Database["public"]["Tables"]["training_plan_exercise_progressions"]["Row"];
 
-export type UpdateTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "current_weight" | "consecutive_failures" | "deload_percentage" | "deload_strategy" | "reference_set_index">;
+// Command to update (or create if not exists) progression rules. Fields like current_weight and consecutive_failures might be updated by system or user.
+export type UpsertTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "deload_percentage" | "deload_strategy" | "current_weight" | "consecutive_failures" | "reference_set_index">;
 
 // 8. Training Session DTO and Commands
 export type TrainingSessionDto = Database["public"]["Tables"]["training_sessions"]["Row"];
@@ -102,34 +161,24 @@ export type CreateTrainingSessionCommand = Pick<Database["public"]["Tables"]["tr
 
 export type UpdateTrainingSessionCommand = Pick<Database["public"]["Tables"]["training_sessions"]["Update"], "status">;
 
-export interface CompleteTrainingSessionCommand {
-  status: 'COMPLETED';
-}
+// For PATCH /training-sessions/{sessionId}/complete
+// Request body is empty.
+export type CompleteTrainingSessionCommand = Record<string, never>; // Represents an empty request body
+export type CompleteTrainingSessionResponseDto = Pick<TrainingSessionDto, "id" | "status">;
 
 // 9. Session Set DTO and Commands
 export type SessionSetDto = Database["public"]["Tables"]["session_sets"]["Row"];
 
-// For creation, omit fields set by the system
-export type CreateSessionSetCommand = Omit<Database["public"]["Tables"]["session_sets"]["Insert"], "id" | "actual_reps" | "actual_weight" | "status" | "completed_at" | "training_session_id">;
+export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "training_plan_exercise_id" | "set_index" | "actual_reps" | "actual_weight" | "status">;
 
-export type UpdateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Update"], "actual_reps" | "actual_weight" | "status">;
+export type UpdateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Update"], "set_index" | "actual_reps" | "actual_weight" | "status">;
 
-export interface CompleteSessionSetCommand {
-  status: 'COMPLETED';
-}
+// For PATCH /training-sessions/{sessionId}/sets/{setId}/complete
+// Request body is empty.
+export type CompleteSessionSetCommand = Record<string, never>; // Represents an empty request body
+export type CompleteSessionSetResponseDto = Pick<SessionSetDto, "id" | "status" | "actual_reps" | "completed_at">;
 
-export interface FailSessionSetCommand {
-  status: 'FAILED';
-}
-
-// 10. AI-Driven Training Suggestion DTO
-export interface ResourceLinkDto {
-  title: string;
-  url: string;
-}
-
-export interface AITrainingSuggestionDto {
-  response: string;
-  training_plan: TrainingPlanDto;
-  resource_links: ResourceLinkDto[];
-}
+// For PATCH /training-sessions/{sessionId}/sets/{setId}/failed
+// Request uses query parameter `reps`, body is empty.
+export type FailSessionSetCommand = Record<string, never>; // Represents an empty request body
+export type FailSessionSetResponseDto = Pick<SessionSetDto, "id" | "status" | "actual_reps" | "completed_at">;

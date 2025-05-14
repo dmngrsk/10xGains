@@ -35,7 +35,8 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     {
       "id": "uuid",
       "first_name": "John",
-      "active_training_plan_id": null,
+      "active_training_plan_id": "uuid",
+      "ai_suggestions_remaining": 0,
       "created_at": "2023-01-01T00:00:00Z",
       "updated_at": "2023-01-01T00:00:00Z"
     }
@@ -58,6 +59,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "id": "uuid",
       "first_name": "John",
       "active_training_plan_id": "uuid",
+      "ai_suggestions_remaining": 0,
       "updated_at": "2023-01-01T00:00:00Z"
     }
     ```
@@ -240,6 +242,157 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Description: Delete a training plan belonging to the authenticated user.
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
+
+- **POST /training-plans/{planId}/suggest**
+  - Description: Provide AI-generated suggestions to modify an existing training plan (`{planId}`) belonging to the authenticated user. The suggestions are based on a user query. This endpoint can propose training exercises using existing global exercises or creating new ones (which are then added to the global `exercises` table). The response will indicate which parts of the plan were modified or newly suggested by the AI, using the original `TrainingPlanDto` model expanded with an additional `is_ai_modified` property whenever applicable. As a side-effect, this method also decrements the value of `user_profiles.ai_suggestions_remaining` by 1, and does not allow AI suggestions when that value is not positive (403 Forbidden).
+  - Request Body:
+    ```json
+    {
+      "query": "I want to focus more on strength for this plan, add some plyometrics."
+    }
+    ```
+  - Example Response:
+    ```json
+    {
+      "ai_message": "Based on your query to focus more on strength and add plyometrics to your current plan, here are some suggested modifications and new exercises.",
+      "ai_plan_modified": true, // Flag indicating whether the plan was modified; if false, the value of the suggested_training_plan field is null
+      "suggested_training_plan": { 
+        "id": "uuid", // {planId}
+        "name": "Plan Name (Strength & Plyo Focused)", 
+        "description": "Updated description reflecting new focus on strength and plyometrics.",
+        "user_id": "uuid",
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": "2023-01-10T10:00:00Z", // Reflects AI modification time
+        "is_ai_modified": true, // Flag indicating the plan object itself was modified
+        "days": [
+          {
+            "id": "day1_uuid_existing", 
+            "name": "Day 1 - Lower Body Strength & Plyo",
+            "description": "Focused on squats, deadlifts, and new plyometric exercises.",
+            "order_index": 1,
+            "is_ai_modified": true, // This day was modified
+            "exercises": [
+              {
+                "id": "day1_ex1_uuid_existing",
+                "exercise_id": "global_squat_uuid", // Existing exercise
+                "order_index": 1,
+                // No is_ai_modified flag here means this exercise linkage was kept as is,
+                // but its sets might be modified.
+                "sets": [
+                  { 
+                    "id": "day1_ex1_set1_uuid_existing", 
+                    "set_index": 1, 
+                    "expected_reps": 5, 
+                    "expected_weight": 105, // Weight increased by AI
+                    "is_ai_modified": true // This set was modified
+                  },
+                  { 
+                    "id": "day1_ex1_set2_uuid_new_by_ai", // New set added by AI
+                    "set_index": 2, 
+                    "expected_reps": 8, 
+                    "expected_weight": 70,
+                    "is_ai_modified": true // This new set is an AI modification
+                  }
+                ]
+              },
+              {
+                "id": "day1_ex2_uuid_new_by_ai", // New training plan exercise entry
+                "exercise_id": "new_global_box_jump_uuid", // Assumes AI created Box Jump in global 'exercises' table
+                "order_index": 2,
+                "is_ai_modified": true, // This new exercise entry is an AI modification
+                "sets": [
+                  { 
+                    "id": "day1_ex2_set1_uuid_new_by_ai", 
+                    "set_index": 1, 
+                    "expected_reps": 10, 
+                    "expected_weight": 0, // Bodyweight
+                    "is_ai_modified": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "day2_uuid_existing",
+            "name": "Day 2 - Unchanged Upper Body",
+            "description": "Original upper body day.",
+            "order_index": 2,
+            "is_ai_modified": false, // Flag indicating the plan object itself was NOT modified
+            "exercises": [ /* ... original exercises and sets, with an additional 'is_ai_modified' flag set to false ... */ ]
+          }
+        ]
+      }
+    }
+    ```
+  - Success: 200 OK
+  - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found (`{planId}`).
+
+- **POST /training-plans/{planId}/composite**
+  - Description: Performs a composite update of an entire training plan (`{planId}`) belonging to the authenticated user. This includes its nested days, exercises, and sets. The server will determine whether to create, update, or delete these nested entities based on the provided payload compared to the current state of the plan.
+  - Request Body: A `TrainingPlanDto`-like structure. IDs for existing entities should be provided; new entities may omit IDs (server generates).
+    ```json
+    {
+      "name": "Completely Overhauled Plan",
+      "description": "New comprehensive description.",
+      "days": [
+        {
+          "id": "day1_uuid_existing_or_new", // If existing, server updates. If new/omitted, server creates.
+          "name": "New Day 1 Name",
+          "description": "...",
+          "order_index": 0,
+          "exercises": [
+            {
+              "id": "day1_ex1_uuid_existing_or_new",
+              "exercise_id": "global_exercise_uuid_1", // Refers to an exercise in the global 'exercises' table
+              "order_index": 0,
+              "sets": [
+                {
+                  "id": "day1_ex1_set1_uuid_existing_or_new",
+                  "set_index": 0,
+                  "expected_reps": 5,
+                  "expected_weight": 100
+                }
+                // ... other sets for this exercise
+              ]
+            }
+            // ... other exercises for this day
+          ]
+        }
+        // ... other days for this plan
+        // IMPORTANT: Days/exercises/sets NOT included in the payload but existing in DB for this plan will be DELETED.
+      ]
+    }
+    ```
+  - Example Response: The fully updated `TrainingPlanDto` reflecting all changes.
+    ```json
+    {
+      "id": "uuid", // {planId}
+      "name": "Completely Overhauled Plan",
+      "description": "New comprehensive description.",
+      "user_id": "uuid",
+      "updated_at": "YYYY-MM-DDTHH:mm:ssZ",
+      "days": [ /* ... resulting structure of days, exercises, sets ... */ ]
+    }
+    ```
+  - Success: 200 OK
+  - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found (`{planId}` or referenced `exercise_id`).
+  - Business Logic: Complex. Involves diffing the provided structure with the existing one. Handles CUD for plan itself, days, exercises, and sets. Manages `order_index` and `set_index` based on array order in payload. This should ideally be a transactional operation.
+
+- **POST /training-plans/{planId}/activate**
+  - Description: Sets the specified training plan (`{planId}`) as the active plan for the authenticated user by updating their profile. Triggers any associated business logic, such as training session recalculation (specifics of recalculation depend on application requirements).
+  - Request Body: None.
+  - Example Response:
+    ```json
+    {
+      "active_training_plan_id": "uuid" // {planId} that was activated
+    }
+    ```
+  - Success: 200 OK
+  - Errors: 401 Unauthorized, 403 Forbidden, 404 Not Found (`{planId}`).
+  - Business Logic:
+    1. Verify `{planId}` exists and belongs to the user.
+    2. Update `user_profiles.active_training_plan_id` for the authenticated user to `{planId}`.
+    3. Trigger training session recalculation logic.
 
 ### Training Plan Days
 
@@ -849,92 +1002,29 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     {
       "id": "uuid",
       "status": "COMPLETED",
-      "completed_at": "2023-01-01T00:00:00Z"
-    }
-    ```
-
-- **PATCH /training-sessions/{sessionId}/sets/{setId}/failed**
-  - Description: Mark a session set as failed and record the completion timestamp for a session belonging to the authenticated user.
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "status": "FAILED",
+      "actual_reps": 5,
       "completed_at": "2023-01-01T00:00:00Z"
     }
     ```
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-### AI-Driven Training Suggestions
-
-- **POST /ai/training-suggestions**
-  - Description: Provide AI-generated training plan suggestions based on user input/preferences. While the endpoint is public, suggestions are tailored to the authenticated user context if available.
-  - Request Body:
-    ```json
-    {
-      "query": "User preferences or query"
-    }
-    ```
+- **PATCH /training-sessions/{sessionId}/sets/{setId}/failed**
+  - Description: Mark a session set as FAILED, record the completion timestamp, and update the `actual_reps` performed for a session belonging to the authenticated user.
+  - Query Parameters:
+    - `reps` (integer, optional): The number of repetitions actually performed for this failed set. Must be a non-negative integer. Defaults to 0 if not provided.
   - Example Response:
     ```json
     {
-      "response": "Based on your fitness goals and experience level, I recommend this 2-day split focusing on progressive overload for compound movements. This plan incorporates adequate rest periods and targets all major muscle groups for balanced development.",
-      "training_plan": {
-        "id": "uuid",
-        "name": "Plan Name",
-        "description": "Optional description",
-        "user_id": "uuid",
-        "created_at": "2023-01-01T00:00:00Z",
-        "days": [
-          {
-            "id": "uuid",
-            "name": "Day 1",
-            "description": "Optional description",
-            "order_index": 1,
-            "exercises": [
-              {
-                "id": "uuid",
-                "exercise_id": "uuid",
-                "order_index": 1
-              },
-              {
-                "id": "uuid",
-                "exercise_id": "uuid",
-                "order_index": 2
-              }
-            ]
-          },
-          {
-            "id": "uuid",
-            "name": "Day 2",
-            "description": "Optional description",
-            "order_index": 2,
-            "exercises": [
-              {
-                "id": "uuid",
-                "exercise_id": "uuid",
-                "order_index": 1
-              },
-              {
-                "id": "uuid",
-                "exercise_id": "uuid",
-                "order_index": 2
-              }]
-          }
-        ]
-      },
-      "resource_links": [
-        {
-          "title": "Resource Title",
-          "url": "https://example.com"
-        }
-      ]
+      "id": "uuid",
+      "status": "FAILED",
+      "actual_reps": 0,
+      "completed_at": "2023-01-01T00:00:00Z"
     }
     ```
   - Success: 200 OK
-
-> All endpoints will support common query parameters for list endpoints such as `limit`, `offset` (or `page`), and `sort` where applicable.
+  - Errors: 401 Unauthorized, 404 Not Found
+  - Validation: Ensure `reps` query parameter, if provided, is a non-negative integer.
 
 ## 3. Authentication and Authorization
 
@@ -951,15 +1041,14 @@ All endpoints require that the client is authenticated. This means all data is v
   - `order_index`, `set_index`, and other numeric fields are validated to ensure uniqueness and proper sequencing.
 
 - **Business Logic**:
-  - **Automated `order_index` Management**: For list-based entities like `Training Plan Days` (within a plan), `Training Plan Exercises` (within a day), and `Training Plan Exercise Sets` (within an exercise), the API will automatically manage the `order_index` (or `set_index` for sets) to ensure a dense, sequential order.
+  - **Reordering**: For list-based entities like `Training Plan Days` (within a plan), `Training Plan Exercises` (within a day), and `Training Plan Exercise Sets` (within an exercise), the API will automatically manage the `order_index` (or `set_index` for sets) to ensure a dense, sequential order.
     - On **creation (POST)**, if an `order_index` is provided, the item will be inserted at that position, and subsequent items in the same list will have their `order_index` incremented. If no `order_index` is provided, the item will be appended to the end of the list.
-    - On **update (PUT/PATCH)** where an item's `order_index` is changed, the API will adjust the `order_index` of other items in the list to maintain sequence.
+    - On **update (PUT)** where an item's `order_index` is changed, the API will adjust the `order_index` of other items in the list to maintain sequence.
     - On **deletion (DELETE)**, the `order_index` of subsequent items in the same list will be decremented to close any gaps.
     This simplifies client-side logic and maintains data integrity.
-  - **Automated Weight Progression**: Upon successful completion of all sets in a training session, the system will update the corresponding training plan exercise progression by increasing the weight by the defined `weight_increment`. If a user records three consecutive failures on an exercise, a 10% deload is automatically applied (using the `deload_percentage` and `deload_strategy`).
+  - **Automated Weight Progression**: Upon activating a training plan, or marking a training session as complete, the system will update the corresponding training plan exercise progression by increasing the weight by the defined `weight_increment`. If a user records three consecutive failures on an exercise, a 10% deload is automatically applied (using the `deload_percentage` and `deload_strategy`).
   - **Active Session Tracking**: As users mark sets as completed (via the PATCH endpoints), the session and related metrics are updated in real-time.
-  - **Reordering**: Endpoints that modify the order of days or exercises (using PATCH requests) allow users to customize the flow of their training plan.
-  - **AI Integration**: The `/ai/training-suggestions` endpoint wraps the external AI service to provide tailored training suggestions and embed links to educational resources.
+  - **AI Integration**: The `/training-plans/{planId}/suggest` endpoint wraps the external AI service to provide tailored training suggestions.
 
 - **Error Handling**: The API will return appropriate HTTP status codes and error messages:
   - 400 Bad Request for validation errors.

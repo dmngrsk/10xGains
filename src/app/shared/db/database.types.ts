@@ -321,6 +321,7 @@ export interface Database {
           created_at: string | null
           first_name: string
           id: string
+          ai_suggestions_remaining: number
           updated_at: string | null
         }
         Insert: {
@@ -328,6 +329,7 @@ export interface Database {
           created_at?: string | null
           first_name: string
           id: string
+          ai_suggestions_remaining?: number
           updated_at?: string | null
         }
         Update: {
@@ -335,6 +337,7 @@ export interface Database {
           created_at?: string | null
           first_name?: string
           id?: string
+          ai_suggestions_remaining?: number
           updated_at?: string | null
         }
         Relationships: [

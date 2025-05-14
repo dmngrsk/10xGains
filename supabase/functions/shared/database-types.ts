@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-05-10T15:57:51.183Z
+ * Last updated: 2025-05-14T11:31:59.444Z
  */
 
 export type Json =
@@ -338,6 +338,7 @@ export interface Database {
           created_at: string | null
           first_name: string
           id: string
+          ai_suggestions_remaining: number
           updated_at: string | null
         }
         Insert: {
@@ -345,6 +346,7 @@ export interface Database {
           created_at?: string | null
           first_name: string
           id: string
+          ai_suggestions_remaining?: number
           updated_at?: string | null
         }
         Update: {
@@ -352,6 +354,7 @@ export interface Database {
           created_at?: string | null
           first_name?: string
           id?: string
+          ai_suggestions_remaining?: number
           updated_at?: string | null
         }
         Relationships: [
