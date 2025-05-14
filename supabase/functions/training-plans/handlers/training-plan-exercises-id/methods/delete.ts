@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const paramsSchema = z.object({
   planId: z.string().uuid('Invalid Plan ID format'),

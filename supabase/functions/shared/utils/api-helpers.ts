@@ -1,12 +1,5 @@
-/**
- * API Helper Types and Utilities
- *
- * This file contains helper types and utility functions for API responses
- * that aren't defined in the main api.types.ts file.
- */
-
 import { createClient, type SupabaseClient } from 'supabase';
-import type { Database } from './database-types.ts';
+import type { Database } from '../models/database-types.ts';
 
 // CORS headers for all Supabase Edge Functions
 export const corsHeaders = {

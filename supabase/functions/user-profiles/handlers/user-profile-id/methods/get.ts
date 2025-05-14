@@ -1,6 +1,6 @@
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
-import type { UserProfileDto } from '@shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { UserProfileDto } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 export async function handleGetUserProfile(
   { supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams'>

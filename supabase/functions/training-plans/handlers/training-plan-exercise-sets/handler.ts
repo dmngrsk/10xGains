@@ -1,4 +1,5 @@
-import { type ApiHandlerContext, type MethodHandlers, routeRequestToMethods } from '@shared/api-handler.ts';
+import { routeRequestToMethods } from '@shared/utils/api-handler.ts';
+import type { ApiHandlerContext, MethodHandlers } from '@shared/utils/api-handler.ts';
 import { handleGetTrainingPlanExerciseSets } from './methods/get.ts';
 import { handleCreateTrainingPlanExerciseSet } from './methods/post.ts';
 

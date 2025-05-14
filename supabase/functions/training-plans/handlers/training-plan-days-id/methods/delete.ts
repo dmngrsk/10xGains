@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 export async function handleDeleteTrainingPlanDayById(
   { supabaseClient, user, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams'>

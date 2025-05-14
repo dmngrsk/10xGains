@@ -1,7 +1,7 @@
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
-import type { CreateExerciseCommand, ExerciseDto } from '@shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { CreateExerciseCommand, ExerciseDto } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const CreateExerciseSchema = z.object({
   name: z.string().min(1, { message: 'Exercise name cannot be empty.' }),

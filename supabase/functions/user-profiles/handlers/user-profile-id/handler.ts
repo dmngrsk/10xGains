@@ -1,5 +1,5 @@
-import { routeRequestToMethods, type MethodHandlers } from '@shared/api-handler.ts';
-import type { ApiHandlerContext, PASS_ROUTE_INDICATOR } from '@shared/api-handler.ts';
+import { routeRequestToMethods, type MethodHandlers } from '@shared/utils/api-handler.ts';
+import type { ApiHandlerContext, PASS_ROUTE_INDICATOR } from '@shared/utils/api-handler.ts';
 import { handleGetUserProfile } from './methods/get.ts';
 import { handleUpdateUserProfile } from './methods/put.ts';
 

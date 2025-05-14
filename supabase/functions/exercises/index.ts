@@ -1,4 +1,4 @@
-import { createMainRouterHandler, type ApiRouterHandler } from '@shared/api-handler.ts';
+import { createMainRouterHandler, type ApiRouterHandler } from '@shared/utils/api-handler.ts';
 import { handleExercisesRoute } from './handlers/exercises/handler.ts';
 import { handleExerciseByIdRoute } from './handlers/exercises-id/handler.ts';
 

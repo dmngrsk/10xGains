@@ -1,7 +1,8 @@
-import { type ApiHandlerContext, MethodHandlers, routeRequestToMethods } from '@shared/api-handler.ts';
+import { routeRequestToMethods } from '@shared/utils/api-handler.ts';
+import type { ApiHandlerContext, MethodHandlers } from '@shared/utils/api-handler.ts';
 import { handleGetTrainingPlanExerciseProgression } from './methods/get.ts';
 import { handleUpsertTrainingPlanExerciseProgression } from './methods/put.ts';
-  
+
 const ABSOLUTE_PATH_PATTERN = '/training-plans/:planId/exercises/:exerciseId/progression';
 
 const methodHandlers: MethodHandlers = {

@@ -77,7 +77,7 @@ copyTypeFile(API_SOURCE_FILE, API_TARGET_FILE, "API", (content) => {
   // Update the import path to point to the correct database types file
   return content.replace(
     `import type { Database } from '../db/database.types';`,
-    `import type { Database } from './database-types';`
+    `import type { Database } from '@shared/models/database-types.ts';`
   );
 });
 

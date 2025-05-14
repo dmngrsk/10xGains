@@ -1,5 +1,5 @@
-import type { ApiHandlerContext, MethodHandlers } from '@shared/api-handler.ts';
-import { routeRequestToMethods } from '@shared/api-handler.ts';
+import { routeRequestToMethods } from '@shared/utils/api-handler.ts';
+import type { ApiHandlerContext, MethodHandlers } from '@shared/utils/api-handler.ts';
 import { handleGetTrainingPlanById } from './methods/get.ts';
 import { handlePutTrainingPlanById } from './methods/put.ts';
 import { handleDeleteTrainingPlanById } from './methods/delete.ts';
@@ -14,4 +14,4 @@ const methodHandlers: MethodHandlers = {
 
 export async function handleTrainingPlanByIdRoute(req: Request, context: ApiHandlerContext) {
   return await routeRequestToMethods(req, ABSOLUTE_PATH_PATTERN, methodHandlers, context);
-} 
+}

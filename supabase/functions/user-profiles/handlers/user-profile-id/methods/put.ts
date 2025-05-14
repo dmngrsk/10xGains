@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/api-helpers.ts';
-import type { UserProfileDto, UpdateUserProfileCommand } from '@shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/utils/api-helpers.ts';
+import type { UserProfileDto, UpdateUserProfileCommand } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const UpdateUserProfilePayloadSchema = z.object({
   first_name: z.string().optional(),

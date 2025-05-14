@@ -24,6 +24,7 @@
     "paths": {
       "supabase": ["./node_modules/@supabase/supabase-js"],
       "zod": ["./node_modules/zod"],
+      "@shared": ["./shared"],
     },
     "lib": ["ES2020", "DOM"]
   },

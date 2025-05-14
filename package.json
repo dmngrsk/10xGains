@@ -72,7 +72,7 @@
       "eslint --fix"
     ],
     "supabase/functions/**/*.ts": [
-      "deno lint"
+      "deno lint --fix"
     ]
   }
 }

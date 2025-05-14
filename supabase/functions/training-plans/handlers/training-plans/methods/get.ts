@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
-import type { TrainingPlanDto } from '@shared/api-types.ts';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { TrainingPlanDto } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const DEFAULT_PLANS_PAGE_LIMIT = 20;
 const MAX_PLANS_PAGE_LIMIT = 100;
@@ -24,7 +24,7 @@ export const listTrainingPlansQuerySchema = z.object({
 export async function handleGetTrainingPlans(
   { supabaseClient, user, url, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'url' | 'requestInfo'>
 ): Promise<Response> {
-  
+
   const queryParams = Object.fromEntries(url.searchParams);
   const validationResult = listTrainingPlansQuerySchema.safeParse(queryParams);
 

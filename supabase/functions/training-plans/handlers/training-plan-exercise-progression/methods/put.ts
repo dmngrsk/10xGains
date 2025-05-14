@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/api-helpers.ts';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import type { TrainingPlanExerciseProgressionDto, UpsertTrainingPlanExerciseProgressionCommand } from '@shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/utils/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
+import type { TrainingPlanExerciseProgressionDto, UpsertTrainingPlanExerciseProgressionCommand } from '@shared/models/api-types.ts';
 
 const updateProgressionBodySchema = z.object({
   weight_increment: z.number().positive().optional(),

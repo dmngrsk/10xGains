@@ -1,6 +1,6 @@
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
 import { z } from 'zod';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const PathParamsSchema = z.object({
   id: z.string().uuid({ message: 'Exercise ID must be a valid UUID.' }),

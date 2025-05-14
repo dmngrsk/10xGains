@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
-import type { CreateTrainingPlanCommand, TrainingPlanDto } from '@shared/api-types.ts';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { CreateTrainingPlanCommand, TrainingPlanDto } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 export const createTrainingPlanBodySchema = z.object({
   name: z.string().min(1).max(255),
@@ -11,7 +11,7 @@ export const createTrainingPlanBodySchema = z.object({
 export async function handleCreateTrainingPlan(
   { supabaseClient, user, req }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req'>
 ): Promise<Response> {
-  
+
   let body;
   try {
     body = await req.json();

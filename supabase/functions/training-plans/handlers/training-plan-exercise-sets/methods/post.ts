@@ -1,7 +1,7 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@shared/api-helpers.ts';
-import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import type { TrainingPlanExerciseSetDto, CreateTrainingPlanExerciseSetCommand } from '@shared/api-types.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
+import type { TrainingPlanExerciseSetDto, CreateTrainingPlanExerciseSetCommand } from '@shared/models/api-types.ts';
+import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
 const pathParamsSchema = z.object({
   planId: z.string().uuid({ message: 'Invalid Plan ID format' }),

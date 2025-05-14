@@ -1,12 +1,6 @@
+import { corsHeaders, createRequestInfo, createErrorResponse, createSupabaseClient, type SupabaseUser } from '../utils/api-helpers.ts';
 import type { SupabaseClient } from 'supabase';
-import type { Database } from './database-types.ts';
-import {
-  corsHeaders,
-  createRequestInfo,
-  createErrorResponse,
-  createSupabaseClient,
-  type SupabaseUser,
-} from './api-helpers.ts';
+import type { Database } from '../models/database-types.ts';
 
 /**
  * A special symbol to indicate that the current route handler did not match the request,
@@ -94,7 +88,7 @@ export async function routeRequestToMethods(
       console.error('Auth error or no user in session:', authError?.message);
       return createErrorResponse(401, 'Authentication required', { details: authError?.message || 'No user session' }, 'AUTH_REQUIRED', authError, context.requestInfo);
     }
-    
+
     context.user = { id: sessionUser.id, email: sessionUser.email };
   }
 

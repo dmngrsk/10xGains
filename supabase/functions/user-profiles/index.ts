@@ -1,4 +1,4 @@
-import { createMainRouterHandler, type ApiRouterHandler } from '@shared/api-handler.ts';
+import { createMainRouterHandler, type ApiRouterHandler } from '@shared/utils/api-handler.ts';
 import { handleUserProfileByIdRoute } from "./handlers/user-profile-id/handler.ts";
 
 const MAIN_FUNCTION_MOUNT_PATH = '/user-profiles';
