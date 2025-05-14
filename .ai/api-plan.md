@@ -4,11 +4,11 @@
 
 - **User Profiles**: Corresponds to the `user_profiles` table. This resource holds additional user data (e.g., first name, active training plan ID) and is linked to Supabase authentication.
 
+- **Exercises**: Corresponds to the `exercises` table. This resource includes predefined exercises (name and description) available for users to include in their plans.
+
 - **Training Plans**: Represents the `training_plans` table. It contains the plan name, associated user, and creation timestamp.
 
 - **Training Plan Days**: Maps to the `training_plan_days` table. These are the individual days within a training plan, each having a name, description, and order index.
-
-- **Exercises**: Corresponds to the `exercises` table. This resource includes predefined exercises (name and description) available for users to include in their plans.
 
 - **Training Plan Exercises**: Based on the `training_plan_exercises` table, this resource links a training day with an exercise and preserves the order of exercises.
 
@@ -28,7 +28,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
 
 ### User Profiles
 
-- **GET /profiles/{id}**
+- **GET /user-profiles/{id}**
   - Description: Retrieve the authenticated user's profile. The provided `{id}` must match the authenticated user's ID.
   - Example Response:
     ```json
@@ -44,7 +44,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 403 Forbidden
 
-- **PUT /profiles/{id}**
+- **PUT /user-profiles/{id}**
   - Description: Update profile details for the authenticated user. The `{id}` must match the authenticated user's ID.
   - Request Body:
     ```json
@@ -65,6 +65,79 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     ```
   - Success: 200 OK
   - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden
+
+### Exercises
+
+- **GET /exercises**
+  - Description: Retrieve a list of all available exercises. Global resource.
+  - Example Response:
+    ```json
+    [
+      {
+        "id": "uuid",
+        "name": "Squat",
+        "description": "A lower-body exercise."
+      }
+    ]
+    ```
+  - Success: 200 OK
+
+- **POST /exercises**
+  - Description: Create a new exercise.
+  - Request Body:
+    ```json
+    {
+      "name": "Exercise Name",
+      "description": "Details about the exercise"
+    }
+    ```
+  - Example Response:
+    ```json
+    {
+      "id": "uuid",
+      "name": "Exercise Name",
+      "description": "Details about the exercise"
+    }
+    ```
+  - Success: 201 Created
+  - Errors: 401 Unauthorized, 403 Forbidden
+
+- **GET /exercises/{id}**
+  - Description: Retrieve details of a specific exercise. Global resource.
+  - Example Response:
+    ```json
+    {
+      "id": "uuid",
+      "name": "Squat",
+      "description": "A lower-body exercise."
+    }
+    ```
+  - Success: 200 OK
+
+- **PUT /exercises/{id}**
+  - Description: Update an exercise.
+  - Request Body:
+    ```json
+    {
+      "name": "Updated Exercise Name",
+      "description": "Updated details about the exercise"
+    }
+    ```
+  - Example Response:
+    ```json
+    {
+      "id": "uuid",
+      "name": "Updated Exercise Name",
+      "description": "Updated details about the exercise"
+    }
+    ```
+  - Success: 200 OK
+  - Errors: 401 Unauthorized, 403 Forbidden
+
+- **DELETE /exercises/{id}**
+  - Description: Delete an exercise.
+  - Success: 204 No Content
+  - Errors: 401 Unauthorized, 403 Forbidden
 
 ### Training Plans
 
@@ -534,79 +607,6 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Description: Delete a day within a training plan owned by the authenticated user. Subsequent days in the plan will be re-indexed automatically by the server.
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
-
-### Exercises
-
-- **GET /exercises**
-  - Description: Retrieve a list of all available exercises. Global resource.
-  - Example Response:
-    ```json
-    [
-      {
-        "id": "uuid",
-        "name": "Squat",
-        "description": "A lower-body exercise."
-      }
-    ]
-    ```
-  - Success: 200 OK
-
-- **POST /exercises**
-  - Description: Create a new exercise.
-  - Request Body:
-    ```json
-    {
-      "name": "Exercise Name",
-      "description": "Details about the exercise"
-    }
-    ```
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "name": "Exercise Name",
-      "description": "Details about the exercise"
-    }
-    ```
-  - Success: 201 Created
-  - Errors: 401 Unauthorized, 403 Forbidden
-
-- **GET /exercises/{id}**
-  - Description: Retrieve details of a specific exercise. Global resource.
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "name": "Squat",
-      "description": "A lower-body exercise."
-    }
-    ```
-  - Success: 200 OK
-
-- **PUT /exercises/{id}**
-  - Description: Update an exercise.
-  - Request Body:
-    ```json
-    {
-      "name": "Updated Exercise Name",
-      "description": "Updated details about the exercise"
-    }
-    ```
-  - Example Response:
-    ```json
-    {
-      "id": "uuid",
-      "name": "Updated Exercise Name",
-      "description": "Updated details about the exercise"
-    }
-    ```
-  - Success: 200 OK
-  - Errors: 401 Unauthorized, 403 Forbidden
-
-- **DELETE /exercises/{id}**
-  - Description: Delete an exercise.
-  - Success: 204 No Content
-  - Errors: 401 Unauthorized, 403 Forbidden
 
 ### Training Plan Exercises
 

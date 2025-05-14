@@ -15,7 +15,7 @@ import {
   UpdateTrainingPlanExerciseCommand,
   CreateTrainingPlanCommand,
   TrainingPlanExerciseProgressionDto,
-  UpdateTrainingPlanExerciseProgressionCommand
+  UpsertTrainingPlanExerciseProgressionCommand
 } from '@shared/api/api.types';
 
 export type PlanServiceResponse<T> = ApiServiceResponse<T>;
@@ -306,7 +306,7 @@ export class PlanService {
   updateExerciseProgression(
     planId: string,
     exerciseId: string,
-    command: UpdateTrainingPlanExerciseProgressionCommand
+    command: UpsertTrainingPlanExerciseProgressionCommand
   ): Observable<PlanServiceResponse<TrainingPlanExerciseProgressionDto>> {
     if (!planId || !exerciseId) {
       return throwError(() => new Error('Plan ID and Exercise ID are required to update progression'));
@@ -316,6 +316,6 @@ export class PlanService {
     }
 
     const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;
-    return this.apiService.put<UpdateTrainingPlanExerciseProgressionCommand, TrainingPlanExerciseProgressionDto>(url, command);
+    return this.apiService.put<UpsertTrainingPlanExerciseProgressionCommand, TrainingPlanExerciseProgressionDto>(url, command);
   }
 }

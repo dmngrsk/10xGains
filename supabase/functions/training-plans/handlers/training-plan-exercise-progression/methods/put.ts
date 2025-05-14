@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/api-helpers.ts';
 import type { ApiHandlerContext } from '@shared/api-handler.ts';
-import type { TrainingPlanExerciseProgressionDto, UpdateTrainingPlanExerciseProgressionCommand } from '@shared/api-types.ts';
+import type { TrainingPlanExerciseProgressionDto, UpsertTrainingPlanExerciseProgressionCommand } from '@shared/api-types.ts';
 
 const updateProgressionBodySchema = z.object({
   weight_increment: z.number().positive().optional(),
@@ -21,7 +21,7 @@ const pathParamsSchema = z.object({
 });
 
 export async function handleUpsertTrainingPlanExerciseProgression(
-  { supabaseClient, rawPathParams, req, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'req' | 'requestInfo'>
+  { supabaseClient, rawPathParams, req }: Pick<ApiHandlerContext, 'supabaseClient' | 'rawPathParams' | 'req'>
 ) {
   if (!rawPathParams) {
     return createErrorResponse(500, 'Internal server error: Path parameters missing.');
@@ -29,14 +29,7 @@ export async function handleUpsertTrainingPlanExerciseProgression(
 
   const pathParamsValidation = pathParamsSchema.safeParse(rawPathParams);
   if (!pathParamsValidation.success) {
-    return createErrorResponse(
-      400,
-      'Invalid path parameters.',
-      pathParamsValidation.error.flatten(),
-      undefined,
-      undefined,
-      requestInfo
-    );
+    return createErrorResponse(400, 'Invalid path parameters.', pathParamsValidation.error.flatten());
   }
   const { planId, exerciseId } = pathParamsValidation.data;
 
@@ -49,95 +42,43 @@ export async function handleUpsertTrainingPlanExerciseProgression(
 
   const bodyValidation = updateProgressionBodySchema.safeParse(requestBody);
   if (!bodyValidation.success) {
-    return createErrorResponse(
-      400,
-      'Invalid request body.',
-      bodyValidation.error.flatten(),
-      undefined,
-      undefined,
-      requestInfo
-    );
+    return createErrorResponse(400, 'Invalid request body.', bodyValidation.error.flatten());
   }
-  const validatedBody = bodyValidation.data as UpdateTrainingPlanExerciseProgressionCommand;
+
+  const validatedData = bodyValidation.data as UpsertTrainingPlanExerciseProgressionCommand;
+
+  const { data: existingProgression, error } = await supabaseClient
+    .from('training_plan_exercise_progressions')
+    .select('*')
+    .eq('training_plan_id', planId)
+    .eq('exercise_id', exerciseId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching exercise progression for update:', error);
+    return createErrorResponse(500, 'Failed to fetch exercise progression details for update.', { details: error.message });
+  }
+
+  const dataToUpsert: Partial<TrainingPlanExerciseProgressionDto> = {
+    ...(existingProgression || {}),
+    ...stripUndefinedValues(validatedData),
+    training_plan_id: planId,
+    exercise_id: exerciseId,
+  };
 
   try {
-    const { data: existingProgressionFull, error: fetchError } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from('training_plan_exercise_progressions')
-      .select('*')
-      .eq('training_plan_id', planId)
-      .eq('exercise_id', exerciseId)
-      .maybeSingle();
+      .upsert(dataToUpsert, { onConflict: 'id' })
+      .select()
+      .single();
 
-    if (fetchError) {
-      console.error('Error fetching existing progression:', fetchError);
-      return createErrorResponse(500, 'Error checking for existing progression.', { details: fetchError.message });
+    if (error) {
+      console.error('Error updating exercise progression:', error);
+      return createErrorResponse(500, 'Failed to create or update exercise progression.');
     }
 
-    let savedProgression: TrainingPlanExerciseProgressionDto | null = null;
-    let statusCode = 200;
-
-    const changesToApply = stripUndefinedValues(validatedBody);
-
-    if (existingProgressionFull) {
-      statusCode = 200; // UPDATE path
-      const updatedRecord = {
-        ...existingProgressionFull,
-        ...changesToApply,
-        last_updated: new Date().toISOString(),
-      };
-
-      const { data, error } = await supabaseClient
-        .from('training_plan_exercise_progressions')
-        .update(updatedRecord)
-        .eq('id', existingProgressionFull.id)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error updating progression:', error);
-        return createErrorResponse(500, 'Failed to update progression data.', { details: error.message });
-      }
-      savedProgression = data;
-    } else {
-      statusCode = 201; // CREATE path
-      if (
-        validatedBody.weight_increment === undefined ||
-        validatedBody.failure_count_for_deload === undefined ||
-        validatedBody.current_weight === undefined
-      ) {
-        return createErrorResponse(
-          400,
-          'Missing required fields for creating a new progression: weight_increment, failure_count_for_deload, and current_weight are required.'
-        );
-      }
-
-      const insertData = {
-        training_plan_id: planId,
-        exercise_id: exerciseId,
-        ...changesToApply,
-        last_updated: new Date().toISOString(),
-      } as TrainingPlanExerciseProgressionDto;
-
-      const { data, error } = await supabaseClient
-        .from('training_plan_exercise_progressions')
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating progression:', error);
-        return createErrorResponse(500, 'Failed to create progression data.', { details: error.message });
-      }
-      savedProgression = data;
-    }
-
-    if (!savedProgression) {
-      console.error('Save operation did not return the expected record.');
-      return createErrorResponse(500, 'Failed to retrieve progression data after save.');
-    }
-
-    return createSuccessResponse<TrainingPlanExerciseProgressionDto>(statusCode, savedProgression);
-
+    return createSuccessResponse<TrainingPlanExerciseProgressionDto>(200, data as TrainingPlanExerciseProgressionDto);
   } catch (e) {
     console.error('Unexpected error in handleUpsertTrainingPlanExerciseProgression:', e);
     return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });
