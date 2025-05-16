@@ -204,9 +204,9 @@ Błędy będą obsługiwane za pomocą funkcji pomocniczych `createErrorResponse
 ### 9.3. Implementacja Path Handler dla `/exercises` (`supabase/functions/exercises/handlers/exercises/handler.ts`)
 1.  Zdefiniuj `ABSOLUTE_PATH_PATTERN = '/exercises'`.
 2.  Importuj `routeRequestToMethods` z `supabase/functions/shared/api-handler.ts`.
-3.  Importuj Method Handlery: `handleGetExercises` z `./methods/get.ts` i `handlePostExercise` z `./methods/post.ts`.
+3.  Importuj Method Handlery: `handleGetExercises` z `./methods/get.ts` i `handleCreateExercise` z `./methods/post.ts`.
 4.  Wyeksportuj funkcję `handleExercisesRoute(req, context)`:
-    -   Wywołaj `routeRequestToMethods` z `req`, `ABSOLUTE_PATH_PATTERN`, mapą metod (`{ GET: handleGetExercises, POST: handlePostExercise }`) i `context`.
+    -   Wywołaj `routeRequestToMethods` z `req`, `ABSOLUTE_PATH_PATTERN`, mapą metod (`{ GET: handleGetExercises, POST: handleCreateExercise }`) i `context`.
 
 ### 9.4. Implementacja Path Handler dla `/exercises/{id}` (`supabase/functions/exercises/handlers/exercise-id/handler.ts`)
 1.  Zdefiniuj `ABSOLUTE_PATH_PATTERN = '/exercises/:id'`.
@@ -227,7 +227,7 @@ Błędy będą obsługiwane za pomocą funkcji pomocniczych `createErrorResponse
 7.  Zwróć `createSuccessResponse(200, data)`.
 
 #### 9.5.2. `POST /exercises` (`supabase/functions/exercises/handlers/exercises/methods/post.ts`)
-1.  Wyeksportuj `async function handlePostExercise(context: ApiHandlerContext)`.
+1.  Wyeksportuj `async function handleCreateExercise(context: ApiHandlerContext)`.
 2.  Sprawdź uprawnienia administratora (np. `if (!context.user?.app_metadata?.roles?.includes('admin')) return createErrorResponse(403, 'Forbidden');`). Jeśli brak `context.user`, `createMainRouterHandler` powinien zwrócić 401.
 3.  Pobierz ciało żądania: `const body = await context.req.json()`.
 4.  Zwaliduj ciało żądania używając `CreateExerciseCommand` i Zod. Jeśli błąd, zwróć `createErrorResponse(400, ...)`.

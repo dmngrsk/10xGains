@@ -26,14 +26,13 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
     {
       "weight_increment": 2.5,                   // Opcjonalne (wymagane przy tworzeniu), NUMERIC(7,3) > 0
       "failure_count_for_deload": 3,             // Opcjonalne (wymagane przy tworzeniu), SMALLINT > 0
-      "current_weight": 50.0,                    // Opcjonalne (wymagane przy tworzeniu), NUMERIC(7,3) > 0
       "consecutive_failures": 0,                 // Opcjonalne, SMALLINT >= 0, domyślnie 0 przy tworzeniu
       "deload_percentage": 10.0,                 // Opcjonalne, NUMERIC(4,2) > 0, domyślnie 10.0 przy tworzeniu
       "deload_strategy": "PROPORTIONAL",         // Opcjonalne, ENUM('PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM'), domyślnie 'PROPORTIONAL'
       "reference_set_index": null                // Opcjonalne, SMALLINT >= 0 lub null
     }
     ```
-    -   Przy tworzeniu (jeśli zasób nie istnieje), pola `weight_increment`, `failure_count_for_deload`, `current_weight` są wymagane. Pozostałe mogą przyjąć wartości domyślne.
+    -   Przy tworzeniu (jeśli zasób nie istnieje), pola `weight_increment`, `failure_count_for_deload`, są wymagane. Pozostałe mogą przyjąć wartości domyślne.
     -   Przy aktualizacji, co najmniej jedno pole musi zostać dostarczone.
 
 ## 3. Wykorzystywane typy
@@ -45,7 +44,7 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
 -   **Command Model (Ciało żądania dla PUT):**
     -   `UpdateTrainingPlanExerciseProgressionCommand` (z `supabase/functions/shared/api-types.ts`)
       ```typescript
-      export type UpdateTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "current_weight" | "consecutive_failures" | "deload_percentage" | "deload_strategy" | "reference_set_index">;
+      export type UpdateTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "consecutive_failures" | "deload_percentage" | "deload_strategy" | "reference_set_index">;
       ```
 
 ## 4. Szczegóły odpowiedzi
@@ -60,7 +59,6 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
           "failure_count_for_deload": 3,
           "deload_percentage": 10.0,
           "deload_strategy": "PROPORTIONAL",
-          "current_weight": 50.0,
           "consecutive_failures": 0,
           "last_updated": "2023-01-01T00:00:00Z",
           "reference_set_index": null
@@ -101,14 +99,14 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
 3.  **Pobranie i walidacja ciała żądania:**
     -   Odczytaj ciało żądania.
     -   Zwaliduj je przy użyciu schematu Zod opartego na `UpdateTrainingPlanExerciseProgressionCommand`.
-    -   Dodatkowa walidacja (w logice serwera): Jeśli zasób nie istnieje (tworzenie), sprawdź, czy podano `weight_increment`, `failure_count_for_deload`, `current_weight`. Jeśli nie, `400 Bad Request`.
+    -   Dodatkowa walidacja (w logice serwera): Jeśli zasób nie istnieje (tworzenie), sprawdź, czy podano `weight_increment`, `failure_count_for_deload`. Jeśli nie, `400 Bad Request`.
 4.  **Weryfikacja nadrzędnych zasobów i uprawnień:**
     -   Sprawdź, czy `training_plan` o `planId` istnieje i należy do `context.user.id`. Jeśli nie, zwróć `404 Not Found`.
     -   Sprawdź, czy `exercise` (encja `exercises`) o `exerciseId` (z URL) istnieje. Jeśli nie, zwróć `404 Not Found` (lub `400 Bad Request`, traktując to jako nieprawidłowe `exerciseId` dla progresji).
 5.  **Operacja na bazie danych (Upsert - Create/Update):**
     -   Przygotuj dane do operacji upsert, łącząc `planId`, `exerciseId` z URL z danymi z ciała żądania.
     -   Użyj metody `.upsert()` klienta Supabase z opcją `onConflict: ['training_plan_id', 'exercise_id']`.
-        -   Pola do wstawienia/aktualizacji: `weight_increment`, `failure_count_for_deload`, `current_weight`, `consecutive_failures`, `deload_percentage`, `deload_strategy`, `reference_set_index`.
+        -   Pola do wstawienia/aktualizacji: `weight_increment`, `failure_count_for_deload`, `consecutive_failures`, `deload_percentage`, `deload_strategy`, `reference_set_index`.
         -   Automatycznie ustaw `last_updated` na `CURRENT_TIMESTAMP`.
         -   Pola takie jak `id` (dla `training_plan_exercise_progressions`) będą generowane przez bazę danych przy tworzeniu.
         -   Dla pól niepodanych w żądaniu przy tworzeniu, baza danych użyje wartości `DEFAULT` (np. dla `consecutive_failures`, `deload_percentage`, `deload_strategy`).
@@ -128,7 +126,7 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
 -   **`400 Bad Request`:**
     -   Nieprawidłowy format `planId` lub `exerciseId`.
     -   Nieprawidłowe ciało żądania w PUT (np. wartości poza zakresem, nieprawidłowa wartość `deload_strategy`).
-    -   Brak wymaganych pól (`weight_increment`, `failure_count_for_deload`, `current_weight`) w ciele żądania PUT podczas próby utworzenia nowego zasobu progresji.
+    -   Brak wymaganych pól (`weight_increment`, `failure_count_for_deload`) w ciele żądania PUT podczas próby utworzenia nowego zasobu progresji.
 -   **`401 Unauthorized`:** Token JWT.
 -   **`404 Not Found`:**
     -   Nie znaleziono planu treningowego (`planId`) należącego do uwierzytelnionego użytkownika.
@@ -175,7 +173,6 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
         const updateProgressionBodySchema = z.object({
           weight_increment: z.number().positive().optional(),
           failure_count_for_deload: z.number().int().positive().optional(),
-          current_weight: z.number().positive().optional(),
           consecutive_failures: z.number().int().min(0).optional(),
           deload_percentage: z.number().positive().optional(), // np. .max(100)
           deload_strategy: z.enum(['PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM']).optional(),
@@ -186,7 +183,7 @@ Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w
         ```
     -   Zaimplementuj logikę weryfikacji istnienia `training_plan` (i przynależności) oraz `exercise`.
     -   Zaimplementuj walidację ciała żądania przy użyciu zdefiniowanego `updateProgressionBodySchema`.
-    -   Dodaj logikę sprawdzającą, czy podczas tworzenia (jeśli zasób progresji nie istnieje) są obecne wymagane pola (`weight_increment`, `failure_count_for_deload`, `current_weight`).
+    -   Dodaj logikę sprawdzającą, czy podczas tworzenia (jeśli zasób progresji nie istnieje) są obecne wymagane pola (`weight_increment`, `failure_count_for_deload`).
     -   Użyj operacji `.upsert()` klienta Supabase.
     -   Zaimplementuj logikę determinującą kod statusu odpowiedzi (`200 OK` vs `201 Created`).
 

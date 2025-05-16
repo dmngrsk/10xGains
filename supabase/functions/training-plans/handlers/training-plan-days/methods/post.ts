@@ -9,7 +9,7 @@ const CreateTrainingPlanDayCommandSchema = z.object({
   order_index: z.number().int().positive({ message: 'Order index must be a positive integer.' }).optional(),
 });
 
-export async function handlePostTrainingPlanDay(
+export async function handleCreateTrainingPlanDay(
   { supabaseClient, user, req, rawPathParams }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'req' | 'rawPathParams'>
 ): Promise<Response> {
   let command;
@@ -57,7 +57,7 @@ export async function handlePostTrainingPlanDay(
     return createSuccessResponse<TrainingPlanDayDto>(201, newDay);
 
   } catch (error) {
-    console.error('Unexpected error in handlePostTrainingPlanDay RPC call:', error);
+    console.error('Unexpected error in handleCreateTrainingPlanDay RPC call:', error);
     return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

@@ -22,21 +22,13 @@ export const listTrainingPlansQuerySchema = z.object({
 });
 
 export async function handleGetTrainingPlans(
-  { supabaseClient, user, url, requestInfo }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'url' | 'requestInfo'>
+  { supabaseClient, user, url }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'url'>
 ): Promise<Response> {
-
   const queryParams = Object.fromEntries(url.searchParams);
   const validationResult = listTrainingPlansQuerySchema.safeParse(queryParams);
 
   if (!validationResult.success) {
-    return createErrorResponse(
-      400,
-      'Invalid query parameters',
-      validationResult.error.flatten(),
-      undefined,
-      undefined,
-      requestInfo
-    );
+    return createErrorResponse(400, 'Invalid query parameters', validationResult.error.flatten());
   }
 
   const { limit, offset, sort } = validationResult.data;

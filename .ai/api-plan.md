@@ -259,14 +259,14 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
                   "expected_reps": 5,
                   "expected_weight": 20,
                   "training_plan_exercise_id": "uuid"
-							  },
+                },
                 {
                   "id": "uuid",
                   "set_index": 2,
                   "expected_reps": 5,
                   "expected_weight": 20,
                   "training_plan_exercise_id": "uuid"
-							  },
+                },
               ]
             },
             {
@@ -451,22 +451,6 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found (`{planId}` or referenced `exercise_id`).
   - Business Logic: Complex. Involves diffing the provided structure with the existing one. Handles CUD for plan itself, days, exercises, and sets. Manages `order_index` and `set_index` based on array order in payload. This should ideally be a transactional operation.
 
-- **POST /training-plans/{planId}/activate**
-  - Description: Sets the specified training plan (`{planId}`) as the active plan for the authenticated user by updating their profile. Triggers any associated business logic, such as training session recalculation (specifics of recalculation depend on application requirements).
-  - Request Body: None.
-  - Example Response:
-    ```json
-    {
-      "active_training_plan_id": "uuid" // {planId} that was activated
-    }
-    ```
-  - Success: 200 OK
-  - Errors: 401 Unauthorized, 403 Forbidden, 404 Not Found (`{planId}`).
-  - Business Logic:
-    1. Verify `{planId}` exists and belongs to the user.
-    2. Update `user_profiles.active_training_plan_id` for the authenticated user to `{planId}`.
-    3. Trigger training session recalculation logic.
-
 ### Training Plan Days
 
 - **GET /training-plans/{planId}/days**
@@ -514,6 +498,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     ]
     ```
   - Success: 200 OK
+  - Errors: 401 Unauthorized, 403 Forbidden
 
 - **POST /training-plans/{planId}/days**
   - Description: Create a new day for the authenticated user's training plan. The server automatically manages `order_index` – appends if not provided by the client, or inserts at the specified `order_index` and shifts subsequent days accordingly.
@@ -781,7 +766,6 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "failure_count_for_deload": 3,
       "deload_percentage": 10.0,
       "deload_strategy": "PROPORTIONAL",
-      "current_weight": 50.0,
       "consecutive_failures": 0,
       "last_updated": "2023-01-01T00:00:00Z"
     }
@@ -790,13 +774,12 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /training-plans/{planId}/exercises/{exerciseId}/progression**
-  - Description: Update progression details (e.g., `current_weight`, `consecutive_failures`) for an exercise in a training plan belonging to the authenticated user.
+  - Description: Update progression details (e.g., `consecutive_failures`) for an exercise in a training plan belonging to the authenticated user.
   - Request Body:
     ```json
     {
       "weight_increment": 2.5,
-      "failure_count_for_deload": 3,
-      "current_weight": 50.0
+      "failure_count_for_deload": 3
     }
     ```
   - Example Response:
@@ -809,7 +792,6 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "failure_count_for_deload": 3,
       "deload_percentage": 10.0,
       "deload_strategy": "PROPORTIONAL",
-      "current_weight": 50.0,
       "consecutive_failures": 0,
       "last_updated": "2023-01-01T00:00:00Z"
     }
@@ -832,7 +814,24 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
         "training_plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
-        "status": "IN_PROGRESS"
+        "status": "IN_PROGRESS",
+        "sets": [
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid1", 
+          "set_index": 1,
+          "actual_weight": 5,
+          "actual_reps": 102.5,
+          "status": "PENDING"
+        },
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid2",
+          "set_index": 1,
+          "actual_weight": 8,
+          "actual_reps": 60,
+          "status": "PENDING"
+        }
       }
     ]
     ```
@@ -840,7 +839,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 403 Forbidden
 
 - **POST /training-sessions**
-  - Description: Create a new training session for a given training plan and a specific day for the authenticated user.
+  - Description: Create a new training session for a given training plan and a specific day for the authenticated user. This endpoint also automatically generates the initial `session_set` entities for the session, based on the exercises and sets defined in the referenced `training_plan_day_id`. Any applicable progression logic (e.g., weight increases) will be applied to determine the initial `expected_weight` for these session sets. The newly created session, along with its pre-generated sets, is returned in the response.
   - Request Body:
     ```json
     {
@@ -855,12 +854,32 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "training_plan_id": "uuid",
       "training_plan_day_id": "uuid",
       "user_id": "uuid",
-      "session_date": "2023-01-01T00:00:00Z",
-      "status": "IN_PROGRESS"
+      "session_date": "2023-10-27T10:00:00Z",
+      "status": "IN_PROGRESS",
+      "sets": [
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid1", 
+          "set_index": 1,
+          "actual_weight": 5,
+          "actual_reps": 102.5,
+          "status": "PENDING"
+        },
+        // ...
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid2",
+          "set_index": 1,
+          "actual_weight": 8,
+          "actual_reps": 60,
+          "status": "PENDING"
+        },
+        // ...
+      ]
     }
     ```
   - Success: 201 Created
-  - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden
+  - Errors: 400 Bad Request, 401 Unauthorized, 403 Forbidden, 404 Not Found
 
 - **GET /training-sessions/{sessionId}**
   - Description: Retrieve details of a specific training session belonging to the authenticated user.
@@ -872,7 +891,24 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "training_plan_day_id": "uuid",
       "user_id": "uuid",
       "session_date": "2023-01-01T00:00:00Z",
-      "status": "IN_PROGRESS"
+      "status": "IN_PROGRESS",
+      "sets": [
+      {
+        "id": "uuid",
+        "training_plan_exercise_id": "uuid1", 
+        "set_index": 1,
+        "actual_weight": 5,
+        "actual_reps": 102.5,
+        "status": "PENDING"
+      },
+      {
+        "id": "uuid",
+        "training_plan_exercise_id": "uuid2",
+        "set_index": 1,
+        "actual_weight": 8,
+        "actual_reps": 60,
+        "status": "PENDING"
+      }
     }
     ```
   - Success: 200 OK
@@ -890,6 +926,10 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     ```json
     {
       "id": "uuid",
+      "training_plan_id": "uuid",
+      "training_plan_day_id": "uuid",
+      "user_id": "uuid",
+      "session_date": "2023-01-01T00:00:00Z",
       "status": "CANCELLED"
     }
     ```
@@ -901,17 +941,22 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 204 No Content
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **PATCH /training-sessions/{sessionId}/complete**
-  - Description: Mark a session as COMPLETED, triggering business logic for updating exercise progressions, for a session belonging to the authenticated user.
+- **POST /training-sessions/{sessionId}/complete**
+  - Description: Mark a session as COMPLETED, triggering business logic for updating exercise progressions for the involved exercises, for a session belonging to the authenticated user.
   - Example Response:
     ```json
     {
       "id": "uuid",
+      "training_plan_id": "uuid",
+      "training_plan_day_id": "uuid",
+      "user_id": "uuid",
+      "session_date": "2023-01-01T19:16:42Z", // Updated with the current timestamp 
       "status": "COMPLETED"
     }
     ```
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
+  - Business Logic: Marking a training session as complete (via `POST /training-sessions/{sessionId}/complete`) will trigger an update to the corresponding `training_plan_exercise_progression` for each exercise in that session. This involves increasing the weight by the defined `weight_increment` if the exercise was completed successfully, or applying deload logic (e.g., 10% deload after three consecutive failures based on `deload_percentage` and `deload_strategy`). The weight changes will be applied to the `training_plan_exercise_sets` entities related to the session's training plan.
 
 ### Session Sets
 
@@ -995,6 +1040,11 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
   - Validation: Ensure `actual_reps` and `actual_weight` are greater than 0.
 
+- **DELETE /training-sessions/{sessionId}/sets/{setId}**
+  - Description: Delete a session set belonging to the authenticated user. Subsequent sets for this exercise and session will be re-indexed automatically by the server.
+  - Success: 204 No Content
+  - Errors: 401 Unauthorized, 404 Not Found
+  
 - **PATCH /training-sessions/{sessionId}/sets/{setId}/complete**
   - Description: Mark a session set as completed and record the completion timestamp for a session belonging to the authenticated user.
   - Example Response:
@@ -1009,7 +1059,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
-- **PATCH /training-sessions/{sessionId}/sets/{setId}/failed**
+- **PATCH /training-sessions/{sessionId}/sets/{setId}/fail**
   - Description: Mark a session set as FAILED, record the completion timestamp, and update the `actual_reps` performed for a session belonging to the authenticated user.
   - Query Parameters:
     - `reps` (integer, optional): The number of repetitions actually performed for this failed set. Must be a non-negative integer. Defaults to 0 if not provided.
@@ -1046,8 +1096,8 @@ All endpoints require that the client is authenticated. This means all data is v
     - On **update (PUT)** where an item's `order_index` is changed, the API will adjust the `order_index` of other items in the list to maintain sequence.
     - On **deletion (DELETE)**, the `order_index` of subsequent items in the same list will be decremented to close any gaps.
     This simplifies client-side logic and maintains data integrity.
-  - **Automated Weight Progression**: Upon activating a training plan, or marking a training session as complete, the system will update the corresponding training plan exercise progression by increasing the weight by the defined `weight_increment`. If a user records three consecutive failures on an exercise, a 10% deload is automatically applied (using the `deload_percentage` and `deload_strategy`).
-  - **Active Session Tracking**: As users mark sets as completed (via the PATCH endpoints), the session and related metrics are updated in real-time.
+  - **Automated Weight Progression**: Marking a training session as complete (via `POST /training-sessions/{sessionId}/complete`) will trigger an update to the corresponding `training_plan_exercise_progression` for each exercise in that session. This involves increasing the weight by the defined `weight_increment` if the exercise was completed successfully, or applying deload logic (e.g., 10% deload after three consecutive failures based on `deload_percentage` and `deload_strategy`).
+  - **Active Session Tracking**: As users mark sets as completed or failed (via the PATCH session set endpoints), the session's overall status and related metrics are updated in real-time.
   - **AI Integration**: The `/training-plans/{planId}/suggest` endpoint wraps the external AI service to provide tailored training suggestions.
 
 - **Error Handling**: The API will return appropriate HTTP status codes and error messages:

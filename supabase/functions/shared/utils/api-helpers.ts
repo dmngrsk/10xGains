@@ -271,3 +271,40 @@ export function stripUndefinedValues<T extends Record<string, unknown>>(
   }
   return result;
 }
+
+/**
+ * Checks if the request body is empty or effectively empty (e.g., contains only '{}').
+ * This function first checks the 'content-length' header. If it indicates an empty body,
+ * it returns true. Otherwise, it attempts to clone the request, read its body as text,
+ * and checks if the trimmed text is an empty string or an empty JSON object string ('{}').
+ *
+ * Note: Cloning and reading the request body consumes it. If the original request body
+ * needs to be read later, ensure this function is called on a clone or that the body
+ * is re-fetched/re-constructed if necessary for subsequent operations.
+ * However, for typical use cases like validating an empty body for POST/PUT requests
+ * that shouldn't have one, this consumption is usually not an issue.
+ *
+ * @param req The Request object to check.
+ * @returns A Promise that resolves to true if the body is empty, false otherwise.
+ */
+export async function isRequestBodyEmpty(req: Request): Promise<boolean> {
+  const contentLength = req.headers.get('content-length');
+  if (!contentLength || parseInt(contentLength, 10) === 0) {
+    return true;
+  }
+  try {
+    // Clone the request to read its body without consuming the original request's body stream
+    // if it were to be read again (though for this function's purpose, it's usually a final check).
+    const clonedReq = req.clone();
+    const bodyText = await clonedReq.text();
+    const trimmedBody = bodyText.trim();
+    // Check for empty string or an empty JSON object string
+    return trimmedBody === '' || trimmedBody === '{}';
+  } catch (error) {
+    // If reading the body fails (e.g., network error, already consumed elsewhere unexpectedly),
+    // log a warning. It's safer to assume the body is not empty in case of an error reading it,
+    // especially if content-length indicated there was content.
+    console.warn('Could not definitively read request body to check for emptiness:', error);
+    return false;
+  }
+}

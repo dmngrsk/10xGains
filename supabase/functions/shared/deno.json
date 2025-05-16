@@ -7,7 +7,8 @@
     "rules": {
       "tags": ["recommended"],
       "exclude": ["no-explicit-any"]
-    }
+    },
+    "exclude": ["**/*.test.ts"]
   },
   "imports": {
     "supabase": "https://esm.sh/@supabase/supabase-js@2.42.0",

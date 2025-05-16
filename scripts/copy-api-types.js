@@ -21,17 +21,10 @@ const fs = require("fs");
 const path = require("path");
 
 // Paths
-const API_SOURCE_FILE = path.join(__dirname, "../src/app/shared/api/api.types.ts");
-const DB_SOURCE_FILE = path.join(__dirname, "../src/app/shared/db/database.types.ts");
-const TARGET_DIR = path.join(__dirname, "../supabase/functions/shared");
-const API_TARGET_FILE = path.join(TARGET_DIR, "api-types.ts");
-const DB_TARGET_FILE = path.join(TARGET_DIR, "database-types.ts");
-
-// Ensure target directory exists
-if (!fs.existsSync(TARGET_DIR)) {
-  console.log(`Creating directory: ${TARGET_DIR}`);
-  fs.mkdirSync(TARGET_DIR, { recursive: true });
-}
+const API_SOURCE_FILE = path.join(__dirname, "../supabase/functions/shared/models/api-types.ts");
+const DB_SOURCE_FILE = path.join(__dirname, "../supabase/functions/shared/models/database-types.ts");
+const API_TARGET_FILE = path.join(__dirname, "../src/app/shared/api/api.types.ts");
+const DB_TARGET_FILE = path.join(__dirname, "../src/app/shared/db/database.types.ts");
 
 // Function to copy and transform a file
 function copyTypeFile(sourceFile, targetFile, type, transformContent = null) {
@@ -76,8 +69,8 @@ copyTypeFile(DB_SOURCE_FILE, DB_TARGET_FILE, "Database");
 copyTypeFile(API_SOURCE_FILE, API_TARGET_FILE, "API", (content) => {
   // Update the import path to point to the correct database types file
   return content.replace(
+    `import type { Database } from './database-types.ts';`,
     `import type { Database } from '../db/database.types';`,
-    `import type { Database } from '@shared/models/database-types.ts';`
   );
 });
 

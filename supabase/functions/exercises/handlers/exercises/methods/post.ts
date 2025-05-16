@@ -8,7 +8,7 @@ const CreateExerciseSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-export async function handlePostExercise(
+export async function handleCreateExercise(
   { req, supabaseClient }: Pick<ApiHandlerContext, 'req' | 'supabaseClient'>
 ) {
   let body: CreateExerciseCommand;

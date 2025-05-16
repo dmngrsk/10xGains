@@ -152,15 +152,7 @@ export function createMainRouterHandler(
       }
     }
 
-    const requestInfo = createRequestInfo(req);
     console.warn(`No handler matched for ${req.method} ${req.url} (function mount: ${functionMountPath})`);
-    return createErrorResponse(
-      404,
-      `The requested endpoint was not found within the ${functionMountPath} function scope.`,
-      undefined,
-      'NOT_FOUND',
-      undefined,
-      requestInfo
-    );
+    return createErrorResponse(404, `The requested endpoint was not found.`);
   };
 }

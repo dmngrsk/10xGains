@@ -13,7 +13,7 @@ const bodySchema = z.object({
   order_index: z.number().int().min(1, 'Order index must be a positive integer').optional(),
 });
 
-export async function handlePostTrainingPlanExercise(
+export async function handleCreateTrainingPlanExercise(
   { supabaseClient, user, rawPathParams, req }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams' | 'req'>
 ): Promise<Response> {
 

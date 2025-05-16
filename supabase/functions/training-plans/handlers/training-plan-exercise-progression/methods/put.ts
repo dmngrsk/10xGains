@@ -6,7 +6,6 @@ import type { TrainingPlanExerciseProgressionDto, UpsertTrainingPlanExerciseProg
 const updateProgressionBodySchema = z.object({
   weight_increment: z.number().positive().optional(),
   failure_count_for_deload: z.number().int().positive().optional(),
-  current_weight: z.number().positive().optional(),
   consecutive_failures: z.number().int().min(0).optional(),
   deload_percentage: z.number().max(100).positive().optional(),
   deload_strategy: z.enum(['PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM']).optional(),
@@ -67,6 +66,8 @@ export async function handleUpsertTrainingPlanExerciseProgression(
   };
 
   try {
+    console.log(dataToUpsert);
+
     const { data, error } = await supabaseClient
       .from('training_plan_exercise_progressions')
       .upsert(dataToUpsert, { onConflict: 'id' })

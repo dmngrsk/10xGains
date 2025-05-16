@@ -641,6 +641,39 @@ Adds a new exercise to a specified training day. `order_index` is managed by the
 -   **Response (404 Not Found)**: If the training plan, day, or the referenced global exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
+#### GET /training-plans/{planId}/days/{dayId}/exercises/{planExerciseId}
+
+Retrieves a specific exercise within a training day by its ID. Includes associated sets.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the training plan.
+    -   `dayId` (UUID, required): The ID of the training plan day.
+    -   `planExerciseId` (UUID, required): The ID of the training plan exercise entry to retrieve.
+-   **Response (200 OK)**: The `TrainingPlanExerciseDto` object, including `sets`.
+    ```json
+    {
+      "id": "uuid",
+      "exercise_id": "uuid", // References the global exercises table
+      "training_plan_day_id": "uuid",
+      "order_index": 1,
+      "sets": [
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid",
+          "set_index": 1,
+          "expected_reps": 10,
+          "expected_weight": 52.5
+        }
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If any path parameter format is invalid.
+    -   `401 Unauthorized`: If the authentication token is missing or invalid.
+    -   `404 Not Found`: If the training plan, day, or specific plan exercise is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
 #### PUT /training-plans/{planId}/days/{dayId}/exercises/{planExerciseId}
 
 Updates an existing exercise within a training day, primarily for reordering.
@@ -848,7 +881,6 @@ Retrieves the progression rule for a specific exercise within a training plan da
       "failure_count_for_deload": 3,
       "deload_percentage": 10.0,
       "deload_strategy": "PROPORTIONAL",
-      "current_weight": 50.0,
       "consecutive_failures": 0,
       "last_updated": "2023-01-01T00:00:00Z",
       "reference_set_index": null
@@ -867,12 +899,11 @@ Creates or updates (upserts) the progression rule for a specific exercise within
 -   **URL Path Parameters**:
     -   `planId` (UUID, required): The ID of the training plan.
     -   `exerciseId` (UUID, required): The ID of the exercise (from the global `exercises` table).
--   **Request Body**: `UpdateTrainingPlanExerciseProgressionCommand` (at least one field must be present for an update; `weight_increment`, `failure_count_for_deload`, `current_weight` are required if creating a new progression rule for an exercise that doesn't have one).
+-   **Request Body**: `UpdateTrainingPlanExerciseProgressionCommand` (at least one field must be present for an update; `weight_increment`, `failure_count_for_deload` are required if creating a new progression rule for an exercise that doesn't have one).
     ```json
     {
       "weight_increment": 2.5,                // Optional (Required for create), NUMERIC(7,3) > 0
       "failure_count_for_deload": 3,          // Optional (Required for create), SMALLINT > 0
-      "current_weight": 50.0,                 // Optional (Required for create), NUMERIC(7,3) > 0
       "consecutive_failures": 0,              // Optional, SMALLINT >= 0
       "deload_percentage": 10.0,              // Optional, NUMERIC(4,2) > 0
       "deload_strategy": "PROPORTIONAL",      // Optional, ENUM('PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM')
@@ -885,3 +916,427 @@ Creates or updates (upserts) the progression rule for a specific exercise within
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the training plan or exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+### Training Sessions API
+
+The Training Sessions API is served by the `supabase/functions/training-sessions` Edge Function. It manages user training sessions, allowing for creation, listing, retrieval, updates (e.g., cancellation), and marking sessions as complete, which triggers exercise progression logic. All operations require Bearer token authorization and are scoped to the authenticated user's data.
+
+#### GET /training-sessions
+
+Lists all training sessions for the authenticated user. Supports pagination, sorting, and filtering.
+
+-   **Authorization**: Bearer token required.
+-   **URL Query Parameters**:
+    -   `limit` (optional, integer, default: 20, max: 100): Number of sessions to return.
+    -   `offset` (optional, integer, default: 0): Offset for pagination.
+    -   `order` (optional, string, default: `session_date.desc`): Sort criteria (e.g., `session_date.asc`, `status.asc`).
+    -   `status` (optional, string): Filter by session status (e.g., `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
+    -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
+-   **Response (200 OK)**: An array of `TrainingSessionDto` objects.
+    ```json
+    [
+      {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "user_id": "uuid",
+        "session_date": "2023-01-01T00:00:00Z",
+        "status": "IN_PROGRESS",
+        "sets": [
+          {
+            "id": "uuid",
+            "training_session_id": "uuid", // Matches parent session ID
+            "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+            "set_index": 1,
+            "actual_weight": 50.0,
+            "actual_reps": 10,
+            "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
+            "completed_at": null // or timestamp
+          }
+          // ... other sets for this session
+        ]
+      }
+    ]
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If query parameters are invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
+#### POST /training-sessions
+
+Creates a new training session for the authenticated user.
+If `training_plan_day_id` is not provided, the system determines it:
+- If historical completed sessions exist for the `training_plan_id`, the next `training_plan_day_id` in sequence is chosen.
+- Otherwise, the first `training_plan_day_id` of the `training_plan_id` is chosen.
+Once the `training_plan_day_id` is determined (either provided or automatically selected), new `session_sets` are automatically created for the session. These sets are based on the `training_plan_exercise_sets` defined for the determined day. `actual_reps` and `actual_weight` for these new sets are initialized from the `expected_reps` and `expected_weight` of the plan, and their `status` is set to `PENDING`.
+
+-   **Authorization**: Bearer token required.
+-   **Request Body**: `CreateTrainingSessionCommand`
+    ```json
+    {
+      "training_plan_id": "uuid", // Required
+      "training_plan_day_id": "uuid" // Optional. If not provided, it's determined automatically.
+    }
+    ```
+-   **Response (201 Created)**: The newly created `TrainingSessionDto` object, including auto-generated `session_sets`.
+    ```json
+    {
+      "id": "uuid", // ID of the new session
+      "training_plan_id": "uuid", // As provided
+      "training_plan_day_id": "uuid", // Provided or determined
+      "user_id": "uuid", // ID of the authenticated user
+      "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
+      "status": "IN_PROGRESS", // Default status
+      "sets": [ // Auto-created session sets
+        {
+          "id": "uuid", // ID of the new session set
+          "training_session_id": "uuid", // Matches parent session ID
+          "training_plan_exercise_id": "uuid", // From the plan day's exercise
+          "set_index": 1,
+          "actual_weight": 50.0, // Initialized from plan's expected_weight
+          "actual_reps": 10,     // Initialized from plan's expected_reps
+          "status": "PENDING",
+          "completed_at": null
+        }
+        // ... other auto-created sets based on the plan day
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If the request body is invalid, or if the referenced `training_plan_id` or `training_plan_day_id` is not found or not accessible to the user.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
+#### GET /training-sessions/{sessionId}
+
+Retrieves a specific training session by its ID, if it belongs to the authenticated user.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session.
+-   **Response (200 OK)**: The `TrainingSessionDto` object.
+    ```json
+    {
+      "id": "uuid",
+      "training_plan_id": "uuid",
+      "training_plan_day_id": "uuid",
+      "user_id": "uuid",
+      "session_date": "2023-01-01T00:00:00Z",
+      "status": "IN_PROGRESS",
+      "sets": [
+        {
+          "id": "uuid",
+          "training_session_id": "uuid", // Matches parent session ID
+          "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+          "set_index": 1,
+          "actual_weight": 50.0,
+          "actual_reps": 10,
+          "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
+          "completed_at": null // or timestamp
+        }
+        // ... other sets for this session
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
+#### PUT /training-sessions/{sessionId}
+
+Updates the status of an existing training session (e.g., to cancel it).
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session.
+-   **Request Body**: `UpdateTrainingSessionCommand`
+    ```json
+    {
+      "status": "CANCELLED" // e.g., 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
+    }
+    ```
+-   **Response (200 OK)**: The full, updated `TrainingSessionDto` object, including any nested sets.
+    ```json
+    {
+      "id": "uuid",
+      "training_plan_id": "uuid",
+      "training_plan_day_id": "uuid",
+      "user_id": "uuid",
+      "session_date": "2023-01-01T00:00:00Z",
+      "status": "CANCELLED", // Updated status
+      "sets": [
+        {
+          "id": "uuid",
+          "training_session_id": "uuid",
+          "training_plan_exercise_id": "uuid",
+          "set_index": 1,
+          "actual_weight": 50.0,
+          "actual_reps": 10,
+          "status": "PENDING",
+          "completed_at": null
+        }
+        // ... other existing sets for this session
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid or the request body is invalid (e.g., invalid status).
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
+#### DELETE /training-sessions/{sessionId}
+
+Deletes a specific training session by its ID, if it belongs to the authenticated user. Associated session sets are deleted via cascading delete in the database.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session to delete.
+-   **Response (204 No Content)**: Indicates successful deletion.
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
+#### POST /training-sessions/{sessionId}/complete
+
+Marks a training session as completed and triggers exercise progression logic.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session to complete.
+-   **Request Body**: Empty (`CompleteTrainingSessionCommand` is `Record<string, never>`).
+-   **Response (200 OK)**: The full, updated `TrainingSessionDto` object (including nested fields like `sets`) with status set to `COMPLETED`.
+    ```json
+    {
+      "id": "uuid",
+      "training_plan_id": "uuid",
+      "training_plan_day_id": "uuid",
+      "user_id": "uuid",
+      "session_date": "2023-01-01T00:00:00Z",
+      "status": "COMPLETED",
+      "sets": [
+        {
+          "id": "uuid",
+          "training_session_id": "uuid", 
+          "training_plan_exercise_id": "uuid",
+          "set_index": 1,
+          "actual_weight": 50.0,
+          "actual_reps": 10,
+          "status": "COMPLETED", // Example: sets also marked completed
+          "completed_at": "2023-01-02T10:30:00Z"
+        }
+        // ... other sets for this session, likely also completed
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid or the session is not in a state that can be completed (e.g., already 'CANCELLED' or 'COMPLETED').
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `500 Internal Server Error`: For unexpected server issues, especially during progression logic.
+
+### Session Sets API
+
+Manages sets within a specific training session. These endpoints are part of the `training-sessions` Edge Function. All require Bearer token authorization.
+
+#### GET /training-sessions/{sessionId}/sets
+
+Retrieves a list of all sets for a specified training session.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+-   **Response (200 OK)**: An array of `SessionSetDto` objects.
+    ```json
+    [
+      {
+        "id": "uuid",
+        "training_session_id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "actual_weight": 57.5,
+        "actual_reps": 5,
+        "status": "PENDING",
+        "completed_at": null
+      }
+    ]
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### POST /training-sessions/{sessionId}/sets
+
+Creates a new set for a specified training session.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+-   **Request Body**: `CreateSessionSetCommand`
+    ```json
+    {
+      "training_plan_exercise_id": "uuid", // Required, ID from training_plan_exercises
+      "set_index": 1, // Optional, SMALLINT >= 1. If provided, inserts at this position and shifts others. If omitted, appends to the end.
+      "actual_weight": 57.5, // Required, NUMERIC(7,3) >= 0
+      "actual_reps": 5, // Required, SMALLINT >= 0
+      "status": "PENDING",  // Optional, e.g., 'PENDING', 'COMPLETED', 'FAILED', 'SKIPPED', defaults to PENDING
+      "completed_at": "datetime" // Optional; required if status is 'COMPLETED' or 'FAILED'.
+    }
+    ```
+-   **Response (201 Created)**: The newly created `SessionSetDto` object.
+    ```json
+    {
+      "id": "uuid",
+      "training_session_id": "uuid",
+      "training_plan_exercise_id": "uuid",
+      "set_index": 1, // or assigned index
+      "actual_weight": 57.5,
+      "actual_reps": 5,
+      "status": "PENDING", // or provided status
+      "completed_at": null // or provided datetime
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid, or the request body is invalid (e.g., missing required fields, invalid `set_index`).
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or referenced `training_plan_exercise_id` is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### GET /training-sessions/{sessionId}/sets/{setId}
+
+Retrieves details for a specific set within a training session.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+    -   `setId` (UUID, required): The ID of the session set.
+-   **Response (200 OK)**: The `SessionSetDto` object.
+    ```json
+    {
+      "id": "uuid", // ID of the session set
+      "training_session_id": "uuid", // Parent session ID
+      "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+      "set_index": 1,
+      "actual_weight": 55.0,
+      "actual_reps": 8,
+      "status": "COMPLETED",
+      "completed_at": "2023-01-01T10:05:00Z"
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` or `setId` format is invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PUT /training-sessions/{sessionId}/sets/{setId}
+
+Updates an existing set within a training session.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+    -   `setId` (UUID, required): The ID of the session set to update.
+-   **Request Body**: `UpdateSessionSetCommand` (at least one optional field must be provided)
+    ```json
+    {
+      "set_index": 1, // Optional, SMALLINT >= 1. Reorders sets if changed.
+      "actual_reps": 5, // Optional, SMALLINT >= 0
+      "actual_weight": 57.5, // Optional, NUMERIC(7,3) >= 0
+      "status": "COMPLETED", // Optional, e.g., 'PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'
+      "completed_at": "datetime" // Optional; required if status is 'COMPLETED' or 'FAILED'. If status is 'COMPLETED' or 'FAILED' and this is omitted, it defaults to NOW().
+    }
+    ```
+-   **Response (200 OK)**: The updated `SessionSetDto` object.
+    ```json
+    {
+      "id": "uuid", // ID of the session set (matches setId)
+      "training_session_id": "uuid", // Parent session ID
+      "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+      "set_index": 1, // Updated value
+      "actual_weight": 57.5, // Updated value
+      "actual_reps": 5, // Updated value
+      "status": "COMPLETED", // Updated value
+      "completed_at": "2023-01-01T10:10:00Z" // Updated or set to NOW()
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid, the request body is invalid, or no fields provided for update.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### DELETE /training-sessions/{sessionId}/sets/{setId}
+
+Deletes a specific set from a training session. Reordering of subsequent sets occurs automatically.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training plan.
+    -   `setId` (UUID, required): The ID of the session set to delete.
+-   **Response (204 No Content)**: Indicates successful deletion.
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PATCH /training-sessions/{sessionId}/sets/{setId}/complete
+
+Marks a specific set as completed.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+    -   `setId` (UUID, required): The ID of the session set.
+-   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "COMPLETED"` and `completed_at` set to the current server time.
+    ```json
+    {
+      "id": "uuid",
+      "training_session_id": "uuid",
+      "training_plan_exercise_id": "uuid",
+      "set_index": 1,
+      "actual_weight": 57.5,
+      "actual_reps": 5, // Unchanged by this endpoint, reflects last known value
+      "status": "COMPLETED",
+      "completed_at": "2023-01-01T00:00:00Z" // Server time of completion
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PATCH /training-sessions/{sessionId}/sets/{setId}/fail
+
+Marks a specific set as failed.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+    -   `setId` (UUID, required): The ID of the session set.
+-   **URL Query Parameters**:
+    -   `reps` (optional, integer, default: 0): Number of actual repetitions performed (must be >= 0).
+-   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "FAILED"`, `completed_at` set to current server time, and `actual_reps` updated if provided.
+    ```json
+    {
+      "id": "uuid",
+      "training_session_id": "uuid",
+      "training_plan_exercise_id": "uuid",
+      "set_index": 1,
+      "actual_weight": 57.5, // Unchanged by this endpoint
+      "actual_reps": 3,    // Updated from 'reps' query param or 0
+      "status": "FAILED",
+      "completed_at": "2023-01-01T00:00:00Z" // Server time of failure
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid or `reps` query parameter is invalid.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.

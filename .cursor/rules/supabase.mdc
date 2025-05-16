@@ -10,8 +10,11 @@ alwaysApply: false
 - Use Zod schemas to validate data exchanged with the backend.
 - Each API method MUST be implemented as a Supabase Edge Function, keep that in mind when planning and implementing the actual endpoint.
 - Each API method MUST have its own `index.ts` file saved in the `supabase/functions/{resource}` directory, as well as its own `deno.json` file.
-- Use entities from the `supabase/functions/shared` directory as baseline REST API models.
+- Use entities from the `supabase/functions/shared/models` directory as baseline REST API models.
 - Use the API handler framework from `api-handler.ts` for consistent implementation patterns. Define resource paths using patterns (e.g., `['profiles', '{id}']`) that follow the API plan found in `.ai/api-plan.md`.
+- Use the `@shared` alias for accessing any shared resources, like models, services or utilities. Use the `zod` alias for creating Zod validators within method handlers.
+- When implementing unit tests for specific services, use `vitest` functions. Each test file should be saved in the `{tested-file}.test.ts` file.
+- When creating a new Edge Function, base the `index.ts` and `deno.json` on an existing Edge Function (e.g. `supabase/functions/training-plans`).
 - Maintain consistent implementation between different handlers across the Edge Functions, feel free to use existing endpoints as a baseline for implementing new ones.
 - Maintain endpoint documentation in the `supabase/functions/README.md` file after implementing new endpoints.
 - Use dedicated `*.service.ts` data services for communication in Angular components (implement them when necessary), rather than directly using `@supabase/supabase-js`.

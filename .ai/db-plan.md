@@ -40,20 +40,19 @@
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - training_plan_exercise_id: UUID NOT NULL REFERENCES training_plan_exercises(id) ON DELETE CASCADE
 - set_index: SMALLINT NOT NULL  -- Specifies the order of sets within an exercise
-- expected_reps: SMALLINT NOT NULL CHECK (expected_reps > 0)
-- expected_weight: NUMERIC(7,3) NOT NULL CHECK (expected_weight > 0)
+- expected_reps: SMALLINT NOT NULL CHECK (expected_reps >= 0)
+- expected_weight: NUMERIC(7,3) NOT NULL CHECK (expected_weight >= 0)
 - UNIQUE(training_plan_exercise_id, set_index)
 
 ### 1.7. training_plan_exercise_progressions
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
 - training_plan_id: UUID NOT NULL REFERENCES training_plans(id) ON DELETE CASCADE
 - exercise_id: UUID NOT NULL REFERENCES exercises(id) ON DELETE CASCADE
-- weight_increment: NUMERIC(7,3) NOT NULL CHECK (weight_increment > 0)
+- weight_increment: NUMERIC(7,3) NOT NULL CHECK (weight_increment >= 0)
 - failure_count_for_deload: SMALLINT NOT NULL DEFAULT 3 CHECK (failure_count_for_deload > 0)
-- deload_percentage: NUMERIC(4,2) NOT NULL DEFAULT 10.00 CHECK (deload_percentage > 0)
+- deload_percentage: NUMERIC(4,2) NOT NULL DEFAULT 10.00 CHECK (deload_percentage >= 0)
 - deload_strategy: VARCHAR(20) NOT NULL DEFAULT 'PROPORTIONAL' CHECK (deload_strategy IN ('PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM'))
 - reference_set_index: SMALLINT NULL
-- current_weight: NUMERIC(7,3) NOT NULL CHECK (current_weight > 0)
 - consecutive_failures: SMALLINT NOT NULL DEFAULT 0 CHECK (consecutive_failures >= 0)
 - last_updated: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 - UNIQUE(training_plan_id, exercise_id)
@@ -71,8 +70,8 @@
 - training_session_id: UUID NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE
 - training_plan_exercise_id: UUID NOT NULL REFERENCES training_plan_exercises(id) ON DELETE CASCADE
 - set_index: SMALLINT NOT NULL
-- actual_weight: NUMERIC(7,3) NOT NULL CHECK (actual_weight > 0)
-- actual_reps: SMALLINT NOT NULL CHECK (actual_reps > 0)
+- actual_weight: NUMERIC(7,3) NOT NULL CHECK (actual_weight >= 0)
+- actual_reps: SMALLINT NOT NULL CHECK (actual_reps >= 0)
 - status: VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'))
 - completed_at: TIMESTAMP WITHOUT TIME ZONE NULL
 
