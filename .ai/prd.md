@@ -22,7 +22,7 @@ Many users face an overwhelming number of available training plans, which create
    - Display a simple, reorderable list of exercises during an active workout session.
    - Provide an intuitive set tracking mechanism where each exercise's sets are displayed in a row as clickable bubbles, enabling single-tap progress marking.
    - Offer pop-up dialogues for detailed editing of exercise parameters (e.g., sets, reps, and weights).
-   - Automatically update exercise weights based on performance, with user override capabilities.
+   - Display a FAB for workout completion, which in turn marks the session as complete and automatically triggers weight progression and new training session creation logic.
 
 4. Workout History:
    - Present a clear summary of past workout sessions, including details such as exercises performed, sets, reps, and weight adjustments.

@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { authGuard } from '@shared/guards/auth.guard';
+import { authGuard } from '@shared/utils/guards/auth.guard';
 import { PlanListComponent } from './components/plan-list/plan-list.component';
 
 export const PLANS_ROUTES: Route[] = [

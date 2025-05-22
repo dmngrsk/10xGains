@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-05-16T23:01:56.331Z
+ * Last updated: 2025-05-21T08:54:50.972Z
  */
 
 export type Json =
@@ -63,9 +63,10 @@ export interface Database {
       }
       session_sets: {
         Row: {
-          actual_reps: number
+          actual_reps: number | null
           actual_weight: number
           completed_at: string | null
+          expected_reps: number
           id: string
           set_index: number
           status: string
@@ -73,9 +74,10 @@ export interface Database {
           training_session_id: string
         }
         Insert: {
-          actual_reps: number
+          actual_reps?: number | null
           actual_weight: number
           completed_at?: string | null
+          expected_reps: number
           id?: string
           set_index: number
           status?: string
@@ -83,9 +85,10 @@ export interface Database {
           training_session_id: string
         }
         Update: {
-          actual_reps?: number
+          actual_reps?: number | null
           actual_weight?: number
           completed_at?: string | null
+          expected_reps?: number
           id?: string
           set_index?: number
           status?: string
@@ -290,7 +293,7 @@ export interface Database {
       training_sessions: {
         Row: {
           id: string
-          session_date: string
+          session_date: string | null
           status: string
           training_plan_day_id: string | null
           training_plan_id: string
@@ -298,7 +301,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          session_date?: string
+          session_date?: string | null
           status?: string
           training_plan_day_id?: string | null
           training_plan_id: string
@@ -306,7 +309,7 @@ export interface Database {
         }
         Update: {
           id?: string
-          session_date?: string
+          session_date?: string | null
           status?: string
           training_plan_day_id?: string | null
           training_plan_id?: string

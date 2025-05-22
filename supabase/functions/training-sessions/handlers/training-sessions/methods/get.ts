@@ -13,7 +13,7 @@ const GetTrainingSessionsQuerySchema = z.object({
     z.number().int().nonnegative().optional()
   ),
   order: z.string().regex(/^(session_date)\.(asc|desc)$/).default('session_date.desc').optional(),
-  status: z.enum(['IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
   date_from: z.preprocess(
     (val) => (val ? new Date(String(val)).toISOString() : undefined),
     z.string().datetime().optional()
@@ -71,6 +71,13 @@ export async function handleGetTrainingSessions(
       console.error('Error fetching training sessions:', error);
       return createErrorResponse(500, 'Failed to fetch training sessions', { details: error.message });
     }
+
+    data?.forEach(session =>
+      session.sets?.sort((a, b) =>
+        a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
+        a.set_index - b.set_index
+      )
+    );
 
     return createSuccessResponse<TrainingSessionDto[]>(200, data || []);
   } catch (e) {

@@ -63,7 +63,7 @@
 - training_plan_id: UUID NOT NULL REFERENCES training_plans(id) ON DELETE CASCADE
 - training_plan_day_id: UUID REFERENCES training_plan_days(id)
 - session_date: TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-- status: VARCHAR(20) NOT NULL DEFAULT 'IN_PROGRESS' CHECK (status IN ('IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
+- status: VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 
 ### 1.9. session_sets
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()

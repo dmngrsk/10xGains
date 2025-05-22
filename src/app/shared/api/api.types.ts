@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-05-16T23:01:56.333Z
+ * Last updated: 2025-05-21T08:54:50.975Z
  */
 
 /*
@@ -170,14 +170,18 @@ export type CompleteTrainingSessionCommand = Record<string, never>; // Represent
 // 9. Session Set DTO and Commands
 export type SessionSetDto = Database["public"]["Tables"]["session_sets"]["Row"];
 
-export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "training_session_id" | "training_plan_exercise_id" | "set_index" | "actual_weight" | "actual_reps"  | "status" | "completed_at">;
+export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "training_session_id" | "training_plan_exercise_id" | "set_index" | "actual_weight" | "actual_reps" | "expected_reps" | "status" | "completed_at">;
 
-export type UpdateSessionSetCommand = Partial<Pick<Database["public"]["Tables"]["session_sets"]["Update"], "set_index" | "actual_reps" | "actual_weight" | "status" | "completed_at">>;
+export type UpdateSessionSetCommand = Partial<Pick<Database["public"]["Tables"]["session_sets"]["Update"], "set_index" | "actual_reps" | "actual_weight" | "expected_reps" | "status" | "completed_at">>;
 
 // For PATCH /training-sessions/{sessionId}/sets/{setId}/complete
 // Request body is empty.
 export type CompleteSessionSetCommand = Record<string, never>; // Represents an empty request body
 
-// For PATCH /training-sessions/{sessionId}/sets/{setId}/failed
+// For PATCH /training-sessions/{sessionId}/sets/{setId}/fail
 // Request uses query parameter `reps`, body is empty.
-export type FailSessionSetCommand = Pick<SessionSetDto, "actual_reps">;
+export type FailSessionSetCommand = Record<string, never>; // Represents an empty request body
+
+// For PATCH /training-sessions/{sessionId}/sets/{setId}/reset
+// Request body is empty.
+export type ResetSessionSetCommand = Record<string, never>; // Represents an empty request body

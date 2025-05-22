@@ -814,7 +814,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
         "training_plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
-        "status": "IN_PROGRESS",
+        "status": "PENDING",
         "sets": [
         {
           "id": "uuid",
@@ -855,7 +855,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "training_plan_day_id": "uuid",
       "user_id": "uuid",
       "session_date": "2023-10-27T10:00:00Z",
-      "status": "IN_PROGRESS",
+      "status": "PENDING",
       "sets": [
         {
           "id": "uuid",
@@ -891,7 +891,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "training_plan_day_id": "uuid",
       "user_id": "uuid",
       "session_date": "2023-01-01T00:00:00Z",
-      "status": "IN_PROGRESS",
+      "status": "PENDING",
       "sets": [
       {
         "id": "uuid",
@@ -1073,8 +1073,22 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
     }
     ```
   - Success: 200 OK
-  - Errors: 401 Unauthorized, 404 Not Found
+  - Errors: 400 Bad Request, 401 Unauthorized, 404 Not Found
   - Validation: Ensure `reps` query parameter, if provided, is a non-negative integer.
+  
+- **PATCH /training-sessions/{sessionId}/sets/{setId}/reset**
+  - Description: Mark a session set as pending and clear the completion timestamp for a session belonging to the authenticated user.
+  - Example Response:
+    ```json
+    {
+      "id": "uuid",
+      "status": "PENDING",
+      "actual_reps": 5,
+      "completed_at": null
+    }
+    ```
+  - Success: 200 OK
+  - Errors: 401 Unauthorized, 404 Not Found
 
 ## 3. Authentication and Authorization
 

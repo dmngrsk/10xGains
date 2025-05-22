@@ -52,7 +52,7 @@ export async function handleCreateTrainingSessions(context: ApiHandlerContext) {
       .select('*')
       .eq('user_id', userId)
       .eq('training_plan_id', command.training_plan_id as string)
-      .in('status', ['COMPLETED', 'IN_PROGRESS'])
+      .in('status', ['COMPLETED', 'PENDING', 'IN_PROGRESS'])
       .order('session_date', { ascending: false })
       .limit(10);
 
@@ -63,7 +63,8 @@ export async function handleCreateTrainingSessions(context: ApiHandlerContext) {
 
     if (!dayId) {
       const latestCompletedSession = sessions!
-        .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime())
+        .filter(s => !!s.session_date)
+        .sort((a, b) => new Date(b.session_date!).getTime() - new Date(a.session_date!).getTime())
         .find(s => s.status === 'COMPLETED');
 
       if (latestCompletedSession) {
@@ -81,7 +82,7 @@ export async function handleCreateTrainingSessions(context: ApiHandlerContext) {
 
     // Step 3: Build training plan entities to upsert, including the new training session and its related session sets.
     const recordsToUpsert: TrainingSessionDto[] = [];
-    const sessionsInProgress = sessions!.filter(s => s.status === 'IN_PROGRESS');
+    const sessionsInProgress = sessions!.filter(s => s.status === 'IN_PROGRESS' || s.status === 'PENDING');
 
     if (sessionsInProgress && sessionsInProgress.length > 0) {
       sessionsInProgress.forEach(s => {
@@ -99,8 +100,8 @@ export async function handleCreateTrainingSessions(context: ApiHandlerContext) {
       user_id: userId,
       training_plan_id: command.training_plan_id,
       training_plan_day_id: dayId,
-      status: 'IN_PROGRESS',
-      session_date: new Date().toISOString(),
+      status: 'PENDING',
+      session_date: null
     });
 
     const newSessionSets = plan.days
@@ -111,8 +112,9 @@ export async function handleCreateTrainingSessions(context: ApiHandlerContext) {
         training_session_id: newSessionId,
         training_plan_exercise_id: tpes.training_plan_exercise_id,
         set_index: tpes.set_index,
+        expected_reps: tpes.expected_reps,
+        actual_reps: null,
         actual_weight: tpes.expected_weight,
-        actual_reps: tpes.expected_reps,
         status: 'PENDING',
         completed_at: null
       })) as SessionSetDto[];

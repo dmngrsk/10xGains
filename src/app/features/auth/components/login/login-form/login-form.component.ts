@@ -3,7 +3,7 @@ import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { zodFormGroupValidator } from '@shared/utils/form-validation';
+import { zodFormGroupValidator } from '@shared/utils/forms/form-validation';
 import { LoginFormValues, loginFormSchema } from '../../../shared/types';
 import { EmailInputComponent } from '../../shared/email-input/email-input.component';
 import { PasswordInputComponent } from '../../shared/password-input/password-input.component';

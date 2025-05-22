@@ -1,0 +1,27 @@
+button {
+  width: 48px;
+  height: 48px;
+  min-width: auto;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  overflow: hidden;
+  line-height: normal;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.completed {
+  background-color: var(--mat-sys-primary) !important;
+  color: var(--md-sys-color-on-primary, #FFFFFF) !important;
+}
+
+.add-action-bubble {
+  mat-icon {
+    font-size: 28px !important;
+    width: auto !important;
+    height: auto !important;
+    vertical-align: middle !important;
+  }
+}

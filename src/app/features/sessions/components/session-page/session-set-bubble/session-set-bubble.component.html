@@ -1,0 +1,28 @@
+@if (!isAddAction && setVm; as currentSet) {
+  <button mat-raised-button txgLongPress
+    [class.completed]="currentSet.status === 'COMPLETED' || currentSet.status === 'FAILED'"
+    [disabled]="isReadOnly"
+    (txgClick)="onSetClicked()"
+    (txgLongPress)="onSetLongPressed()"
+  >
+    <div class="flex flex-col items-center justify-center">
+      <span class="text-xl font-medium leading-none">
+        {{ bubbleText }}
+      </span>
+      @if (bubbleWeightText) {
+        <span class="text-[0.625rem] font-normal leading-none mt-px">
+          {{ bubbleWeightText }}
+        </span>
+      }
+    </div>
+  </button>
+} @else if (isAddAction && !isReadOnly) {
+  <button mat-raised-button class="add-action-bubble"
+    [disabled]="isReadOnly"
+    (click)="onAddClicked()"
+  >
+    <span>
+      <mat-icon>add</mat-icon>
+    </span>
+  </button>
+}

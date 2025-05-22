@@ -8,9 +8,10 @@ const PathParamsSchema = z.object({
 });
 
 const UpdateTrainingSessionCommandSchema = z.object({
-  status: z.enum(['IN_PROGRESS', 'COMPLETED', 'CANCELLED'], {
-    errorMap: () => ({ message: 'Invalid status value. Must be one of IN_PROGRESS, COMPLETED, CANCELLED.' })
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'], {
+    errorMap: () => ({ message: 'Invalid status value. Must be one of PENDING, IN_PROGRESS, COMPLETED, CANCELLED.' })
   }),
+  session_date: z.string().datetime({ message: 'Invalid session date format' }).optional().nullable()
 });
 
 export async function handlePutTrainingSessionById(
@@ -36,7 +37,7 @@ export async function handlePutTrainingSessionById(
   try {
     const { data: updatedSession, error } = await supabaseClient
       .from('training_sessions')
-      .update({ status: command.status })
+      .update({ status: command.status, session_date: command.session_date })
       .eq('id', sessionId)
       .eq('user_id', userId)
       .select()

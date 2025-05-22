@@ -37,6 +37,11 @@ export class ApiService {
     return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
   }
 
+  public patch<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'PATCH', body: body });
+    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+  }
+
   private handleFunctionResponse<T>(functionsResponse: { data: ApiInternalResponse<T> | null; error: Error | null }): ApiServiceResponse<T> {
     return {
       data: functionsResponse.error ? null : (functionsResponse.data as ApiInternalSuccessResponse<T>)?.data ?? null,

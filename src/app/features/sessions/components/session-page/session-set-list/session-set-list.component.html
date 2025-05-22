@@ -1,0 +1,19 @@
+<div class="flex flex-nowrap gap-2 pb-3 items-center overflow-x-auto">
+  @for (set of exercise.sets; track set.id; let i = $index) {
+    <txg-session-set-bubble
+      [class.ml-[2px]]="i === 0"
+      [class.mr-[2px]]="isReadOnly && i === exercise.sets.length - 1"
+      [set]="set"
+      [isReadOnly]="isReadOnly"
+      (setClicked)="onSetClicked($event)"
+      (setLongPressed)="onSetLongPressed($event)"
+    ></txg-session-set-bubble>
+  }
+  @if (!isReadOnly) {
+    <txg-session-set-bubble class="mr-[2px]"
+      [isAddAction]="true"
+      [isReadOnly]="isReadOnly"
+      (setAdded)="onSetAdded()"
+    ></txg-session-set-bubble>
+  }
+</div>

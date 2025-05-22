@@ -930,7 +930,7 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
     -   `limit` (optional, integer, default: 20, max: 100): Number of sessions to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
     -   `order` (optional, string, default: `session_date.desc`): Sort criteria (e.g., `session_date.asc`, `status.asc`).
-    -   `status` (optional, string): Filter by session status (e.g., `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+    -   `status` (optional, string): Filter by session status (e.g., `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
     -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
 -   **Response (200 OK)**: An array of `TrainingSessionDto` objects.
@@ -988,7 +988,7 @@ Once the `training_plan_day_id` is determined (either provided or automatically 
       "training_plan_day_id": "uuid", // Provided or determined
       "user_id": "uuid", // ID of the authenticated user
       "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
-      "status": "IN_PROGRESS", // Default status
+      "status": "PENDING", // Default status
       "sets": [ // Auto-created session sets
         {
           "id": "uuid", // ID of the new session set
@@ -1054,7 +1054,7 @@ Updates the status of an existing training session (e.g., to cancel it).
 -   **Request Body**: `UpdateTrainingSessionCommand`
     ```json
     {
-      "status": "CANCELLED" // e.g., 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
+      "status": "CANCELLED" // e.g., 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
     }
     ```
 -   **Response (200 OK)**: The full, updated `TrainingSessionDto` object, including any nested sets.
@@ -1300,8 +1300,9 @@ Marks a specific set as completed.
       "training_session_id": "uuid",
       "training_plan_exercise_id": "uuid",
       "set_index": 1,
+      "expected_reps": 5,
+      "actual_reps": 5, // Updated to the current value of 'expected_reps'
       "actual_weight": 57.5,
-      "actual_reps": 5, // Unchanged by this endpoint, reflects last known value
       "status": "COMPLETED",
       "completed_at": "2023-01-01T00:00:00Z" // Server time of completion
     }
@@ -1329,14 +1330,43 @@ Marks a specific set as failed.
       "training_session_id": "uuid",
       "training_plan_exercise_id": "uuid",
       "set_index": 1,
-      "actual_weight": 57.5, // Unchanged by this endpoint
-      "actual_reps": 3,    // Updated from 'reps' query param or 0
+      "expected_reps": 5,
+      "actual_reps": 3,  // Updated from 'reps' query param or 0
+      "actual_weight": 57.5,
       "status": "FAILED",
       "completed_at": "2023-01-01T00:00:00Z" // Server time of failure
     }
     ```
 -   **Responses (Error)**:
-    -   `400 Bad Request`: If path parameter formats are invalid or `reps` query parameter is invalid.
+    -   `400 Bad Request`: If path parameter formats are invalid or `reps` query parameter is invalid. Alternatively, if the `reps` value is equal to or higher than `expected_reps` of the referenced set.
+    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PATCH /training-sessions/{sessionId}/sets/{setId}/reset
+
+Marks a specific set as pending.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The ID of the training session.
+    -   `setId` (UUID, required): The ID of the session set.
+-   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "PENDING"` and `completed_at` set to null.
+    ```json
+    {
+      "id": "uuid",
+      "training_session_id": "uuid",
+      "training_plan_exercise_id": "uuid",
+      "set_index": 1,
+      "expected_reps": 5,
+      "actual_reps": null, // Updated to null
+      "actual_weight": 57.5,
+      "status": "PENDING",
+      "completed_at": null // Updated to null
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid.
     -   `401 Unauthorized`: If the JWT is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.

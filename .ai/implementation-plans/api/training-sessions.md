@@ -28,7 +28,7 @@ Ten zestaw punktów końcowych zarządza sesjami treningowymi użytkowników. Um
     -   `limit` (number): Liczba rekordów do zwrócenia.
     -   `offset` (number): Przesunięcie (dla paginacji).
     -   `order` (string): Kierunek sortowania (np. `session_date.asc`, `session_date.desc`). Domyślnie `session_date.desc`.
-    -   `status` (string): Filtrowanie po statusie sesji (np. `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+    -   `status` (string): Filtrowanie po statusie sesji (np. `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
     -   `date_from` (string ISO 8601): Filtrowanie sesji od tej daty (włącznie).
     -   `date_to` (string ISO 8601): Filtrowanie sesji do tej daty (włącznie).
 -   **Request Body**: Brak.
@@ -112,7 +112,7 @@ Ten zestaw punktów końcowych zarządza sesjami treningowymi użytkowników. Um
       "training_plan_day_id": "uuid",
       "user_id": "uuid", // ID zalogowanego użytkownika
       "session_date": "2023-01-01T00:00:00Z", // Aktualna data/czas utworzenia
-      "status": "IN_PROGRESS" // Domyślny status
+      "status": "PENDING" // Domyślny status
     }
     ```
 
@@ -128,7 +128,7 @@ Ten zestaw punktów końcowych zarządza sesjami treningowymi użytkowników. Um
     -   `user_id`: z kontekstu.
     -   `training_plan_id`, `training_plan_day_id`: z ciała żądania.
     -   `session_date`: `DEFAULT CURRENT_TIMESTAMP`.
-    -   `status`: `DEFAULT 'IN_PROGRESS'`.
+    -   `status`: `DEFAULT 'PENDING'`.
 7.  Zwrócenie nowo utworzonego obiektu `TrainingSessionDto`.
 
 #### 3.2.5. Względy bezpieczeństwa
@@ -241,7 +241,7 @@ Ten zestaw punktów końcowych zarządza sesjami treningowymi użytkowników. Um
 #### 3.4.4. Przepływ danych
 1.  Uwierzytelnienie użytkownika.
 2.  Walidacja `sessionId` (UUID - Zod).
-3.  Walidacja ciała żądania (Zod schema dla `UpdateTrainingSessionCommand`, np. `status` musi być jedną z wartości: `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
+3.  Walidacja ciała żądania (Zod schema dla `UpdateTrainingSessionCommand`, np. `status` musi być jedną z wartości: `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
 4.  Pobranie `user_id` z `ApiHandlerContext`.
 5.  Aktualizacja rekordu w tabeli `training_sessions`:
     -   `UPDATE training_sessions SET status = :status WHERE id = :sessionId AND user_id = :user_id RETURNING id, status`.

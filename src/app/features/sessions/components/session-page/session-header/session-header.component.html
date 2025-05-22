@@ -1,0 +1,12 @@
+<div class="flex flex-row justify-between">
+  <div class="flex flex-col">
+    <p class="text-xl font-bold text-[var(--mat-sys-primary)]">{{ metadata.dayName }}</p>
+    <p class="text-sm text-[var(--mat-sys-primary)]">{{ metadata.planName }}</p>
+  </div>
+  <div class="flex flex-col items-end">
+    <p class="text-md text-[var(--mat-sys-primary)]">{{ dateText }}</p>
+    @if (metadata.status) {
+      <p class="text-sm text-[var(--mat-sys-primary)]">{{ statusText }}</p>
+    }
+  </div>
+</div>

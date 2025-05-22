@@ -10,8 +10,9 @@ export type SessionSetStatus = z.infer<typeof SessionSetStatusSchema>;
 const createSessionSetCommandSchema = z.object({
   training_plan_exercise_id: z.string().uuid('Invalid training plan exercise ID format.'),
   set_index: z.number().int().positive('Set index must be a positive integer.').optional(),
+  expected_reps: z.number().int().nonnegative('Expected reps must be a non-negative integer.'),
+  actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer.').nullable().optional(),
   actual_weight: z.number().nonnegative('Actual weight cannot be negative.'),
-  actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer.'),
   status: SessionSetStatusSchema.default('PENDING').optional(),
   completed_at: z.string().datetime({ message: 'Invalid datetime format for completed_at.' }).optional(),
 }).refine(data => !((data.status === 'COMPLETED' || data.status === 'FAILED') && !data.completed_at), {
@@ -88,6 +89,7 @@ export async function handleCreateTrainingSessionSet(
       training_session_id: sessionId,
       training_plan_exercise_id: createCommand.training_plan_exercise_id,
       set_index: createCommand.set_index,
+      expected_reps: createCommand.expected_reps,
       actual_reps: createCommand.actual_reps,
       actual_weight: createCommand.actual_weight,
       status: createCommand.status || 'PENDING',

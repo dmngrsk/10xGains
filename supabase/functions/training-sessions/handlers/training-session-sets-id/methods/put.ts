@@ -16,7 +16,7 @@ const updateSessionSetCommandSchema = z.object({
   actual_weight: z.number().nonnegative('Actual weight cannot be negative.').optional(),
   actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer.').optional(),
   status: SessionSetStatusSchema.optional(),
-  completed_at: z.string().datetime({ message: 'Invalid datetime format for completed_at.' }).nullable().optional(), // Allow null to clear it
+  completed_at: z.string().datetime({ message: 'Invalid datetime format for completed_at.' }).nullable().optional()
 }).refine(data => !((data.status === 'COMPLETED' || data.status === 'FAILED') && !data.completed_at), {
   message: "completed_at is required if status is COMPLETED or FAILED.",
   path: ["completed_at"],

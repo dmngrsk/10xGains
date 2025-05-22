@@ -39,6 +39,11 @@ export async function handleGetTrainingSessionById(
       return createErrorResponse(404, 'Training session not found.');
     }
 
+    session.sets?.sort((a, b) =>
+      a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
+      a.set_index - b.set_index
+    )
+
     return createSuccessResponse<TrainingSessionDto>(200, session as TrainingSessionDto);
 
   } catch (e) {

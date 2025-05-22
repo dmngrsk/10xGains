@@ -46,9 +46,10 @@ export interface Database {
       }
       session_sets: {
         Row: {
-          actual_reps: number
+          actual_reps: number | null
           actual_weight: number
           completed_at: string | null
+          expected_reps: number
           id: string
           set_index: number
           status: string
@@ -56,9 +57,10 @@ export interface Database {
           training_session_id: string
         }
         Insert: {
-          actual_reps: number
+          actual_reps?: number | null
           actual_weight: number
           completed_at?: string | null
+          expected_reps: number
           id?: string
           set_index: number
           status?: string
@@ -66,9 +68,10 @@ export interface Database {
           training_session_id: string
         }
         Update: {
-          actual_reps?: number
+          actual_reps?: number | null
           actual_weight?: number
           completed_at?: string | null
+          expected_reps?: number
           id?: string
           set_index?: number
           status?: string
@@ -273,7 +276,7 @@ export interface Database {
       training_sessions: {
         Row: {
           id: string
-          session_date: string
+          session_date: string | null
           status: string
           training_plan_day_id: string | null
           training_plan_id: string
@@ -281,7 +284,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          session_date?: string
+          session_date?: string | null
           status?: string
           training_plan_day_id?: string | null
           training_plan_id: string
@@ -289,7 +292,7 @@ export interface Database {
         }
         Update: {
           id?: string
-          session_date?: string
+          session_date?: string | null
           status?: string
           training_plan_day_id?: string | null
           training_plan_id?: string

@@ -1,0 +1,45 @@
+<h2 mat-dialog-title class="text-xl font-semibold">{{ titleText }}</h2>
+
+<mat-dialog-content [formGroup]="setForm" class="!pt-4">
+  <mat-form-field appearance="outline" class="w-full mb-3">
+    <mat-label>Reps</mat-label>
+    <input matInput formControlName="reps">
+    @if (setForm.get('reps')?.hasError('required')) {
+      <mat-error>{{ validationMessages.required }}</mat-error>
+    }
+    @if (setForm.get('reps')?.hasError('min')) {
+      <mat-error>{{ validationMessages.nonNegative }}</mat-error>
+    }
+    @if (setForm.get('reps')?.hasError('integer')) {
+      <mat-error>{{ validationMessages.integer }}</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Weight (kg)</mat-label>
+    <input matInput formControlName="weight">
+    @if (setForm.get('weight')?.hasError('required')) {
+      <mat-error>{{ validationMessages.required }}</mat-error>
+    }
+    @if (setForm.get('weight')?.hasError('min')) {
+      <mat-error>{{ validationMessages.nonNegative }}</mat-error>
+    }
+    @if (setForm.get('weight')?.hasError('numeric')) {
+      <mat-error>{{ validationMessages.numeric }}</mat-error>
+    }
+  </mat-form-field>
+
+  <div class="flex flex-col flex-grow gap-2">
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid">
+      <span>{{ saveButtonText }}</span>
+    </button>
+    @if (isSetDeletable) {
+      <button mat-raised-button color="warn" type="button" (click)="onDelete()" class="action-button">
+        <span>Delete Set</span>
+      </button>
+    }
+    <button mat-raised-button (click)="onCancel()">
+      <span>Cancel</span>
+    </button>
+  </div>
+</mat-dialog-content>

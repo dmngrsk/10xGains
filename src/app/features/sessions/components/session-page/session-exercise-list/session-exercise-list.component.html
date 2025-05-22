@@ -1,0 +1,9 @@
+@for (exercise of exercises; track exercise.trainingPlanExerciseId) {
+  <txg-session-exercise-item
+    [exercise]="exercise"
+    [isReadOnly]="isReadOnly"
+    (setClicked)="onSetClicked($event)"
+    (setLongPressed)="onSetLongPressed($event)"
+    (setAdded)="onSetAdded($event)"
+  ></txg-session-exercise-item>
+}

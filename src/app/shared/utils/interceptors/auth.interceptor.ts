@@ -1,7 +1,7 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { from, switchMap } from 'rxjs';
-import { SupabaseService } from '../db/supabase.service';
+import { SupabaseService } from '../../db/supabase.service';
 
 /**
  * Interceptor that adds authorization headers to HTTP requests

@@ -1,0 +1,75 @@
+.timer-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  height: 48px;
+  transform: translateX(-50%);
+  background-color: var(--mat-sys-primary-container);
+  padding: 0 12px;
+  border-radius: 24px;
+  z-index: 10;
+  box-shadow: var(--mat-sys-level3);
+  display: inline-flex;
+  align-items: center;
+  transition: background-color 0.3s ease-in-out;
+
+  .timer-display,
+  mat-divider,
+  button[mat-icon-button] mat-icon {
+    transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  }
+
+  .timer-display {
+    font-family: monospace;
+    display: inline-block;
+    color: var(--mat-sys-primary);
+    font-size: 1.25rem;
+  }
+
+  mat-divider {
+    border-right-color: var(--mat-sys-primary);
+    align-self: stretch;
+    opacity: 0.25;
+  }
+
+  button[mat-icon-button] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin-left: 8px;
+
+    mat-icon {
+      color: var(--mat-sys-primary);
+    }
+  }
+}
+
+:host {
+  display: block;
+}
+
+%timer-highlight-styles {
+  background-color: var(--mat-sys-primary);
+
+  .timer-display {
+    color: var(--mat-sys-on-primary);
+  }
+
+  mat-divider {
+    border-right-color: var(--mat-sys-on-primary);
+  }
+
+  button[mat-icon-button] mat-icon {
+    color: var(--mat-sys-on-primary);
+  }
+}
+
+:host(.pulsing) .timer-container {
+  @extend %timer-highlight-styles;
+}
+
+:host(.all-sets-complete-highlight) .timer-container {
+  @extend %timer-highlight-styles;
+}

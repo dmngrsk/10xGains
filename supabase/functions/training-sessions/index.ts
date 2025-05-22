@@ -6,6 +6,7 @@ import { handleTrainingSessionSetsRoute } from "./handlers/training-session-sets
 import { handleTrainingSessionSetByIdRoute } from "./handlers/training-session-sets-id/handler.ts";
 import { handleTrainingSessionSetCompleteRoute } from "./handlers/training-session-sets-complete/handler.ts";
 import { handleTrainingSessionSetFailRoute } from "./handlers/training-session-sets-fail/handler.ts";
+import { handleTrainingSessionSetResetRoute } from "./handlers/training-session-sets-reset/handler.ts";
 
 const MAIN_FUNCTION_MOUNT_PATH = '/training-sessions';
 
@@ -17,6 +18,7 @@ const routeHandlers: ApiRouterHandler[] = [
   handleTrainingSessionSetByIdRoute,
   handleTrainingSessionSetCompleteRoute,
   handleTrainingSessionSetFailRoute,
+  handleTrainingSessionSetResetRoute,
 ];
 
 const handler = createMainRouterHandler(routeHandlers, MAIN_FUNCTION_MOUNT_PATH);
