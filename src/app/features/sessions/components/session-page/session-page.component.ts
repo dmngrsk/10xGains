@@ -6,16 +6,17 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, filter, switchMap, debounceTime, map, tap, finalize } from 'rxjs/operators';
 import { Observable, of, Subject, forkJoin } from 'rxjs';
+import { PlanService } from '@features/plans/services/plan.service';
 import { CreateSessionSetCommand, SessionSetDto, UpdateSessionSetCommand, TrainingSessionDto, ExerciseDto, TrainingPlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/services/exercise.service';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
+import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
 import { SessionExerciseListComponent } from './session-exercise-list/session-exercise-list.component';
 import { SessionHeaderComponent } from './session-header/session-header.component';
 import { SessionTimerComponent } from './session-timer/session-timer.component';
-import { PlanService } from '../../../plans/services/plan.service';
-import { mapDtosToSessionDetailsViewModel, SessionDetailsViewModel, SessionExerciseViewModel, SessionSetStatus, SessionSetViewModel, SessionStatus } from '../../models/session-view.models';
+import { mapDtosToSessionDetailsViewModel, SessionPageViewModel, SessionExerciseViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { SessionStatus, SessionSetStatus } from '../../models/session.enum';
 import { SessionService, SessionServiceResponse } from '../../services/session.service';
 
 @Component({
@@ -23,7 +24,7 @@ import { SessionService, SessionServiceResponse } from '../../services/session.s
   standalone: true,
   imports: [
     CommonModule,
-    FullScreenLayoutComponent,
+    MainLayoutComponent,
     SessionHeaderComponent,
     SessionExerciseListComponent,
     SessionTimerComponent
@@ -43,7 +44,7 @@ export class SessionPageComponent implements OnInit {
 
   readonly errorSignal = signal<string | null>(null);
   readonly isLoading = signal<boolean>(true);
-  readonly session = signal<SessionDetailsViewModel | null>(null);
+  readonly session = signal<SessionPageViewModel | null>(null);
   readonly sessionIdSignal = signal<string | null>(null);
   readonly timerResetTrigger: WritableSignal<number | null> = signal(null);
   readonly updatingSetId = signal<string | null>(null);
@@ -337,6 +338,11 @@ export class SessionPageComponent implements OnInit {
     const trainingPlanId = currentSession.metadata?.trainingPlanId;
 
     const completeSessionInner = () => {
+      this.session.update(s => {
+        if (!s || !s.metadata) return s;
+        return { ...s, metadata: { ...s.metadata, status: 'COMPLETED' as SessionStatus } };
+      });
+      
       this.isLoading.set(true);
       this.sessionService.completeSession(sessionId)
         .pipe(
@@ -346,14 +352,6 @@ export class SessionPageComponent implements OnInit {
             return of(null);
           }),
           finalize(() => {
-            this.session.update(s => {
-              if (!s || !s.metadata) return s;
-              return {
-                ...s,
-                metadata: { ...s.metadata, status: 'COMPLETED' as SessionStatus }
-              };
-            });
-
             const navigateHomeAndShowSnackbar = () => {
               this.router.navigate(['/home']);
               this.snackBar.open('Session completed. See you soon!', 'Close', { duration: 3000 });

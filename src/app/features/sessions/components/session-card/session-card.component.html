@@ -1,0 +1,34 @@
+<mat-card class="h-full flex flex-col">
+  <mat-card-header>
+    <mat-card-title class="text-lg text-[var(--mat-sys-primary)]">{{ sessionData.title }}</mat-card-title>
+    @if (sessionDateTimeText) {
+      <mat-card-subtitle class="!text-sm !text-[var(--mat-sys-primary)]">
+        {{ sessionDateTimeText }}
+      </mat-card-subtitle>
+    }
+  </mat-card-header>
+  <mat-card-content class="flex-grow my-4">
+    @if (sessionData.exercises && sessionData.exercises.length > 0) {
+      <ul class="list-disc list-inside text-sm">
+        @for (exercise of sessionData.exercises; track exercise.name) {
+          <li><span class="font-medium">{{ exercise.name }}:</span> {{ getExerciseSummaryText(exercise.sets) }}</li>
+        }
+      </ul>
+    } @else {
+      <p class="text-sm text-gray-500">No exercises defined for this session.</p>
+    }
+  </mat-card-content>
+  @if (buttonText) {
+    <mat-card-actions class="mt-auto mb-2">
+      @if (isActiveSession) {
+        <button mat-flat-button color="primary" (click)="onSessionNavigated()" class="w-full">
+          {{ buttonText }}
+        </button>
+      } @else {
+        <button mat-raised-button color="primary" (click)="onSessionNavigated()" class="w-full">
+          {{ buttonText }}
+        </button>
+      }
+    </mat-card-actions>
+  }
+</mat-card>

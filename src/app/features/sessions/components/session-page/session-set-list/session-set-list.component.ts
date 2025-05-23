@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-view.models';
+import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-page.viewmodel';
 import { SessionSetBubbleComponent } from '../session-set-bubble/session-set-bubble.component';
 
 @Component({

@@ -1,0 +1,17 @@
+<section class="flex flex-col h-16 bg-white fixed bottom-0 left-0 right-0 z-100">
+  <mat-divider class="opacity-30"></mat-divider>
+  <mat-toolbar class="flex-grow">
+    <nav class="relative w-full">
+      @for (link of navLinks; track link.label; let i = $index) {
+        <div class="nav-item-container absolute" [style.left]="(10 + i * 20) + '%'">
+          <a mat-button class="h-full" routerLinkActive="active-nav-item" [routerLink]="link.disabled ? null : link.path">
+            <div class="flex flex-col items-center justify-center">
+              <mat-icon class="text-gray-500">{{ link.icon }}</mat-icon>
+              <span class="text-xs text-gray-500 mt-1 text-center">{{ link.label }}</span>
+            </div>
+          </a>
+        </div>
+      }
+    </nav>
+  </mat-toolbar>
+</section>

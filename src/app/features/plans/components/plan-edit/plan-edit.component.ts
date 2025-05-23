@@ -14,7 +14,7 @@ import { finalize } from 'rxjs'
 import { TrainingPlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/services/exercise.service';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
-import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
+import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { AddEditDayDialogCloseResult, AddEditDayDialogComponent, AddEditDayDialogData } from './dialogs/add-edit-day/add-edit-day-dialog.component';
 import { AddEditPlanDialogComponent } from './dialogs/add-edit-plan/add-edit-plan-dialog.component';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult } from './dialogs/add-edit-set/add-edit-set-dialog.component';
@@ -36,7 +36,7 @@ import { PlanService, PlanServiceResponse } from '../../services/plan.service';
     MatButtonModule,
     MatProgressBarModule,
     MatIconModule,
-    FullScreenLayoutComponent,
+    MainLayoutComponent,
     PlanDayListComponent,
     PlanMetadataComponent,
   ],

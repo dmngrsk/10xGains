@@ -1,7 +1,7 @@
 import { WritableSignal, effect } from '@angular/core';
 import { describe, it, expect, vi, beforeEach, MockedFunction } from 'vitest';
 import { SessionSetBubbleComponent } from './session-set-bubble.component';
-import { SessionSetViewModel } from '../../../models/session-view.models';
+import { SessionSetViewModel } from '../../../models/session-page.viewmodel';
 
 vi.mock('@angular/core', async (importOriginal) => {
   const actualCore = await importOriginal<typeof import('@angular/core')>();
@@ -235,9 +235,14 @@ describe('SessionSetBubbleComponent', () => {
         expect(component.bubbleText).toBe('12');
       });
 
-      it('bubbleText: SKIPPED', () => {
+      it('bubbleText: SKIPPED (with actualReps)', () => {
+        initializeComponentSet(createMockSet({ status: 'SKIPPED', expectedReps: 8, actualReps: 5 }));
+        expect(component.bubbleText).toBe('5');
+      });
+
+      it('bubbleText: SKIPPED (no actualReps, fallback to 0)', () => {
         initializeComponentSet(createMockSet({ status: 'SKIPPED', expectedReps: 8 }));
-        expect(component.bubbleText).toBe('8');
+        expect(component.bubbleText).toBe('0');
       });
 
       it('bubbleText: COMPLETED (with actualReps)', () => {

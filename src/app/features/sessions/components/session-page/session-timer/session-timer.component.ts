@@ -65,7 +65,7 @@ export class SessionTimerComponent implements OnDestroy {
     }
   }
 
-  onCompleteSessionClick(): void {
+  onCompleteSession(): void {
     this.sessionCompleted.emit();
   }
 

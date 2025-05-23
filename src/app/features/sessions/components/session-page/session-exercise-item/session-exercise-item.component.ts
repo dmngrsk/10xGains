@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-view.models';
+import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-page.viewmodel';
 import { SessionSetListComponent } from '../session-set-list/session-set-list.component';
 
 @Component({

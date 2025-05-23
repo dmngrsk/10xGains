@@ -11,6 +11,13 @@ import { CompleteSessionSetCommand,
   UpdateSessionSetCommand
 } from '@shared/api/api.types';
 
+export interface GetSessionsParams {
+  limit?: number;
+  order?: string;
+  status?: string[];
+  plan_id?: string;
+}
+
 export type SessionServiceResponse<T> = ApiServiceResponse<T>;
 
 @Injectable({
@@ -18,6 +25,36 @@ export type SessionServiceResponse<T> = ApiServiceResponse<T>;
 })
 export class SessionService {
   private apiService = inject(ApiService);
+
+  /**
+   * Retrieves a list of training sessions based on query parameters.
+   * @param params Query parameters for filtering and ordering sessions.
+   * @returns An Observable emitting an array of training session data.
+   */
+  getSessions(params: GetSessionsParams): Observable<SessionServiceResponse<TrainingSessionDto[]>> {
+    const queryParams = new URLSearchParams();
+    let url = '/training-sessions';
+
+    if (params.limit) {
+      queryParams.append('limit', params.limit.toString());
+    }
+    if (params.order) {
+      queryParams.append('order', params.order);
+    }
+    if (params.status) {
+      queryParams.append('status', params.status.join(','));
+    }
+    if (params.plan_id) {
+      queryParams.append('plan_id', params.plan_id);
+    }
+
+    const queryString = queryParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+
+    return this.apiService.get<TrainingSessionDto[]>(url);
+  }
 
   /**
    * Retrieves the details of a specific training session.

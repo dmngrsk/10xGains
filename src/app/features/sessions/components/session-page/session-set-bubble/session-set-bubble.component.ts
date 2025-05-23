@@ -4,7 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatRippleModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { LongPressDirective } from '@shared/utils/directives/long-press.directive';
-import { SessionSetStatus, SessionSetViewModel } from '../../../models/session-view.models';
+import { SessionSetViewModel } from '../../../models/session-page.viewmodel';
+import { SessionSetStatus } from '../../../models/session.enum';
 
 interface NextSetStateAttributes {
   status: SessionSetStatus;
@@ -52,6 +53,7 @@ export class SessionSetBubbleComponent {
       case 'COMPLETED':
         return (current.actualReps ?? current.expectedReps).toString();
       case 'FAILED':
+      case 'SKIPPED':
         return (current.actualReps ?? '0').toString();
       default:
         return (current.expectedReps).toString();

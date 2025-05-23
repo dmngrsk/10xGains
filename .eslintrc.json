@@ -53,6 +53,11 @@
                 "position": "after"
               },
               {
+                "pattern": "@features/**",
+                "group": "internal",
+                "position": "before"
+              },
+              {
                 "pattern": "@shared/**",
                 "group": "internal",
                 "position": "before"

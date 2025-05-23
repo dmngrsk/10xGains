@@ -1,26 +1,26 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './shared/utils/guards/auth.guard';
-import { noAuthGuard } from './shared/utils/guards/no-auth.guard';
+import { authGuard } from '@shared/utils/guards/auth.guard';
+import { noAuthGuard } from '@shared/utils/guards/no-auth.guard';
 
 export const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES),
+    loadChildren: () => import('@features/auth/auth.routes').then(m => m.AUTH_ROUTES),
     canActivate: [noAuthGuard]
   },
   {
     path: 'home',
-    loadChildren: () => import('./features/home/home.routes').then(m => m.HOME_ROUTES),
+    loadChildren: () => import('@features/home/home.routes').then(m => m.HOME_ROUTES),
     canActivate: [authGuard]
   },
   {
     path: 'plans',
-    loadChildren: () => import('./features/plans/plans.routes').then(m => m.PLANS_ROUTES),
+    loadChildren: () => import('@features/plans/plans.routes').then(m => m.PLANS_ROUTES),
     canActivate: [authGuard]
   },
   {
     path: 'sessions',
-    loadChildren: () => import('./features/sessions/sessions.routes').then(m => m.SESSIONS_ROUTES),
+    loadChildren: () => import('@features/sessions/sessions.routes').then(m => m.SESSIONS_ROUTES),
     canActivate: [authGuard]
   },
   {

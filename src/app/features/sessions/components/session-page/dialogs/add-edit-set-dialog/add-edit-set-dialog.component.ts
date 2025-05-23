@@ -10,7 +10,7 @@ import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/ap
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { integerValidator } from '@shared/utils/forms/validators/integer.validator';
 import { numericValidator } from '@shared/utils/forms/validators/numeric.validator';
-import { SessionSetViewModel } from '../../../../models/session-view.models';
+import { SessionSetViewModel } from '../../../../models/session-page.viewmodel';
 
 export interface AddEditSetDialogData {
   mode: 'add' | 'edit';

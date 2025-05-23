@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-view.models';
+import { SessionExerciseViewModel, SessionSetViewModel } from '../../../models/session-page.viewmodel';
 import { SessionExerciseItemComponent } from '../session-exercise-item/session-exercise-item.component';
 
 @Component({

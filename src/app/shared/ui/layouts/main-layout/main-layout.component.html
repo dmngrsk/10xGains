@@ -1,0 +1,29 @@
+<mat-toolbar color="primary" class="flex justify-start gap-2 items-center shadow-md fixed top-0 left-0 right-0 z-[100] h-16">
+  @if (showBackNavigation()) {
+    <button class="!text-[var(--mat-sys-primary)]" mat-icon-button (click)="onNavigateBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+  } @else {
+    <img ngSrc="assets/images/logotype.png" alt="10xGains Logo" width="1024" height="1024" priority="true" class="h-10 w-10 object-contain" />
+  }
+  <span class="text-xl font-semibold">{{ title }}</span>
+</mat-toolbar>
+
+@if (showFullScreenLoader()) {
+  <div class="flex justify-center items-center fixed inset-0 z-50">
+    <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
+  </div>
+} @else {
+  @if (showProgressBar()) {
+    <mat-progress-bar mode="indeterminate" color="accent" class="fixed top-14 left-0 right-0 z-[99]"></mat-progress-bar>
+  } @else {
+    <div class="h-[4px]"></div>
+  }
+  <div [class.pb-20]="showBottomNavigation()" class="page-content-area pt-16 min-h-[calc(100vh-4rem-3.5rem)] overflow-y-auto">
+    <ng-content></ng-content>
+  </div>
+}
+
+@if (showBottomNavigation()) {
+  <txg-bottom-navigation></txg-bottom-navigation>
+}

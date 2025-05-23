@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { SessionMetadataViewModel } from '../../../models/session-view.models';
+import { SessionMetadataViewModel } from '../../../models/session-page.viewmodel';
 
 @Component({
   selector: 'txg-session-header',

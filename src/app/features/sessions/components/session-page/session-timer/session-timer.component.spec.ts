@@ -255,9 +255,9 @@ describe('SessionTimerComponent', () => {
     });
   });
 
-  it('onCompleteSessionClick should emit sessionCompleted event', () => {
+  it('onCompleteSession should emit sessionCompleted event', () => {
     const spy = vi.spyOn(component.sessionCompleted, 'emit');
-    component.onCompleteSessionClick();
+    component.onCompleteSession();
     expect(spy).toHaveBeenCalledOnce();
   });
 

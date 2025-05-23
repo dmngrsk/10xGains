@@ -3,6 +3,8 @@ import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-he
 import type { TrainingSessionDto } from '@shared/models/api-types.ts';
 import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
+const TrainingSessionStatusEnum = z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']);
+
 const GetTrainingSessionsQuerySchema = z.object({
   limit: z.preprocess(
     (val) => (val ? Number(val) : undefined),
@@ -13,7 +15,10 @@ const GetTrainingSessionsQuerySchema = z.object({
     z.number().int().nonnegative().optional()
   ),
   order: z.string().regex(/^(session_date)\.(asc|desc)$/).default('session_date.desc').optional(),
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.preprocess(
+    (val) => (typeof val === 'string' ? val.split(',').map(s => s.trim()) : undefined),
+    z.array(TrainingSessionStatusEnum).optional()
+  ),
   date_from: z.preprocess(
     (val) => (val ? new Date(String(val)).toISOString() : undefined),
     z.string().datetime().optional()
@@ -42,8 +47,8 @@ export async function handleGetTrainingSessions(
       .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)')
       .eq('user_id', user!.id);
 
-    if (status) {
-      query = query.eq('status', status);
+    if (status && status.length > 0) {
+      query = query.in('status', status);
     }
     if (date_from) {
       query = query.gte('session_date', date_from);

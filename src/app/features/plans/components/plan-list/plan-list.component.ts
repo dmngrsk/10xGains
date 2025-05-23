@@ -13,7 +13,7 @@ import { of } from 'rxjs';
 import { TrainingPlanDto, TrainingPlanDayDto, CreateTrainingPlanCommand } from '@shared/api/api.types';
 import { AuthService } from '@shared/services/auth.service';
 import { ExerciseService } from '@shared/services/exercise.service';
-import { FullScreenLayoutComponent } from '@shared/ui/layouts/full-screen-layout/full-screen-layout.component';
+import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { PlanCardComponent } from './plan-card/plan-card.component';
 import { PlanCardSkeletonComponent } from './plan-card-skeleton/plan-card-skeleton.component';
 import { PlanListEmptyComponent } from './plan-list-empty/plan-list-empty.component';
@@ -34,7 +34,7 @@ import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogClo
     MatSnackBarModule,
     PlanCardComponent,
     PlanCardSkeletonComponent,
-    FullScreenLayoutComponent,
+    MainLayoutComponent,
     PlanListEmptyComponent
   ],
   templateUrl: './plan-list.component.html',

@@ -1,0 +1,18 @@
+mat-toolbar {
+  padding: 0;
+}
+
+.nav-item-container {
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  .active-nav-item {
+    mat-icon {
+      color: var(--mat-sys-primary, inherit);
+    }
+
+    span {
+      color: var(--mat-sys-primary, inherit);
+    }
+  }
+}

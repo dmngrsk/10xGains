@@ -1,9 +1,7 @@
 import { TrainingSessionDto, SessionSetDto, ExerciseDto, TrainingPlanExerciseSetDto, TrainingPlanDto } from '@shared/api/api.types';
+import { SessionStatus, SessionSetStatus } from './session.enum';
 
-export type SessionStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-export type SessionSetStatus = 'PENDING' | 'COMPLETED' | 'FAILED' | 'SKIPPED';
-
-export interface SessionDetailsViewModel {
+export interface SessionPageViewModel {
   id: string;
   metadata?: SessionMetadataViewModel;
   exercises: SessionExerciseViewModel[];
@@ -39,7 +37,7 @@ export function mapDtosToSessionDetailsViewModel(
   currentSession: TrainingSessionDto,
   plan: TrainingPlanDto | undefined | null,
   exerciseDetailsMap: Map<string, Pick<ExerciseDto, 'name'>>
-): SessionDetailsViewModel | null {
+): SessionPageViewModel | null {
   if (!plan) {
     console.warn('[mapTrainingDataToSessionViewModels] Plan day data or planned exercises are missing. Cannot map to SessionExerciseViewModel structure.');
     return null;

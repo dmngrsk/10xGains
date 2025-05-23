@@ -16,6 +16,7 @@ const mockSessionSet = (id: string, tpeId: string, index: number, actualWeight: 
   training_plan_exercise_id: tpeId,
   training_session_id: 'session1',
   set_index: index,
+  expected_reps: actualReps,
   actual_reps: actualReps,
   actual_weight: actualWeight,
   status,
