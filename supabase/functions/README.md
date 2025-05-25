@@ -949,8 +949,9 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
             "training_session_id": "uuid", // Matches parent session ID
             "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
             "set_index": 1,
+            "expected_reps": 10,
+            "actual_reps": null,
             "actual_weight": 50.0,
-            "actual_reps": 10,
             "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
             "completed_at": null // or timestamp
           }
@@ -995,8 +996,9 @@ Once the `training_plan_day_id` is determined (either provided or automatically 
           "training_session_id": "uuid", // Matches parent session ID
           "training_plan_exercise_id": "uuid", // From the plan day's exercise
           "set_index": 1,
+          "expected_reps": 10,     // Initialized from plan's expected_reps
+          "actual_reps": null,     // Initially null
           "actual_weight": 50.0, // Initialized from plan's expected_weight
-          "actual_reps": 10,     // Initialized from plan's expected_reps
           "status": "PENDING",
           "completed_at": null
         }
@@ -1030,8 +1032,9 @@ Retrieves a specific training session by its ID, if it belongs to the authentica
           "training_session_id": "uuid", // Matches parent session ID
           "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
           "set_index": 1,
+          "expected_reps": 10,
+          "actual_reps": null,
           "actual_weight": 50.0,
-          "actual_reps": 10,
           "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
           "completed_at": null // or timestamp
         }
@@ -1072,8 +1075,9 @@ Updates the status of an existing training session (e.g., to cancel it).
           "training_session_id": "uuid",
           "training_plan_exercise_id": "uuid",
           "set_index": 1,
+          "expected_reps": 10,
+          "actual_reps": null,
           "actual_weight": 50.0,
-          "actual_reps": 10,
           "status": "PENDING",
           "completed_at": null
         }
@@ -1122,8 +1126,9 @@ Marks a training session as completed and triggers exercise progression logic.
           "training_session_id": "uuid", 
           "training_plan_exercise_id": "uuid",
           "set_index": 1,
-          "actual_weight": 50.0,
+          "expected_reps": 10,
           "actual_reps": 10,
+          "actual_weight": 50.0,
           "status": "COMPLETED", // Example: sets also marked completed
           "completed_at": "2023-01-02T10:30:00Z"
         }
@@ -1156,8 +1161,9 @@ Retrieves a list of all sets for a specified training session.
         "training_session_id": "uuid",
         "training_plan_exercise_id": "uuid",
         "set_index": 1,
-        "actual_weight": 57.5,
+        "expected_reps": 5,
         "actual_reps": 5,
+        "actual_weight": 57.5,
         "status": "PENDING",
         "completed_at": null
       }
@@ -1181,8 +1187,9 @@ Creates a new set for a specified training session.
     {
       "training_plan_exercise_id": "uuid", // Required, ID from training_plan_exercises
       "set_index": 1, // Optional, SMALLINT >= 1. If provided, inserts at this position and shifts others. If omitted, appends to the end.
+      "expected_reps": 5, // Required, SMALLINT >= 0
+      "actual_reps": 5, // Optional, SMALLINT >= 0, nullabe
       "actual_weight": 57.5, // Required, NUMERIC(7,3) >= 0
-      "actual_reps": 5, // Required, SMALLINT >= 0
       "status": "PENDING",  // Optional, e.g., 'PENDING', 'COMPLETED', 'FAILED', 'SKIPPED', defaults to PENDING
       "completed_at": "datetime" // Optional; required if status is 'COMPLETED' or 'FAILED'.
     }
@@ -1194,8 +1201,9 @@ Creates a new set for a specified training session.
       "training_session_id": "uuid",
       "training_plan_exercise_id": "uuid",
       "set_index": 1, // or assigned index
-      "actual_weight": 57.5,
+      "expected_reps": 5,
       "actual_reps": 5,
+      "actual_weight": 57.5,
       "status": "PENDING", // or provided status
       "completed_at": null // or provided datetime
     }
@@ -1221,6 +1229,7 @@ Retrieves details for a specific set within a training session.
       "training_session_id": "uuid", // Parent session ID
       "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
       "set_index": 1,
+      "expected_reps": 5,
       "actual_weight": 55.0,
       "actual_reps": 8,
       "status": "COMPLETED",
@@ -1245,7 +1254,8 @@ Updates an existing set within a training session.
     ```json
     {
       "set_index": 1, // Optional, SMALLINT >= 1. Reorders sets if changed.
-      "actual_reps": 5, // Optional, SMALLINT >= 0
+      "expected_reps": 5, // Optional, SMALLINT >= 0
+      "actual_reps": 5, // Optional, SMALLINT >= 0, nullable
       "actual_weight": 57.5, // Optional, NUMERIC(7,3) >= 0
       "status": "COMPLETED", // Optional, e.g., 'PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'
       "completed_at": "datetime" // Optional; required if status is 'COMPLETED' or 'FAILED'. If status is 'COMPLETED' or 'FAILED' and this is omitted, it defaults to NOW().
@@ -1258,8 +1268,9 @@ Updates an existing set within a training session.
       "training_session_id": "uuid", // Parent session ID
       "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
       "set_index": 1, // Updated value
-      "actual_weight": 57.5, // Updated value
+      "expected_reps": 5, // Updated value
       "actual_reps": 5, // Updated value
+      "actual_weight": 57.5, // Updated value
       "status": "COMPLETED", // Updated value
       "completed_at": "2023-01-01T10:10:00Z" // Updated or set to NOW()
     }

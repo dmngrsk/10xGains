@@ -50,6 +50,11 @@
               {
                 "pattern": "rxjs",
                 "group": "external",
+                "position": "before"
+              },
+              {
+                "pattern": "@supabase/**",
+                "group": "external",
                 "position": "after"
               },
               {

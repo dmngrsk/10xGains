@@ -106,7 +106,7 @@ export class SessionCardComponent {
     } else {
       const allRepsSame = repCounts.every(r => r === repCounts[0]);
       if (allRepsSame) {
-        repsSummaryStr = `${repCounts[0]}x${repCounts.length}`;
+        repsSummaryStr = `${repCounts.length}x${repCounts[0]}`;
       } else {
         repsSummaryStr = repCounts.join('/');
       }
@@ -168,7 +168,7 @@ export class SessionCardComponent {
         }
       }
     }
-    
+
     return bestTime;
   }
 }

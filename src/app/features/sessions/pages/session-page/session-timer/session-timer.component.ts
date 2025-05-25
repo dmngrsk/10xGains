@@ -14,7 +14,7 @@ import { Subscription, Subject, takeUntil, interval } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionTimerComponent implements OnDestroy {
-  @Input({ required: true }) resetTrigger!: Signal<number | null>;
+  @Input({ required: true }) resetTrigger!: Signal<number | null | undefined>;
   @Input() @HostBinding('class.all-sets-complete-highlight') allExercisesComplete: boolean = false;
 
   @Output() readonly sessionCompleted = new EventEmitter<void>();
@@ -41,7 +41,7 @@ export class SessionTimerComponent implements OnDestroy {
   constructor() {
     effect(() => {
       const triggerValue = this.resetTrigger();
-      if (triggerValue === null) {
+      if (triggerValue === null || triggerValue === undefined) {
         untracked(() => {
           this.resetTimer();
         });

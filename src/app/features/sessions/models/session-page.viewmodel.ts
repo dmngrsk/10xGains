@@ -1,10 +1,12 @@
 import { TrainingSessionDto, SessionSetDto, ExerciseDto, TrainingPlanExerciseSetDto, TrainingPlanDto } from '@shared/api/api.types';
-import { SessionStatus, SessionSetStatus } from './session.enum';
+import { SessionStatus, SessionSetStatus } from './session.types';
 
 export interface SessionPageViewModel {
-  id: string;
+  id: string | null;
   metadata?: SessionMetadataViewModel;
   exercises: SessionExerciseViewModel[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 export interface SessionMetadataViewModel {
@@ -33,7 +35,7 @@ export interface SessionSetViewModel {
   weight?: number;
 }
 
-export function mapDtosToSessionDetailsViewModel(
+export function mapToSessionPageViewModel(
   currentSession: TrainingSessionDto,
   plan: TrainingPlanDto | undefined | null,
   exerciseDetailsMap: Map<string, Pick<ExerciseDto, 'name'>>
@@ -110,6 +112,20 @@ export function mapDtosToSessionDetailsViewModel(
       date: currentSession.session_date ?? undefined,
       status: currentSession.status as SessionStatus
     },
-    exercises: sessionExercisesViewModel
+    exercises: sessionExercisesViewModel,
+    isLoading: false,
+    error: null,
   }
+}
+
+export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpectedReps?: number | null): SessionSetViewModel {
+  return {
+    id: setDto.id,
+    status: setDto.status as SessionSetStatus,
+    order: setDto.set_index,
+    expectedReps: originalExpectedReps ?? setDto.expected_reps ?? 0,
+    actualReps: setDto.actual_reps,
+    weight: setDto.actual_weight,
+    trainingPlanExerciseId: setDto.training_plan_exercise_id,
+  };
 }

@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { TrainingPlanExerciseDto } from '@shared/api/api.types';
-import { ExerciseService } from '@shared/services/exercise.service';
+import { ExerciseService } from '@shared/api/exercise.service';
 import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-item.component';
 
 @Component({

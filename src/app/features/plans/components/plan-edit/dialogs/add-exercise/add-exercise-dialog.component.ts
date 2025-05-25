@@ -10,8 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { startWith, map, debounceTime, switchMap } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
+import { startWith, map, debounceTime, switchMap } from 'rxjs/operators';
 import { ExerciseDto } from '@shared/api/api.types';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 

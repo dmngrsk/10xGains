@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { finalize } from 'rxjs/operators';
 import { BehaviorSubject , firstValueFrom } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import { AuthService, LoginRequest } from '@shared/services/auth.service';
 
 /**

@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs'
 import { TrainingPlanDto } from '@shared/api/api.types';
-import { ExerciseService } from '@shared/services/exercise.service';
+import { ExerciseService } from '@shared/api/exercise.service';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { AddEditDayDialogCloseResult, AddEditDayDialogComponent, AddEditDayDialogData } from './dialogs/add-edit-day/add-edit-day-dialog.component';

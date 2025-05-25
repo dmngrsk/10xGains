@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, EventEmitter, Input, Output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatRippleModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { LongPressDirective } from '@shared/utils/directives/long-press.directive';
 import { SessionSetViewModel } from '../../../models/session-page.viewmodel';
-import { SessionSetStatus } from '../../../models/session.enum';
+import { SessionSetStatus } from '../../../models/session.types';
 
 interface NextSetStateAttributes {
   status: SessionSetStatus;
@@ -27,7 +27,7 @@ interface NextSetStateAttributes {
   styleUrls: ['./session-set-bubble.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SessionSetBubbleComponent {
+export class SessionSetBubbleComponent implements OnChanges {
   @Input() set!: SessionSetViewModel;
   @Input() isAddAction: boolean = false;
   @Input() isReadOnly: boolean = false;
@@ -36,7 +36,7 @@ export class SessionSetBubbleComponent {
   @Output() setLongPressed = new EventEmitter<SessionSetViewModel>();
   @Output() setAdded = new EventEmitter<void>();
 
-  private optimisticSet = signal(this.set);
+  private optimisticSet = signal<SessionSetViewModel>(this.set);
 
   get setVm(): SessionSetViewModel | null {
     if (this.isAddAction) return null;
@@ -63,11 +63,14 @@ export class SessionSetBubbleComponent {
   get bubbleWeightText(): string | null {
     if (this.isAddAction) return null;
 
-    return this.set?.weight?.toString() ?? null;
+    return this.optimisticSet()?.weight?.toString() ?? null;
   }
 
-  constructor() {
-    effect(() => this.optimisticSet.set(this.set));
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['set']) {
+      const newSet = changes['set'].currentValue as SessionSetViewModel;
+      this.optimisticSet.set(newSet);
+    }
   }
 
   onSetClicked(): void {

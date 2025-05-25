@@ -112,8 +112,10 @@ export class AddEditSetDialogComponent {
 
     if (this.data.mode === 'edit' && this.data.setToEditDetails) {
       const command: UpdateSessionSetCommand = {
-        actual_reps: Number(formValue.reps),
+        expected_reps: Number(formValue.reps),
+        actual_reps: null,
         actual_weight: Number(formValue.weight),
+        status: 'PENDING',
       };
       this.dialogRef.close(command);
     } else if (

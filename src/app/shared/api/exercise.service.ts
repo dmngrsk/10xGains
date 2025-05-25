@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, tap, firstValueFrom } from 'rxjs';
-import { ApiService, ApiServiceResponse } from '../api/api.service';
-import { ExerciseDto, CreateExerciseCommand } from '../api/api.types';
+import { ApiService, ApiServiceResponse } from './api.service';
+import { ExerciseDto, CreateExerciseCommand } from './api.types';
 
 /**
  * Service to manage exercises from the database

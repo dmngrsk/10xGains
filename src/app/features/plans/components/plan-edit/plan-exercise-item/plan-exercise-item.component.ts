@@ -3,7 +3,7 @@ import { Component, Input, ChangeDetectionStrategy, inject, Signal, signal } fro
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { TrainingPlanExerciseDto } from '@shared/api/api.types';
-import { ExerciseService } from '@shared/services/exercise.service';
+import { ExerciseService } from '@shared/api/exercise.service';
 import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exercise-set-list.component';
 
 @Component({

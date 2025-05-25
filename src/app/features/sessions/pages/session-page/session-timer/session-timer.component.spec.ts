@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, NgZone, WritableSignal, signal, effect } from '@angular/core';
-import { vi, describe, it, expect, beforeEach, afterEach, MockedFunction } from 'vitest';
 import { Subject, Subscription } from 'rxjs';
+import { vi, describe, it, expect, beforeEach, afterEach, MockedFunction } from 'vitest';
 import { SessionTimerComponent } from './session-timer.component';
 
 // Define a type for our augmented effect mock

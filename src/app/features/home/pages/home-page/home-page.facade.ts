@@ -1,14 +1,13 @@
 import { inject, signal, computed, Injectable } from '@angular/core';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { EMPTY, forkJoin, of, from } from 'rxjs';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { PlanService } from '@features/plans/services/plan.service';
-import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from '@features/sessions/models/session-card.viewmodel';
-import { SessionStatus, SessionSetStatus } from '@features/sessions/models/session.enum';
-import { SessionService, GetSessionsParams } from '@features/sessions/services/session.service';
+import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
+import { SessionCardViewModel, mapToSesssionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { TrainingSessionDto, ExerciseDto, TrainingPlanDto } from '@shared/api/api.types';
+import { ExerciseService } from '@shared/api/exercise.service';
+import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
-import { ExerciseService } from '@shared/services/exercise.service';
-import { ProfileService } from '@shared/services/profile.service';
 import { HomePageViewModel } from '../../models/home-page.viewmodel';
 
 const initialState: HomePageViewModel = {
@@ -79,16 +78,16 @@ export class HomePageFacade {
         const currentProfileActivePlanId = this.viewModel().activeTrainingPlanId;
 
         if (!sessions || !plan || !exercises) {
-            if (!currentProfileActivePlanId) {
-              return { ...this.viewModel(), isLoading: false, sessions: [] };
-            }
-            return { ...this.viewModel(), isLoading: false, error: 'Failed to load some home page data.', sessions: [] };
+          if (!currentProfileActivePlanId) {
+            return { ...this.viewModel(), isLoading: false, sessions: [] };
+          }
+          return { ...this.viewModel(), isLoading: false, error: 'Failed to load some home page data.', sessions: [] };
         }
 
         const displaySessions: SessionCardViewModel[] = [];
 
         if (sessions.length > 0) {
-          displaySessions.push(this.transformSessionToViewModel(sessions[0], plan, exercises));
+          displaySessions.push(mapToSesssionCardViewModel(sessions[0], plan, exercises));
         }
 
         return {
@@ -127,52 +126,5 @@ export class HomePageFacade {
         return EMPTY;
       })
     ).subscribe();
-  }
-
-  private transformSessionToViewModel(
-    session: TrainingSessionDto,
-    plan: TrainingPlanDto,
-    allExercises: ExerciseDto[],
-  ): SessionCardViewModel {
-    const planDay = plan.days?.find(d => d.id === session.training_plan_day_id);
-
-    const sessionExercises: SessionCardExerciseViewModel[] = [];
-    if (planDay?.exercises && allExercises) {
-      for (const planExercise of planDay.exercises) {
-        const exerciseDetail = allExercises.find(e => e.id === planExercise.exercise_id);
-        if (exerciseDetail) {
-          const relevantSetsDto = session.sets?.filter(s => s.training_plan_exercise_id === planExercise.id) || [];
-          const setsViewModel: SessionCardSetViewModel[] = relevantSetsDto.map(dto => ({
-            expectedReps: dto.expected_reps,
-            actualReps: dto.actual_reps,
-            actualWeight: dto.actual_weight,
-            status: dto.status as SessionSetStatus,
-            completedAt: dto.completed_at ? new Date(this.ensureUtc(dto.completed_at)) : null,
-          }));
-          sessionExercises.push({
-            name: exerciseDetail.name,
-            sets: setsViewModel,
-          });
-        }
-      }
-    }
-
-    return {
-      id: session.id,
-      title: planDay?.name || 'N/A',
-      sessionDate: session.session_date ? new Date(this.ensureUtc(session.session_date)) : null,
-      status: session.status as SessionStatus,
-      exercises: sessionExercises,
-    };
-  }
-
-  private ensureUtc(dateString: string | null | undefined): string {
-    if (!dateString) {
-      return new Date().toISOString();
-    }
-    if (dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
-      return dateString;
-    }
-    return dateString + 'Z';
   }
 }

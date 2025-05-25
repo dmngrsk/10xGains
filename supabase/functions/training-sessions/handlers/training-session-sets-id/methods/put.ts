@@ -13,8 +13,9 @@ const pathParamsSchema = z.object({
 
 const updateSessionSetCommandSchema = z.object({
   set_index: z.number().int().positive('Set index must be a positive integer.').optional(),
+  expected_reps: z.number().int().nonnegative('Expected reps must be a non-negative integer.').optional(),
   actual_weight: z.number().nonnegative('Actual weight cannot be negative.').optional(),
-  actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer.').optional(),
+  actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer.').nullable().optional(),
   status: SessionSetStatusSchema.optional(),
   completed_at: z.string().datetime({ message: 'Invalid datetime format for completed_at.' }).nullable().optional()
 }).refine(data => !((data.status === 'COMPLETED' || data.status === 'FAILED') && !data.completed_at), {

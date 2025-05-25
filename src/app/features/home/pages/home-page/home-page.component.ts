@@ -22,10 +22,11 @@ import { HomePageFacade } from './home-page.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePageComponent implements OnInit {
-  private readonly homeFacade = inject(HomePageFacade);
+  private readonly facade = inject(HomePageFacade);
   private readonly router = inject(Router);
 
-  readonly viewModel = this.homeFacade.viewModel;
+  readonly viewModel = this.facade.viewModel;
+
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
 
   readonly activeSession: Signal<SessionCardViewModel | null> = computed(() => {
@@ -38,11 +39,11 @@ export class HomePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.homeFacade.loadHomePageData();
+    this.facade.loadHomePageData();
   }
 
   onSessionCreated(): void {
-    this.homeFacade.createSession();
+    this.facade.createSession();
   }
 
   onSessionNavigated(sessionId: string): void {

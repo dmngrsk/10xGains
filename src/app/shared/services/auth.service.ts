@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { Session, User } from '@supabase/supabase-js';
-import { map, first } from 'rxjs/operators';
 import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
+import { map, first } from 'rxjs/operators';
+import { Session, User } from '@supabase/supabase-js';
 import { SupabaseService } from '../db/supabase.service';
 
 

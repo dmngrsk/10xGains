@@ -1,0 +1,34 @@
+<txg-main-layout title="Active Session" [loadingSignal]="isLoadingSignal" backNavigation="/home">
+  <div class="p-4">
+    @if (viewModel(); as vm) {
+      @if (vm.error) {
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong class="font-bold">Error!</strong>
+          <span class="block sm:inline">{{ vm.error }}</span>
+        </div>
+      } @else {
+        <txg-session-header [metadata]="vm.metadata!" />
+
+        <div class="mt-4">
+          <txg-session-exercise-list
+            [exercises]="vm.exercises!"
+            [isReadOnly]="isReadOnly()"
+            (setClicked)="onSetClicked($event)"
+            (setLongPressed)="onSetLongPressed($event)"
+            (setAdded)="onSetAdded($event)"
+          ></txg-session-exercise-list>
+        </div>
+
+        <div class="bottom-spacer h-16"></div>
+
+        @if (!isReadOnly()) {
+          <txg-session-timer
+            [resetTrigger]="timerResetTrigger"
+            [allExercisesComplete]="allExercisesComplete()"
+            (sessionCompleted)="onSessionCompleted()"
+          ></txg-session-timer>
+        }
+      }
+    }
+  </div>
+</txg-main-layout>

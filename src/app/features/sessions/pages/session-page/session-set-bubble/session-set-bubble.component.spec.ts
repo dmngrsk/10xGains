@@ -1,12 +1,7 @@
-import { WritableSignal, effect } from '@angular/core';
-import { describe, it, expect, vi, beforeEach, MockedFunction } from 'vitest';
+import { WritableSignal } from '@angular/core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SessionSetBubbleComponent } from './session-set-bubble.component';
 import { SessionSetViewModel } from '../../../models/session-page.viewmodel';
-
-vi.mock('@angular/core', async (importOriginal) => {
-  const actualCore = await importOriginal<typeof import('@angular/core')>();
-  return { ...actualCore, effect: vi.fn() };
-});
 
 const createMockSet = (overrides: Partial<SessionSetViewModel> = {}): SessionSetViewModel => ({
   id: 'set1',
@@ -21,12 +16,8 @@ const createMockSet = (overrides: Partial<SessionSetViewModel> = {}): SessionSet
 
 describe('SessionSetBubbleComponent', () => {
   let component: SessionSetBubbleComponent;
-  let effectSpy: MockedFunction<typeof effect>;
 
   beforeEach(() => {
-    effectSpy = vi.mocked(effect);
-    effectSpy.mockClear();
-
     component = new SessionSetBubbleComponent();
     initializeComponentSet(createMockSet());
   });
@@ -37,11 +28,6 @@ describe('SessionSetBubbleComponent', () => {
   };
 
   describe('Initialization and Defaults', () => {
-    it('should create and effect should be called in constructor', () => {
-      expect(component).toBeTruthy();
-      expect(effectSpy).toHaveBeenCalledTimes(1);
-    });
-
     it('should have default isAddAction as false', () => {
       expect(component.isAddAction).toBe(false);
     });
