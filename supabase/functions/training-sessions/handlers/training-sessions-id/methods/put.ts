@@ -57,8 +57,8 @@ export async function handlePutTrainingSessionById(
 
     return createSuccessResponse<TrainingSessionDto>(200, updatedSession);
 
-  } catch (e: any) {
-    console.error('Unexpected error in handlePutTrainingSessionById:', e);
-    return createErrorResponse(500, 'An unexpected error occurred.', { details: e.message });
+  } catch (error) {
+    console.error('Unexpected error in handlePutTrainingSessionById:', error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

@@ -1,0 +1,53 @@
+<h2 mat-dialog-title class="flex items-center">Filter Sessions</h2>
+
+<mat-dialog-content class="!pt-4">
+  <form [formGroup]="filterForm" class="space-y-4 p-1">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Training plan</mat-label>
+      <mat-select formControlName="selectedTrainingPlanId">
+        @for (plan of availableTrainingPlans; track plan.id) {
+          <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Start date</mat-label>
+        <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY">
+        <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
+        <mat-datepicker #pickerFrom></mat-datepicker>
+        @if (filterForm.get('dateFrom')?.hasError('matDatepickerParse') && filterForm.get('dateFrom')?.touched) {
+          <mat-error>{{ validationMessages.pattern }}</mat-error>
+        }
+        @if (filterForm.get('dateFrom')?.hasError('dateRangeInvalid') && filterForm.get('dateFrom')?.touched) {
+          <mat-error>{{ validationMessages.dateRangeInvalid }}</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>End date</mat-label>
+        <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY">
+        <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
+        <mat-datepicker #pickerTo></mat-datepicker>
+        @if (filterForm.get('dateTo')?.hasError('matDatepickerParse') && filterForm.get('dateTo')?.touched) {
+          <mat-error>{{ validationMessages.pattern }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Sessions per page</mat-label>
+      <mat-select formControlName="pageSize">
+        @for (size of pageSizeOptions; track size) {
+          <mat-option [value]="size">{{ size }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions class="flex justify-end space-x-3">
+  <button mat-raised-button (click)="onCancelled()" type="button">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid">Apply Filters</button>
+</mat-dialog-actions>

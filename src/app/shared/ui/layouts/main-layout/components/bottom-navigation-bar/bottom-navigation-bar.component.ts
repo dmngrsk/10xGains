@@ -13,7 +13,7 @@ interface NavLink {
 }
 
 @Component({
-  selector: 'txg-bottom-navigation',
+  selector: 'txg-bottom-navigation-bar',
   standalone: true,
   imports: [
     RouterLink,
@@ -23,16 +23,16 @@ interface NavLink {
     MatIconModule,
     MatDividerModule
   ],
-  templateUrl: './bottom-navigation.component.html',
-  styleUrls: ['./bottom-navigation.component.scss'],
+  templateUrl: './bottom-navigation-bar.component.html',
+  styleUrls: ['./bottom-navigation-bar.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BottomNavigationComponent {
+export class BottomNavigationBarComponent {
   navLinks: NavLink[] = [
     { label: 'Home', icon: 'home', path: '/home' },
     { label: 'Plans', icon: 'list_alt', path: '/plans' },
-    { label: 'History', icon: 'history', disabled: true },
-    { label: 'Progress', icon: 'bar_chart', disabled: true },
+    { label: 'History', icon: 'history', path: '/history' },
+    { label: 'Progress', icon: 'stacked_line_chart', disabled: true },
     { label: 'Settings', icon: 'settings', disabled: true }
   ];
 }

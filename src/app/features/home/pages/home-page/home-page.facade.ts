@@ -1,9 +1,10 @@
 import { inject, signal, computed, Injectable } from '@angular/core';
 import { EMPTY, forkJoin, of, from } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { PlanService } from '@features/plans/services/plan.service';
+import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
-import { SessionCardViewModel, mapToSesssionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
+import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
+import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
 import { TrainingSessionDto, ExerciseDto, TrainingPlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
@@ -87,7 +88,7 @@ export class HomePageFacade {
         const displaySessions: SessionCardViewModel[] = [];
 
         if (sessions.length > 0) {
-          displaySessions.push(mapToSesssionCardViewModel(sessions[0], plan, exercises));
+          displaySessions.push(mapToSessionCardViewModel(sessions[0], plan, exercises));
         }
 
         return {

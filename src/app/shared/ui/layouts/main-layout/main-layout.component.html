@@ -19,11 +19,11 @@
   } @else {
     <div class="h-[4px]"></div>
   }
-  <div [class.pb-20]="showBottomNavigation()" class="page-content-area pt-16 min-h-[calc(100vh-4rem-3.5rem)] overflow-y-auto">
+  <div [class.pb-20]="showBottomNavigation()" class="page-content-area pt-16 min-h-[calc(100vh-7.5rem)] overflow-y-auto">
     <ng-content></ng-content>
   </div>
 }
 
 @if (showBottomNavigation()) {
-  <txg-bottom-navigation></txg-bottom-navigation>
+  <txg-bottom-navigation-bar />
 }

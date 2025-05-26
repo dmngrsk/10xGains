@@ -27,6 +27,7 @@ const GetTrainingSessionsQuerySchema = z.object({
     (val) => (val ? new Date(String(val)).toISOString() : undefined),
     z.string().datetime().optional()
   ),
+  plan_id: z.string().uuid().optional(),
 });
 
 export async function handleGetTrainingSessions(
@@ -39,12 +40,12 @@ export async function handleGetTrainingSessions(
     return createErrorResponse(400, 'Invalid query parameters', validationResult.error.flatten());
   }
 
-  const { limit, offset, order, status, date_from, date_to } = validationResult.data;
+  const { limit, offset, order, status, date_from, date_to, plan_id } = validationResult.data;
 
   try {
     let query = supabaseClient
       .from('training_sessions')
-      .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)')
+      .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)', { count: 'exact' })
       .eq('user_id', user!.id);
 
     if (status && status.length > 0) {
@@ -56,12 +57,14 @@ export async function handleGetTrainingSessions(
     if (date_to) {
       query = query.lte('session_date', date_to);
     }
-
     if (order) {
       const [field, direction] = order.split('.');
       query = query.order(field, { ascending: direction === 'asc' });
     } else {
       query = query.order('session_date', { ascending: false });
+    }
+    if (plan_id) {
+      query = query.eq('training_plan_id', plan_id);
     }
 
     if (limit !== undefined && offset !== undefined) {
@@ -70,7 +73,7 @@ export async function handleGetTrainingSessions(
       query = query.limit(limit);
     }
 
-    const { data, error } = await query.returns<TrainingSessionDto[]>();
+    const { data, count, error } = await query.returns<TrainingSessionDto[]>();
 
     if (error) {
       console.error('Error fetching training sessions:', error);
@@ -84,7 +87,7 @@ export async function handleGetTrainingSessions(
       )
     );
 
-    return createSuccessResponse<TrainingSessionDto[]>(200, data || []);
+    return createSuccessResponse<TrainingSessionDto[]>(200, data || [], { totalCount: count! });
   } catch (e) {
     console.error('Unexpected error in handleGetTrainingSessions:', e);
     return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });

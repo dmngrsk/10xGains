@@ -22,7 +22,7 @@ import { AddExerciseDialogComponent, AddExerciseDialogData, AddExerciseDialogClo
 import { EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogData, EditExerciseProgressionDialogCloseResult } from './dialogs/edit-exercise-progression/edit-exercise-progression-dialog.component';
 import { PlanDayListComponent } from './plan-day-list/plan-day-list.component';
 import { PlanMetadataComponent } from './plan-metadata/plan-metadata.component';
-import { PlanService, PlanServiceResponse } from '../../services/plan.service';
+import { PlanService, PlanServiceResponse } from '../../api/plan.service';
 
 @Component({
   selector: 'txg-plan-edit',
@@ -208,7 +208,7 @@ export class PlanEditComponent {
       .subscribe(result => {
         if (result && ('save' in result) && result.value) {
           this.loadingSignal.set(true);
-          this.planService.createTrainingDay(planId, {
+          this.planService.createPlanDay(planId, {
             name: result.value.name,
             description: result.value.description ?? '',
             order_index: (this.daysSignal().length + 1)
@@ -347,7 +347,7 @@ export class PlanEditComponent {
 
     const addExerciseToBackend = (planId: string, dayId: string, exerciseId: string) => {
       this.loadingSignal.set(true);
-      this.planService.addExerciseToPlanDay(planId, dayId, {
+      this.planService.createPlanExercise(planId, dayId, {
         exercise_id: exerciseId,
         order_index: (this.daysSignal().find(d => d.id === dayId)?.exercises?.length ?? 0) + 1
       })
@@ -555,7 +555,7 @@ export class PlanEditComponent {
 
     const addSetToBackend = (expected_reps: number, expected_weight: number) => {
       this.loadingSignal.set(true);
-      this.planService.addSetToPlanExercise(planId, dayId, exerciseId, {
+      this.planService.createPlanExerciseSet(planId, dayId, exerciseId, {
         expected_reps,
         expected_weight,
         set_index: index
@@ -666,7 +666,7 @@ export class PlanEditComponent {
       return;
     }
     this.loadingSignal.set(true);
-    this.planService.deleteSetFromPlanExercise(planId, dayId, exerciseId, setId)
+    this.planService.deletePlanExerciseSet(planId, dayId, exerciseId, setId)
       .pipe(finalize(() => this.loadingSignal.set(false)), takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {

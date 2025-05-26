@@ -4,11 +4,12 @@ import { SupabaseService } from '../db/supabase.service';
 
 export interface ApiServiceResponse<T> {
   data: T | null;
+  totalCount?: number;
   error: string | null;
 }
 
 type ApiInternalResponse<T> = ApiInternalSuccessResponse<T> | ApiInternalErrorResponse;
-interface ApiInternalSuccessResponse<T> { data: T; message?: string; }
+interface ApiInternalSuccessResponse<T> { data: T; totalCount?: number; message?: string; }
 interface ApiInternalErrorResponse { error: string; details?: Record<string, unknown>; code?: string; }
 
 @Injectable({
@@ -45,6 +46,7 @@ export class ApiService {
   private handleFunctionResponse<T>(functionsResponse: { data: ApiInternalResponse<T> | null; error: Error | null }): ApiServiceResponse<T> {
     return {
       data: functionsResponse.error ? null : (functionsResponse.data as ApiInternalSuccessResponse<T>)?.data ?? null,
+      totalCount: functionsResponse.error ? undefined : (functionsResponse.data as ApiInternalSuccessResponse<T>)?.totalCount ?? undefined,
       error: functionsResponse.error?.message ?? (functionsResponse.data as ApiInternalErrorResponse)?.error ?? null,
     };
   }

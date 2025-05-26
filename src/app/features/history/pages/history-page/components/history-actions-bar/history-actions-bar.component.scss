@@ -1,0 +1,23 @@
+:host {
+  ::ng-deep {
+    .mat-mdc-paginator-container {
+      width: auto;
+
+      .mat-mdc-paginator-range-label {
+        order: 1;
+      }
+    }
+  }
+}
+
+mat-divider {
+  border-top-color: var(--mat-sys-outline-variant);
+}
+
+.bg-surface {
+  background-color: var(--mat-sys-surface);
+}
+
+.filter-specified {
+  color: var(--mat-sys-primary);
+}

@@ -9,6 +9,11 @@ export const routes: Routes = [
     canActivate: [noAuthGuard]
   },
   {
+    path: 'history',
+    loadChildren: () => import('./features/history/history.routes').then(m => m.HISTORY_ROUTES),
+    canActivate: [authGuard]
+  },
+  {
     path: 'home',
     loadChildren: () => import('@features/home/home.routes').then(m => m.HOME_ROUTES),
     canActivate: [authGuard]

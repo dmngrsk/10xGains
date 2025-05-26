@@ -2,13 +2,14 @@ import { inject, signal, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, from, EMPTY } from 'rxjs';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
-import { PlanService } from '@features/plans/services/plan.service';
+import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseDto, TrainingPlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
-import { SessionPageViewModel, SessionSetViewModel, mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session-page.viewmodel';
+import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
 import { SessionStatus } from '../../models/session.types';
 
 // Types used by KeyedDebouncerService for session set update operations
@@ -153,7 +154,7 @@ export class SessionPageFacade {
   }
 
   addSet(command: CreateSessionSetCommand, trainingPlanExerciseId: string): Observable<SessionSetDto | null> {
-    const operation$ = this.sessionService.addSet(command).pipe(
+    const operation$ = this.sessionService.createSet(command).pipe(
       map(response => response?.data ?? null),
       tapIf(setDto => !!setDto, (newSetDto) =>
         this.updateSessionViewModelWithUpsertedSet(mapToSessionSetViewModel(newSetDto!), trainingPlanExerciseId)

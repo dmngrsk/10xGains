@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse, isRequestBodyEmpty } from '@shared/utils/api-helpers.ts';
 import { resolveExerciseProgressions } from '@shared/services/exercise-progressions/exercise-progressions.ts';
 import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
-import type { SessionSetDto, TrainingPlanExerciseDto, TrainingPlanExerciseProgressionDto } from '@shared/models/api-types.ts';
+import type { SessionSetDto, TrainingPlanExerciseDto, TrainingPlanExerciseProgressionDto, TrainingSessionDto } from '@shared/models/api-types.ts';
 
 const PathParamsSchema = z.object({
   sessionId: z.string().uuid({ message: 'Invalid session ID format in path' }),
@@ -182,7 +182,7 @@ export async function handleCompleteTrainingSession(
       return createErrorResponse(404, 'Session not found or could not be updated.');
     }
 
-    return createSuccessResponse<CompleteTrainingSessionResponseDto>(200, updatedSessionEntry as CompleteTrainingSessionResponseDto);
+    return createSuccessResponse<TrainingSessionDto>(200, updatedSessionEntry as TrainingSessionDto);
   } catch (e) {
     console.error('Unexpected error in handleCompleteTrainingSession:', e);
     return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });

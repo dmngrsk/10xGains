@@ -35,8 +35,8 @@ export async function handleDeleteTrainingSessionById(
 
     return createSuccessResponse(204, null);
 
-  } catch (e: any) {
-    console.error('Unexpected error in handleDeleteTrainingSessionById:', e);
-    return createErrorResponse(500, 'An unexpected error occurred.', { details: e.message });
+  } catch (error) {
+    console.error('Unexpected error in handleDeleteTrainingSessionById:', error);
+    return createErrorResponse(500, 'An unexpected error occurred.', { details: (error as Error).message });
   }
 }

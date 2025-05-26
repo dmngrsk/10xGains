@@ -61,7 +61,7 @@ describe('handleProportionalDeload', () => {
 
   it('should return the original set and warn if deload_percentage is missing', () => {
     const set: TrainingPlanExerciseSetDto = { ...baseSet, expected_weight: 100 };
-    const progression: TrainingPlanExerciseProgressionDto = { ...baseProgression, deload_percentage: null as any };
+    const progression: TrainingPlanExerciseProgressionDto = { ...baseProgression, deload_percentage: null as unknown as number };
     const newSet = handleProportionalDeload(set, progression);
     expect(newSet.expected_weight).toBe(100);
     expect(consoleWarnSpy).toHaveBeenCalledWith('Proportional deload cannot be applied: deload_percentage or weight_increment is missing in progression.');
@@ -69,7 +69,7 @@ describe('handleProportionalDeload', () => {
 
   it('should return the original set and warn if weight_increment is missing', () => {
     const set: TrainingPlanExerciseSetDto = { ...baseSet, expected_weight: 100 };
-    const progression: TrainingPlanExerciseProgressionDto = { ...baseProgression, weight_increment: undefined as any };
+    const progression: TrainingPlanExerciseProgressionDto = { ...baseProgression, weight_increment: undefined as unknown as number };
     const newSet = handleProportionalDeload(set, progression);
     expect(newSet.expected_weight).toBe(100);
     expect(consoleWarnSpy).toHaveBeenCalledWith('Proportional deload cannot be applied: deload_percentage or weight_increment is missing in progression.');

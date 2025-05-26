@@ -17,7 +17,7 @@ import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.
 import { PlanCardComponent } from './plan-card/plan-card.component';
 import { PlanCardSkeletonComponent } from './plan-card-skeleton/plan-card-skeleton.component';
 import { PlanListEmptyComponent } from './plan-list-empty/plan-list-empty.component';
-import { PlanService, PlanServiceResponse } from '../../services/plan.service';
+import { PlanService, PlanServiceResponse } from '../../api/plan.service';
 import { PlanListItemViewModel } from '../../shared/models/plan-list-item.view-model';
 import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogCloseResult } from '../plan-edit/dialogs/add-edit-plan/add-edit-plan-dialog.component';
 

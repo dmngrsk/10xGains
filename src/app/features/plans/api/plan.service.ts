@@ -32,14 +32,22 @@ export class PlanService {
    * @param offset Starting position for pagination
    * @returns Observable with plans data and potential error
    */
-  getPlans(limit: number, offset: number): Observable<PlanServiceResponse<TrainingPlanDto[]>> {
-    if (limit <= 0) {
-      return throwError(() => new Error('Limit must be greater than 0'));
+  getPlans(limit?: number, offset?: number): Observable<PlanServiceResponse<TrainingPlanDto[]>> {
+    const queryParams = new URLSearchParams();
+    let url = '/training-plans';
+
+    if (limit) {
+      queryParams.append('limit', limit.toString());
     }
-    if (offset < 0) {
-      return throwError(() => new Error('Offset must be greater than or equal to 0'));
+    if (offset) {
+      queryParams.append('offset', offset.toString());
     }
-    const url = `training-plans?limit=${limit}&offset=${offset}`;
+
+    const queryString = queryParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+
     return this.apiService.get<TrainingPlanDto[]>(url);
   }
 
@@ -52,38 +60,55 @@ export class PlanService {
     if (!planId) {
       return throwError(() => new Error('Plan ID is required'));
     }
+
     const url = `training-plans/${planId}`;
     return this.apiService.get<TrainingPlanDto>(url);
   }
 
   /**
-   * Updates a training plan.
-   * @param planId The ID of the plan to update.
-   * @param payload The data to update (name, description).
-   * @returns Observable with the updated plan data and potential error.
+   * Creates a new training plan.
+   * @param command The command object containing plan details (name, description).
+   * @returns Observable with the created plan data and potential error.
    */
-  updatePlan(planId: string, payload: UpdateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
-    if (!planId) {
-      return throwError(() => new Error('Plan ID is required for update'));
+  createPlan(command: CreateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
+    if (!command || !command.name || command.name.trim() === '') {
+      return throwError(() => new Error('Plan name in command is required for creation'));
     }
-    if (!payload || (payload.name === undefined && payload.description === undefined)) {
-      return throwError(() => new Error('Payload with name or description is required for update'));
-    }
-    const url = `training-plans/${planId}`;
-    return this.apiService.put<UpdateTrainingPlanCommand, TrainingPlanDto>(url, payload);
+
+    const url = 'training-plans';
+    return this.apiService.post<CreateTrainingPlanCommand, TrainingPlanDto>(url, command);
   }
 
   /**
-   * Creates a new training plan.
-   * @param payload The command object containing plan details (name, description).
-   * @returns Observable with the created plan data and potential error.
+   * Updates a training plan.
+   * @param planId The ID of the plan to update.
+   * @param command The command object containing the data to update (name, description).
+   * @returns Observable with the updated plan data and potential error.
    */
-  createPlan(payload: CreateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
-    if (!payload || !payload.name || payload.name.trim() === '') {
-      return throwError(() => new Error('Plan name in payload is required for creation'));
+  updatePlan(planId: string, command: UpdateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
+    if (!planId) {
+      return throwError(() => new Error('Plan ID is required for update'));
     }
-    const url = 'training-plans';
-    return this.apiService.post<CreateTrainingPlanCommand, TrainingPlanDto>(url, payload);
+    if (!command || (command.name === undefined && command.description === undefined)) {
+      return throwError(() => new Error('Command with name or description is required for update'));
+    }
+
+    const url = `training-plans/${planId}`;
+    return this.apiService.put<UpdateTrainingPlanCommand, TrainingPlanDto>(url, command);
+  }
+
+  /**
+   * Deletes a training plan.
+   * @param planId The ID of the plan to delete.
+   * @returns Observable indicating success (null data) or error.
+   */
+  deletePlan(planId: string): Observable<PlanServiceResponse<null>> {
+    if (!planId) {
+      return throwError(() => new Error('Plan ID is required for deletion'));
+    }
+
+    const url = `training-plans/${planId}`;
+    return this.apiService.delete(url);
   }
 
   /**
@@ -92,7 +117,7 @@ export class PlanService {
    * @param command The command object containing day details (name, description, order_index).
    * @returns Observable with the created day data and potential error.
    */
-  createTrainingDay(planId: string, command: CreateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
+  createPlanDay(planId: string, command: CreateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
     if (!planId) {
       return throwError(() => new Error('Plan ID is required to create a day'));
     }
@@ -108,19 +133,19 @@ export class PlanService {
    * Updates a specific training day within a plan.
    * @param planId The ID of the plan.
    * @param dayId The ID of the day to update.
-   * @param payload The data to update (name, description, order_index).
+   * @param command The command object containing the data to update (name, description, order_index).
    * @returns Observable with the updated day data and potential error.
    */
-  updatePlanDay(planId: string, dayId: string, payload: UpdateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
+  updatePlanDay(planId: string, dayId: string, command: UpdateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
     if (!planId || !dayId) {
       return throwError(() => new Error('Plan ID and Day ID are required for update'));
     }
-    if (!payload) {
-      return throwError(() => new Error('Payload is required for update'));
+    if (!command) {
+      return throwError(() => new Error('Command is required for update'));
     }
 
     const url = `training-plans/${planId}/days/${dayId}`;
-    return this.apiService.put<UpdateTrainingPlanDayCommand, TrainingPlanDayDto>(url, payload);
+    return this.apiService.put<UpdateTrainingPlanDayCommand, TrainingPlanDayDto>(url, command);
   }
 
   /**
@@ -133,6 +158,7 @@ export class PlanService {
     if (!planId || !dayId) {
       return throwError(() => new Error('Plan ID and Day ID are required for delete'));
     }
+
     const url = `training-plans/${planId}/days/${dayId}`;
     return this.apiService.delete(url);
   }
@@ -144,7 +170,7 @@ export class PlanService {
    * @param command The command object containing exercise details (exercise_id, order_index).
    * @returns Observable with the created training plan exercise data and potential error.
    */
-  addExerciseToPlanDay(planId: string, dayId: string, command: CreateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
+  createPlanExercise(planId: string, dayId: string, command: CreateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
     if (!planId || !dayId) {
       return throwError(() => new Error('Plan ID and Day ID are required'));
     }
@@ -160,6 +186,42 @@ export class PlanService {
   }
 
   /**
+   * Updates a specific training plan exercise, e.g., its order_index.
+   * @param planId The ID of the training plan.
+   * @param dayId The ID of the training plan day.
+   * @param trainingPlanExerciseId The ID of the training plan exercise to update.
+   * @param command The command object, typically containing the new order_index.
+   * @returns Observable with the updated training plan exercise data and potential error.
+   */
+  updatePlanExercise(planId: string, dayId: string, trainingPlanExerciseId: string, command: UpdateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
+    if (!planId || !dayId || !trainingPlanExerciseId) {
+      return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required for update'));
+    }
+    if (!command || command.order_index === undefined || command.order_index < 0) {
+      return throwError(() => new Error('Command with a non-negative order_index is required'));
+    }
+
+    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
+    return this.apiService.put<UpdateTrainingPlanExerciseCommand, TrainingPlanExerciseDto>(url, command);
+  }
+
+  /**
+   * Deletes a specific exercise from a training day.
+   * @param planId The ID of the training plan.
+   * @param dayId The ID of the training plan day.
+   * @param trainingPlanExerciseId The ID of the training plan exercise to delete.
+   * @returns Observable indicating success (null data) or error.
+   */
+  deletePlanExercise(planId: string, dayId: string, trainingPlanExerciseId: string): Observable<PlanServiceResponse<null>> {
+    if (!planId || !dayId || !trainingPlanExerciseId) {
+      return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required for delete'));
+    }
+
+    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
+    return this.apiService.delete(url);
+  }
+
+  /**
    * Adds a set to a specific training plan exercise.
    * @param planId The ID of the training plan.
    * @param dayId The ID of the training plan day.
@@ -167,7 +229,7 @@ export class PlanService {
    * @param command The command object for creating the set.
    * @returns Observable with the created set data and potential error.
    */
-  addSetToPlanExercise(planId: string, dayId: string, planExerciseId: string, command: CreateTrainingPlanExerciseSetCommand): Observable<PlanServiceResponse<TrainingPlanExerciseSetDto>> {
+  createPlanExerciseSet(planId: string, dayId: string, planExerciseId: string, command: CreateTrainingPlanExerciseSetCommand): Observable<PlanServiceResponse<TrainingPlanExerciseSetDto>> {
     if (!planId || !dayId || !planExerciseId) {
       return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required'));
     }
@@ -183,28 +245,12 @@ export class PlanService {
   }
 
   /**
-   * Deletes a specific set from a training plan exercise.
-   * @param planId The ID of the training plan.
-   * @param dayId The ID of the training plan day.
-   * @param planExerciseId The ID of the training plan exercise.
-   * @param setId The ID of the set to delete.
-   * @returns Observable indicating success (null data) or error.
-   */
-  deleteSetFromPlanExercise(planId: string, dayId: string, planExerciseId: string, setId: string): Observable<PlanServiceResponse<null>> {
-    if (!planId || !dayId || !planExerciseId || !setId) {
-      return throwError(() => new Error('Plan ID, Day ID, Plan Exercise ID, and Set ID are required for delete'));
-    }
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
-    return this.apiService.delete(url);
-  }
-
-  /**
    * Updates a specific set within a training plan exercise.
    * @param planId The ID of the training plan.
    * @param dayId The ID of the training plan day.
    * @param planExerciseId The ID of the training plan exercise.
    * @param setId The ID of the set to update.
-   * @param payload The data to update (set_index, expected_reps, expected_weight).
+   * @param command The command object containing the data to update (set_index, expected_reps, expected_weight).
    * @returns Observable with the updated set data and potential error.
    */
   updatePlanExerciseSet(
@@ -212,73 +258,41 @@ export class PlanService {
     dayId: string,
     planExerciseId: string,
     setId: string,
-    payload: UpdateTrainingPlanExerciseSetCommand
+    command: UpdateTrainingPlanExerciseSetCommand
   ): Observable<PlanServiceResponse<TrainingPlanExerciseSetDto>> {
     if (!planId || !dayId || !planExerciseId || !setId) {
       return throwError(() => new Error('Plan ID, Day ID, Plan Exercise ID, and Set ID are required for update'));
     }
-    if (!payload || (payload.expected_reps === undefined && payload.expected_weight === undefined && payload.set_index === undefined)) {
-      return throwError(() => new Error('Payload with set_index, expected_reps, or expected_weight is required for update'));
+    if (!command || (command.expected_reps === undefined && command.expected_weight === undefined && command.set_index === undefined)) {
+      return throwError(() => new Error('Command with set_index, expected_reps, or expected_weight is required for update'));
     }
-    if (payload.expected_reps !== undefined && payload.expected_reps <= 0) {
+    if (command.expected_reps !== undefined && command.expected_reps <= 0) {
       return throwError(() => new Error('Expected reps must be positive if provided'));
     }
-    if (payload.expected_weight !== undefined && payload.expected_weight <= 0) {
+    if (command.expected_weight !== undefined && command.expected_weight <= 0) {
       return throwError(() => new Error('Expected weight must be positive if provided'));
     }
-    if (payload.set_index !== undefined && payload.set_index < 0) {
+    if (command.set_index !== undefined && command.set_index < 0) {
       return throwError(() => new Error('Set index must be non-negative if provided'));
     }
 
     const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
-    return this.apiService.put<UpdateTrainingPlanExerciseSetCommand, TrainingPlanExerciseSetDto>(url, payload);
+    return this.apiService.put<UpdateTrainingPlanExerciseSetCommand, TrainingPlanExerciseSetDto>(url, command);
   }
 
   /**
-   * Deletes a specific exercise from a training day.
+   * Deletes a specific set from a training plan exercise.
    * @param planId The ID of the training plan.
    * @param dayId The ID of the training plan day.
-   * @param trainingPlanExerciseId The ID of the training plan exercise to delete.
+   * @param planExerciseId The ID of the training plan exercise.
+   * @param setId The ID of the set to delete.
    * @returns Observable indicating success (null data) or error.
    */
-  deletePlanExercise(planId: string, dayId: string, trainingPlanExerciseId: string): Observable<PlanServiceResponse<null>> {
-    if (!planId || !dayId || !trainingPlanExerciseId) {
-      return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required for delete'));
+  deletePlanExerciseSet(planId: string, dayId: string, planExerciseId: string, setId: string): Observable<PlanServiceResponse<null>> {
+    if (!planId || !dayId || !planExerciseId || !setId) {
+      return throwError(() => new Error('Plan ID, Day ID, Plan Exercise ID, and Set ID are required for delete'));
     }
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
-    return this.apiService.delete(url);
-  }
-
-  /**
-   * Updates a specific training plan exercise, e.g., its order_index.
-   * @param planId The ID of the training plan.
-   * @param dayId The ID of the training plan day.
-   * @param trainingPlanExerciseId The ID of the training plan exercise to update.
-   * @param payload The command object, typically containing the new order_index.
-   * @returns Observable with the updated training plan exercise data and potential error.
-   */
-  updatePlanExercise(planId: string, dayId: string, trainingPlanExerciseId: string, payload: UpdateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
-    if (!planId || !dayId || !trainingPlanExerciseId) {
-      return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required for update'));
-    }
-    if (!payload || payload.order_index === undefined || payload.order_index < 0) {
-      return throwError(() => new Error('Payload with a non-negative order_index is required'));
-    }
-
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
-    return this.apiService.put<UpdateTrainingPlanExerciseCommand, TrainingPlanExerciseDto>(url, payload);
-  }
-
-  /**
-   * Deletes a training plan.
-   * @param planId The ID of the plan to delete.
-   * @returns Observable indicating success (null data) or error.
-   */
-  deletePlan(planId: string): Observable<PlanServiceResponse<null>> {
-    if (!planId) {
-      return throwError(() => new Error('Plan ID is required for deletion'));
-    }
-    const url = `training-plans/${planId}`;
+    const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
     return this.apiService.delete(url);
   }
 
@@ -292,6 +306,7 @@ export class PlanService {
     if (!planId || !exerciseId) {
       return throwError(() => new Error('Plan ID and Exercise ID are required to get progression'));
     }
+
     const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;
     return this.apiService.get<TrainingPlanExerciseProgressionDto | undefined>(url);
   }
@@ -312,7 +327,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID and Exercise ID are required to update progression'));
     }
     if (!command) {
-      return throwError(() => new Error('Command payload is required for updating progression'));
+      return throwError(() => new Error('Command is required for updating progression'));
     }
 
     const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;

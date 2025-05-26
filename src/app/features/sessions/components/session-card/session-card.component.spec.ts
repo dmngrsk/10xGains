@@ -12,8 +12,7 @@ describe('SessionCardComponent', () => {
 
     originalToLocaleDateString = Date.prototype.toLocaleDateString;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    Date.prototype.toLocaleDateString = function(locales?: string | string[] | undefined, options?: Intl.DateTimeFormatOptions | undefined) {
+    Date.prototype.toLocaleDateString = function(_locales?: string | string[] | undefined, _options?: Intl.DateTimeFormatOptions | undefined) {
       return originalToLocaleDateString.call(this, 'en-US');
     };
   });

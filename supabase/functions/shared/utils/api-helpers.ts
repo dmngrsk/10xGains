@@ -29,6 +29,9 @@ export interface ApiSuccessResponse<T> {
   /** Response data */
   data: T;
 
+  /** Total row count (optional) */
+  totalCount?: number;
+
   /** Success message (optional) */
   message?: string;
 }
@@ -166,7 +169,7 @@ export function createErrorResponse(
 export function createSuccessResponse<T>(
   status: number,
   data: T,
-  message?: string
+  metadata?: { totalCount?: number, message?: string }
 ): Response {
   // For 204 No Content responses, don't include a body
   if (status === 204) {
@@ -179,7 +182,8 @@ export function createSuccessResponse<T>(
   // For all other success responses, include the JSON body
   const response: ApiSuccessResponse<T> = {
     data,
-    ...(message && { message }),
+    totalCount: metadata?.totalCount ?? undefined,
+    message: metadata?.message ?? undefined,
   };
 
   return new Response(JSON.stringify(response), {

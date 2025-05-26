@@ -6,7 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
-import { BottomNavigationComponent } from './components/bottom-navigation/bottom-navigation.component';
+import { BottomNavigationBarComponent } from './components/bottom-navigation-bar/bottom-navigation-bar.component';
 
 @Component({
   selector: 'txg-main-layout',
@@ -19,7 +19,7 @@ import { BottomNavigationComponent } from './components/bottom-navigation/bottom
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatToolbarModule,
-    BottomNavigationComponent
+    BottomNavigationBarComponent
   ],
   templateUrl: './main-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush

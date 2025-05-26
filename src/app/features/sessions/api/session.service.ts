@@ -13,8 +13,11 @@ import { CompleteSessionSetCommand,
 
 export interface GetSessionsParams {
   limit?: number;
+  offset?: number;
   order?: string;
   status?: string[];
+  date_from?: string;
+  date_to?: string;
   plan_id?: string;
 }
 
@@ -38,11 +41,20 @@ export class SessionService {
     if (params.limit) {
       queryParams.append('limit', params.limit.toString());
     }
+    if (params.offset) {
+      queryParams.append('offset', params.offset.toString());
+    }
     if (params.order) {
       queryParams.append('order', params.order);
     }
     if (params.status) {
       queryParams.append('status', params.status.join(','));
+    }
+    if (params.date_from) {
+      queryParams.append('date_from', params.date_from);
+    }
+    if (params.date_to) {
+      queryParams.append('date_to', params.date_to);
     }
     if (params.plan_id) {
       queryParams.append('plan_id', params.plan_id);
@@ -65,6 +77,7 @@ export class SessionService {
     if (!sessionId) {
       return throwError(() => new Error('Session ID is required.'));
     }
+
     const url = `/training-sessions/${sessionId}`;
     return this.apiService.get<TrainingSessionDto>(url);
   }
@@ -79,6 +92,7 @@ export class SessionService {
     if (!trainingPlanId) {
       return throwError(() => new Error('Training Plan ID is required to create a session from a plan.'));
     }
+
     const url = `/training-sessions`;
     return this.apiService.post<CreateTrainingSessionCommand, TrainingSessionDto>(url, { training_plan_id: trainingPlanId });
   }
@@ -92,6 +106,7 @@ export class SessionService {
     if (!sessionId) {
       return throwError(() => new Error('Session ID is required to complete the session.'));
     }
+
     const url = `/training-sessions/${sessionId}/complete`;
     return this.apiService.post<Record<string, never>, TrainingSessionDto>(url, {});
   }
@@ -101,13 +116,14 @@ export class SessionService {
    * @param command The command object containing the details for the new set.
    * @returns An Observable emitting the created session set data.
    */
-  addSet(command: CreateSessionSetCommand): Observable<SessionServiceResponse<SessionSetDto>> {
+  createSet(command: CreateSessionSetCommand): Observable<SessionServiceResponse<SessionSetDto>> {
     if (!command.training_session_id) {
       return throwError(() => new Error('training_session_id is required in CreateSessionSetCommand for addSet operation.'));
     }
     if (!command.training_plan_exercise_id) {
       return throwError(() => new Error('training_plan_exercise_id is required in CreateSessionSetCommand for addSet operation.'));
     }
+
     const url = `/training-sessions/${command.training_session_id}/sets`;
     return this.apiService.post<CreateSessionSetCommand, SessionSetDto>(url, command);
   }
@@ -129,6 +145,7 @@ export class SessionService {
     if (!command || Object.keys(command).length === 0) {
       return throwError(() => new Error('Update command cannot be empty.'));
     }
+
     const url = `/training-sessions/${sessionId}/sets/${setId}`;
     return this.apiService.put<Partial<UpdateSessionSetCommand>, SessionSetDto>(url, command);
   }
@@ -146,6 +163,7 @@ export class SessionService {
     if (!setId) {
       return throwError(() => new Error('Set ID is required.'));
     }
+
     const url = `/training-sessions/${sessionId}/sets/${setId}`;
     return this.apiService.delete(url);
   }
@@ -163,6 +181,7 @@ export class SessionService {
     if (!setId) {
       return throwError(() => new Error('Set ID is required.'));
     }
+
     const url = `/training-sessions/${sessionId}/sets/${setId}/complete`;
     return this.apiService.patch<CompleteSessionSetCommand, SessionSetDto>(url, {});
   }
@@ -184,6 +203,7 @@ export class SessionService {
     if (actualReps < 0) {
       return throwError(() => new Error('Actual reps cannot be negative.'));
     }
+
     const url = `/training-sessions/${sessionId}/sets/${setId}/fail?reps=${actualReps}`;
     return this.apiService.patch<FailSessionSetCommand, SessionSetDto>(url, {});
   }
@@ -201,6 +221,7 @@ export class SessionService {
     if (!setId) {
       return throwError(() => new Error('Set ID is required.'));
     }
+
     const url = `/training-sessions/${sessionId}/sets/${setId}/reset`;
     return this.apiService.patch<ResetSessionSetCommand, SessionSetDto>(url, {});
   }

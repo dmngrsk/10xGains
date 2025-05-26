@@ -160,16 +160,18 @@ Retrieves the profile information for the authenticated user.
 -   **Response (200 OK)**: The `UserProfileDto` object.
     ```json
     {
-      "id": "uuid",
-      "first_name": "John",
-      "active_training_plan_id": "uuid | null",
-      "ai_suggestions_remaining": 0,
-      "created_at": "timestamp",
-      "updated_at": "timestamp"
+      "data": {
+        "id": "uuid",
+        "first_name": "John",
+        "active_training_plan_id": "uuid | null",
+        "ai_suggestions_remaining": 0,
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      }
     }
     ```
 -   **Responses (Error)**:
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `403 Forbidden`: If the requested `{id}` does not match the authenticated user's ID.
     -   `404 Not Found`: If the user's profile is not found.
 
@@ -187,20 +189,22 @@ Creates or updates the profile information for the authenticated user (upsert be
       "active_training_plan_id": "uuid | null (optional)"
     }
     ```
--   **Response (200 OK)**: The created or updated `UserProfileDto` object.
+-   **Response (200 OK/201 Created)**: The created or updated `UserProfileDto` object.
     ```json
     {
-      "id": "uuid",
-      "first_name": "John",
-      "active_training_plan_id": "uuid | null",
-      "ai_suggestions_remaining": 0,
-      "created_at": "timestamp",
-      "updated_at": "timestamp" // updated
+      "data": {
+        "id": "uuid",
+        "first_name": "John",
+        "active_training_plan_id": "uuid | null",
+        "ai_suggestions_remaining": 0,
+        "created_at": "timestamp",
+        "updated_at": "timestamp" // updated
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If the request body is invalid (e.g., missing both fields, invalid UUID format).
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `403 Forbidden`: If the requested `{id}` does not match the authenticated user's ID.
     -   `500 Internal Server Error`: For other server-side issues during the upsert operation.
 
@@ -219,14 +223,16 @@ Lists all available exercises. Supports pagination and sorting.
     -   `sort` (optional, string, default: `id.desc`): Sort criteria (e.g., `name.asc`).
 -   **Response (200 OK)**: An array of `ExerciseDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "name": "Squat",
-        "description": "A lower-body exercise."
-      }
-      // ... other exercises
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "name": "Squat",
+          "description": "A lower-body exercise."
+        }
+        // ... other exercises
+      ]
+    }
     ```
 -   **Response (400 Bad Request)**: If pagination or sort parameters are invalid.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
@@ -246,9 +252,11 @@ Creates a new exercise. Requires administrator privileges.
 -   **Response (201 Created)**: The newly created `ExerciseDto` object.
     ```json
     {
-      "id": "uuid",
-      "name": "New Exercise",
-      "description": "Details about the new exercise."
+      "data": {
+        "id": "uuid",
+        "name": "New Exercise",
+        "description": "Details about the new exercise."
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If the request body is invalid.
@@ -265,9 +273,11 @@ Retrieves a specific exercise by its ID.
 -   **Response (200 OK)**: The `ExerciseDto` object.
     ```json
     {
-      "id": "uuid",
-      "name": "Squat",
-      "description": "A lower-body exercise."
+      "data": {
+        "id": "uuid",
+        "name": "Squat",
+        "description": "A lower-body exercise."
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If `id` format is invalid (not a UUID).
@@ -290,9 +300,11 @@ Updates an existing exercise by its ID. Requires administrator privileges.
 -   **Response (200 OK)**: The updated `ExerciseDto` object.
     ```json
     {
-      "id": "uuid",
-      "name": "Updated Exercise Name",
-      "description": "Updated details about the exercise."
+      "data": {
+        "id": "uuid",
+        "name": "Updated Exercise Name",
+        "description": "Updated details about the exercise."
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If `id` format is invalid or the request body is invalid.
@@ -328,15 +340,17 @@ Lists all training plans for the authenticated user. Supports pagination and sor
     -   `sort` (optional, string, default: `created_at:desc`): Sort criteria (e.g., `name:asc`, `created_at:desc`).
 -   **Response (200 OK)**: An array of `TrainingPlanDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "name": "My Awesome Plan",
-        "description": "A great plan for gains.",
-        "user_id": "uuid",
-        "created_at": "timestamp"
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "name": "My Awesome Plan",
+          "description": "A great plan for gains.",
+          "user_id": "uuid",
+          "created_at": "timestamp"
+        }
+      ]
+    }
     ```
 
 #### POST /training-plans
@@ -354,11 +368,13 @@ Creates a new training plan for the authenticated user.
 -   **Response (201 Created)**: The newly created `TrainingPlanDto` object.
     ```json
     {
-      "id": "uuid",
-      "name": "New Plan",
-      "description": "Details about the new plan.",
-      "user_id": "uuid",
-      "created_at": "timestamp"
+      "data": {
+        "id": "uuid",
+        "name": "New Plan",
+        "description": "Details about the new plan.",
+        "user_id": "uuid",
+        "created_at": "timestamp"
+      }
     }
     ```
 
@@ -371,24 +387,26 @@ Retrieves a specific training plan by its ID, if it belongs to the authenticated
 -   **Response (200 OK)**: The `TrainingPlanDto` object, including `days` and their `exercises`.
     ```json
     {
-      "id": "uuid",
-      "name": "Specific Plan",
-      "description": "Description of this plan.",
-      "user_id": "uuid",
-      "created_at": "timestamp",
-      "days": [
-        {
-          "id": "uuid",
-          "name": "Day 1: Push",
-          /* ... other day fields ... */
-          "exercises": [
-            {
-              "id": "uuid",
-              /* ... other exercise fields ... */
-            }
-          ]
-        }
-      ]
+      "data": {
+        "id": "uuid",
+        "name": "Specific Plan",
+        "description": "Description of this plan.",
+        "user_id": "uuid",
+        "created_at": "timestamp",
+        "days": [
+          {
+            "id": "uuid",
+            "name": "Day 1: Push",
+            /* ... other day fields ... */
+            "exercises": [
+              {
+                "id": "uuid",
+                /* ... other exercise fields ... */
+              }
+            ]
+          }
+        ]
+      }
     }
     ```
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user.
@@ -409,11 +427,13 @@ Updates an existing training plan by its ID, if it belongs to the authenticated 
 -   **Response (200 OK)**: The updated `TrainingPlanDto` object.
     ```json
     {
-      "id": "uuid",
-      "name": "Updated Plan Name",
-      "description": "Updated description.",
-      "user_id": "uuid",
-      "updated_at": "timestamp" 
+      "data": {
+        "id": "uuid",
+        "name": "Updated Plan Name",
+        "description": "Updated description.",
+        "user_id": "uuid",
+        "updated_at": "timestamp" 
+      }
     }
     ```
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user for an update.
@@ -443,32 +463,34 @@ Retrieves a list of all training days for a specified training plan. Includes ne
     -   `offset` (optional, integer, default: 0): Offset for pagination.
 -   **Response (200 OK)**: An array of `TrainingPlanDayDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "name": "Day 1: Push",
-        "description": "Chest, Shoulders, Triceps",
-        "order_index": 1,
-        "training_plan_id": "uuid",
-        "exercises": [
-          {
-            "id": "uuid",
-            "exercise_id": "uuid",
-            "training_plan_day_id": "uuid",
-            "order_index": 1,
-            "sets": [
-              {
-                "id": "uuid",
-                "training_plan_exercise_id": "uuid",
-                "set_index": 1,
-                "expected_reps": 10,
-                "expected_weight": 52.5
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "name": "Day 1: Push",
+          "description": "Chest, Shoulders, Triceps",
+          "order_index": 1,
+          "training_plan_id": "uuid",
+          "exercises": [
+            {
+              "id": "uuid",
+              "exercise_id": "uuid",
+              "training_plan_day_id": "uuid",
+              "order_index": 1,
+              "sets": [
+                {
+                  "id": "uuid",
+                  "training_plan_exercise_id": "uuid",
+                  "set_index": 1,
+                  "expected_reps": 10,
+                  "expected_weight": 52.5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
     ```
 -   **Response (400 Bad Request)**: If `planId` format is invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
@@ -493,13 +515,15 @@ Creates a new training day within a specified training plan. `order_index` is ma
 -   **Response (201 Created)**: The newly created `TrainingPlanDayDto` object (without nested exercises).
     ```json
     {
-      "id": "uuid",
-      "name": "Day 2: Pull",
-      "description": "Back, Biceps",
-      "order_index": 2,
-      "training_plan_id": "uuid",
-      "created_at": "timestamp",
-      "updated_at": "timestamp"
+      "data": {
+        "id": "uuid",
+        "name": "Day 2: Pull",
+        "description": "Back, Biceps",
+        "order_index": 2,
+        "training_plan_id": "uuid",
+        "created_at": "timestamp",
+        "updated_at": "timestamp"
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If `planId` format is invalid or the request body is invalid.
@@ -518,14 +542,16 @@ Retrieves details for a specific training day, including nested exercise and set
 -   **Response (200 OK)**: The `TrainingPlanDayDto` object, including `exercises` and their `sets`.
     ```json
     {
-      "id": "uuid",
-      "name": "Day 1: Push",
-      "description": "Chest, Shoulders, Triceps",
-      "order_index": 1,
-      "training_plan_id": "uuid",
-      "created_at": "timestamp",
-      "updated_at": "timestamp",
-      "exercises": [ /* ... as in GET /training-plans/{planId}/days ... */ ]
+      "data": {
+        "id": "uuid",
+        "name": "Day 1: Push",
+        "description": "Chest, Shoulders, Triceps",
+        "order_index": 1,
+        "training_plan_id": "uuid",
+        "created_at": "timestamp",
+        "updated_at": "timestamp",
+        "exercises": [ /* ... as in GET /training-plans/{planId}/days ... */ ]
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
@@ -552,13 +578,15 @@ Updates an existing training day. If `order_index` is changed, reordering of oth
 -   **Response (200 OK)**: The updated `TrainingPlanDayDto` object (without nested exercises).
     ```json
     {
-      "id": "uuid",
-      "name": "Day 1: Upper Body Push",
-      "description": "Focus on compound movements",
-      "order_index": 1,
-      "training_plan_id": "uuid",
-      "created_at": "timestamp", 
-      "updated_at": "timestamp"
+      "data": {
+        "id": "uuid",
+        "name": "Day 1: Upper Body Push",
+        "description": "Focus on compound movements",
+        "order_index": 1,
+        "training_plan_id": "uuid",
+        "created_at": "timestamp", 
+        "updated_at": "timestamp"
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid, or the request body is invalid.
@@ -597,15 +625,17 @@ Retrieves a list of all exercises for a specified training day.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
 -   **Response (200 OK)**: An array of `TrainingPlanExerciseDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "exercise_id": "uuid", // References the global exercises table
-        "training_plan_day_id": "uuid",
-        "order_index": 1,
-        "sets": [ /* Array of TrainingPlanExerciseSetDto */ ]
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "exercise_id": "uuid", // References the global exercises table
+          "training_plan_day_id": "uuid",
+          "order_index": 1,
+          "sets": [ /* Array of TrainingPlanExerciseSetDto */ ]
+        }
+      ]
+    }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
@@ -630,10 +660,12 @@ Adds a new exercise to a specified training day. `order_index` is managed by the
 -   **Response (201 Created)**: The newly created `TrainingPlanExerciseDto` object (without nested sets usually, unless explicitly designed to return them).
     ```json
     {
-      "id": "uuid",
-      "exercise_id": "uuid",
-      "training_plan_day_id": "uuid",
-      "order_index": 1
+      "data": {
+        "id": "uuid",
+        "exercise_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "order_index": 1
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
@@ -653,19 +685,21 @@ Retrieves a specific exercise within a training day by its ID. Includes associat
 -   **Response (200 OK)**: The `TrainingPlanExerciseDto` object, including `sets`.
     ```json
     {
-      "id": "uuid",
-      "exercise_id": "uuid", // References the global exercises table
-      "training_plan_day_id": "uuid",
-      "order_index": 1,
-      "sets": [
-        {
-          "id": "uuid",
-          "training_plan_exercise_id": "uuid",
-          "set_index": 1,
-          "expected_reps": 10,
-          "expected_weight": 52.5
-        }
-      ]
+      "data": {
+        "id": "uuid",
+        "exercise_id": "uuid", // References the global exercises table
+        "training_plan_day_id": "uuid",
+        "order_index": 1,
+        "sets": [
+          {
+            "id": "uuid",
+            "training_plan_exercise_id": "uuid",
+            "set_index": 1,
+            "expected_reps": 10,
+            "expected_weight": 52.5
+          }
+        ]
+      }
     }
     ```
 -   **Responses (Error)**:
@@ -694,10 +728,12 @@ If other fields of `training_plan_exercises` need to be updated, a separate endp
 -   **Response (200 OK)**: The updated `TrainingPlanExerciseDto` object.
     ```json
     {
-      "id": "uuid",
-      "exercise_id": "uuid",
-      "training_plan_day_id": "uuid",
-      "order_index": 2 // Updated order_index
+      "data": {
+        "id": "uuid",
+        "exercise_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "order_index": 2 // Updated order_index
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid (e.g., missing `order_index`).
@@ -738,15 +774,17 @@ Retrieves a list of all sets for a specified exercise within a training day.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
 -   **Response (200 OK)**: An array of `TrainingPlanExerciseSetDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "training_plan_exercise_id": "uuid",
-        "set_index": 1,
-        "expected_reps": 5,
-        "expected_weight": 52.5
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "training_plan_exercise_id": "uuid",
+          "set_index": 1,
+          "expected_reps": 5,
+          "expected_weight": 52.5
+        }
+      ]
+    }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
@@ -773,11 +811,13 @@ Creates a new set for a specified exercise within a training day. `set_index` is
 -   **Response (201 Created)**: The newly created `TrainingPlanExerciseSetDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "expected_weight": 52.5
+      "data": {
+        "id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "expected_weight": 52.5
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
@@ -798,11 +838,13 @@ Retrieves details for a specific set.
 -   **Response (200 OK)**: The `TrainingPlanExerciseSetDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "expected_weight": 52.5
+      "data": {
+        "id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "expected_weight": 52.5
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
@@ -831,11 +873,13 @@ Updates an existing set.
 -   **Response (200 OK)**: The updated `TrainingPlanExerciseSetDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "expected_weight": 55.0
+      "data": {
+        "id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "expected_weight": 55.0
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
@@ -874,16 +918,18 @@ Retrieves the progression rule for a specific exercise within a training plan da
 -   **Response (200 OK)**: The `TrainingPlanExerciseProgressionDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_plan_id": "uuid",
-      "exercise_id": "uuid",
-      "weight_increment": 2.5,
-      "failure_count_for_deload": 3,
-      "deload_percentage": 10.0,
-      "deload_strategy": "PROPORTIONAL",
-      "consecutive_failures": 0,
-      "last_updated": "2023-01-01T00:00:00Z",
-      "reference_set_index": null
+      "data": {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "exercise_id": "uuid",
+        "weight_increment": 2.5,
+        "failure_count_for_deload": 3,
+        "deload_percentage": 10.0,
+        "deload_strategy": "PROPORTIONAL",
+        "consecutive_failures": 0,
+        "last_updated": "2023-01-01T00:00:00Z",
+        "reference_set_index": null
+      }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
@@ -910,8 +956,23 @@ Creates or updates (upserts) the progression rule for a specific exercise within
       "reference_set_index": null             // Optional, SMALLINT >= 0 or null
     }
     ```
--   **Response (201 Created)**: If a new progression rule was created. Returns the `TrainingPlanExerciseProgressionDto`.
--   **Response (200 OK)**: If an existing progression rule was updated. Returns the `TrainingPlanExerciseProgressionDto`.
+-   **Response (200 OK/201 Created)**: Returns the newly created or updated `TrainingPlanExerciseProgressionDto`.
+    ```json
+    {
+      "data": {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "exercise_id": "uuid",
+        "weight_increment": 2.5,
+        "failure_count_for_deload": 3,
+        "deload_percentage": 10.0,
+        "deload_strategy": "PROPORTIONAL",
+        "consecutive_failures": 0,
+        "last_updated": "2023-01-01T00:00:00Z",
+        "reference_set_index": null
+      }
+    }
+    ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid, the request body is invalid (e.g., missing required fields for creation, invalid values), or no fields provided for update.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the training plan or exercise is not found or not accessible.
@@ -933,36 +994,40 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
     -   `status` (optional, string): Filter by session status (e.g., `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
     -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
+    -   `plan_id` (optional, string UUID): Filter sessions associated with a training plan with a given `training_plan_id`.
 -   **Response (200 OK)**: An array of `TrainingSessionDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "training_plan_id": "uuid",
-        "training_plan_day_id": "uuid",
-        "user_id": "uuid",
-        "session_date": "2023-01-01T00:00:00Z",
-        "status": "IN_PROGRESS",
-        "sets": [
-          {
-            "id": "uuid",
-            "training_session_id": "uuid", // Matches parent session ID
-            "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
-            "set_index": 1,
-            "expected_reps": 10,
-            "actual_reps": null,
-            "actual_weight": 50.0,
-            "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
-            "completed_at": null // or timestamp
-          }
-          // ... other sets for this session
-        ]
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "training_plan_id": "uuid",
+          "training_plan_day_id": "uuid",
+          "user_id": "uuid",
+          "session_date": "2023-01-01T00:00:00Z",
+          "status": "IN_PROGRESS",
+          "sets": [
+            {
+              "id": "uuid",
+              "training_session_id": "uuid", // Matches parent session ID
+              "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+              "set_index": 1,
+              "expected_reps": 10,
+              "actual_reps": null,
+              "actual_weight": 50.0,
+              "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
+              "completed_at": null // or timestamp
+            }
+            // ... other sets for this session
+          ]
+        }
+      ],
+      "totalCount": 42 // Total row count, used in pagination scenarios
+    }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If query parameters are invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: For unexpected server issues.
 
 #### POST /training-sessions
@@ -984,31 +1049,33 @@ Once the `training_plan_day_id` is determined (either provided or automatically 
 -   **Response (201 Created)**: The newly created `TrainingSessionDto` object, including auto-generated `session_sets`.
     ```json
     {
-      "id": "uuid", // ID of the new session
-      "training_plan_id": "uuid", // As provided
-      "training_plan_day_id": "uuid", // Provided or determined
-      "user_id": "uuid", // ID of the authenticated user
-      "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
-      "status": "PENDING", // Default status
-      "sets": [ // Auto-created session sets
-        {
-          "id": "uuid", // ID of the new session set
-          "training_session_id": "uuid", // Matches parent session ID
-          "training_plan_exercise_id": "uuid", // From the plan day's exercise
-          "set_index": 1,
-          "expected_reps": 10,     // Initialized from plan's expected_reps
-          "actual_reps": null,     // Initially null
-          "actual_weight": 50.0, // Initialized from plan's expected_weight
-          "status": "PENDING",
-          "completed_at": null
-        }
-        // ... other auto-created sets based on the plan day
-      ]
+      "data": {
+        "id": "uuid", // ID of the new session
+        "training_plan_id": "uuid", // As provided
+        "training_plan_day_id": "uuid", // Provided or determined
+        "user_id": "uuid", // ID of the authenticated user
+        "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
+        "status": "PENDING", // Default status
+        "sets": [ // Auto-created session sets
+          {
+            "id": "uuid", // ID of the new session set
+            "training_session_id": "uuid", // Matches parent session ID
+            "training_plan_exercise_id": "uuid", // From the plan day's exercise
+            "set_index": 1,
+            "expected_reps": 10,     // Initialized from plan's expected_reps
+            "actual_reps": null,     // Initially null
+            "actual_weight": 50.0, // Initialized from plan's expected_weight
+            "status": "PENDING",
+            "completed_at": null
+          }
+          // ... other auto-created sets based on the plan day
+        ]
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If the request body is invalid, or if the referenced `training_plan_id` or `training_plan_day_id` is not found or not accessible to the user.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: For unexpected server issues.
 
 #### GET /training-sessions/{sessionId}
@@ -1020,31 +1087,33 @@ Retrieves a specific training session by its ID, if it belongs to the authentica
 -   **Response (200 OK)**: The `TrainingSessionDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_plan_id": "uuid",
-      "training_plan_day_id": "uuid",
-      "user_id": "uuid",
-      "session_date": "2023-01-01T00:00:00Z",
-      "status": "IN_PROGRESS",
-      "sets": [
-        {
-          "id": "uuid",
-          "training_session_id": "uuid", // Matches parent session ID
-          "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
-          "set_index": 1,
-          "expected_reps": 10,
-          "actual_reps": null,
-          "actual_weight": 50.0,
-          "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
-          "completed_at": null // or timestamp
-        }
-        // ... other sets for this session
-      ]
+      "data": {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "user_id": "uuid",
+        "session_date": "2023-01-01T00:00:00Z",
+        "status": "IN_PROGRESS",
+        "sets": [
+          {
+            "id": "uuid",
+            "training_session_id": "uuid", // Matches parent session ID
+            "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+            "set_index": 1,
+            "expected_reps": 10,
+            "actual_reps": null,
+            "actual_weight": 50.0,
+            "status": "PENDING", // or 'COMPLETED', 'FAILED', 'SKIPPED'
+            "completed_at": null // or timestamp
+          }
+          // ... other sets for this session
+        ]
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
@@ -1063,31 +1132,33 @@ Updates the status of an existing training session (e.g., to cancel it).
 -   **Response (200 OK)**: The full, updated `TrainingSessionDto` object, including any nested sets.
     ```json
     {
-      "id": "uuid",
-      "training_plan_id": "uuid",
-      "training_plan_day_id": "uuid",
-      "user_id": "uuid",
-      "session_date": "2023-01-01T00:00:00Z",
-      "status": "CANCELLED", // Updated status
-      "sets": [
-        {
-          "id": "uuid",
-          "training_session_id": "uuid",
-          "training_plan_exercise_id": "uuid",
-          "set_index": 1,
-          "expected_reps": 10,
-          "actual_reps": null,
-          "actual_weight": 50.0,
-          "status": "PENDING",
-          "completed_at": null
-        }
-        // ... other existing sets for this session
-      ]
+      "data": {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "user_id": "uuid",
+        "session_date": "2023-01-01T00:00:00Z",
+        "status": "CANCELLED", // Updated status
+        "sets": [
+          {
+            "id": "uuid",
+            "training_session_id": "uuid",
+            "training_plan_exercise_id": "uuid",
+            "set_index": 1,
+            "expected_reps": 10,
+            "actual_reps": null,
+            "actual_weight": 50.0,
+            "status": "PENDING",
+            "completed_at": null
+          }
+          // ... other existing sets for this session
+        ]
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid or the request body is invalid (e.g., invalid status).
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
@@ -1100,7 +1171,7 @@ Deletes a specific training session by its ID, if it belongs to the authenticate
 -   **Response (204 No Content)**: Indicates successful deletion.
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
@@ -1114,31 +1185,33 @@ Marks a training session as completed and triggers exercise progression logic.
 -   **Response (200 OK)**: The full, updated `TrainingSessionDto` object (including nested fields like `sets`) with status set to `COMPLETED`.
     ```json
     {
-      "id": "uuid",
-      "training_plan_id": "uuid",
-      "training_plan_day_id": "uuid",
-      "user_id": "uuid",
-      "session_date": "2023-01-01T00:00:00Z",
-      "status": "COMPLETED",
-      "sets": [
-        {
-          "id": "uuid",
-          "training_session_id": "uuid", 
-          "training_plan_exercise_id": "uuid",
-          "set_index": 1,
-          "expected_reps": 10,
-          "actual_reps": 10,
-          "actual_weight": 50.0,
-          "status": "COMPLETED", // Example: sets also marked completed
-          "completed_at": "2023-01-02T10:30:00Z"
-        }
-        // ... other sets for this session, likely also completed
-      ]
+      "data": {
+        "id": "uuid",
+        "training_plan_id": "uuid",
+        "training_plan_day_id": "uuid",
+        "user_id": "uuid",
+        "session_date": "2023-01-01T00:00:00Z",
+        "status": "COMPLETED",
+        "sets": [
+          {
+            "id": "uuid",
+            "training_session_id": "uuid", 
+            "training_plan_exercise_id": "uuid",
+            "set_index": 1,
+            "expected_reps": 10,
+            "actual_reps": 10,
+            "actual_weight": 50.0,
+            "status": "COMPLETED", // Example: sets also marked completed
+            "completed_at": "2023-01-02T10:30:00Z"
+          }
+          // ... other sets for this session, likely also completed
+        ]
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid or the session is not in a state that can be completed (e.g., already 'CANCELLED' or 'COMPLETED').
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues, especially during progression logic.
 
@@ -1155,23 +1228,25 @@ Retrieves a list of all sets for a specified training session.
     -   `sessionId` (UUID, required): The ID of the training session.
 -   **Response (200 OK)**: An array of `SessionSetDto` objects.
     ```json
-    [
-      {
-        "id": "uuid",
-        "training_session_id": "uuid",
-        "training_plan_exercise_id": "uuid",
-        "set_index": 1,
-        "expected_reps": 5,
-        "actual_reps": 5,
-        "actual_weight": 57.5,
-        "status": "PENDING",
-        "completed_at": null
-      }
-    ]
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "training_session_id": "uuid",
+          "training_plan_exercise_id": "uuid",
+          "set_index": 1,
+          "expected_reps": 5,
+          "actual_reps": 5,
+          "actual_weight": 57.5,
+          "status": "PENDING",
+          "completed_at": null
+        }
+      ]
+    }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1197,20 +1272,22 @@ Creates a new set for a specified training session.
 -   **Response (201 Created)**: The newly created `SessionSetDto` object.
     ```json
     {
-      "id": "uuid",
-      "training_session_id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1, // or assigned index
-      "expected_reps": 5,
-      "actual_reps": 5,
-      "actual_weight": 57.5,
-      "status": "PENDING", // or provided status
-      "completed_at": null // or provided datetime
+      "data": {
+        "id": "uuid",
+        "training_session_id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1, // or assigned index
+        "expected_reps": 5,
+        "actual_reps": 5,
+        "actual_weight": 57.5,
+        "status": "PENDING", // or provided status
+        "completed_at": null // or provided datetime
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid, or the request body is invalid (e.g., missing required fields, invalid `set_index`).
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is missing or invalid.
     -   `404 Not Found`: If the training session or referenced `training_plan_exercise_id` is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1225,20 +1302,22 @@ Retrieves details for a specific set within a training session.
 -   **Response (200 OK)**: The `SessionSetDto` object.
     ```json
     {
-      "id": "uuid", // ID of the session set
-      "training_session_id": "uuid", // Parent session ID
-      "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
-      "set_index": 1,
-      "expected_reps": 5,
-      "actual_weight": 55.0,
-      "actual_reps": 8,
-      "status": "COMPLETED",
-      "completed_at": "2023-01-01T10:05:00Z"
+      "data": {
+        "id": "uuid", // ID of the session set
+        "training_session_id": "uuid", // Parent session ID
+        "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+        "set_index": 1,
+        "expected_reps": 5,
+        "actual_weight": 55.0,
+        "actual_reps": 8,
+        "status": "COMPLETED",
+        "completed_at": "2023-01-01T10:05:00Z"
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` or `setId` format is invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1264,20 +1343,22 @@ Updates an existing set within a training session.
 -   **Response (200 OK)**: The updated `SessionSetDto` object.
     ```json
     {
-      "id": "uuid", // ID of the session set (matches setId)
-      "training_session_id": "uuid", // Parent session ID
-      "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
-      "set_index": 1, // Updated value
-      "expected_reps": 5, // Updated value
-      "actual_reps": 5, // Updated value
-      "actual_weight": 57.5, // Updated value
-      "status": "COMPLETED", // Updated value
-      "completed_at": "2023-01-01T10:10:00Z" // Updated or set to NOW()
+      "data": {
+        "id": "uuid", // ID of the session set (matches setId)
+        "training_session_id": "uuid", // Parent session ID
+        "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+        "set_index": 1, // Updated value
+        "expected_reps": 5, // Updated value
+        "actual_reps": 5, // Updated value
+        "actual_weight": 57.5, // Updated value
+        "status": "COMPLETED", // Updated value
+        "completed_at": "2023-01-01T10:10:00Z" // Updated or set to NOW()
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If path parameter formats are invalid, the request body is invalid, or no fields provided for update.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1292,7 +1373,7 @@ Deletes a specific set from a training session. Reordering of subsequent sets oc
 -   **Response (204 No Content)**: Indicates successful deletion.
 -   **Responses (Error)**:
     -   `400 Bad Request`: If path parameter formats are invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is missing or invalid.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1307,20 +1388,22 @@ Marks a specific set as completed.
 -   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "COMPLETED"` and `completed_at` set to the current server time.
     ```json
     {
-      "id": "uuid",
-      "training_session_id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "actual_reps": 5, // Updated to the current value of 'expected_reps'
-      "actual_weight": 57.5,
-      "status": "COMPLETED",
-      "completed_at": "2023-01-01T00:00:00Z" // Server time of completion
+      "data": {
+        "id": "uuid",
+        "training_session_id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "actual_reps": 5, // Updated to the current value of 'expected_reps'
+        "actual_weight": 57.5,
+        "status": "COMPLETED",
+        "completed_at": "2023-01-01T00:00:00Z" // Server time of completion
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If path parameter formats are invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1337,20 +1420,22 @@ Marks a specific set as failed.
 -   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "FAILED"`, `completed_at` set to current server time, and `actual_reps` updated if provided.
     ```json
     {
-      "id": "uuid",
-      "training_session_id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "actual_reps": 3,  // Updated from 'reps' query param or 0
-      "actual_weight": 57.5,
-      "status": "FAILED",
-      "completed_at": "2023-01-01T00:00:00Z" // Server time of failure
+      "data": {
+        "id": "uuid",
+        "training_session_id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "actual_reps": 3,  // Updated from 'reps' query param or 0
+        "actual_weight": 57.5,
+        "status": "FAILED",
+        "completed_at": "2023-01-01T00:00:00Z" // Server time of failure
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If path parameter formats are invalid or `reps` query parameter is invalid. Alternatively, if the `reps` value is equal to or higher than `expected_reps` of the referenced set.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
@@ -1365,19 +1450,21 @@ Marks a specific set as pending.
 -   **Response (200 OK)**: The updated `SessionSetDto` object with `status: "PENDING"` and `completed_at` set to null.
     ```json
     {
-      "id": "uuid",
-      "training_session_id": "uuid",
-      "training_plan_exercise_id": "uuid",
-      "set_index": 1,
-      "expected_reps": 5,
-      "actual_reps": null, // Updated to null
-      "actual_weight": 57.5,
-      "status": "PENDING",
-      "completed_at": null // Updated to null
+      "data": {
+        "id": "uuid",
+        "training_session_id": "uuid",
+        "training_plan_exercise_id": "uuid",
+        "set_index": 1,
+        "expected_reps": 5,
+        "actual_reps": null, // Updated to null
+        "actual_weight": 57.5,
+        "status": "PENDING",
+        "completed_at": null // Updated to null
+      }
     }
     ```
 -   **Responses (Error)**:
     -   `400 Bad Request`: If path parameter formats are invalid.
-    -   `401 Unauthorized`: If the JWT is invalid or missing.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
