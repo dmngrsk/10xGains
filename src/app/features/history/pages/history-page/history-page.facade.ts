@@ -6,7 +6,6 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { GetSessionsParams, SessionService } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
-import { SessionStatus } from '@features/sessions/models/session.types';
 import { TrainingSessionDto, TrainingPlanDto, ExerciseDto, UserProfileDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
@@ -42,8 +41,6 @@ export class HistoryPageFacade {
   private readonly internalPlans = signal<TrainingPlanDto[]>([]);
   private readonly internalExercises = signal<ExerciseDto[]>([]);
   private readonly currentUser = computed(() => this.authService.currentUser());
-
-  private readonly REQUIRED_SESSION_STATUSES: SessionStatus[] = ['COMPLETED', 'CANCELLED'];
 
   loadHistoryPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -96,7 +93,7 @@ export class HistoryPageFacade {
       limit: pageSize,
       offset: currentPage * pageSize,
       order: 'session_date.desc',
-      status: this.REQUIRED_SESSION_STATUSES,
+      status: ['COMPLETED'],
       date_from: filters.dateFrom ?? undefined,
       date_to: filters.dateTo ?? undefined,
       plan_id: filters.selectedTrainingPlanId ?? undefined,

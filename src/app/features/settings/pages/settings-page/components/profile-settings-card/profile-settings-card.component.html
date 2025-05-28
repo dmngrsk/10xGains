@@ -1,0 +1,44 @@
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Profile Settings</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="mt-8">
+    <form [formGroup]="profileForm">
+      <mat-form-field appearance="outline" class="w-full">
+        <mat-label>Your name</mat-label>
+        <input matInput formControlName="firstName" required minlength="2" maxlength="50">
+        @if (profileForm.get('firstName')?.hasError('required')) {
+          <mat-error>
+            {{ validationMessages.required }}
+          </mat-error>
+        }
+        @if (profileForm.get('firstName')?.hasError('minlength')) {
+          <mat-error>
+            {{ validationMessages.minlength }}
+          </mat-error>
+        }
+        @if (profileForm.get('firstName')?.hasError('maxlength')) {
+          <mat-error>
+            {{ validationMessages.maxlength }}
+          </mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full mt-4">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" readonly>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="w-full mt-4">
+        <mat-label>AI suggestions remaining</mat-label>
+        <input matInput formControlName="aiSuggestionsRemaining" readonly>
+      </mat-form-field>
+
+    </form>
+  </mat-card-content>
+  <mat-card-actions class="mb-2">
+    <button class="w-full" mat-flat-button color="primary" type="submit" [disabled]="profileForm.invalid || profileForm.pristine" (click)="onProfileSaved()">
+      Save Settings
+    </button>
+  </mat-card-actions>
+</mat-card>

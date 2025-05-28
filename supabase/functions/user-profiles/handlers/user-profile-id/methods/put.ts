@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/utils/api-helpers.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
 import type { UserProfileDto, UpdateUserProfileCommand } from '@shared/models/api-types.ts';
 import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
@@ -49,10 +49,13 @@ export async function handleUpdateUserProfile(
     return createErrorResponse(500, 'Failed to fetch user profile details for update.', { details: error.message });
   }
 
-  const dataToUpsert: Partial<UserProfileDto> = {
-    ...(existingProfile || {}),
-    ...stripUndefinedValues(validatedData),
+  const dataToUpsert: UserProfileDto = {
     id: user!.id,
+    first_name: validatedData.first_name || existingProfile?.first_name || '',
+    active_training_plan_id: validatedData.active_training_plan_id || existingProfile?.active_training_plan_id || null,
+    ai_suggestions_remaining: existingProfile?.ai_suggestions_remaining || 0,
+    created_at: existingProfile?.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
 
   try {

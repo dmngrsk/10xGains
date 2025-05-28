@@ -42,11 +42,15 @@ export class HomePageFacade {
 
     this.profileService.getUserProfile(user.id).pipe(
       switchMap(profileResponse => {
-        if (profileResponse.error || !profileResponse.data) {
+        if (!profileResponse.error && !profileResponse.data) {
+          this.viewModel.update(state => ({ ...state, isLoading: false, activeTrainingPlanId: null, sessions: [] }));
+          return EMPTY; // 404, the user profile was not found
+        } else if (profileResponse.error) {
           this.viewModel.update(state => ({ ...state, isLoading: false, error: profileResponse.error || 'User profile data not found.', sessions: [] }));
-          return EMPTY;
+          return EMPTY; // Other HTTP error, display error message
         }
-        const profile = profileResponse.data;
+
+        const profile = profileResponse.data!;
         this.viewModel.update(state => ({ ...state, name: profile.first_name, activeTrainingPlanId: profile.active_training_plan_id }));
         if (!profile.active_training_plan_id) {
           this.viewModel.update(state => ({ ...state, isLoading: false, sessions: [] }));

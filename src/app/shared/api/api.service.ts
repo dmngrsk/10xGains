@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, from, map } from 'rxjs';
-import { SupabaseService } from '../db/supabase.service';
+import { Observable, from } from 'rxjs';
+import { handleNotFoundHttpError, SupabaseService } from '../db/supabase.service';
 
 export interface ApiServiceResponse<T> {
   data: T | null;
@@ -20,34 +20,35 @@ export class ApiService {
 
   public get<T>(url: string): Observable<ApiServiceResponse<T>> {
     const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'GET' });
-    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+    return from(promise.then(this.handleFunctionResponse));
   }
 
   public post<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'POST', body: body });
-    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+    return from(promise.then(this.handleFunctionResponse));
   }
 
   public put<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'PUT', body: body });
-    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+    return from(promise.then(this.handleFunctionResponse));
   }
 
   public delete(url: string): Observable<ApiServiceResponse<null>> {
     const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<null>>(url, { method: 'DELETE' });
-    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+    return from(promise.then(this.handleFunctionResponse));
   }
 
   public patch<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'PATCH', body: body });
-    return from(promise).pipe(map(r => this.handleFunctionResponse(r)));
+    return from(promise.then(this.handleFunctionResponse));
   }
 
-  private handleFunctionResponse<T>(functionsResponse: { data: ApiInternalResponse<T> | null; error: Error | null }): ApiServiceResponse<T> {
-    return {
-      data: functionsResponse.error ? null : (functionsResponse.data as ApiInternalSuccessResponse<T>)?.data ?? null,
-      totalCount: functionsResponse.error ? undefined : (functionsResponse.data as ApiInternalSuccessResponse<T>)?.totalCount ?? undefined,
-      error: functionsResponse.error?.message ?? (functionsResponse.data as ApiInternalErrorResponse)?.error ?? null,
-    };
+  private async handleFunctionResponse<T>(response: { data: ApiInternalResponse<T> | null; error: Error | null }): Promise<ApiServiceResponse<T>> {
+    if (!response.error) {
+      const successResponse = response.data as ApiInternalSuccessResponse<T>;
+      return { data: successResponse.data, totalCount: successResponse.totalCount, error: null };
+    } else {
+      return { data: handleNotFoundHttpError(response.error), error: null };
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { ApiService, ApiServiceResponse } from './api.service';
-import { UserProfileDto } from './api.types';
+import { UserProfileDto, UpdateUserProfileCommand } from './api.types';
 
 export type ProfileServiceResponse<T> = ApiServiceResponse<T>;
 
@@ -24,7 +24,24 @@ export class ProfileService {
     if (!userId) {
       return throwError(() => new Error('User ID is required to get user profile.'));
     }
+
     const url = `user-profiles/${userId}`;
     return this.apiService.get<UserProfileDto>(url)
+  }
+
+  /**
+   * Updates the user profile for a given user ID.
+   * @param userId The unique identifier of the user whose profile is to be updated.
+   * @param command The command object containing the profile data to update.
+   * @returns An Observable emitting a `ProfileServiceResponse` containing the updated `UserProfileDto`.
+   * Throws an error if the userId or command is not provided.
+   */
+  updateUserProfile(userId: string, command: UpdateUserProfileCommand): Observable<ProfileServiceResponse<UserProfileDto>> {
+    if (!userId) {
+      return throwError(() => new Error('User ID is required to update user profile.'));
+    }
+
+    const url = `user-profiles/${userId}`;
+    return this.apiService.put<UpdateUserProfileCommand, UserProfileDto>(url, command);
   }
 }

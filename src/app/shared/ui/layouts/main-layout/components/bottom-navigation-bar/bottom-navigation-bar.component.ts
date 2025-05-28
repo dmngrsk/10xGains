@@ -33,6 +33,6 @@ export class BottomNavigationBarComponent {
     { label: 'Plans', icon: 'list_alt', path: '/plans' },
     { label: 'History', icon: 'history', path: '/history' },
     { label: 'Progress', icon: 'stacked_line_chart', disabled: true },
-    { label: 'Settings', icon: 'settings', disabled: true }
+    { label: 'Settings', icon: 'settings', path: '/settings' }
   ];
 }

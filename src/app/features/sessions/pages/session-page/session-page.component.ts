@@ -198,6 +198,7 @@ export class SessionPageComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.flushPendingSetUpdate();
+    this.facade.triggerTimerReset(true);
   }
 
   private showSnackbar(message: string, duration: number = 3000): void {

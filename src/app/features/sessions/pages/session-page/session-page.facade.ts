@@ -240,8 +240,8 @@ export class SessionPageFacade {
     );
   }
 
-  triggerTimerReset(): void {
-    this.timerResetTrigger.set(Date.now());
+  triggerTimerReset(disable: boolean = false): void {
+    this.timerResetTrigger.set(disable ? null : Date.now());
   }
 
   flushPendingSetUpdate(): void {

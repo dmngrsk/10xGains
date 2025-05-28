@@ -177,7 +177,7 @@ export class KeyedDebouncerService implements OnDestroy {
           errorToReport = err as ErrType;
         } else if (typeof err === 'string' && (typeof Error() as ErrType) === 'string') {
            errorToReport = err as ErrType;
-        }else {
+        } else {
            errorToReport = new Error(`Debouncer stream error: ${JSON.stringify(err)}`) as ErrType;
         }
 

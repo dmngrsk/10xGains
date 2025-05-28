@@ -102,4 +102,11 @@ export class AuthService {
       map(user => !!user)
     );
   }
+
+  async changePassword(newPassword: string): Promise<void> {
+    const { error } = await this.supabaseService.client.auth.updateUser({ password: newPassword });
+    if (error) {
+      throw error;
+    }
+  }
 }

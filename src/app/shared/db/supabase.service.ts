@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, FunctionsHttpError, SupabaseClient } from '@supabase/supabase-js';
 import { Database } from './database.types';
 import { EnvironmentService } from '../services/environment.service';
 
@@ -22,4 +22,11 @@ export class SupabaseService {
     }
     return this._client;
   }
+}
+
+export function handleNotFoundHttpError(error: Error): null {
+  if (error instanceof FunctionsHttpError && error.context.status === 404) {
+    return null;
+  }
+  throw error;
 }

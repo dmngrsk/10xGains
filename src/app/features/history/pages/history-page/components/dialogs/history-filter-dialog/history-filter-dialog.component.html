@@ -1,4 +1,4 @@
-<h2 mat-dialog-title class="flex items-center">Filter Sessions</h2>
+<h2 mat-dialog-title>Filter Sessions</h2>
 
 <mat-dialog-content class="!pt-4">
   <form [formGroup]="filterForm" class="space-y-4 p-1">
@@ -47,7 +47,7 @@
   </form>
 </mat-dialog-content>
 
-<mat-dialog-actions class="flex justify-end space-x-3">
-  <button mat-raised-button (click)="onCancelled()" type="button">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid">Apply Filters</button>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancelled()" type="button">Cancel</button>
+  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid">Apply Filters</button>
 </mat-dialog-actions>

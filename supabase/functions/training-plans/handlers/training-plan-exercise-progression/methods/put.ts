@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse, stripUndefinedValues } from '@shared/utils/api-helpers.ts';
+import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
 import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 import type { TrainingPlanExerciseProgressionDto, UpsertTrainingPlanExerciseProgressionCommand } from '@shared/models/api-types.ts';
 
@@ -58,16 +58,20 @@ export async function handleUpsertTrainingPlanExerciseProgression(
     return createErrorResponse(500, 'Failed to fetch exercise progression details for update.', { details: error.message });
   }
 
-  const dataToUpsert: Partial<TrainingPlanExerciseProgressionDto> = {
-    ...(existingProgression || {}),
-    ...stripUndefinedValues(validatedData),
+  const dataToUpsert: TrainingPlanExerciseProgressionDto = {
+    id: existingProgression?.id || crypto.randomUUID(),
     training_plan_id: planId,
     exercise_id: exerciseId,
+    weight_increment: validatedData.weight_increment || existingProgression?.weight_increment || 0,
+    failure_count_for_deload: validatedData.failure_count_for_deload || existingProgression?.failure_count_for_deload || 0,
+    deload_percentage: validatedData.deload_percentage || existingProgression?.deload_percentage || 0,
+    deload_strategy: validatedData.deload_strategy || existingProgression?.deload_strategy || 'PROPORTIONAL',
+    reference_set_index: validatedData.reference_set_index || existingProgression?.reference_set_index || null,
+    consecutive_failures: validatedData.consecutive_failures || existingProgression?.consecutive_failures || 0,
+    last_updated: new Date().toISOString(),
   };
 
   try {
-    console.log(dataToUpsert);
-
     const { data, error } = await supabaseClient
       .from('training_plan_exercise_progressions')
       .upsert(dataToUpsert, { onConflict: 'id' })

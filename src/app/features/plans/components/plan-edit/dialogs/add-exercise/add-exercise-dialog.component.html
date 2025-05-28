@@ -1,6 +1,4 @@
-<h2 mat-dialog-title>
-  Add New Exercise
-</h2>
+<h2 mat-dialog-title>Add New Exercise</h2>
 
 <mat-dialog-content class="!pt-4">
   <form [formGroup]="exerciseForm">
@@ -69,9 +67,7 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onCancel()">
-    <span>Cancel</span>
-  </button>
+  <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-flat-button color="primary" (click)="onSave()" [disabled]="isSaveDisabled()" cdkFocusInitial>
     <span>{{ isCreatingNewExercise() ? 'Create and Add Exercise' : 'Add Exercise' }}</span>
   </button>

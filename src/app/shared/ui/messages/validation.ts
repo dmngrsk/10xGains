@@ -11,4 +11,5 @@ export const VALIDATION_MESSAGES = {
   nonNegative: 'Value must be non-negative.',
   percentageRange: 'Value must be between 0 and 100.',
   dateRangeInvalid: 'Start date cannot be after end date.',
+  passwordsMismatch: 'Passwords do not match.',
 };

@@ -74,11 +74,7 @@
   </div>
 </mat-dialog-content>
 
-<mat-dialog-actions class="flex justify-end space-x-3">
-  <button mat-raised-button (click)="onCancel()">
-    <span>Cancel</span>
-  </button>
-  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="progressionForm.invalid">
-    <span>Save</span>
-  </button>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="progressionForm.invalid">Save</button>
 </mat-dialog-actions>
