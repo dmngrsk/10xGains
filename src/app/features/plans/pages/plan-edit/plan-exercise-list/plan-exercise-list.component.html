@@ -1,0 +1,56 @@
+<div class="exercise-list-container">
+  @if (exercises) {
+    @if (exercises.length > 0) {
+      <mat-accordion multi="true" cdkDropList [cdkDropListData]="exercises" (cdkDropListDropped)="onExerciseItemDrop($event)" [cdkDropListDisabled]="preview()">
+        @for (exercise of exercises; track exercise.id; let i = $index) {
+          <mat-expansion-panel
+            [expanded]="expandedStates()[i]"
+            (opened)="onExerciseItemToggle(i, true)"
+            (closed)="onExerciseItemToggle(i, false)"
+            class="!mb-2 !last:mb-0 exercise-panel"
+            cdkDrag
+            [cdkDragData]="exercise"
+            cdkDragLockAxis="y"
+            [cdkDragDisabled]="preview()"
+          >
+            <mat-expansion-panel-header>
+              <div class="flex items-center w-full">
+                <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-gray-500 hover:text-gray-700">
+                  <mat-icon>drag_indicator</mat-icon>
+                </div>
+                <mat-panel-title class="flex-grow">
+                  <span class="font-medium text-md">{{ getExerciseName(exercise.exercise_id) }}</span>
+                </mat-panel-title>
+              </div>
+            </mat-expansion-panel-header>
+
+            <txg-plan-exercise-item
+              [planId]="planId"
+              [dayId]="dayId"
+              [exercise]="exercise"
+              [preview]="preview"
+              [onDeleteExercise]="onDeleteExercise"
+              [onEditProgression]="onEditProgression"
+              [onAddSet]="onAddSet"
+              [onReorderSet]="onReorderSet"
+              [onEditSet]="onEditSet"
+              [onDeleteSet]="onDeleteSet">
+            </txg-plan-exercise-item>
+
+          </mat-expansion-panel>
+        }
+      </mat-accordion>
+    } @else {
+      <p class="text-gray-500 py-3 px-2">No exercises defined for this day. Add the first one!</p>
+    }
+  }
+
+  @if (!preview()) {
+    <div class="mt-6">
+      <button mat-raised-button color="primary" (click)="onAddExerciseClick()" class="w-full">
+        <mat-icon>add</mat-icon>
+        Add Exercise
+      </button>
+    </div>
+  }
+</div>

@@ -31,9 +31,9 @@ const DEFAULT_MOVEMENT_THRESHOLD = 10;
       [txgLongPressMovementThreshold]="movementThreshold"
       [txgLongPressDisabled]="disabled"
       (txgLongPress)="onLongPress($event)"
-      (txgClick)="onClick($event)"
+      (txgClick)="onClick($event)">
       style="width: 100px; height: 100px; background-color: lightgray;"
-    ></div>
+    </div>
   `,
   standalone: true,
   imports: [LongPressDirective],

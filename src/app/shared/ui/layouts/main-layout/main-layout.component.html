@@ -10,16 +10,14 @@
 </mat-toolbar>
 
 @if (showFullScreenLoader()) {
-  <div class="flex justify-center items-center fixed inset-0 z-50">
+  <div [class.pb-16]="showBottomNavigation()" class="flex pt-14 justify-center items-center fixed inset-0 z-50">
     <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
   </div>
 } @else {
   @if (showProgressBar()) {
-    <mat-progress-bar mode="indeterminate" color="accent" class="fixed top-14 left-0 right-0 z-[99]"></mat-progress-bar>
-  } @else {
-    <div class="h-[4px]"></div>
+    <mat-progress-bar mode="indeterminate" color="accent" class="!fixed top-14 left-0 right-0 z-[99]"></mat-progress-bar>
   }
-  <div [class.pb-20]="showBottomNavigation()" class="page-content-area pt-16 min-h-[calc(100vh-7.5rem)] overflow-y-auto">
+  <div [class.pb-16]="showBottomNavigation()" class="page-content-area pt-16 h-screen overflow-y-auto">
     <ng-content></ng-content>
   </div>
 }

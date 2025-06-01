@@ -47,7 +47,7 @@ export async function handleGetTrainingPlans(
             )
           )
         )
-      `)
+      `, { count: 'exact' })
       .eq('user_id', user!.id)
       .range(offset, offset + limit - 1);
 
@@ -57,7 +57,7 @@ export async function handleGetTrainingPlans(
       query = query.order(sortField, { ascending: sortOrder === 'asc' });
     }
 
-    const { data, error: dbError } = await query;
+    const { data, count, error: dbError } = await query;
 
     if (dbError) {
       return createErrorResponse(500, 'Failed to retrieve training plans', { details: dbError.message });
@@ -73,7 +73,7 @@ export async function handleGetTrainingPlans(
       });
     });
 
-    return createSuccessResponse<TrainingPlanDto[]>(200, data ?? []);
+    return createSuccessResponse<TrainingPlanDto[]>(200, data ?? [], { totalCount: count ?? 0 });
   } catch (e) {
     return createErrorResponse(500, 'An unexpected error occurred while fetching training plans', { details: (e as Error).message });
   }

@@ -1,0 +1,5 @@
+<div class="grid grid-cols-1 gap-4">
+  @for (plan of plans; track plan.id) {
+    <txg-plan-card [plan]="plan" (planClicked)="onPlanClicked($event)"></txg-plan-card>
+  }
+</div>

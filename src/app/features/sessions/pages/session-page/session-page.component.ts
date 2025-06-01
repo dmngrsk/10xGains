@@ -7,16 +7,16 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { filter, map, switchMap } from 'rxjs/operators';
 import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
+import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionSetViewModel } from '../../models/session-page.viewmodel';
-import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
-import { SessionExerciseListComponent } from './session-exercise-list/session-exercise-list.component';
-import { SessionHeaderComponent } from './session-header/session-header.component';
+import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './components/dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
+import { SessionExerciseListComponent } from './components/session-exercise-list/session-exercise-list.component';
+import { SessionHeaderComponent } from './components/session-header/session-header.component';
+import { SessionTimerComponent } from './components/session-timer/session-timer.component';
 import { SessionPageFacade } from './session-page.facade';
-import { SessionTimerComponent } from './session-timer/session-timer.component';
-
 @Component({
   selector: 'txg-session-page',
   standalone: true,
@@ -25,7 +25,8 @@ import { SessionTimerComponent } from './session-timer/session-timer.component';
     MainLayoutComponent,
     SessionHeaderComponent,
     SessionExerciseListComponent,
-    SessionTimerComponent
+    SessionTimerComponent,
+    NoticeComponent
   ],
   templateUrl: './session-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

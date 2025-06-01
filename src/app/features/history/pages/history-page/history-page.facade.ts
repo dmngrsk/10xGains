@@ -122,7 +122,7 @@ export class HistoryPageFacade {
           sessions: [],
           totalSessions: 0
         }));
-        return of({ sessions: [], totalCount: 0 });
+        throw error;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
       this.viewModel.update(vm => ({

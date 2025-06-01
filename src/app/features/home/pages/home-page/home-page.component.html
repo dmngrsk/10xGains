@@ -1,32 +1,39 @@
 <txg-main-layout title="Home" [loadingSignal]="isLoadingSignal">
-  <div class="p-4">
-    @if (viewModel(); as vm) {
-      @if (vm.error) {
-        <div class="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg dark:bg-red-200 dark:text-red-800" role="alert">
-          <span class="font-medium">Error:</span> {{ vm.error }}
-        </div>
-      } @else if (!vm.activeTrainingPlanId) {
-        <div class="mb-4">
-          <p class="text-2xl text-[var(--mat-sys-primary)] font-medium">{{ greetingText }}</p>
-          <p class="text-sm mt-2 text-gray-500">
-            It looks like you don't have an active training plan yet. In order to get started, press the "Plans" button below to create a training plan. Good luck!
-          </p>
-        </div>
-      } @else if (!isLoadingSignal()) {
-        <div class="mb-4">
-          <p class="text-2xl text-[var(--mat-sys-primary)] font-medium">{{ greetingText }}</p>
-          <p class="text-sm mt-2 text-gray-500">This is your upcoming workout:</p>
-        </div>
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <txg-notice
+        [descriptionText]="viewModel.error!"
+        [isError]="true">
+      </txg-notice>
+    } @else if (!viewModel.activeTrainingPlanId) {
+      <txg-notice
+        iconName="rocket_launch"
+        titleText="No Active Training Plan"
+        descriptionText="It looks like you don't have an active training plan yet.
+          In order to get started, press the &quot;Plans&quot; button below to create a training plan. Good luck!">
+      </txg-notice>
+    } @else if (!isLoadingSignal()) {
+      @if (activeSession(); as session) {
+        <div class="p-4">
+          <div class="mb-4">
+            <p class="text-2xl text-[var(--mat-sys-primary)] font-medium">{{ greetingText }}</p>
+            <p class="text-sm mt-2 text-gray-500">This is your upcoming workout:</p>
+          </div>
 
-        @if (activeSession(); as session) {
           <txg-session-card
             [sessionData]="session"
             (sessionNavigated)="onSessionNavigated($event)">
           </txg-session-card>
-        } @else {
-          <txg-create-session-card (sessionCreated)="onSessionCreated()"></txg-create-session-card>
-        }
+        </div>
+      } @else {
+        <txg-notice
+          iconName="event_busy"
+          titleText="No Active Session Found"
+          descriptionText="It looks like you don't have an active session yet. Create a new one to get started!"
+          buttonText="Create Session"
+          (buttonClicked)="onSessionCreated()">
+        </txg-notice>
       }
     }
-  </div>
+  }
 </txg-main-layout>

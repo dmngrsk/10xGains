@@ -3,22 +3,22 @@
     @if (isLoading()) {
       <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
     } @else if (viewModel().error) {
-      <div class="flex flex-col items-center justify-center text-center bg-red-50 rounded-lg max-w-lg">
-        <mat-icon class="text-red-500 !text-5xl mb-4">error_outline</mat-icon>
-        <p class="text-xl font-medium text-red-700 mb-2">An Error Occurred</p>
-        <p class="text-red-600 mb-6">{{ viewModel().error }}</p>
-        <button mat-stroked-button color="warn" (click)="reloadData()">Try Again</button>
-      </div>
+      <txg-notice
+        [descriptionText]="viewModel().error!"
+        buttonText="Try Again"
+        (buttonClicked)="onErrorButtonClicked()"
+        [isError]="true">
+      </txg-notice>
     } @else if (viewModel().sessions.length === 0) {
-      <div class="flex flex-col items-center justify-center text-center p-10">
-        <mat-icon class="!text-4xl !w-9 !h-9 mb-4">history_edu</mat-icon>
-        <p class="text-xl font-medium text-[var(--mat-sys-primary)] mb-4">No Sessions Found</p>
-        <p class="text-gray-500">
-          It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet.
-        </p>
-      </div>
+      <txg-notice
+        iconName="search_off"
+        titleText="No Sessions Found"
+        descriptionText="It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet."
+        buttonText="Edit Filters"
+        (buttonClicked)="onFilterButtonClicked()">
+      </txg-notice>
     } @else {
-      <div class="pb-14 w-full">
+      <div class="pb-18 w-full">
         <txg-session-list
           [sessions]="viewModel().sessions"
           (sessionNavigated)="onSessionNavigated($event)">
@@ -34,6 +34,6 @@
     [pageSizeOptions]="viewModel().filters.pageSizeOptions"
     [filterSpecified]="filterSpecified()"
     (pageChanged)="onPageChanged($event)"
-    (filterButtonClicked)="onFilterButtonClicked()"
-  ></txg-history-actions-bar>
+    (filterButtonClicked)="onFilterButtonClicked()">
+  </txg-history-actions-bar>
 </txg-main-layout>

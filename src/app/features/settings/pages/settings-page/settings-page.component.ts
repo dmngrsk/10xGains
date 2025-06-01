@@ -6,6 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { filter, take, switchMap } from 'rxjs';
 import { UpdateUserProfileCommand } from '@shared/api/api.types';
+import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SettingsPageFacade } from '../settings-page.facade';
@@ -23,7 +24,8 @@ import { ProfileSettingsCardComponent } from './components/profile-settings-card
     MatProgressSpinnerModule,
     MatDividerModule,
     ProfileSettingsCardComponent,
-    AccountSettingsCardComponent
+    AccountSettingsCardComponent,
+    NoticeComponent
   ],
   templateUrl: './settings-page.component.html'
 })

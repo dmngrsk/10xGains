@@ -13,6 +13,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, filter, tap } from 'rxjs/operators';
 import { HistoryFiltersViewModel, HistoryPageViewModel } from '@features/history/models/history-page.viewmodel';
 import { SessionListComponent } from '@features/sessions/components/session-list/session-list.component';
+import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HistoryFilterDialogComponent } from './components/dialogs/history-filter-dialog/history-filter-dialog.component';
 import { HistoryActionsBarComponent } from './components/history-actions-bar/history-actions-bar.component';
@@ -33,6 +34,7 @@ import { HistoryPageFacade } from './history-page.facade';
     MatTooltipModule,
     MatDividerModule,
     HistoryActionsBarComponent,
+    NoticeComponent,
   ],
   templateUrl: './history-page.component.html',
   providers: [HistoryPageFacade],
@@ -56,7 +58,7 @@ export class HistoryPageComponent implements OnInit {
   private readonly pageChangedSubject = new Subject<PageEvent>();
 
   ngOnInit(): void {
-    this.reloadData();
+    this.facade.loadHistoryPageData();
 
     this.pageChangedSubject.pipe(
       tap(() => this.pageRecentlyChanged.set(true)),
@@ -89,7 +91,7 @@ export class HistoryPageComponent implements OnInit {
       .subscribe((result: HistoryFiltersViewModel | undefined) => this.facade.updateFilters(result!));
   }
 
-  reloadData(): void {
+  onErrorButtonClicked(): void {
     this.facade.loadHistoryPageData();
   }
 }

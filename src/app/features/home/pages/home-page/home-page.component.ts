@@ -4,8 +4,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { SessionCardComponent } from '@features/sessions/components/session-card/session-card.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
+import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
-import { CreateSessionCardComponent } from './create-session-card/create-session-card.component';
 import { HomePageFacade } from './home-page.facade';
 
 @Component({
@@ -15,8 +15,8 @@ import { HomePageFacade } from './home-page.facade';
     CommonModule,
     MatDividerModule,
     MainLayoutComponent,
-    CreateSessionCardComponent,
     SessionCardComponent,
+    NoticeComponent
   ],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

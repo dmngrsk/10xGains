@@ -349,7 +349,8 @@ Lists all training plans for the authenticated user. Supports pagination and sor
           "user_id": "uuid",
           "created_at": "timestamp"
         }
-      ]
+      ],
+      "totalCount": 7 // Total row count, used in pagination scenarios
     }
     ```
 
