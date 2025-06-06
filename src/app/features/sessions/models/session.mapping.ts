@@ -114,7 +114,7 @@ export function mapToSessionPageViewModel(
       trainingPlanId: currentSession.training_plan_id ?? undefined,
       dayName: planDay.name,
       planName: plan.name,
-      date: currentSession.session_date ?? undefined,
+      date: currentSession.session_date ? new Date(ensureUtc(currentSession.session_date)) : undefined,
       status: currentSession.status as SessionStatus
     },
     exercises: sessionExercisesViewModel,

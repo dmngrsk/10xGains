@@ -1,4 +1,5 @@
-import { inject, signal, computed, Injectable } from '@angular/core';
+import { inject, signal, computed, Injectable, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
@@ -28,6 +29,7 @@ export class HomePageFacade {
   private readonly planService = inject(PlanService);
   private readonly profileService = inject(ProfileService);
   private readonly sessionService = inject(SessionService);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly viewModel = signal<HomePageViewModel>(initialState);
   private readonly currentUser = computed(() => this.authService.currentUser());
@@ -41,6 +43,7 @@ export class HomePageFacade {
     }
 
     this.profileService.getUserProfile(user.id).pipe(
+      takeUntilDestroyed(this.destroyRef),
       switchMap(profileResponse => {
         if (!profileResponse.error && !profileResponse.data) {
           this.viewModel.update(state => ({ ...state, isLoading: false, activeTrainingPlanId: null, sessions: [] }));
@@ -123,9 +126,28 @@ export class HomePageFacade {
     this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
 
     this.sessionService.createSession(currentViewModel.activeTrainingPlanId).pipe(
-      tap(() => {
-        this.loadHomePageData();
-      }),
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.loadHomePageData()),
+      catchError((error: Error) => {
+        this.viewModel.update(state => ({ ...state, isLoading: false, error: error.message }));
+        return EMPTY;
+      })
+    ).subscribe();
+  }
+
+  abandonSession(sessionId: string) {
+    const currentViewModel = this.viewModel();
+    if (!currentViewModel.activeTrainingPlanId) {
+      console.error('Cannot create session without an active training plan.');
+      this.viewModel.update(state => ({ ...state, error: 'Active training plan is required to create a session.', isLoading: false }));
+      return;
+    }
+
+    this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
+
+    this.sessionService.completeSession(sessionId).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(() => this.createSession()),
       catchError((error: Error) => {
         this.viewModel.update(state => ({ ...state, isLoading: false, error: error.message }));
         return EMPTY;

@@ -5,20 +5,9 @@ import { SessionStatus, SessionSetStatus } from '../../models/session.types';
 
 describe('SessionCardComponent', () => {
   let component: SessionCardComponent;
-  let originalToLocaleDateString: (locales?: string | string[] | undefined, options?: Intl.DateTimeFormatOptions | undefined) => string;
 
   beforeEach(() => {
     component = new SessionCardComponent();
-
-    originalToLocaleDateString = Date.prototype.toLocaleDateString;
-
-    Date.prototype.toLocaleDateString = function(_locales?: string | string[] | undefined, _options?: Intl.DateTimeFormatOptions | undefined) {
-      return originalToLocaleDateString.call(this, 'en-US');
-    };
-  });
-
-  afterEach(() => {
-    Date.prototype.toLocaleDateString = originalToLocaleDateString;
   });
 
   const createMockSession = (status: SessionStatus, sessionDate: Date | null, exercises: SessionCardExerciseViewModel[] = []): SessionCardViewModel => ({
@@ -61,113 +50,125 @@ describe('SessionCardComponent', () => {
       vi.useRealTimers();
     });
 
-    const expectedFormattedDate = `${baseMockDate.getMonth() + 1}/${baseMockDate.getDate()}/${baseMockDate.getFullYear()}`;
-    const formattedTime = (date: Date) => date.toLocaleTimeString(undefined, { hour: 'numeric', minute: 'numeric', hour12: false });
+    const formattedDate = (date: Date) => new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+    const formattedTime = (date: Date) => new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
 
     it('should return empty string if sessionData is not set', () => {
-        // @ts-expect-error Testing undefined case
-        component.sessionData = undefined;
-        expect(component.sessionDateTimeText).toBe('');
+      // @ts-expect-error Testing undefined case
+      component.sessionData = undefined;
+      expect(component.sessionDateTimeText).toBe('');
     });
 
     it('should return empty string if sessionData.sessionDate is null', () => {
-        component.sessionData = createMockSession('PENDING', null);
-        expect(component.sessionDateTimeText).toBe('');
+      component.sessionData = createMockSession('PENDING', null);
+      expect(component.sessionDateTimeText).toBe('');
     });
 
-    it('PENDING: should return formatted date', () => {
-      component.sessionData = createMockSession('PENDING', testMockDate);
-      expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
-    });
-
-    it('IN_PROGRESS: should return date | startTime - ... (duration) if startTime exists', () => {
-      const sessionTime = new Date(testMockDate);
-      const startTime = new Date(sessionTime.getTime() - 30 * 60 * 1000);
-
-      const mockNow = new Date(startTime.getTime() + 45 * 60 * 1000);
-      vi.setSystemTime(mockNow);
-
-      const exercises = [createMockExercise([createMockSet(startTime)])];
-      component.sessionData = createMockSession('IN_PROGRESS', sessionTime, exercises);
-
-      const expectedDateStr = `${sessionTime.getMonth() + 1}/${sessionTime.getDate()}/${sessionTime.getFullYear()}`;
-      const expectedStartTimeStr = formattedTime(startTime);
-      const expectedDuration = 45;
-
-      const expectedText = `${expectedDateStr} | ${expectedStartTimeStr} - ... (${expectedDuration} min)`;
-      expect(component.sessionDateTimeText).toBe(expectedText);
-    });
-
-    it('IN_PROGRESS: should return only formatted date if no earliest set completion time (all sets have null completedAt)', () => {
-      component.sessionData = createMockSession('IN_PROGRESS', testMockDate, [createMockExercise([createMockSet(null)])]);
-      expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
-    });
-
-    it('IN_PROGRESS: should return only formatted date if exercises are empty', () => {
-      component.sessionData = createMockSession('IN_PROGRESS', testMockDate, []);
-      expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
-    });
-
-    it('COMPLETED: should return date | startTime if startTime equals endTime', () => {
-      const time = new Date(testMockDate.getTime() - 60 * 60 * 1000);
-      const exercises = [createMockExercise([createMockSet(time)])];
-      component.sessionData = createMockSession('COMPLETED', testMockDate, exercises);
-      const expectedDateStr = `${testMockDate.getMonth() + 1}/${testMockDate.getDate()}/${testMockDate.getFullYear()}`;
-      expect(component.sessionDateTimeText).toBe(`${expectedDateStr} | ${formattedTime(time)}`);
-    });
-
-    it('COMPLETED: should return date | startTime - endTime (duration) if times differ', () => {
-      const sessionDisplayDate = new Date(testMockDate);
-      const startTime = new Date(sessionDisplayDate.getTime() - 60 * 60 * 1000);
-      const endTime = new Date(sessionDisplayDate.getTime() - 15 * 60 * 1000);
-      const exercises = [
-        createMockExercise([
-          createMockSet(startTime),
-          createMockSet(endTime)
-        ])
-      ];
-      component.sessionData = createMockSession('COMPLETED', sessionDisplayDate, exercises);
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-      const expectedDateStr = `${sessionDisplayDate.getMonth() + 1}/${sessionDisplayDate.getDate()}/${sessionDisplayDate.getFullYear()}`;
-      expect(component.sessionDateTimeText).toBe(
-        `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(endTime)} (${duration} min)`
-      );
-    });
-
-    it('CANCELLED: should behave like COMPLETED for date/time text (times differ)', () => {
-      const sessionDisplayDate = new Date(testMockDate);
-      const startTime = new Date(sessionDisplayDate.getTime() - 60 * 60 * 1000);
-      const endTime = new Date(sessionDisplayDate.getTime() - 15 * 60 * 1000);
-      const exercises = [
-        createMockExercise([
-          createMockSet(startTime),
-          createMockSet(endTime)
-        ])
-      ];
-      component.sessionData = createMockSession('CANCELLED', sessionDisplayDate, exercises);
-      const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-      const expectedDateStr = `${sessionDisplayDate.getMonth() + 1}/${sessionDisplayDate.getDate()}/${sessionDisplayDate.getFullYear()}`;
-      expect(component.sessionDateTimeText).toBe(
-        `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(endTime)} (${duration} min)`
-      );
-    });
-
-    it('COMPLETED: should return only formatted date if no set completion times (all sets have null completedAt)', () => {
-      component.sessionData = createMockSession('COMPLETED', testMockDate, [createMockExercise([createMockSet(null)])]);
-      expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
-    });
-
-    it('COMPLETED: should return only formatted date if exercises are empty', () => {
-       component.sessionData = createMockSession('COMPLETED', testMockDate, []);
-       expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
-    });
-
-    it('should return empty string if formatDisplayDate returns null (e.g. invalid date format in sessionData)', () => {
+    it('should return empty string if sessionData.sessionDate is invalid', () => {
       const invalidDate = new Date('invalid-date-string');
       component.sessionData = createMockSession('PENDING', invalidDate);
       expect(component.sessionDateTimeText).toBe('');
     });
 
+    describe('PENDING state', () => {
+      it('should return only the formatted date', () => {
+        component.sessionData = createMockSession('PENDING', testMockDate);
+        const expectedFormattedDate = formattedDate(baseMockDate);
+        expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
+      });
+    });
+
+    describe('IN_PROGRESS state', () => {
+      it('should show duration from sessionDate when no sets are completed', () => {
+        const sessionTime = new Date(testMockDate);
+        component.sessionData = createMockSession('IN_PROGRESS', sessionTime, [createMockExercise([createMockSet(null)])]);
+
+        const mockNow = new Date(sessionTime.getTime() + 30 * 60 * 1000); // 30 minutes later
+        vi.setSystemTime(mockNow);
+
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedStartTimeStr = formattedTime(sessionTime);
+        const expectedDuration = 30;
+
+        const expectedText = `${expectedDateStr} | ${expectedStartTimeStr} - ... (${expectedDuration} min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+
+      it('should show duration from earliest timestamp when a set was completed before sessionDate', () => {
+        const sessionTime = new Date(testMockDate); // 10:30
+        const set1Time = new Date(testMockDate.getTime() - 30 * 60 * 1000); // 10:00
+        const set2Time = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
+        const exercises = [createMockExercise([createMockSet(set1Time), createMockSet(set2Time)])];
+        component.sessionData = createMockSession('IN_PROGRESS', sessionTime, exercises);
+
+        const mockNow = new Date(testMockDate.getTime() + 15 * 60 * 1000); // 10:45
+        vi.setSystemTime(mockNow);
+
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedStartTimeStr = formattedTime(set1Time);
+        const expectedDuration = 45; // from 10:00 to 10:45
+        const expectedText = `${expectedDateStr} | ${expectedStartTimeStr} - ... (${expectedDuration} min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+
+      it('should show duration from earliest timestamp when sessionDate is before any completed set', () => {
+        const sessionTime = new Date(testMockDate); // 10:30
+        const set1Time = new Date(testMockDate.getTime() + 15 * 60 * 1000); // 10:45
+        const exercises = [createMockExercise([createMockSet(set1Time)])];
+        component.sessionData = createMockSession('IN_PROGRESS', sessionTime, exercises);
+
+        const mockNow = new Date(testMockDate.getTime() + 30 * 60 * 1000); // 11:00
+        vi.setSystemTime(mockNow);
+
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedStartTimeStr = formattedTime(sessionTime);
+        const expectedDuration = 30; // from 10:30 to 11:00
+        const expectedText = `${expectedDateStr} | ${expectedStartTimeStr} - ... (${expectedDuration} min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+    });
+
+    describe('COMPLETED or CANCELLED state', () => {
+      it('should show single timestamp if start and end times are identical', () => {
+        const time = new Date(testMockDate);
+        const exercises = [createMockExercise([createMockSet(time)])];
+        component.sessionData = createMockSession('COMPLETED', time, exercises);
+
+        const expectedDateStr = formattedDate(time);
+        expect(component.sessionDateTimeText).toBe(`${expectedDateStr} | ${formattedTime(time)}`);
+      });
+
+      it('should show duration from earliest to latest timestamp', () => {
+        const sessionTime = new Date(testMockDate); // 10:30
+        const startTime = new Date(testMockDate.getTime() - 60 * 60 * 1000); // 09:30
+        const endTime = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
+        const exercises = [createMockExercise([createMockSet(startTime), createMockSet(endTime)])];
+        component.sessionData = createMockSession('COMPLETED', sessionTime, exercises);
+        // Earliest is startTime (09:30), latest is sessionTime (10:30)
+        const duration = Math.round((sessionTime.getTime() - startTime.getTime()) / (1000 * 60)); // 60 min
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedText = `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(sessionTime)} (${duration} min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+
+      it('should show duration correctly for CANCELLED status', () => {
+        const sessionTime = new Date(testMockDate); // 10:30
+        const startTime = new Date(testMockDate.getTime() - 60 * 60 * 1000); // 09:30
+        const endTime = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
+        const exercises = [createMockExercise([createMockSet(startTime), createMockSet(endTime)])];
+        component.sessionData = createMockSession('CANCELLED', sessionTime, exercises);
+        const duration = Math.round((sessionTime.getTime() - startTime.getTime()) / (1000 * 60)); // 60 min
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedText = `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(sessionTime)} (${duration} min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+
+      it('should show just date and time if only sessionDate is available', () => {
+        component.sessionData = createMockSession('COMPLETED', testMockDate, []);
+        const expectedDateStr = formattedDate(testMockDate);
+        expect(component.sessionDateTimeText).toBe(`${expectedDateStr} | ${formattedTime(testMockDate)}`);
+      });
+    });
   });
 
   describe('getExerciseSummaryText method', () => {
@@ -210,12 +211,12 @@ describe('SessionCardComponent', () => {
     });
 
     it('should use 0 reps for SKIPPED sets if actualReps is null', () => {
-        const sets = [
-            createMockSet(new Date(), 10, 10, 50, 'COMPLETED'),
-            createMockSet(null, null, 8, null, 'SKIPPED'),
-            createMockSet(new Date(), 6, 6, 50, 'COMPLETED'),
-        ];
-        expect(component.getExerciseSummaryText(sets)).toBe('10/0/6 @ 50 kg');
+      const sets = [
+        createMockSet(new Date(), 10, 10, 50, 'COMPLETED'),
+        createMockSet(null, null, 8, null, 'SKIPPED'),
+        createMockSet(new Date(), 6, 6, 50, 'COMPLETED'),
+      ];
+      expect(component.getExerciseSummaryText(sets)).toBe('10/0/6 @ 50 kg');
     });
 
     it('should include weight summary if weights are defined and same', () => {
@@ -240,6 +241,47 @@ describe('SessionCardComponent', () => {
         createMockSet(new Date(), 8, 8, null),
       ];
       expect(component.getExerciseSummaryText(sets)).toBe('10/8');
+    });
+  });
+
+  describe('isAbandonableSession getter', () => {
+    it('should return true for IN_PROGRESS status and when sessionDate is more than 6 hours in the past', () => {
+      const sessionDate = new Date(Date.now() - 1000 * 60 * 60 * 6 - 1);
+      component.sessionData = createMockSession('IN_PROGRESS', sessionDate);
+      expect(component.isAbandonableSession).toBe(true);
+    });
+
+    it('should return false for IN_PROGRESS status and when sessionDate is less than 6 hours in the past', () => {
+      const sessionDate = new Date(Date.now() - 1000 * 60 * 60 * 6 + 1);
+      component.sessionData = createMockSession('IN_PROGRESS', sessionDate);
+      expect(component.isAbandonableSession).toBe(false);
+    });
+
+    it('should return true for PENDING status and when sessionDate is more than 6 hours in the past', () => {
+      const sessionDate = new Date(Date.now() - 1000 * 60 * 60 * 6 - 1);
+      component.sessionData = createMockSession('PENDING', sessionDate);
+      expect(component.isAbandonableSession).toBe(true);
+    });
+
+    it('should return false for PENDING status and when sessionDate is less than 6 hours in the past', () => {
+      const sessionDate = new Date(Date.now() - 1000 * 60 * 60 * 6 + 1);
+      component.sessionData = createMockSession('PENDING', sessionDate);
+      expect(component.isAbandonableSession).toBe(false);
+    });
+
+    it('should return false for COMPLETED status', () => {
+      component.sessionData = createMockSession('COMPLETED', new Date());
+      expect(component.isAbandonableSession).toBe(false);
+    });
+
+    it('should return false for CANCELLED status', () => {
+      component.sessionData = createMockSession('CANCELLED', new Date());
+      expect(component.isAbandonableSession).toBe(false);
+    });
+
+    it('should return false if sessionDate is null', () => {
+      component.sessionData = createMockSession('IN_PROGRESS', null);
+      expect(component.isAbandonableSession).toBe(false);
     });
   });
 

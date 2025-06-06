@@ -58,6 +58,15 @@ export class SessionPageComponent implements OnDestroy {
     });
   });
 
+  get title(): string {
+    if (this.viewModel().isLoading) return 'Loading Session...';
+    return this.viewModel().metadata?.status === 'COMPLETED' ? 'Completed Session' : 'Active Session';
+  }
+
+  get navigation(): string {
+    return this.viewModel().metadata?.status === 'COMPLETED' ? '/history' : '/home';
+  }
+
   constructor() {
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))

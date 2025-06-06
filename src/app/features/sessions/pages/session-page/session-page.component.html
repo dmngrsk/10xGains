@@ -1,4 +1,4 @@
-<txg-main-layout title="Active Session" [loadingSignal]="isLoadingSignal" backNavigation="/home">
+<txg-main-layout [title]="title" [loadingSignal]="isLoadingSignal" [backNavigation]="navigation">
   <div class="p-4">
     @if (viewModel(); as viewModel) {
       @if (viewModel.error) {

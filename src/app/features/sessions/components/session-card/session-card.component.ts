@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { SessionCardViewModel, SessionCardSetViewModel, SessionCardExerciseViewModel } from '../../models/session-card.viewmodel';
+import { SessionCardViewModel, SessionCardSetViewModel } from '../../models/session-card.viewmodel';
 
 @Component({
   selector: 'txg-session-card',
@@ -20,6 +20,7 @@ import { SessionCardViewModel, SessionCardSetViewModel, SessionCardExerciseViewM
 export class SessionCardComponent {
   @Input() sessionData!: SessionCardViewModel;
   @Output() sessionNavigated = new EventEmitter<string>();
+  @Output() sessionAbandoned = new EventEmitter<string>();
 
   get buttonText(): string {
     if (!this.sessionData) return '';
@@ -43,13 +44,17 @@ export class SessionCardComponent {
     const displayDate = this.formatDisplayDate(this.sessionData.sessionDate);
     if (!displayDate) return '';
 
+    const sessionTimestamps = [this.sessionData.sessionDate]
+      .concat(this.sessionData.exercises.flatMap(e => e.sets.map(s => s.completedAt)))
+      .filter(d => !!d && d instanceof Date);
+
     switch (this.sessionData.status) {
       case 'PENDING': {
         return displayDate;
       }
 
       case 'IN_PROGRESS': {
-        const sessionStartTime = this.getEarliestSetCompletionTime(this.sessionData.exercises);
+        const sessionStartTime = sessionTimestamps.sort((a, b) => a.getTime() - b.getTime())[0];
         const sessionStartTimeFormatted = this.formatDisplayTime(sessionStartTime);
 
         if (sessionStartTime && sessionStartTimeFormatted) {
@@ -63,8 +68,8 @@ export class SessionCardComponent {
 
       case 'COMPLETED':
       case 'CANCELLED': {
-        const sessionStartTime = this.getEarliestSetCompletionTime(this.sessionData.exercises);
-        const sessionEndTime = this.getLatestSetCompletionTime(this.sessionData.exercises);
+        const sessionStartTime = sessionTimestamps.sort((a, b) => a.getTime() - b.getTime())[0];
+        const sessionEndTime = sessionTimestamps.sort((a, b) => b.getTime() - a.getTime())[0];
 
         if (sessionStartTime && sessionEndTime) {
           const sessionStartTimeFormatted = this.formatDisplayTime(sessionStartTime);
@@ -83,6 +88,11 @@ export class SessionCardComponent {
       default:
         return displayDate;
     }
+  }
+
+  get isAbandonableSession(): boolean {
+    if (!this.sessionData.sessionDate) return false;
+    return this.isActiveSession && (new Date().getTime() - this.sessionData.sessionDate.getTime()) > 1000 * 60 * 60 * 6; // 6h
   }
 
   get isActiveSession(): boolean {
@@ -133,42 +143,17 @@ export class SessionCardComponent {
     this.sessionNavigated.emit(this.sessionData.id);
   }
 
+  onSessionAbandoned(): void {
+    this.sessionAbandoned.emit(this.sessionData.id);
+  }
+
   private formatDisplayDate(date: Date | null): string | null {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
-    return date.toLocaleDateString();
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
   }
 
   private formatDisplayTime(date: Date | null): string | null {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
-    return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: 'numeric', hour12: false });
-  }
-
-  private getEarliestSetCompletionTime(exercises: SessionCardExerciseViewModel[]): Date | null {
-    return this.findSetCompletionTime(exercises, (t1, t2) => !t2 || t1 < t2);
-  }
-
-  private getLatestSetCompletionTime(exercises: SessionCardExerciseViewModel[]): Date | null {
-    return this.findSetCompletionTime(exercises, (t1, t2) => !t2 || t1 > t2);
-  }
-
-  private findSetCompletionTime(exercises: SessionCardExerciseViewModel[], comparator: (currentTime: Date, bestTime: Date | null) => boolean): Date | null {
-    let bestTime: Date | null = null;
-    if (!exercises) {
-      return null;
-    }
-
-    for (const exercise of exercises) {
-      if (exercise.sets) {
-        for (const set of exercise.sets) {
-          if (set.completedAt instanceof Date && !isNaN(set.completedAt.getTime())) {
-            if (comparator(set.completedAt, bestTime)) {
-              bestTime = set.completedAt;
-            }
-          }
-        }
-      }
-    }
-
-    return bestTime;
+    return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
   }
 }

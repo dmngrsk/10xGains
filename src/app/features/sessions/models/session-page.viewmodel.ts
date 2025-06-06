@@ -12,7 +12,7 @@ export interface SessionMetadataViewModel {
   trainingPlanId?: string;
   dayName?: string;
   planName?: string;
-  date?: string;
+  date?: Date;
   status?: SessionStatus;
 }
 

@@ -4,9 +4,9 @@
     <p class="text-sm text-[var(--mat-sys-primary)]">{{ metadata.planName }}</p>
   </div>
   <div class="flex flex-col items-end">
-    <p class="text-md text-[var(--mat-sys-primary)]">{{ dateText }}</p>
+    <p class="text-md text-[var(--mat-sys-primary)]">{{ metadata.date | date:'MMM d, yyyy' }}</p>
     @if (metadata.status) {
-      <p class="text-sm text-[var(--mat-sys-primary)]">{{ statusText }}</p>
+      <p class="text-sm text-[var(--mat-sys-primary)]">{{ metadata.status.replace('_', ' ') }}</p>
     }
   </div>
 </div>

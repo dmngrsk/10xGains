@@ -22,7 +22,8 @@
 
           <txg-session-card
             [sessionData]="session"
-            (sessionNavigated)="onSessionNavigated($event)">
+            (sessionNavigated)="onSessionNavigated($event)"
+            (sessionAbandoned)="onSessionAbandoned($event)">
           </txg-session-card>
         </div>
       } @else {
