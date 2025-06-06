@@ -1,6 +1,6 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, switchMap, from, forkJoin } from 'rxjs';
+import { Observable, of, switchMap, forkJoin } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { TrainingPlanViewModel } from '@features/plans/models/training-plan.viewmodel';
 import { CreateTrainingPlanCommand, TrainingPlanDto, ExerciseDto, UserProfileDto } from '@shared/api/api.types';
@@ -33,9 +33,9 @@ export class PlanListPageFacade {
 
   readonly viewModel = signal(initialState);
 
-  private userProfile: UserProfileDto | null = null;
-  private allExercises: ExerciseDto[] = [];
-  private activePlanViewModel: TrainingPlanViewModel | null = null;
+  private internalUserProfile: UserProfileDto | null = null;
+  private internalExercises: ExerciseDto[] = [];
+  private internalActivePlanViewModel: TrainingPlanViewModel | null = null;
 
   loadPlanData(isLoadMore = false): void {
     const offset = isLoadMore ? this.viewModel().plans.length : 0;
@@ -49,16 +49,16 @@ export class PlanListPageFacade {
     this.plansService.getPlans(PLAN_PAGE_SIZE, offset).pipe(
       switchMap(plansResponse => {
         return this.getInitialData(isLoadMore).pipe(
-          map(({ userProfile, allExercises, activePlanViewModel }) => ({
+          map(({ userProfile, exercises, activePlanViewModel }) => ({
             plansResponse,
             userProfile,
-            allExercises,
+            exercises,
             activePlanViewModel
           }))
         );
       }),
       map(data => {
-        const { plansResponse, userProfile, allExercises, activePlanViewModel } = data;
+        const { plansResponse, userProfile, exercises, activePlanViewModel } = data;
         const viewModel = this.viewModel();
 
         if (plansResponse.error || !plansResponse.data) {
@@ -72,7 +72,7 @@ export class PlanListPageFacade {
           };
         }
 
-        const newMappedPlans = plansResponse.data.map(dto => mapToTrainingPlanViewModel(dto, allExercises, userProfile!)).filter(p => !p.isActive);
+        const newMappedPlans = plansResponse.data.map(dto => mapToTrainingPlanViewModel(dto, exercises, userProfile!)).filter(p => !p.isActive);
         const updatedPlans = [...viewModel.plans, ...newMappedPlans];
         const newTotalPlans = plansResponse.totalCount ?? viewModel.totalPlans;
 
@@ -112,11 +112,11 @@ export class PlanListPageFacade {
 
   private getInitialData(isLoadMore: boolean): Observable<{
     userProfile: UserProfileDto;
-    allExercises: ExerciseDto[];
+    exercises: ExerciseDto[];
     activePlanViewModel: TrainingPlanViewModel | null;
   }> {
-    if (this.userProfile && this.allExercises.length > 0 && isLoadMore) {
-      return of({ userProfile: this.userProfile, allExercises: this.allExercises, activePlanViewModel: this.activePlanViewModel });
+    if (this.internalUserProfile && this.internalExercises.length > 0 && isLoadMore) {
+      return of({ userProfile: this.internalUserProfile, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel });
     }
 
     return this.profileService
@@ -125,23 +125,23 @@ export class PlanListPageFacade {
         if (profileResponse.error || !profileResponse.data) {
           throw profileResponse.error || new Error('Failed to load user profile.');
         } else {
-          this.userProfile = profileResponse.data;
+          this.internalUserProfile = profileResponse.data;
         }
         return forkJoin({
-          exercises: from(this.exerciseService.refresh()),
+          exercises: this.exerciseService.getExercises(),
           activePlan: this.plansService.getPlan(profileResponse.data.active_training_plan_id!)
         }).pipe(map(({ exercises, activePlan }) => {
-          if (exercises.length === 0) {
+          if (exercises.data && exercises.data.length === 0) {
             console.warn('Exercise list is empty. Plans might not map exercise names correctly.');
           } else {
-            this.allExercises = exercises;
+            this.internalExercises = exercises.data ?? [];
           }
           if (activePlan.error || !activePlan.data) {
             throw activePlan.error || new Error('Failed to load active plan.');
           } else {
-            this.activePlanViewModel = mapToTrainingPlanViewModel(activePlan.data, exercises, this.userProfile!);
+            this.internalActivePlanViewModel = mapToTrainingPlanViewModel(activePlan.data, this.internalExercises, this.internalUserProfile);
           }
-          return { userProfile: this.userProfile!, allExercises: this.allExercises, activePlanViewModel: this.activePlanViewModel };
+          return { userProfile: this.internalUserProfile!, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel };
         }));
       }));
   }

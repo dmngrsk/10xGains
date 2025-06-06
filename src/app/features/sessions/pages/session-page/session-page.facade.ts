@@ -1,6 +1,6 @@
 import { inject, signal, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, forkJoin, from, EMPTY } from 'rxjs';
+import { Observable, of, forkJoin, EMPTY } from 'rxjs';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseDto, TrainingPlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
@@ -67,8 +67,8 @@ export class SessionPageFacade {
             map(res => res.data),
             catchError(() => of(null as TrainingPlanDto | null))
           ),
-          exercises: from(this.exerciseService.refresh()).pipe(
-            map(res => res ?? [] as ExerciseDto[]),
+          exercises: this.exerciseService.getExercises().pipe(
+            map(res => res.data ?? [] as ExerciseDto[]),
             catchError(() => of([] as ExerciseDto[]))
           )
         });

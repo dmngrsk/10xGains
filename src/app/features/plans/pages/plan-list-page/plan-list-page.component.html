@@ -6,7 +6,7 @@
           [descriptionText]="viewModel.error!"
           [isError]="true">
         </txg-notice>
-      } @else if (!viewModel.isLoading && viewModel.plans.length === 0) {
+      } @else if (!viewModel.isLoading && !viewModel.activePlan && viewModel.plans.length === 0) {
         <txg-notice
           iconName="assignment"
           titleText="No Training Plans Found"
@@ -17,12 +17,17 @@
       } @else {
         @if (viewModel.activePlan) {
           <txg-plan-card [plan]="viewModel.activePlan" (planClicked)="onPlanClicked($event)"></txg-plan-card>
+        }
+
+        @if (viewModel.activePlan && viewModel.plans.length > 0) {
           <mat-divider class="!border-t-[var(--mat-sys-outline-variant)] !mx-2 !my-8"></mat-divider>
         }
 
-        <div class="mb-2">
-          <txg-plan-list [plans]="viewModel.plans" (planClicked)="onPlanClicked($event)"></txg-plan-list>
-        </div>
+        @if (viewModel.plans.length > 0) {
+          <div class="mb-2">
+            <txg-plan-list [plans]="viewModel.plans" (planClicked)="onPlanClicked($event)"></txg-plan-list>
+          </div>
+        }
 
         @if (viewModel.plans.length + 1 < viewModel.totalPlans) {
           <!-- Sentinel for Intersection Observer -->

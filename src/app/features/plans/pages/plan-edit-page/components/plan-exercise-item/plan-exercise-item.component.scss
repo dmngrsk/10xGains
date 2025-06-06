@@ -1,0 +1,19 @@
+@media (max-width: 639.98px) {
+  :host ::ng-deep .mat-expansion-panel-body {
+    padding: 0 16px 16px !important;
+  }
+}
+
+.exercise-panel.cdk-drag {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+mat-accordion[cdkDropList] .exercise-panel.cdk-drag.cdk-drag-dragging {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+  display: block;
+}

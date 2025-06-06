@@ -2,6 +2,28 @@
 
 This directory contains the Supabase Edge Functions for the 10xGains application. These functions are deployed to the Supabase platform and serve as the API backend for the application.
 
+## Table of Contents
+ 
+- [Architecture](#architecture)
+- [API Handler Framework](#api-handler-framework)
+- [Type Synchronization](#type-synchronization)
+- [Development Notes](#development-notes)
+  - [Dependency Management](#dependency-management)
+  - [TypeScript Support](#typescript-support)
+  - [Handling Linting Errors in VS Code](#handling-linting-errors-in-vs-code)
+  - [Local Development](#local-development)
+  - [Deployment](#deployment)
+- [API Documentation](#api-documentation)
+  - [User Profiles API](#user-profiles-api)
+  - [Exercises API](#exercises-api)
+  - [Training Plans API](#training-plans-api)
+  - [Training Plan Days API](#training-plan-days-api)
+  - [Training Plan Exercises API](#training-plan-exercises-api)
+  - [Training Plan Exercise Sets API](#training-plan-exercise-sets-api)
+  - [Training Plan Exercise Progression API](#training-plan-exercise-progression-api)
+  - [Training Sessions API](#training-sessions-api)
+  - [Session Sets API](#session-sets-api)
+
 ## Architecture
 
 The Edge Functions are organized into the following structure:
@@ -347,7 +369,33 @@ Lists all training plans for the authenticated user. Supports pagination and sor
           "name": "My Awesome Plan",
           "description": "A great plan for gains.",
           "user_id": "uuid",
-          "created_at": "timestamp"
+          "created_at": "timestamp",
+          "days": [
+            {
+              "id": "uuid",
+              "name": "Day 1: Push",
+              /* ... other day fields ... */
+              "exercises": [
+                {
+                  "id": "uuid",
+                  /* ... other exercise fields ... */
+                  "sets": [
+                    {
+                      "id": "uuid",
+                      /* ... other set fields ... */
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "progressions": [
+            {
+              "id": "uuid",
+              "exercise_id": "uuid",
+              /* ... other exercise progression fields ... */
+            }
+          ]
         }
       ],
       "totalCount": 7 // Total row count, used in pagination scenarios
@@ -381,11 +429,11 @@ Creates a new training plan for the authenticated user.
 
 #### GET /training-plans/{planId}
 
-Retrieves a specific training plan by its ID, if it belongs to the authenticated user. Includes associated training days and exercises.
+Retrieves a specific training plan by its ID, if it belongs to the authenticated user. Includes associated training days exercise progressions.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `planId` (UUID) - The ID of the training plan to retrieve.
--   **Response (200 OK)**: The `TrainingPlanDto` object, including `days` and their `exercises`.
+-   **Response (200 OK)**: The `TrainingPlanDto` object.
     ```json
     {
       "data": {
@@ -403,8 +451,21 @@ Retrieves a specific training plan by its ID, if it belongs to the authenticated
               {
                 "id": "uuid",
                 /* ... other exercise fields ... */
+                "sets": [
+                  {
+                    "id": "uuid",
+                    /* ... other set fields ... */
+                  }
+                ]
               }
             ]
+          }
+        ],
+        "progressions": [
+          {
+            "id": "uuid",
+            "exercise_id": "uuid",
+            /* ... other exercise progression fields ... */
           }
         ]
       }
@@ -908,7 +969,38 @@ Deletes a specific set. Reordering of subsequent sets (if `set_index` is managed
 
 Manages progression rules for a specific exercise within a training plan. All endpoints require Bearer token authorization.
 
-#### GET /training-plans/{planId}/exercises/{exerciseId}/progression
+#### GET /training-plans/{planId}/progressions
+
+Retrieves the progression rules for all exercises within a training plan day.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the training plan.
+-   **Response (200 OK)**: An array of `TrainingPlanExerciseProgressionDto` objects.
+    ```json
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "training_plan_id": "uuid",
+          "exercise_id": "uuid",
+          "weight_increment": 2.5,
+          "failure_count_for_deload": 3,
+          "deload_percentage": 10.0,
+          "deload_strategy": "PROPORTIONAL",
+          "consecutive_failures": 0,
+          "last_updated": "2023-01-01T00:00:00Z",
+          "reference_set_index": null
+        }
+      ]
+    }
+    ```
+-   **Response (400 Bad Request)**: If path parameter formats are invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the training plan, exercise, or the specific progression rule is not found or not accessible.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### GET /training-plans/{planId}/progressions/{exerciseId}
 
 Retrieves the progression rule for a specific exercise within a training plan day.
 
@@ -938,7 +1030,7 @@ Retrieves the progression rule for a specific exercise within a training plan da
 -   **Response (404 Not Found)**: If the training plan, exercise, or the specific progression rule is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### PUT /training-plans/{planId}/exercises/{exerciseId}/progression
+#### PUT /training-plans/{planId}/progressions/{exerciseId}
 
 Creates or updates (upserts) the progression rule for a specific exercise within a training plan.
 

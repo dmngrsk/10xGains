@@ -276,14 +276,14 @@ describe('SessionCardComponent', () => {
       expect(component.buttonText).toBe('Continue Session');
     });
 
-    it('should return "View Details" for COMPLETED status', () => {
+    it('should return "View Session" for COMPLETED status', () => {
       component.sessionData = createMockSession('COMPLETED', new Date());
-      expect(component.buttonText).toBe('View Details');
+      expect(component.buttonText).toBe('View Session');
     });
 
-    it('should return "View Details" for CANCELLED status', () => {
+    it('should return "View Session" for CANCELLED status', () => {
       component.sessionData = createMockSession('CANCELLED', new Date());
-      expect(component.buttonText).toBe('View Details');
+      expect(component.buttonText).toBe('View Session');
     });
 
     it('should return empty string for unknown status', () => {

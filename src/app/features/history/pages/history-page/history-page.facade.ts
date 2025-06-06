@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { of, forkJoin, from } from 'rxjs';
+import { of, forkJoin } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { HistoryPageViewModel, HistoryFiltersViewModel } from '@features/history/models/history-page.viewmodel';
 import { PlanService } from '@features/plans/api/plan.service';
@@ -48,7 +48,7 @@ export class HistoryPageFacade {
 
     forkJoin({
       plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as TrainingPlanDto[]))),
-      exercises: from(this.exerciseService.refresh()).pipe(map(res => res ?? []), catchError(() => of([] as ExerciseDto[]))),
+      exercises: this.exerciseService.getExercises().pipe(map(res => res.data ?? []), catchError(() => of([] as ExerciseDto[]))),
       profile: this.profileService.getUserProfile(user!.id).pipe(map(res => res.data), catchError(() => of(null as UserProfileDto | null)))
     }).pipe(
       tap(({ plans, exercises, profile }) => {

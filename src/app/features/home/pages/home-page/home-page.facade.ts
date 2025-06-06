@@ -1,5 +1,5 @@
 import { inject, signal, computed, Injectable } from '@angular/core';
-import { EMPTY, forkJoin, of, from } from 'rxjs';
+import { EMPTY, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
@@ -73,8 +73,8 @@ export class HomePageFacade {
             map(res => res.data),
             catchError(() => of(null as TrainingPlanDto | null))
           ),
-          exercises: from(this.exerciseService.refresh()).pipe(
-            map(res => res ?? [] as ExerciseDto[]),
+          exercises: this.exerciseService.getExercises().pipe(
+            map(res => res.data ?? [] as ExerciseDto[]),
             catchError(() => of([] as ExerciseDto[]))
           )
         });

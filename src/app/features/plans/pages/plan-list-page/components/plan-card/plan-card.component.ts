@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { TrainingPlanExerciseSetViewModel, TrainingPlanViewModel } from '../../../../models/training-plan.viewmodel';
 
@@ -7,7 +8,7 @@ import { TrainingPlanExerciseSetViewModel, TrainingPlanViewModel } from '../../.
   selector: 'txg-plan-card',
   templateUrl: './plan-card.component.html',
   standalone: true,
-  imports: [CommonModule, MatCardModule],
+  imports: [CommonModule, MatCardModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanCardComponent {

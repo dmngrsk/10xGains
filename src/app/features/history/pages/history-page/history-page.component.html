@@ -1,29 +1,31 @@
-<txg-main-layout title="Session History" [loadingSignal]="isLoading">
+<txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
   <div class="flex justify-center items-center p-4 min-h-[calc(100vh-12.25rem)]">
-    @if (isLoading()) {
-      <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
-    } @else if (viewModel().error) {
-      <txg-notice
-        [descriptionText]="viewModel().error!"
-        buttonText="Try Again"
-        (buttonClicked)="onErrorButtonClicked()"
-        [isError]="true">
-      </txg-notice>
-    } @else if (viewModel().sessions.length === 0) {
-      <txg-notice
-        iconName="search_off"
-        titleText="No Sessions Found"
-        descriptionText="It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet."
-        buttonText="Edit Filters"
-        (buttonClicked)="onFilterButtonClicked()">
-      </txg-notice>
-    } @else {
-      <div class="pb-18 w-full">
-        <txg-session-list
-          [sessions]="viewModel().sessions"
-          (sessionNavigated)="onSessionNavigated($event)">
-        </txg-session-list>
-      </div>
+    @if (viewModel(); as viewModel) {
+      @if (viewModel.isLoading || pageRecentlyChanged()) {
+        <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
+      } @else if (viewModel.error) {
+        <txg-notice
+          [descriptionText]="viewModel.error!"
+          buttonText="Try Again"
+          (buttonClicked)="onErrorButtonClicked()"
+          [isError]="true">
+        </txg-notice>
+      } @else if (viewModel.sessions.length === 0) {
+        <txg-notice
+          iconName="search_off"
+          titleText="No Sessions Found"
+          descriptionText="It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet."
+          buttonText="Edit Filters"
+          (buttonClicked)="onFilterButtonClicked()">
+        </txg-notice>
+      } @else {
+        <div class="pb-18 w-full">
+          <txg-session-list
+            [sessions]="viewModel.sessions"
+            (sessionNavigated)="onSessionNavigated($event)">
+          </txg-session-list>
+        </div>
+      }
     }
   </div>
 

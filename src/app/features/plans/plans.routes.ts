@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 import { authGuard } from '@shared/utils/guards/auth.guard';
-import { PlanEditComponent } from './pages/plan-edit/plan-edit.component';
+import { PlanEditPageComponent } from './pages/plan-edit-page/plan-edit-page.component';
 import { PlanListPageComponent } from './pages/plan-list-page/plan-list-page.component';
 
 export const PLANS_ROUTES: Route[] = [
@@ -12,7 +12,7 @@ export const PLANS_ROUTES: Route[] = [
   },
   {
     path: ':planId',
-    component: PlanEditComponent,
+    component: PlanEditPageComponent,
     canActivate: [authGuard]
   }
 ];

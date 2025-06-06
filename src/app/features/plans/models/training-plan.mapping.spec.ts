@@ -1,146 +1,271 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TrainingPlanDto, UserProfileDto, ExerciseDto } from '@shared/api/api.types';
-import { mapToTrainingPlanViewModel, mapToTrainingPlanDto, mapToTrainingPlanDayDto, mapToTrainingPlanExerciseDto, mapToTrainingPlanExerciseSetDto } from './training-plan.mapping';
-import type { TrainingPlanViewModel, TrainingPlanDayViewModel, TrainingPlanExerciseViewModel, TrainingPlanExerciseSetViewModel } from './training-plan.viewmodel';
+import type { TrainingPlanDto, UserProfileDto, ExerciseDto, TrainingPlanExerciseProgressionDto } from '@shared/api/api.types';
+import { mapToTrainingPlanViewModel, mapToTrainingPlanDto, mapToTrainingPlanDayDto, mapToTrainingPlanExerciseDto, mapToTrainingPlanExerciseSetDto, mapToTrainingPlanExerciseProgressionDto } from './training-plan.mapping';
+import type { TrainingPlanViewModel, TrainingPlanDayViewModel, TrainingPlanExerciseViewModel, TrainingPlanExerciseSetViewModel, TrainingPlanExerciseProgressionViewModel } from './training-plan.viewmodel';
 
 describe('Training Plan Mapping', () => {
-  describe('mapToTrainingPlanExerciseSetDto', () => {
-    it('should throw an error if the set ViewModel is null or undefined', () => {
-      expect(() => mapToTrainingPlanExerciseSetDto(null!)).toThrowError('Training plan exercise set ViewModel is required');
-      expect(() => mapToTrainingPlanExerciseSetDto(undefined!)).toThrowError('Training plan exercise set ViewModel is required');
+  describe('mapToTrainingPlanDto', () => {
+    it('should throw an error if the plan ViewModel is null or undefined', () => {
+      expect(() => mapToTrainingPlanDto(null!)).toThrowError('Training plan ViewModel is required');
+      expect(() => mapToTrainingPlanDto(undefined!)).toThrowError('Training plan ViewModel is required');
     });
 
-    it('should correctly map TrainingPlanExerciseSetViewModel to TrainingPlanExerciseSetDto', () => {
-      const viewModelSet: TrainingPlanExerciseSetViewModel = {
-        id: 'set-1',
-        setIndex: 1,
-        expectedReps: 10,
-        expectedWeight: 50,
-        trainingPlanExerciseId: 'tpe-1',
-      };
-      const result = mapToTrainingPlanExerciseSetDto(viewModelSet);
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "expected_reps": 10,
-          "expected_weight": 50,
-          "id": "set-1",
-          "set_index": 1,
-          "training_plan_exercise_id": "tpe-1",
-        }
-      `);
-    });
-
-    it('should default null expectedReps and expectedWeight to 0', () => {
-      const viewModelSet: TrainingPlanExerciseSetViewModel = {
-        id: 'set-2',
-        setIndex: 2,
-        expectedReps: null,
-        expectedWeight: null,
-        trainingPlanExerciseId: 'tpe-1',
-      };
-      const result = mapToTrainingPlanExerciseSetDto(viewModelSet);
-      expect(result.expected_reps).toBe(0);
-      expect(result.expected_weight).toBe(0);
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "expected_reps": 0,
-          "expected_weight": 0,
-          "id": "set-2",
-          "set_index": 2,
-          "training_plan_exercise_id": "tpe-1",
-        }
-      `);
-    });
-  });
-
-  describe('mapToTrainingPlanExerciseDto', () => {
-    it('should throw an error if the exercise ViewModel is null or undefined', () => {
-      expect(() => mapToTrainingPlanExerciseDto(null!)).toThrowError('Training plan exercise ViewModel is required');
-      expect(() => mapToTrainingPlanExerciseDto(undefined!)).toThrowError('Training plan exercise ViewModel is required');
-    });
-
-    it('should correctly map TrainingPlanExerciseViewModel to TrainingPlanExerciseDto', () => {
-      const viewModelExercise: TrainingPlanExerciseViewModel = {
-        id: 'ex-1',
-        exerciseId: 'e-1',
-        exerciseName: 'Bench Press',
-        orderIndex: 0,
-        trainingPlanDayId: 'tpd-1',
-        sets: [
-          { id: 'set-1', setIndex: 1, expectedReps: 10, expectedWeight: 50, trainingPlanExerciseId: 'ex-1' },
-          { id: 'set-0', setIndex: 0, expectedReps: 12, expectedWeight: 40, trainingPlanExerciseId: 'ex-1' },
+    it('should correctly map TrainingPlanViewModel to TrainingPlanDto', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-1',
+        userId: 'user-123',
+        name: 'My Awesome Plan',
+        description: 'A plan to be awesome',
+        createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        isActive: true,
+        days: [
+          {
+            id: 'day-1',
+            name: 'Day 1',
+            description: 'Push',
+            orderIndex: 1,
+            trainingPlanId: 'plan-1',
+            exercises: [
+              {
+                id: 'ex-1',
+                exerciseId: 'e-1',
+                exerciseName: 'Bench',
+                exerciseDescription: 'Bench press description',
+                orderIndex: 0,
+                trainingPlanDayId: 'day-1',
+                sets: [
+                  { id: 'set-1a', setIndex: 0, expectedReps: 5, expectedWeight: 100, trainingPlanExerciseId: 'ex-1' },
+                ],
+              },
+            ],
+          },
+          {
+            id: 'day-0',
+            name: 'Day 0',
+            description: 'Pull',
+            orderIndex: 0,
+            trainingPlanId: 'plan-1',
+            exercises: [],
+          },
+        ],
+        progressions: [
+          {
+            id: 'prog-1',
+            trainingPlanId: 'plan-1',
+            exerciseId: 'e-1',
+            exerciseName: 'Bench Press',
+            weightIncrement: 5,
+            failureCountForDeload: 3,
+            deloadPercentage: 20,
+            deloadStrategy: 'PERCENTAGE',
+            consecutiveFailures: 0,
+            referenceSetIndex: 0,
+            lastUpdated: new Date('2023-01-01T00:00:00.000Z'),
+          },
         ],
       };
-      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
+
+      const fixedDate = new Date('2024-01-01T10:00:00.000Z');
+      vi.spyOn(global, 'Date').mockImplementation(() => fixedDate as Date);
+
+      const result = mapToTrainingPlanDto(viewModelPlan);
       expect(result).toMatchInlineSnapshot(`
         {
-          "exercise_id": "e-1",
-          "id": "ex-1",
-          "order_index": 0,
-          "sets": [
+          "created_at": "2023-01-01T00:00:00.000Z",
+          "days": [
             {
-              "expected_reps": 12,
-              "expected_weight": 40,
-              "id": "set-0",
-              "set_index": 0,
-              "training_plan_exercise_id": "ex-1",
+              "description": "Pull",
+              "exercises": [],
+              "id": "day-0",
+              "name": "Day 0",
+              "order_index": 0,
+              "training_plan_id": "plan-1",
             },
             {
-              "expected_reps": 10,
-              "expected_weight": 50,
-              "id": "set-1",
-              "set_index": 1,
-              "training_plan_exercise_id": "ex-1",
+              "description": "Push",
+              "exercises": [
+                {
+                  "exercise_id": "e-1",
+                  "id": "ex-1",
+                  "order_index": 0,
+                  "sets": [
+                    {
+                      "expected_reps": 5,
+                      "expected_weight": 100,
+                      "id": "set-1a",
+                      "set_index": 0,
+                      "training_plan_exercise_id": "ex-1",
+                    },
+                  ],
+                  "training_plan_day_id": "day-1",
+                },
+              ],
+              "id": "day-1",
+              "name": "Day 1",
+              "order_index": 1,
+              "training_plan_id": "plan-1",
             },
           ],
-          "training_plan_day_id": "tpd-1",
+          "description": "A plan to be awesome",
+          "id": "plan-1",
+          "name": "My Awesome Plan",
+          "progressions": [
+            {
+              "consecutive_failures": 0,
+              "deload_percentage": 20,
+              "deload_strategy": "PERCENTAGE",
+              "exercise_id": "e-1",
+              "failure_count_for_deload": 3,
+              "id": "prog-1",
+              "last_updated": "2023-01-01T00:00:00.000Z",
+              "reference_set_index": 0,
+              "training_plan_id": "plan-1",
+              "weight_increment": 5,
+            },
+          ],
+          "user_id": "user-123",
         }
       `);
 
-      expect(result.sets![0].id).toBe('set-0');
-      expect(result.sets![1].id).toBe('set-1');
+      expect(result.days![0].id).toBe('day-0');
+      expect(result.days![1].id).toBe('day-1');
+
+      vi.restoreAllMocks();
     });
 
-    it('should handle empty sets array', () => {
-      const viewModelExercise: TrainingPlanExerciseViewModel = {
-        id: 'ex-2',
-        exerciseId: 'e-2',
-        exerciseName: 'Squats',
-        orderIndex: 1,
-        trainingPlanDayId: 'tpd-1',
-        sets: [],
+    it('should use current date for created_at if viewModel.createdAt is null', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-2',
+        userId: 'user-456',
+        name: 'Plan with null createdAt',
+        description: null,
+        createdAt: null,
+        isActive: false,
+        days: [],
+        progressions: [],
       };
-      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
-      expect(result.sets).toEqual([]);
+
+      const mockDate = new Date('2023-03-15T12:30:00.000Z');
+      vi.spyOn(global, 'Date').mockImplementation(() => mockDate as Date);
+
+      const result = mapToTrainingPlanDto(viewModelPlan);
+      expect(result.created_at).toBe('2023-03-15T12:30:00.000Z');
       expect(result).toMatchInlineSnapshot(`
         {
-          "exercise_id": "e-2",
-          "id": "ex-2",
-          "order_index": 1,
-          "sets": [],
-          "training_plan_day_id": "tpd-1",
+          "created_at": "2023-03-15T12:30:00.000Z",
+          "days": [],
+          "description": null,
+          "id": "plan-2",
+          "name": "Plan with null createdAt",
+          "progressions": [],
+          "user_id": "user-456",
+        }
+      `);
+      vi.restoreAllMocks();
+    });
+
+    it('should handle empty days array', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-no-days',
+        userId: 'user-789',
+        name: 'Plan without days',
+        description: 'empty',
+        createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        isActive: true,
+        days: [],
+        progressions: [],
+      };
+      const result = mapToTrainingPlanDto(viewModelPlan);
+      expect(result.days).toEqual([]);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "created_at": "2023-01-01T00:00:00.000Z",
+          "days": [],
+          "description": "empty",
+          "id": "plan-no-days",
+          "name": "Plan without days",
+          "progressions": [],
+          "user_id": "user-789",
         }
       `);
     });
 
-    it('should handle null sets property', () => {
-      const viewModelExercise: TrainingPlanExerciseViewModel = {
-        id: 'ex-3',
-        exerciseId: 'e-3',
-        exerciseName: 'Deadlift',
-        orderIndex: 2,
-        trainingPlanDayId: 'tpd-1',
-        sets: null!
+    it('should handle null days property', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-null-days',
+        userId: 'user-abc',
+        name: 'Plan with null days',
+        description: 'also empty',
+        createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        isActive: false,
+        days: null!,
+        progressions: [],
       };
-      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
-      expect(result.sets).toEqual([]);
+      const result = mapToTrainingPlanDto(viewModelPlan);
+      expect(result.days).toEqual([]);
       expect(result).toMatchInlineSnapshot(`
         {
-          "exercise_id": "e-3",
-          "id": "ex-3",
-          "order_index": 2,
-          "sets": [],
-          "training_plan_day_id": "tpd-1",
+          "created_at": "2023-01-01T00:00:00.000Z",
+          "days": [],
+          "description": "also empty",
+          "id": "plan-null-days",
+          "name": "Plan with null days",
+          "progressions": [],
+          "user_id": "user-abc",
+        }
+      `);
+    });
+
+    it('should handle empty progressions array', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-no-progressions',
+        userId: 'user-abc',
+        name: 'Plan with no progressions',
+        description: 'empty',
+        createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        isActive: false,
+        days: null!,
+        progressions: []!,
+      };
+
+      const result = mapToTrainingPlanDto(viewModelPlan);
+      expect(result.progressions).toEqual([]);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "created_at": "2023-01-01T00:00:00.000Z",
+          "days": [],
+          "description": "empty",
+          "id": "plan-no-progressions",
+          "name": "Plan with no progressions",
+          "progressions": [],
+          "user_id": "user-abc",
+        }
+      `);
+    });
+
+    it('should handle null progressions array', () => {
+      const viewModelPlan: TrainingPlanViewModel = {
+        id: 'plan-null-progressions',
+        userId: 'user-abc',
+        name: 'Plan with null progressions',
+        description: 'also empty',
+        createdAt: new Date('2023-01-01T00:00:00.000Z'),
+        isActive: false,
+        days: null!,
+        progressions: null!,
+      };
+
+      const result = mapToTrainingPlanDto(viewModelPlan);
+      expect(result.progressions).toEqual([]);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "created_at": "2023-01-01T00:00:00.000Z",
+          "days": [],
+          "description": "also empty",
+          "id": "plan-null-progressions",
+          "name": "Plan with null progressions",
+          "progressions": [],
+          "user_id": "user-abc",
         }
       `);
     });
@@ -164,6 +289,7 @@ describe('Training Plan Mapping', () => {
             id: 'ex-1',
             exerciseId: 'e-1',
             exerciseName: 'Bench Press',
+            exerciseDescription: 'Bench press description',
             orderIndex: 1,
             trainingPlanDayId: 'day-1',
             sets: [
@@ -174,6 +300,7 @@ describe('Training Plan Mapping', () => {
             id: 'ex-0',
             exerciseId: 'e-0',
             exerciseName: 'Overhead Press',
+            exerciseDescription: 'Overhead press description',
             orderIndex: 0,
             trainingPlanDayId: 'day-1',
             sets: [
@@ -276,181 +403,210 @@ describe('Training Plan Mapping', () => {
     });
   });
 
-  describe('mapToTrainingPlanDto', () => {
-    it('should throw an error if the plan ViewModel is null or undefined', () => {
-      expect(() => mapToTrainingPlanDto(null!)).toThrowError('Training plan ViewModel is required');
-      expect(() => mapToTrainingPlanDto(undefined!)).toThrowError('Training plan ViewModel is required');
+  describe('mapToTrainingPlanExerciseDto', () => {
+    it('should throw an error if the exercise ViewModel is null or undefined', () => {
+      expect(() => mapToTrainingPlanExerciseDto(null!)).toThrowError('Training plan exercise ViewModel is required');
+      expect(() => mapToTrainingPlanExerciseDto(undefined!)).toThrowError('Training plan exercise ViewModel is required');
     });
 
-    it('should correctly map TrainingPlanViewModel to TrainingPlanDto', () => {
-      const viewModelPlan: TrainingPlanViewModel = {
-        id: 'plan-1',
-        userId: 'user-123',
-        name: 'My Awesome Plan',
-        description: 'A plan to be awesome',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        isActive: true,
-        days: [
-          {
-            id: 'day-1',
-            name: 'Day 1',
-            description: 'Push',
-            orderIndex: 1,
-            trainingPlanId: 'plan-1',
-            exercises: [
-              {
-                id: 'ex-1',
-                exerciseId: 'e-1',
-                exerciseName: 'Bench',
-                orderIndex: 0,
-                trainingPlanDayId: 'day-1',
-                sets: [
-                  { id: 'set-1a', setIndex: 0, expectedReps: 5, expectedWeight: 100, trainingPlanExerciseId: 'ex-1' },
-                ],
-              },
-            ],
-          },
-          {
-            id: 'day-0',
-            name: 'Day 0',
-            description: 'Pull',
-            orderIndex: 0,
-            trainingPlanId: 'plan-1',
-            exercises: [],
-          },
+    it('should correctly map TrainingPlanExerciseViewModel to TrainingPlanExerciseDto', () => {
+      const viewModelExercise: TrainingPlanExerciseViewModel = {
+        id: 'ex-1',
+        exerciseId: 'e-1',
+        exerciseName: 'Bench Press',
+        exerciseDescription: 'Bench press description',
+        orderIndex: 0,
+        trainingPlanDayId: 'tpd-1',
+        sets: [
+          { id: 'set-1', setIndex: 1, expectedReps: 10, expectedWeight: 50, trainingPlanExerciseId: 'ex-1' },
+          { id: 'set-0', setIndex: 0, expectedReps: 12, expectedWeight: 40, trainingPlanExerciseId: 'ex-1' },
         ],
       };
-
-      const fixedDate = new Date('2024-01-01T10:00:00.000Z');
-      vi.spyOn(global, 'Date').mockImplementation(() => fixedDate as Date);
-
-      const result = mapToTrainingPlanDto(viewModelPlan);
-
+      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
       expect(result).toMatchInlineSnapshot(`
         {
-          "created_at": "2023-01-01T00:00:00.000Z",
-          "days": [
+          "exercise_id": "e-1",
+          "id": "ex-1",
+          "order_index": 0,
+          "sets": [
             {
-              "description": "Pull",
-              "exercises": [],
-              "id": "day-0",
-              "name": "Day 0",
-              "order_index": 0,
-              "training_plan_id": "plan-1",
+              "expected_reps": 12,
+              "expected_weight": 40,
+              "id": "set-0",
+              "set_index": 0,
+              "training_plan_exercise_id": "ex-1",
             },
             {
-              "description": "Push",
-              "exercises": [
-                {
-                  "exercise_id": "e-1",
-                  "id": "ex-1",
-                  "order_index": 0,
-                  "sets": [
-                    {
-                      "expected_reps": 5,
-                      "expected_weight": 100,
-                      "id": "set-1a",
-                      "set_index": 0,
-                      "training_plan_exercise_id": "ex-1",
-                    },
-                  ],
-                  "training_plan_day_id": "day-1",
-                },
-              ],
-              "id": "day-1",
-              "name": "Day 1",
-              "order_index": 1,
-              "training_plan_id": "plan-1",
+              "expected_reps": 10,
+              "expected_weight": 50,
+              "id": "set-1",
+              "set_index": 1,
+              "training_plan_exercise_id": "ex-1",
             },
           ],
-          "description": "A plan to be awesome",
-          "id": "plan-1",
-          "name": "My Awesome Plan",
-          "user_id": "user-123",
+          "training_plan_day_id": "tpd-1",
         }
       `);
 
-      expect(result.days![0].id).toBe('day-0');
-      expect(result.days![1].id).toBe('day-1');
-
-      vi.restoreAllMocks();
+      expect(result.sets![0].id).toBe('set-0');
+      expect(result.sets![1].id).toBe('set-1');
     });
 
-    it('should use current date for created_at if viewModel.createdAt is null', () => {
-      const viewModelPlan: TrainingPlanViewModel = {
-        id: 'plan-2',
-        userId: 'user-456',
-        name: 'Plan with null createdAt',
-        description: null,
-        createdAt: null,
-        isActive: false,
-        days: [],
+    it('should handle empty sets array', () => {
+      const viewModelExercise: TrainingPlanExerciseViewModel = {
+        id: 'ex-2',
+        exerciseId: 'e-2',
+        exerciseName: 'Squats',
+        exerciseDescription: 'Squats description',
+        orderIndex: 1,
+        trainingPlanDayId: 'tpd-1',
+        sets: [],
+      };
+      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
+      expect(result.sets).toEqual([]);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "exercise_id": "e-2",
+          "id": "ex-2",
+          "order_index": 1,
+          "sets": [],
+          "training_plan_day_id": "tpd-1",
+        }
+      `);
+    });
+
+    it('should handle null sets property', () => {
+      const viewModelExercise: TrainingPlanExerciseViewModel = {
+        id: 'ex-3',
+        exerciseId: 'e-3',
+        exerciseName: 'Deadlift',
+        exerciseDescription: 'Deadlift description',
+        orderIndex: 2,
+        trainingPlanDayId: 'tpd-1',
+        sets: null!
+      };
+      const result = mapToTrainingPlanExerciseDto(viewModelExercise);
+      expect(result.sets).toEqual([]);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "exercise_id": "e-3",
+          "id": "ex-3",
+          "order_index": 2,
+          "sets": [],
+          "training_plan_day_id": "tpd-1",
+        }
+      `);
+    });
+  });
+
+  describe('mapToTrainingPlanExerciseSetDto', () => {
+    it('should throw an error if the set ViewModel is null or undefined', () => {
+      expect(() => mapToTrainingPlanExerciseSetDto(null!)).toThrowError('Training plan exercise set ViewModel is required');
+      expect(() => mapToTrainingPlanExerciseSetDto(undefined!)).toThrowError('Training plan exercise set ViewModel is required');
+    });
+
+    it('should correctly map TrainingPlanExerciseSetViewModel to TrainingPlanExerciseSetDto', () => {
+      const viewModelSet: TrainingPlanExerciseSetViewModel = {
+        id: 'set-1',
+        setIndex: 1,
+        expectedReps: 10,
+        expectedWeight: 50,
+        trainingPlanExerciseId: 'tpe-1',
+      };
+      const result = mapToTrainingPlanExerciseSetDto(viewModelSet);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "expected_reps": 10,
+          "expected_weight": 50,
+          "id": "set-1",
+          "set_index": 1,
+          "training_plan_exercise_id": "tpe-1",
+        }
+      `);
+    });
+
+    it('should default null expectedReps and expectedWeight to 0', () => {
+      const viewModelSet: TrainingPlanExerciseSetViewModel = {
+        id: 'set-2',
+        setIndex: 2,
+        expectedReps: null,
+        expectedWeight: null,
+        trainingPlanExerciseId: 'tpe-1',
+      };
+      const result = mapToTrainingPlanExerciseSetDto(viewModelSet);
+      expect(result.expected_reps).toBe(0);
+      expect(result.expected_weight).toBe(0);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "expected_reps": 0,
+          "expected_weight": 0,
+          "id": "set-2",
+          "set_index": 2,
+          "training_plan_exercise_id": "tpe-1",
+        }
+      `);
+    });
+  });
+
+  describe('mapToTrainingPlanExerciseProgressionDto', () => {
+    it('should throw an error if the progression ViewModel is null or undefined', () => {
+      expect(() => mapToTrainingPlanExerciseProgressionDto(null!)).toThrowError('Training plan exercise progression ViewModel is required');
+      expect(() => mapToTrainingPlanExerciseProgressionDto(undefined!)).toThrowError('Training plan exercise progression ViewModel is required');
+    });
+
+    it('should correctly map TrainingPlanExerciseProgressionViewModel to TrainingPlanExerciseProgressionDto', () => {
+      const viewModelProgression: TrainingPlanExerciseProgressionViewModel = {
+        id: 'prog-1',
+        trainingPlanId: 'tp-1',
+        exerciseId: 'e-1',
+        exerciseName: 'Bench Press',
+        weightIncrement: 5,
+        failureCountForDeload: 3,
+        deloadPercentage: 20,
+        deloadStrategy: 'PERCENTAGE',
+        consecutiveFailures: 0,
+        referenceSetIndex: 0,
+        lastUpdated: new Date('2023-01-01T00:00:00.000Z'),
+      };
+      const result = mapToTrainingPlanExerciseProgressionDto(viewModelProgression);
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "consecutive_failures": 0,
+          "deload_percentage": 20,
+          "deload_strategy": "PERCENTAGE",
+          "exercise_id": "e-1",
+          "failure_count_for_deload": 3,
+          "id": "prog-1",
+          "last_updated": "2023-01-01T00:00:00.000Z",
+          "reference_set_index": 0,
+          "training_plan_id": "tp-1",
+          "weight_increment": 5,
+        }
+      `);
+    });
+
+    it('should use current date for last_updated if viewModel.lastUpdated is null', () => {
+      const viewModelProgression: TrainingPlanExerciseProgressionViewModel = {
+        id: 'prog-1',
+        trainingPlanId: 'tp-1',
+        exerciseId: 'e-1',
+        exerciseName: 'Bench Press',
+        weightIncrement: 5,
+        failureCountForDeload: 3,
+        deloadPercentage: 20,
+        deloadStrategy: 'PERCENTAGE',
+        consecutiveFailures: 0,
+        referenceSetIndex: 0,
+        lastUpdated: null,
       };
 
       const mockDate = new Date('2023-03-15T12:30:00.000Z');
       vi.spyOn(global, 'Date').mockImplementation(() => mockDate as Date);
 
-      const result = mapToTrainingPlanDto(viewModelPlan);
-      expect(result.created_at).toBe('2023-03-15T12:30:00.000Z');
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "created_at": "2023-03-15T12:30:00.000Z",
-          "days": [],
-          "description": null,
-          "id": "plan-2",
-          "name": "Plan with null createdAt",
-          "user_id": "user-456",
-        }
-      `);
+      const result = mapToTrainingPlanExerciseProgressionDto(viewModelProgression);
+      expect(result.last_updated).toBe('2023-03-15T12:30:00.000Z');
+
       vi.restoreAllMocks();
-    });
-
-    it('should handle empty days array', () => {
-      const viewModelPlan: TrainingPlanViewModel = {
-        id: 'plan-no-days',
-        userId: 'user-789',
-        name: 'Plan without days',
-        description: 'empty',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        isActive: true,
-        days: [],
-      };
-      const result = mapToTrainingPlanDto(viewModelPlan);
-      expect(result.days).toEqual([]);
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "created_at": "2023-01-01T00:00:00.000Z",
-          "days": [],
-          "description": "empty",
-          "id": "plan-no-days",
-          "name": "Plan without days",
-          "user_id": "user-789",
-        }
-      `);
-    });
-
-    it('should handle null days property', () => {
-      const viewModelPlan: TrainingPlanViewModel = {
-        id: 'plan-null-days',
-        userId: 'user-abc',
-        name: 'Plan with null days',
-        description: 'also empty',
-        createdAt: '2023-01-01T00:00:00.000Z',
-        isActive: false,
-        days: null!,
-      };
-      const result = mapToTrainingPlanDto(viewModelPlan);
-      expect(result.days).toEqual([]);
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "created_at": "2023-01-01T00:00:00.000Z",
-          "days": [],
-          "description": "also empty",
-          "id": "plan-null-days",
-          "name": "Plan with null days",
-          "user_id": "user-abc",
-        }
-      `);
     });
   });
 
@@ -466,6 +622,20 @@ describe('Training Plan Mapping', () => {
         name: 'Strength Program',
         description: 'A plan focused on building strength.',
         created_at: new Date().toISOString(),
+        progressions: [
+          {
+            id: 'prog-1',
+            training_plan_id: 'tp-1',
+            exercise_id: 'e-1',
+            weight_increment: 5,
+            failure_count_for_deload: 3,
+            deload_percentage: 20,
+            deload_strategy: 'PERCENTAGE',
+            consecutive_failures: 0,
+            reference_set_index: 0,
+            last_updated: new Date().toISOString(),
+          } as TrainingPlanExerciseProgressionDto,
+        ],
         days: [
           {
             id: 'day-1',
@@ -515,6 +685,7 @@ describe('Training Plan Mapping', () => {
       expect(result.id).toBe('tp-1');
       expect(result.name).toBe('Strength Program');
       expect(result.description).toBe('A plan focused on building strength.');
+      expect(result.createdAt).toEqual(new Date(mockTrainingPlanDto.created_at!));
       expect(result.isActive).toBe(true);
       expect(result.days).toHaveLength(1);
       expect(result.days[0].name).toBe('Push Day');
@@ -590,6 +761,40 @@ describe('Training Plan Mapping', () => {
       const result = mapToTrainingPlanViewModel(dtoWithUnknownExercise, mockExercises, mockUserProfileDto);
       expect(result.days[0].exercises[0].exerciseName).toBe('Unknown Exercise');
     });
+
+    it('should correctly map exercise progressions from DTO to ViewModel', () => {
+      const result = mapToTrainingPlanViewModel(mockTrainingPlanDto, mockExercises, mockUserProfileDto);
+      expect(result.progressions).toBeDefined();
+      expect(result.progressions).toHaveLength(1);
+      expect(result.progressions[0].id).toBe('prog-1');
+      expect(result.progressions[0].exerciseName).toBe('Bench Press');
+      expect(result.progressions[0].weightIncrement).toBe(5);
+      expect(result.progressions[0].lastUpdated).toEqual(new Date(mockTrainingPlanDto.progressions![0].last_updated!));
+    });
+
+    it('should use "Unknown Exercise" for progression if matching exercise is not found', () => {
+      const dtoWithUnknownExerciseProgression = {
+        ...mockTrainingPlanDto,
+        progressions: [
+          {
+            ...mockTrainingPlanDto.progressions![0],
+            exercise_id: 'e-unknown',
+          },
+        ],
+      };
+      const result = mapToTrainingPlanViewModel(dtoWithUnknownExerciseProgression, mockExercises, mockUserProfileDto);
+      expect(result.progressions[0].exerciseName).toBe('Unknown Exercise');
+    });
+
+    it('should handle null or empty exercise_progressions array', () => {
+      const dtoNoProgressions: TrainingPlanDto = { ...mockTrainingPlanDto, progressions: [] };
+      let result = mapToTrainingPlanViewModel(dtoNoProgressions, mockExercises, mockUserProfileDto);
+      expect(result.progressions).toEqual([]);
+
+      const dtoNullProgressions: TrainingPlanDto = { ...mockTrainingPlanDto, progressions: null! };
+      result = mapToTrainingPlanViewModel(dtoNullProgressions, mockExercises, mockUserProfileDto);
+      expect(result.progressions).toEqual([]);
+    });
   });
 
   describe('Round-trip mapping integrity', () => {
@@ -609,8 +814,8 @@ describe('Training Plan Mapping', () => {
       };
 
       mockExercises = [
-        { id: 'e-rt-dto1', name: 'Exercise e-rt-dto1', description:'DTO exercise'},
-        { id: 'e-vm-rt1', name: 'VM RT Exercise 1', description:'VM exercise'},
+        { id: 'e-rt-dto1', name: 'Exercise e-rt-dto1', description: 'DTO exercise description'},
+        { id: 'e-vm-rt1', name: 'VM RT Exercise 1', description: 'VM exercise description'},
       ];
 
       mockDto = {
@@ -619,6 +824,20 @@ describe('Training Plan Mapping', () => {
         name: 'DTO Round Trip Plan',
         description: 'Full description for DTO round trip.',
         created_at: new Date('2023-01-01T12:00:00.000Z').toISOString(),
+        progressions: [
+          {
+            id: 'prog-rt-dto1',
+            training_plan_id: 'base-dto-id',
+            exercise_id: 'e-rt-dto1',
+            weight_increment: 2.5,
+            failure_count_for_deload: 2,
+            deload_percentage: 10,
+            deload_strategy: 'STRATEGY_A',
+            consecutive_failures: 1,
+            reference_set_index: 0,
+            last_updated: new Date('2023-01-01T12:00:00.000Z').toISOString(),
+          } as TrainingPlanExerciseProgressionDto,
+        ],
         days: [
           {
             id: 'day-rt-dto1',
@@ -646,8 +865,23 @@ describe('Training Plan Mapping', () => {
         userId: 'user-vm-rt',
         name: 'VM Round Trip Plan',
         description: 'Full description for VM round trip.',
-        createdAt: new Date('2023-02-01T10:00:00.000Z').toISOString(),
+        createdAt: new Date('2023-02-01T10:00:00.000Z'),
         isActive: true,
+        progressions: [
+          {
+            id: 'prog-vm-rt1',
+            trainingPlanId: 'tp-vm-rt',
+            exerciseId: 'e-vm-rt1',
+            exerciseName: 'VM RT Exercise 1',
+            weightIncrement: 5,
+            failureCountForDeload: 3,
+            deloadPercentage: 15,
+            deloadStrategy: 'STRATEGY_B',
+            consecutiveFailures: 0,
+            referenceSetIndex: 1,
+            lastUpdated: new Date('2023-02-01T10:00:00.000Z'),
+          },
+        ],
         days: [
           {
             id: 'day-vm-rt1',
@@ -660,6 +894,7 @@ describe('Training Plan Mapping', () => {
                 id: 'ex-vm-rt1a',
                 exerciseId: 'e-vm-rt1',
                 exerciseName: 'VM RT Exercise 1',
+                exerciseDescription: 'VM exercise description',
                 orderIndex: 0,
                 trainingPlanDayId: 'day-vm-rt1',
                 sets: [
@@ -710,6 +945,16 @@ describe('Training Plan Mapping', () => {
           });
         });
       });
+
+      expect(finalDto.progressions).toHaveLength(mockDto.progressions!.length);
+      finalDto.progressions?.forEach((progDto, progIndex) => {
+        const originalProgDto = mockDto.progressions![progIndex];
+        expect(progDto.id).toBe(originalProgDto.id);
+        expect(progDto.training_plan_id).toBe(originalProgDto.training_plan_id);
+        expect(progDto.exercise_id).toBe(originalProgDto.exercise_id);
+        expect(progDto.weight_increment).toBe(originalProgDto.weight_increment);
+        expect(progDto.last_updated).toBe(originalProgDto.last_updated);
+      });
     });
 
     it('ViewModel -> DTO -> ViewModel: should maintain data integrity', () => {
@@ -720,7 +965,7 @@ describe('Training Plan Mapping', () => {
       expect(finalViewModel.userId).toBe(mockViewModel.userId);
       expect(finalViewModel.name).toBe(mockViewModel.name);
       expect(finalViewModel.description).toBe(mockViewModel.description);
-      expect(finalViewModel.createdAt).toBe(mockViewModel.createdAt);
+      expect(finalViewModel.createdAt).toEqual(mockViewModel.createdAt);
       expect(finalViewModel.isActive).toBe(mockViewModel.isActive);
 
       expect(finalViewModel.days).toHaveLength(mockViewModel.days.length);
@@ -738,6 +983,7 @@ describe('Training Plan Mapping', () => {
           expect(exVm.id).toBe(originalExVm.id);
           expect(exVm.exerciseId).toBe(originalExVm.exerciseId);
           expect(exVm.exerciseName).toBe(originalExVm.exerciseName);
+          expect(exVm.exerciseDescription).toBe(originalExVm.exerciseDescription);
           expect(exVm.orderIndex).toBe(originalExVm.orderIndex);
           expect(exVm.trainingPlanDayId).toBe(originalExVm.trainingPlanDayId);
 
@@ -751,6 +997,17 @@ describe('Training Plan Mapping', () => {
             expect(setVm.trainingPlanExerciseId).toBe(originalSetVm.trainingPlanExerciseId);
           });
         });
+      });
+
+      expect(finalViewModel.progressions).toHaveLength(mockViewModel.progressions.length);
+      finalViewModel.progressions.forEach((progVm, progIndex) => {
+        const originalProgVm = mockViewModel.progressions[progIndex];
+        expect(progVm.id).toBe(originalProgVm.id);
+        expect(progVm.trainingPlanId).toBe(originalProgVm.trainingPlanId);
+        expect(progVm.exerciseId).toBe(originalProgVm.exerciseId);
+        expect(progVm.exerciseName).toBe(originalProgVm.exerciseName);
+        expect(progVm.weightIncrement).toBe(originalProgVm.weightIncrement);
+        expect(progVm.lastUpdated).toEqual(originalProgVm.lastUpdated);
       });
     });
   });

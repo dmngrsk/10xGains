@@ -38,25 +38,25 @@ export class SessionService {
     const queryParams = new URLSearchParams();
     let url = '/training-sessions';
 
-    if (params.limit) {
+    if (params.limit !== undefined) {
       queryParams.append('limit', params.limit.toString());
     }
-    if (params.offset) {
+    if (params.offset !== undefined) {
       queryParams.append('offset', params.offset.toString());
     }
-    if (params.order) {
+    if (params.order !== undefined) {
       queryParams.append('order', params.order);
     }
-    if (params.status) {
+    if (params.status !== undefined) {
       queryParams.append('status', params.status.join(','));
     }
-    if (params.date_from) {
+    if (params.date_from !== undefined) {
       queryParams.append('date_from', params.date_from);
     }
-    if (params.date_to) {
+    if (params.date_to !== undefined) {
       queryParams.append('date_to', params.date_to);
     }
-    if (params.plan_id) {
+    if (params.plan_id !== undefined) {
       queryParams.append('plan_id', params.plan_id);
     }
 

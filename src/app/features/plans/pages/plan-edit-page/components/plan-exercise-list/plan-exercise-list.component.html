@@ -1,0 +1,26 @@
+@if (exercises.length > 0) {
+  <mat-accordion multi="true" cdkDropList [cdkDropListData]="exercises" (cdkDropListDropped)="onExerciseReordered($event)" [cdkDropListDisabled]="isReadOnly">
+    <div class="flex flex-col gap-2">
+      @for (exercise of exercises; track exercise.id; let i = $index) {
+        <txg-plan-exercise-item
+          [planId]="planId"
+          [dayId]="dayId"
+          [exercise]="exercise"
+          [progression]="getProgression(exercise.exerciseId)"
+          [isReadOnly]="isReadOnly"
+          [expanded]="expandedStates()[i]"
+          (opened)="onExerciseItemToggled(i, true)"
+          (closed)="onExerciseItemToggled(i, false)"
+          (exerciseDeleted)="onExerciseDeleted($event)"
+          (progressionEdited)="onProgressionEdited($event)"
+          (setAdded)="onSetAdded($event)"
+          (setEdited)="onSetEdited($event)"
+          (setDeleted)="onSetDeleted($event)"
+          (setReordered)="onSetReordered($event)">
+        </txg-plan-exercise-item>
+      }
+    </div>
+  </mat-accordion>
+} @else {
+  <p class="text-gray-500 py-3 px-2">No exercises defined for this day. Add the first one!</p>
+}

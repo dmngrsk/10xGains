@@ -32,6 +32,9 @@ export async function handleGetTrainingPlanById(
             *
           )
         )
+      ),
+      progressions:training_plan_exercise_progressions (
+        *
       )
     `)
     .eq('id', planId)

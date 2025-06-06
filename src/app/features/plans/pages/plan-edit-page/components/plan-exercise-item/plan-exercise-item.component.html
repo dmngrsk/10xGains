@@ -1,0 +1,64 @@
+<mat-expansion-panel
+  class="exercise-panel"
+  cdkDrag cdkDragLockAxis="y"
+  [cdkDragData]="exercise"
+  [cdkDragDisabled]="isReadOnly"
+  [expanded]="expanded"
+  (opened)="opened.emit()"
+  (closed)="closed.emit()">
+  <mat-expansion-panel-header>
+    <div class="flex items-center w-full">
+      @if (!isReadOnly) {
+        <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-gray-500 hover:text-gray-700">
+          <mat-icon>drag_indicator</mat-icon>
+        </div>
+      }
+      <mat-panel-title class="flex-grow">
+        <span class="font-medium text-md">{{ exercise.exerciseName }}</span>
+      </mat-panel-title>
+    </div>
+  </mat-expansion-panel-header>
+
+  @if (exercise.exerciseDescription) {
+    <p class="text-sm text-gray-500 px-2 pb-4">{{ exercise.exerciseDescription }}</p>
+  }
+
+  <div class="sets-container">
+    <txg-plan-exercise-set-list
+      [planId]="planId"
+      [dayId]="dayId"
+      [exerciseId]="exercise.id"
+      [sets]="exercise.sets"
+      [isReadOnly]="isReadOnly"
+      (setEdited)="onSetEdited($event)"
+      (setDeleted)="onSetDeleted($event)"
+      (setReordered)="onSetReordered($event)">
+    </txg-plan-exercise-set-list>
+  </div>
+
+  @if (!isReadOnly) {
+    <div class="flex flex-col justify-end items-center mt-6 gap-2">
+      @if (progression) {
+        <button mat-raised-button class="w-full" (click)="onSetAdded()">
+          <mat-icon>add</mat-icon>
+          Add Set
+        </button>
+        <button mat-raised-button class="w-full" (click)="onProgressionEdited()">
+          Edit Exercise Progression
+        </button>
+      } @else {
+        <button mat-flat-button class="w-full" (click)="onProgressionEdited()">
+          <mat-icon>add</mat-icon>
+          Add Exercise Progression
+        </button>
+        <button mat-raised-button class="w-full" (click)="onSetAdded()">
+          <mat-icon>add</mat-icon>
+          Add Set
+        </button>
+      }
+      <button mat-raised-button class="w-full" (click)="onExerciseDeleted()">
+        Delete Exercise
+      </button>
+    </div>
+  }
+</mat-expansion-panel>

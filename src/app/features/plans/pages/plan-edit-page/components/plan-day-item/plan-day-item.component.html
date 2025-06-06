@@ -1,0 +1,52 @@
+<mat-expansion-panel
+  class="day-panel"
+  cdkDrag cdkDragLockAxis="y"
+  [cdkDragData]="day"
+  [cdkDragDisabled]="isReadOnly"
+  [expanded]="expanded"
+  (opened)="opened.emit()"
+  (closed)="closed.emit()">
+  <mat-expansion-panel-header>
+    <div class="flex items-center w-full">
+      @if (!isReadOnly) {
+        <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-gray-500 hover:text-gray-700">
+          <mat-icon>drag_indicator</mat-icon>
+        </div>
+      }
+      <mat-panel-title class="flex-grow">
+        {{ day.name || 'Unnamed day' }}
+      </mat-panel-title>
+    </div>
+  </mat-expansion-panel-header>
+
+  @if (day.description) {
+    <p class="text-sm text-gray-500 px-2 pb-4">{{ day.description }}</p>
+  }
+
+  <txg-plan-exercise-list
+    [planId]="planId"
+    [dayId]="day.id"
+    [exercises]="day.exercises"
+    [progressions]="progressions"
+    [isReadOnly]="isReadOnly"
+    (exerciseDeleted)="onExerciseDeleted($event)"
+    (exerciseReordered)="onExerciseReordered($event)"
+    (progressionEdited)="onProgressionEdited($event)"
+    (setAdded)="onSetAdded($event)"
+    (setEdited)="onSetEdited($event)"
+    (setDeleted)="onSetDeleted($event)"
+    (setReordered)="onSetReordered($event)">
+  </txg-plan-exercise-list>
+
+  @if (!isReadOnly) {
+    <div class="flex flex-col justify-end items-center mt-6 gap-2">
+      <button mat-raised-button class="w-full" (click)="onExerciseAdded()">
+        <mat-icon>add</mat-icon>
+        Add Exercise
+      </button>
+      <button mat-raised-button class="w-full" (click)="onDayEdited()">
+        Edit Training Day
+      </button>
+    </div>
+  }
+</mat-expansion-panel>

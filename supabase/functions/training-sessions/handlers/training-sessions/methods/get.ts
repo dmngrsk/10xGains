@@ -8,7 +8,7 @@ const TrainingSessionStatusEnum = z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED',
 const GetTrainingSessionsQuerySchema = z.object({
   limit: z.preprocess(
     (val) => (val ? Number(val) : undefined),
-    z.number().int().positive().optional()
+    z.number().int().nonnegative().optional()
   ),
   offset: z.preprocess(
     (val) => (val ? Number(val) : undefined),
@@ -35,6 +35,7 @@ export async function handleGetTrainingSessions(
 ) {
   const queryParams = Object.fromEntries(url.searchParams.entries());
   const validationResult = GetTrainingSessionsQuerySchema.safeParse(queryParams);
+  console.log('queryParams', queryParams);
 
   if (!validationResult.success) {
     return createErrorResponse(400, 'Invalid query parameters', validationResult.error.flatten());

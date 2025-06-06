@@ -18,7 +18,7 @@ import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { PlanCardComponent } from './components/plan-card/plan-card.component';
 import { PlanListComponent } from './components/plan-list/plan-list.component';
 import { PlanListPageFacade } from './plan-list-page.facade';
-import { AddEditPlanDialogComponent, AddEditPlanDialogCloseResult, AddEditPlanDialogData } from '../plan-edit/dialogs/add-edit-plan/add-edit-plan-dialog.component';
+import { AddEditPlanDialogComponent, AddEditPlanDialogCloseResult, AddEditPlanDialogData } from '../../components/dialogs/add-edit-plan/add-edit-plan-dialog.component';
 
 @Component({
   selector: 'txg-plan-list-page',

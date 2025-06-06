@@ -1,5 +1,5 @@
-import { TrainingPlanDto, TrainingPlanDayDto, TrainingPlanExerciseDto, TrainingPlanExerciseSetDto, ExerciseDto, UserProfileDto } from '@shared/api/api.types';
-import { TrainingPlanViewModel, TrainingPlanDayViewModel, TrainingPlanExerciseViewModel, TrainingPlanExerciseSetViewModel } from './training-plan.viewmodel';
+import { TrainingPlanDto, TrainingPlanDayDto, TrainingPlanExerciseDto, TrainingPlanExerciseSetDto, ExerciseDto, UserProfileDto, TrainingPlanExerciseProgressionDto } from '@shared/api/api.types';
+import { TrainingPlanViewModel, TrainingPlanDayViewModel, TrainingPlanExerciseViewModel, TrainingPlanExerciseSetViewModel, TrainingPlanExerciseProgressionViewModel } from './training-plan.viewmodel';
 
 export function mapToTrainingPlanViewModel(
   dto: TrainingPlanDto,
@@ -14,6 +14,7 @@ export function mapToTrainingPlanViewModel(
     const exercises: TrainingPlanExerciseViewModel[] = (dayDto.exercises || []).map((exDto: TrainingPlanExerciseDto): TrainingPlanExerciseViewModel => {
       const exercise = allExercises.find(e => e.id === exDto.exercise_id);
       const exerciseName = exercise ? exercise.name : 'Unknown Exercise';
+      const exerciseDescription = exercise ? exercise.description : null;
 
       const sets: TrainingPlanExerciseSetViewModel[] = (exDto.sets || []).map((setDto: TrainingPlanExerciseSetDto): TrainingPlanExerciseSetViewModel => ({
         id: setDto.id,
@@ -27,6 +28,7 @@ export function mapToTrainingPlanViewModel(
         id: exDto.id,
         exerciseId: exDto.exercise_id,
         exerciseName: exerciseName,
+        exerciseDescription: exerciseDescription,
         orderIndex: exDto.order_index,
         trainingPlanDayId: exDto.training_plan_day_id,
         sets: sets.sort((a, b) => a.setIndex - b.setIndex)
@@ -43,14 +45,34 @@ export function mapToTrainingPlanViewModel(
     };
   });
 
+  const progressions = (dto.progressions || []).map((progressionDto): TrainingPlanExerciseProgressionViewModel => {
+    const exercise = allExercises.find(e => e.id === progressionDto.exercise_id);
+    const exerciseName = exercise ? exercise.name : 'Unknown Exercise';
+
+    return {
+      id: progressionDto.id,
+      trainingPlanId: progressionDto.training_plan_id,
+      exerciseId: progressionDto.exercise_id,
+      exerciseName: exerciseName,
+      weightIncrement: progressionDto.weight_increment ?? null,
+      failureCountForDeload: progressionDto.failure_count_for_deload ?? null,
+      deloadPercentage: progressionDto.deload_percentage ?? null,
+      deloadStrategy: progressionDto.deload_strategy ?? null,
+      consecutiveFailures: progressionDto.consecutive_failures ?? null,
+      referenceSetIndex: progressionDto.reference_set_index ?? null,
+      lastUpdated: progressionDto.last_updated ? new Date(progressionDto.last_updated) : null,
+    };
+  });
+
   return {
     id: dto.id,
     userId: dto.user_id,
     name: dto.name,
     description: dto.description,
-    createdAt: dto.created_at ?? null,
+    createdAt: dto.created_at ? new Date(dto.created_at) : null,
     isActive: userProfile ? dto.id === userProfile.active_training_plan_id : false,
     days: trainingDays.sort((a,b) => a.orderIndex - b.orderIndex),
+    progressions,
   };
 }
 
@@ -64,10 +86,11 @@ export function mapToTrainingPlanDto(viewModel: TrainingPlanViewModel): Training
     user_id: viewModel.userId,
     name: viewModel.name,
     description: viewModel.description,
-    created_at: viewModel.createdAt ?? new Date().toISOString(),
+    created_at: viewModel.createdAt?.toISOString() ?? new Date().toISOString(),
     days: (viewModel.days || [])
       .map(mapToTrainingPlanDayDto)
-      .sort((a,b) => a.order_index - b.order_index)
+      .sort((a,b) => a.order_index - b.order_index),
+    progressions: (viewModel.progressions || []).map(mapToTrainingPlanExerciseProgressionDto),
   };
 }
 
@@ -116,4 +139,25 @@ export function mapToTrainingPlanExerciseSetDto(set: TrainingPlanExerciseSetView
     expected_weight: set.expectedWeight ?? 0,
     training_plan_exercise_id: set.trainingPlanExerciseId,
   };
+}
+
+export function mapToTrainingPlanExerciseProgressionDto(
+  progression: TrainingPlanExerciseProgressionViewModel
+): TrainingPlanExerciseProgressionDto {
+  if (!progression) {
+    throw new Error('Training plan exercise progression ViewModel is required');
+  }
+
+  return {
+    id: progression.id,
+    training_plan_id: progression.trainingPlanId,
+    exercise_id: progression.exerciseId,
+    weight_increment: progression.weightIncrement,
+    failure_count_for_deload: progression.failureCountForDeload,
+    deload_percentage: progression.deloadPercentage,
+    deload_strategy: progression.deloadStrategy,
+    consecutive_failures: progression.consecutiveFailures,
+    reference_set_index: progression.referenceSetIndex,
+    last_updated: progression.lastUpdated?.toISOString() ?? new Date().toISOString(),
+  } as TrainingPlanExerciseProgressionDto;
 }

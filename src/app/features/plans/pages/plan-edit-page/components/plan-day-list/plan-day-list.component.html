@@ -1,0 +1,30 @@
+<h3 class="text-xl text-[var(--mat-sys-primary)] font-semibold mb-4">Training Days</h3>
+
+@if (days.length > 0) {
+  <mat-accordion multi="true" cdkDropList [cdkDropListData]="days" (cdkDropListDropped)="onDayItemDropped($event)" [cdkDropListDisabled]="isReadOnly">
+    <div class="flex flex-col gap-2">
+      @for (day of days; track day.id; let i = $index) {
+        <txg-plan-day-item
+          [planId]="planId!"
+          [day]="day"
+          [progressions]="progressions"
+          [isReadOnly]="isReadOnly"
+          [expanded]="expandedStates()[i]"
+          (opened)="onDayItemToggled(i, true)"
+          (closed)="onDayItemToggled(i, false)"
+          (dayEdited)="onDayEdited($event)"
+          (exerciseAdded)="onExerciseAdded($event)"
+          (exerciseDeleted)="onExerciseDeleted($event)"
+          (exerciseReordered)="onExerciseReordered($event)"
+          (progressionEdited)="onProgressionEdited($event)"
+          (setAdded)="onSetAdded($event)"
+          (setEdited)="onSetEdited($event)"
+          (setDeleted)="onSetDeleted($event)"
+          (setReordered)="onSetReordered($event)">
+        </txg-plan-day-item>
+      }
+    </div>
+  </mat-accordion>
+} @else {
+  <p class="text-gray-500 py-4">No days defined for this plan. Add the first one!</p>
+}

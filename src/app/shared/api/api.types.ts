@@ -45,6 +45,7 @@ export type UpdateUserProfileCommand = Partial<Pick<UserProfileDto, "first_name"
 // 2. Training Plan DTO and Commands
 export type TrainingPlanDto = Database["public"]["Tables"]["training_plans"]["Row"] & {
   days?: TrainingPlanDayDto[]; // nested training plan days
+  progressions?: TrainingPlanExerciseProgressionDto[]; // nested exercise progression rules
 };
 
 export type CreateTrainingPlanCommand = Pick<Database["public"]["Tables"]["training_plans"]["Insert"], "name" | "description">;

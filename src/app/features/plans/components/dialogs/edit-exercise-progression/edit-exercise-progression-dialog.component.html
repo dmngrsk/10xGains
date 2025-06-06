@@ -1,0 +1,80 @@
+<h2 mat-dialog-title>Edit Exercise Progression</h2>
+
+<mat-dialog-content [formGroup]="progressionForm" class="!pt-4">
+  <div class="flex flex-col gap-4">
+    <mat-form-field appearance="outline">
+      <mat-label>Weight increment (kg)</mat-label>
+      <input matInput formControlName="weightIncrement">
+      @if (progressionForm.get('weightIncrement')?.hasError('required')) {
+        <mat-error>{{ validationMessages.required }}</mat-error>
+      }
+      @if (progressionForm.get('weightIncrement')?.hasError('min')) {
+        <mat-error>{{ validationMessages.positive }}</mat-error>
+      }
+      @if (progressionForm.get('weightIncrement')?.hasError('numeric')) {
+        <mat-error>{{ validationMessages.numeric }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Deload strategy</mat-label>
+      <mat-select formControlName="deloadStrategy">
+        @for (strategy of deloadStrategies; track strategy.value) {
+          <mat-option [value]="strategy.value">{{ strategy.viewValue }}</mat-option>
+        }
+      </mat-select>
+      @if (progressionForm.get('deloadStrategy')?.hasError('required')) {
+        <mat-error>{{ validationMessages.required }}</mat-error>
+      }
+    </mat-form-field>
+
+    @if (showReferenceSetIndexField) {
+      <mat-form-field appearance="outline">
+        <mat-label>Reference set index</mat-label>
+        <input matInput formControlName="referenceSetIndex">
+        @if (progressionForm.get('referenceSetIndex')?.hasError('required')) {
+          <mat-error>{{ validationMessages.required }}</mat-error>
+        }
+        @if (progressionForm.get('referenceSetIndex')?.hasError('min')) {
+          <mat-error>{{ validationMessages.positive }}</mat-error>
+        }
+        @if (progressionForm.get('referenceSetIndex')?.hasError('integer')) {
+          <mat-error>{{ validationMessages.integer }}</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Failure count for deload</mat-label>
+      <input matInput formControlName="failureCountForDeload">
+      @if (progressionForm.get('failureCountForDeload')?.hasError('required')) {
+        <mat-error>{{ validationMessages.required }}</mat-error>
+      }
+      @if (progressionForm.get('failureCountForDeload')?.hasError('min')) {
+        <mat-error>{{ validationMessages.positive }}</mat-error>
+      }
+      @if (progressionForm.get('failureCountForDeload')?.hasError('integer')) {
+        <mat-error>{{ validationMessages.integer }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="md:col-span-2">
+      <mat-label>Deload percentage (%)</mat-label>
+      <input matInput formControlName="deloadPercentage">
+      @if (progressionForm.get('deloadPercentage')?.hasError('required')) {
+        <mat-error>{{ validationMessages.required }}</mat-error>
+      }
+      @if (progressionForm.get('deloadPercentage')?.hasError('min') || progressionForm.get('deloadPercentage')?.hasError('max')) {
+        <mat-error>{{ validationMessages.percentageRange }}</mat-error>
+      }
+      @if (progressionForm.get('deloadPercentage')?.hasError('numeric')) {
+        <mat-error>{{ validationMessages.numeric }}</mat-error>
+      }
+    </mat-form-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="progressionForm.invalid">Save</button>
+</mat-dialog-actions>

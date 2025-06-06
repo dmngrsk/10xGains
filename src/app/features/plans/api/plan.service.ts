@@ -36,10 +36,10 @@ export class PlanService {
     const queryParams = new URLSearchParams();
     let url = '/training-plans';
 
-    if (limit) {
+    if (limit !== undefined) {
       queryParams.append('limit', limit.toString());
     }
-    if (offset) {
+    if (offset !== undefined) {
       queryParams.append('offset', offset.toString());
     }
 
@@ -301,24 +301,25 @@ export class PlanService {
    * @param planId The ID of the training plan.
    * @param exerciseId The global ID of the exercise (from 'exercises' table).
    * @returns Observable with the exercise progression data or undefined, and potential error.
+   * @deprecated This is fetched from the /training-plans/{planId} endpoint.
    */
   getExerciseProgression(planId: string, exerciseId: string): Observable<PlanServiceResponse<TrainingPlanExerciseProgressionDto | undefined>> {
     if (!planId || !exerciseId) {
       return throwError(() => new Error('Plan ID and Exercise ID are required to get progression'));
     }
 
-    const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;
+    const url = `training-plans/${planId}/progressions/${exerciseId}`;
     return this.apiService.get<TrainingPlanExerciseProgressionDto | undefined>(url);
   }
 
   /**
-   * Updates the progression details for a specific exercise in a training plan.
+   * Creates or updates the progression details for a specific exercise in a training plan.
    * @param planId The ID of the training plan.
    * @param exerciseId The global ID of the exercise (from 'exercises' table).
    * @param command The command object containing progression details to update.
    * @returns Observable with the updated exercise progression data and potential error.
    */
-  updateExerciseProgression(
+  upsertExerciseProgression(
     planId: string,
     exerciseId: string,
     command: UpsertTrainingPlanExerciseProgressionCommand
@@ -330,7 +331,7 @@ export class PlanService {
       return throwError(() => new Error('Command is required for updating progression'));
     }
 
-    const url = `training-plans/${planId}/exercises/${exerciseId}/progression`;
+    const url = `training-plans/${planId}/progressions/${exerciseId}`;
     return this.apiService.put<UpsertTrainingPlanExerciseProgressionCommand, TrainingPlanExerciseProgressionDto>(url, command);
   }
 }

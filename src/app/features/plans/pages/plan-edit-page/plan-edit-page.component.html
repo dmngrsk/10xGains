@@ -1,0 +1,69 @@
+<txg-main-layout backNavigation="/plans" [title]="(viewModel().plan?.name ? 'Editing: ' + viewModel().plan!.name : 'Loading Plan...')" [loadingSignal]="isLoadingSignal">
+  <div #mainScrollContainer class="p-4 h-full overflow-y-auto">
+    @if (viewModel(); as viewModel) {
+      @if (viewModel.error) {
+        <txg-notice
+          [descriptionText]="viewModel.error!"
+          [isError]="true">
+        </txg-notice>
+      } @else if (!viewModel.isLoading && !viewModel.plan) {
+        <txg-notice
+          iconName="error_outline"
+          titleText="Plan Not Found"
+          descriptionText="The requested plan could not be loaded or does not exist."
+          buttonText="Back to Plans"
+          (buttonClicked)="onPlansNavigated()">
+        </txg-notice>
+      } @else if (viewModel.plan) {
+        <div class="mb-6">
+          <txg-plan-metadata
+            [plan]="viewModel.plan"
+            [sessionCount]="viewModel.sessionCount">
+          </txg-plan-metadata>
+        </div>
+
+        <txg-plan-day-list
+          [days]="viewModel.plan.days"
+          [progressions]="viewModel.plan.progressions"
+          [planId]="viewModel.plan.id!"
+          [isReadOnly]="isReadOnlySignal()"
+          (dayAdded)="onDayAdded()"
+          (dayEdited)="onDayEdited($event)"
+          (dayReordered)="onDayReordered($event)"
+          (exerciseAdded)="onExerciseAdded($event)"
+          (exerciseDeleted)="onExerciseDeleted($event)"
+          (exerciseReordered)="onExerciseReordered($event)"
+          (progressionEdited)="onProgressionEdited($event)"
+          (setAdded)="onSetAdded($event)"
+          (setEdited)="onSetEdited($event)"
+          (setDeleted)="onSetDeleted($event)"
+          (setReordered)="onSetReordered($event)">
+        </txg-plan-day-list>
+
+        <div class="flex flex-col justify-end items-center mt-6 gap-2">
+          @if (!isReadOnlySignal()) {
+            <button mat-raised-button class="w-full" (click)="onDayAdded()">
+              <mat-icon>add</mat-icon>
+              <span>Add Training Day</span>
+            </button>
+          }
+          @if (viewModel.sessionCount === 0) {
+            <button mat-raised-button class="w-full" (click)="onPreviewToggled()">
+              <mat-icon>{{ !viewModel.isPreview ? 'visibility' : 'visibility_off' }}</mat-icon>
+              <span>{{ !viewModel.isPreview ? 'Enable Preview' : 'Disable Preview' }}</span>
+            </button>
+          }
+          @if (!isReadOnlySignal()) {
+            <button mat-raised-button class="w-full" (click)="onPlanEdited()">
+              <span>Edit Training Plan</span>
+            </button>
+          }
+          <button mat-flat-button [disabled]="viewModel.plan.isActive" class="w-full" (click)="onPlanActivated()">
+            <mat-icon>rocket_launch</mat-icon>
+            <span>Activate Training Plan</span>
+          </button>
+        </div>
+      }
+    }
+  </div>
+</txg-main-layout>

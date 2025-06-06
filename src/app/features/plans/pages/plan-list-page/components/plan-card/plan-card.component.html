@@ -1,6 +1,6 @@
-<mat-card class="cursor-pointer flex flex-col" (click)="onPlanClicked()">
+<mat-card class="flex flex-col">
   <mat-card-header class="!mb-3">
-    <mat-card-title class="!font-bold !text-lg text-[var(--mat-sys-primary)]">{{ plan.name }}</mat-card-title>
+    <mat-card-title class="!font-bold !text-xl text-[var(--mat-sys-primary)]">{{ plan.name }}</mat-card-title>
     @if (plan.isActive) {
       <mat-card-subtitle class="!text-sm !text-[var(--mat-sys-primary)]">Active Plan</mat-card-subtitle>
     }
@@ -47,4 +47,9 @@
       <p class="text-sm text-[var(--mat-sys-primary)]">No training days defined for this plan.</p>
     }
   </mat-card-content>
+  <mat-card-actions class="my-2">
+    <button mat-raised-button (click)="onPlanClicked()" class="w-full">
+      View Plan
+    </button>
+  </mat-card-actions>
 </mat-card>

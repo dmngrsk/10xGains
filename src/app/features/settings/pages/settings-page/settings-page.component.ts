@@ -9,10 +9,10 @@ import { UpdateUserProfileCommand } from '@shared/api/api.types';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
-import { SettingsPageFacade } from '../settings-page.facade';
 import { AccountSettingsCardComponent } from './components/account-settings-card/account-settings-card.component';
 import { ChangePasswordDialogComponent } from './components/dialogs/change-password-dialog/change-password-dialog.component';
 import { ProfileSettingsCardComponent } from './components/profile-settings-card/profile-settings-card.component';
+import { SettingsPageFacade } from './settings-page.facade';
 
 @Component({
   selector: 'txg-settings-page',
@@ -35,7 +35,7 @@ export class SettingsPageComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   readonly viewModel = this.facade.viewModel;
-  readonly isLoading = computed(() => this.facade.viewModel().isLoading);
+  readonly isLoadingSignal = computed(() => this.facade.viewModel().isLoading);
   readonly initialLoadFinished = signal(false);
 
   ngOnInit(): void {

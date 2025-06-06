@@ -47,7 +47,7 @@ export class HistoryPageComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
-  readonly isLoading: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
+  readonly isLoadingSignal: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
 
   readonly filterSpecified = computed(() => {
     const { selectedTrainingPlanId: _1, availableTrainingPlans: _2, pageSize: _3, pageSizeOptions: _4, ...filters } = this.viewModel().filters;

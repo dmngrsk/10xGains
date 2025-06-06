@@ -31,7 +31,7 @@ export class SessionCardComponent {
         return 'Continue Session';
       case 'COMPLETED':
       case 'CANCELLED':
-        return 'View Details';
+        return 'View Session';
       default:
         return '';
     }

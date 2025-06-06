@@ -7,7 +7,8 @@ import { handleTrainingPlanExercisesRoute } from './handlers/training-plan-exerc
 import { handleTrainingPlanExerciseByIdRoute } from './handlers/training-plan-exercises-id/handler.ts';
 import { handleTrainingPlanExerciseSetsRoute } from './handlers/training-plan-exercise-sets/handler.ts';
 import { handleTrainingPlanExerciseSetByIdRoute } from './handlers/training-plan-exercise-sets-id/handler.ts';
-import { handleTrainingPlanExerciseProgressionRoute } from './handlers/training-plan-exercise-progression/handler.ts';
+import { handleTrainingPlanExerciseProgressionsRoute } from "./handlers/training-plan-exercise-progressions/handler.ts";
+import { handleTrainingPlanExerciseProgressionByIdRoute } from "./handlers/training-plan-exercise-progressions-id/handler.ts";
 
 const MAIN_FUNCTION_MOUNT_PATH = '/training-plans';
 
@@ -20,7 +21,8 @@ const routeHandlers: ApiRouterHandler[] = [
   handleTrainingPlanExerciseByIdRoute,
   handleTrainingPlanExerciseSetsRoute,
   handleTrainingPlanExerciseSetByIdRoute,
-  handleTrainingPlanExerciseProgressionRoute,
+  handleTrainingPlanExerciseProgressionsRoute,
+  handleTrainingPlanExerciseProgressionByIdRoute,
 ];
 
 const handler = createMainRouterHandler(routeHandlers, MAIN_FUNCTION_MOUNT_PATH);

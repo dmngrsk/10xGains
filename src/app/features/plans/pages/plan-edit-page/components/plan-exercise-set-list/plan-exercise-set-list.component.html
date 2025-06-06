@@ -1,0 +1,21 @@
+<div class="set-list-container">
+  @if (sets && sets.length > 0) {
+    <div class="mb-2" cdkDropList [cdkDropListData]="sets" (cdkDropListDropped)="onSetReordered($event)" [cdkDropListDisabled]="isReadOnly">
+      @for (set of sets; track set.id; let i = $index) {
+        <div cdkDrag cdkDragLockAxis="y" [cdkDragDisabled]="isReadOnly">
+          <txg-plan-exercise-set-item
+            [planId]="planId"
+            [dayId]="dayId"
+            [exerciseId]="exerciseId"
+            [set]="set"
+            [isReadOnly]="isReadOnly"
+            (setEdited)="onSetEdited($event)"
+            (setDeleted)="onSetDeleted($event)">
+          </txg-plan-exercise-set-item>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="text-gray-500 py-3 px-2">No sets defined for this exercise. Add the first one!</p>
+  }
+</div>

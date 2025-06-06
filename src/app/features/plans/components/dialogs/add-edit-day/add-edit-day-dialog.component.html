@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>{{ data.isEditMode ? 'Edit Day' : 'Add New Day' }}</h2>
+<mat-dialog-content class="!pt-4">
+  <form [formGroup]="dayForm" id="dayDialogForm" (ngSubmit)="onSave()" class="flex flex-col gap-3">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Name</mat-label>
+      <input matInput formControlName="name">
+      @if (dayForm.get('name')?.hasError('required')) {
+        <mat-error>{{ validationMessages.required }}</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Description (optional)</mat-label>
+      <textarea matInput formControlName="description" rows="3"></textarea>
+    </mat-form-field>
+  </form>
+
+  <div class="mt-4 flex flex-col gap-2">
+    <button mat-flat-button color="primary" type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full">
+      <span>{{ data.isEditMode ? 'Save Changes' : 'Add Day' }}</span>
+    </button>
+    @if (data.isEditMode) {
+      <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full">
+        <span>Delete Day</span>
+      </button>
+    }
+    <button mat-raised-button (click)="onCancel()" class="w-full">
+      <span>Cancel</span>
+    </button>
+  </div>
+</mat-dialog-content>

@@ -46,6 +46,9 @@ export async function handleGetTrainingPlans(
               *
             )
           )
+        ),
+        progressions:training_plan_exercise_progressions (
+          *
         )
       `, { count: 'exact' })
       .eq('user_id', user!.id)
