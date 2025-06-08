@@ -122,23 +122,26 @@ export class PlanListPageFacade {
     return this.profileService
       .getUserProfile(this.authService.currentUser()!.id)
       .pipe(switchMap(profileResponse => {
-        if (profileResponse.error || !profileResponse.data) {
+        if (profileResponse.error) {
           throw profileResponse.error || new Error('Failed to load user profile.');
         } else {
           this.internalUserProfile = profileResponse.data;
         }
+        const activePlan$ = profileResponse.data?.active_training_plan_id
+          ? this.plansService.getPlan(profileResponse.data.active_training_plan_id)
+          : of({ data: null, error: null });
         return forkJoin({
           exercises: this.exerciseService.getExercises(),
-          activePlan: this.plansService.getPlan(profileResponse.data.active_training_plan_id!)
+          activePlan: activePlan$
         }).pipe(map(({ exercises, activePlan }) => {
           if (exercises.data && exercises.data.length === 0) {
             console.warn('Exercise list is empty. Plans might not map exercise names correctly.');
           } else {
             this.internalExercises = exercises.data ?? [];
           }
-          if (activePlan.error || !activePlan.data) {
+          if (activePlan.error) {
             throw activePlan.error || new Error('Failed to load active plan.');
-          } else {
+          } else if (activePlan.data) {
             this.internalActivePlanViewModel = mapToTrainingPlanViewModel(activePlan.data, this.internalExercises, this.internalUserProfile);
           }
           return { userProfile: this.internalUserProfile!, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel };

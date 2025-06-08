@@ -42,9 +42,14 @@ export class HomePageComponent implements OnInit {
     this.facade.loadHomePageData();
   }
 
+  onPlanListNavigated(): void {
+    this.router.navigate(['/plans']);
+  }
+
   onSessionCreated(): void {
     this.facade.createSession();
   }
+
   onSessionNavigated(sessionId: string): void {
     this.router.navigate(['/sessions', sessionId]);
   }

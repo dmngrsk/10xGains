@@ -35,7 +35,6 @@ export async function handleGetTrainingSessions(
 ) {
   const queryParams = Object.fromEntries(url.searchParams.entries());
   const validationResult = GetTrainingSessionsQuerySchema.safeParse(queryParams);
-  console.log('queryParams', queryParams);
 
   if (!validationResult.success) {
     return createErrorResponse(400, 'Invalid query parameters', validationResult.error.flatten());

@@ -1,4 +1,4 @@
-<mat-card class="h-full flex flex-col">
+<mat-card class="flex flex-col">
   <mat-card-header>
     <mat-card-title class="!text-xl !font-medium text-[var(--mat-sys-primary)]">{{ sessionData.title }}</mat-card-title>
     @if (sessionDateTimeText) {
@@ -26,15 +26,15 @@
           <button mat-flat-button (click)="onSessionAbandoned()" class="w-full">
             Abandon Session
           </button>
-          <button mat-raised-button (click)="onSessionNavigated()" class="w-full">
+          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
             {{ buttonText }}
           </button>
         } @else if (isActiveSession) {
-          <button mat-flat-button (click)="onSessionNavigated()" class="w-full">
+          <button mat-flat-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
             {{ buttonText }}
           </button>
         } @else {
-          <button mat-raised-button (click)="onSessionNavigated()" class="w-full">
+          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
             {{ buttonText }}
           </button>
         }

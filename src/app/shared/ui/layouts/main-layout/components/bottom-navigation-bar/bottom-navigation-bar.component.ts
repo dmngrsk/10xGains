@@ -10,6 +10,7 @@ interface NavLink {
   icon: string;
   path?: string;
   disabled?: boolean;
+  dataCy?: string;
 }
 
 @Component({
@@ -29,10 +30,10 @@ interface NavLink {
 })
 export class BottomNavigationBarComponent {
   navLinks: NavLink[] = [
-    { label: 'Home', icon: 'home', path: '/home' },
-    { label: 'Plans', icon: 'list_alt', path: '/plans' },
-    { label: 'History', icon: 'history', path: '/history' },
-    { label: 'Progress', icon: 'stacked_line_chart', disabled: true },
-    { label: 'Settings', icon: 'settings', path: '/settings' }
+    { label: 'Home', icon: 'home', path: '/home', dataCy: 'bottom-navigation-home' },
+    { label: 'Plans', icon: 'list_alt', path: '/plans', dataCy: 'bottom-navigation-plans' },
+    { label: 'History', icon: 'history', path: '/history', dataCy: 'bottom-navigation-history' },
+    { label: 'Progress', icon: 'stacked_line_chart', disabled: true, dataCy: 'bottom-navigation-progress' },
+    { label: 'Settings', icon: 'settings', path: '/settings', dataCy: 'bottom-navigation-settings' }
   ];
 }

@@ -56,7 +56,7 @@ export class SessionService {
     if (params.date_to !== undefined) {
       queryParams.append('date_to', params.date_to);
     }
-    if (params.plan_id !== undefined) {
+    if (params.plan_id) {
       queryParams.append('plan_id', params.plan_id);
     }
 

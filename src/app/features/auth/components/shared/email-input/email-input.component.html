@@ -1,6 +1,6 @@
 <mat-form-field appearance="outline" class="w-full">
   <mat-label>Email</mat-label>
-  <input matInput [formControl]="getFormControl()" type="email" placeholder="Your email address">
+  <input matInput [formControl]="getFormControl()" type="email" placeholder="Your email address" data-cy="email-input">
   @if (parentForm.get(controlName)?.errors?.['required'] && parentForm.get(controlName)?.touched) {
     <mat-error>
       Email is required

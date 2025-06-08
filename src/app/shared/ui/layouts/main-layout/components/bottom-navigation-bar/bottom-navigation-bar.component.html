@@ -4,7 +4,7 @@
     <nav class="relative w-full">
       @for (link of navLinks; track link.label; let i = $index) {
         <div class="nav-item-container absolute" [style.left]="(10 + i * 20) + '%'">
-          <a mat-button class="h-full" routerLinkActive="active-nav-item" [routerLink]="link.disabled ? null : link.path">
+          <a mat-button class="h-full" routerLinkActive="active-nav-item" [routerLink]="link.disabled ? null : link.path" [attr.data-cy]="link.dataCy">
             <div class="flex flex-col items-center justify-center">
               <mat-icon [class.!text-gray-300]="link.disabled">{{ link.icon }}</mat-icon>
               <span [class.!text-gray-300]="link.disabled" class="text-xs mt-1 text-center">{{ link.label }}</span>

@@ -1,22 +1,22 @@
 <txg-main-layout title="Training Plans" [loadingSignal]="isLoadingSignal">
-  <div class="p-4">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.error) {
-        <txg-notice
-          [descriptionText]="viewModel.error!"
-          [isError]="true">
-        </txg-notice>
-      } @else if (!viewModel.isLoading && !viewModel.activePlan && viewModel.plans.length === 0) {
-        <txg-notice
-          iconName="assignment"
-          titleText="No Training Plans Found"
-          descriptionText="You don't have any training plans yet. Create your first plan to get started!"
-          buttonText="Create New Plan"
-          (buttonClicked)="onCreatePlanButtonClicked()">
-        </txg-notice>
-      } @else {
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <txg-notice
+        [descriptionText]="viewModel.error!"
+        [isError]="true">
+      </txg-notice>
+    } @else if (!viewModel.isLoading && !viewModel.activePlan && viewModel.plans.length === 0) {
+      <txg-notice
+        iconName="assignment"
+        titleText="No Training Plans Found"
+        descriptionText="You don't have any training plans yet. Create your first plan to get started!"
+        buttonText="Create New Plan"
+        (buttonClicked)="onCreatePlanButtonClicked()">
+      </txg-notice>
+    } @else {
+      <div class="p-4">
         @if (viewModel.activePlan) {
-          <txg-plan-card [plan]="viewModel.activePlan" (planClicked)="onPlanClicked($event)"></txg-plan-card>
+          <txg-plan-card [plan]="viewModel.activePlan" (planClicked)="onPlanClicked($event)" data-cy="active-plan-card"></txg-plan-card>
         }
 
         @if (viewModel.activePlan && viewModel.plans.length > 0) {
@@ -46,7 +46,7 @@
             <mat-icon>add</mat-icon>
           </button>
         }
-      }
+      </div>
     }
-  </div>
+  }
 </txg-main-layout>

@@ -8,7 +8,8 @@
     color="primary"
     type="submit"
     class="mt-4 h-12 text-base font-medium"
-    [disabled]="loginForm.invalid || isLoading()">
+    [disabled]="loginForm.invalid || isLoading()"
+    data-cy="login-button">
     @if (isLoading()) {
       <span>Signing in...</span>
     } @else {

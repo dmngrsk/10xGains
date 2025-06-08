@@ -9,8 +9,9 @@
       <txg-notice
         iconName="rocket_launch"
         titleText="No Active Training Plan"
-        descriptionText="It looks like you don't have an active training plan yet.
-          In order to get started, press the &quot;Plans&quot; button below to create a training plan. Good luck!">
+        descriptionText="You don't have an active training plan yet. Activate one to get started!"
+        buttonText="Go to Plans"
+        (buttonClicked)="onPlanListNavigated()">
       </txg-notice>
     } @else if (!isLoadingSignal()) {
       @if (activeSession(); as session) {
@@ -23,7 +24,8 @@
           <txg-session-card
             [sessionData]="session"
             (sessionNavigated)="onSessionNavigated($event)"
-            (sessionAbandoned)="onSessionAbandoned($event)">
+            (sessionAbandoned)="onSessionAbandoned($event)"
+            data-cy="session-card">
           </txg-session-card>
         </div>
       } @else {
