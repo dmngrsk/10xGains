@@ -11,7 +11,8 @@
         titleText="No Active Training Plan"
         descriptionText="You don't have an active training plan yet. Activate one to get started!"
         buttonText="Go to Plans"
-        (buttonClicked)="onPlanListNavigated()">
+        (buttonClicked)="onPlanListNavigated()"
+        data-cy="no-active-training-plan-notice">
       </txg-notice>
     } @else if (!isLoadingSignal()) {
       @if (activeSession(); as session) {

@@ -5,8 +5,8 @@ Cypress.Commands.add('navigateBack', navigateBack);
 Cypress.Commands.add('getBySel', getBySel);
 Cypress.Commands.add('longPress', { prevSubject: 'element' }, (s, d) => longPress(s, d as unknown as number));
 
-function login(): void {
-  const useCanaryUser = isSmoke() || !isStaging();
+function login({ forceCanary }: { forceCanary?: boolean } = {}): void {
+  const useCanaryUser = forceCanary || isSmoke() || !isStaging();
   return useCanaryUser ? loginAsCanaryUser() : loginAsEphemeralUser();
 }
 
@@ -17,7 +17,9 @@ function teardown(): void {
   }
 
   cy.get('@ephemeralUserId').then((userId) => {
-    cy.task('users:deleteEphemeral', { userId });
+    if (userId) {
+      cy.task('users:deleteEphemeral', { userId });
+    }
   });
 
   // Clean up the global exercise created in the test PLAN-05.

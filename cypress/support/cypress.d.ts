@@ -3,8 +3,9 @@ namespace Cypress {
     /**
      * Smart login command that automatically determines the appropriate login strategy
      * based on test environment and \@smoke tag presence.
+     * @param forceCanary If true, the command will use the canary user regardless of the test environment.
      */
-    login(): void;
+    login({ forceCanary }: { forceCanary?: boolean } = {}): void;
 
     /**
      * Teardown the test environment by deleting the ephemeral user and cleaning up the test data.

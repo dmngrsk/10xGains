@@ -16,7 +16,8 @@
     color="primary"
     type="submit"
     class="mt-4 h-12 text-base font-medium"
-    [disabled]="registerForm.invalid || isLoading()">
+    [disabled]="registerForm.invalid || isLoading()"
+    data-cy="register-button">
     @if (isLoading()) {
       <span>Signing up...</span>
     } @else {

@@ -97,8 +97,8 @@ A multi-layered testing strategy will be employed, leveraging the "Testing Pyram
     *   **Focus:** Simulate real user workflows from start to finish in a browser environment, leveraging a tag-based strategy for environment-specific execution.
     *   **Test Identification:** Tests will be tagged using `@cypress/grep` syntax. Critical smoke tests will be explicitly marked with `{ tags: '@smoke' }`.
     *   **General Feature Tests (Staging Only):** All tests *not* tagged as `@smoke` will run exclusively against the Staging environment. They will ensure deep feature correctness by programmatically creating isolated, **on-the-fly users** for each test run, guaranteeing a clean state and preventing test pollution.
-    *   **Smoke Tests (Staging & Production):** All tests tagged as `@smoke` will provide a consistent health check across all environments. These tests will use a single, pre-existing **"Canary User"** to log in and perform a minimal, non-destructive set of actions to verify core application availability.
-    *   **Unified Implementation:** A "smart" custom command (e.g., `cy.loginAsAppropriateUser()`) will be implemented. This command will analyze the running test's tags to automatically select the correct login method (Canary User for `@smoke` tests, on-the-fly user for all others).
+    *   **Smoke Tests (Staging & Production):** All tests tagged as `@smoke` will provide a consistent health check across all environments. These tests will use a single, pre-existing **"Canary User"** to sign in and perform a minimal, non-destructive set of actions to verify core application availability.
+    *   **Unified Implementation:** A "smart" custom command (e.g., `cy.login()`) will be implemented. This command will analyze the running test's tags to automatically select the correct login method (Canary User for `@smoke` tests, on-the-fly user for all others).
 
 *   **Performance Testing:**
     *   **Focus:** Monitor and ensure the application is fast and responsive.
@@ -112,12 +112,13 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Feature Area | Scenario ID | Scenario Description | Priority | **Smoke Test** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Authentication** | AUTH-01 | A new user can successfully register and is automatically logged in. | Critical | No |
-| | AUTH-02 | A registered user can successfully log in with valid credentials. | Critical | **Yes** |
+| **Authentication** | AUTH-01 | A new user can successfully register and is automatically signed in. | Critical | No |
+| | AUTH-02 | A registered user can successfully sign in with valid credentials. | Critical | **Yes** |
 | | AUTH-03 | A user with invalid credentials is shown a specific error message. | High | No |
 | | AUTH-04 | An unauthenticated user attempting to access a protected route (e.g., `/home`) is redirected to `/auth/login`. | Critical | No |
 | | AUTH-05 | An authenticated user attempting to access an auth route (e.g., `/auth/login`) is redirected to `/home`. | High | No |
-| | AUTH-06 | User data is isolated; User A cannot access User B's data via API or direct URL manipulation (RLS check). | Critical | No |
+| | AUTH-06 | An authenticated user can successfully sign out, and is redirected to `/auth/login`. | High | No |
+| | AUTH-07 | User data is isolated; User A cannot access User B's data via API or direct URL manipulation (RLS check). | Critical | No |
 | **Plan Management**| PLAN-01 | An authenticated user can create a new training plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
 | | PLAN-03 | In the plan editor, a user can add, edit and delete a new training day. | High | No |

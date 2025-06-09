@@ -4,7 +4,8 @@
       @if (viewModel.error) {
         <txg-notice
           [descriptionText]="viewModel.error!"
-          [isError]="true">
+          [isError]="true"
+          data-cy="plan-edit-error-notice">
         </txg-notice>
       } @else if (!viewModel.isLoading && !viewModel.plan) {
         <txg-notice
