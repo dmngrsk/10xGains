@@ -1,4 +1,4 @@
-describe('Plan Page', () => {
+describe('Plan Page', { tags: ['@plans'] }, () => {
   beforeEach(() => {
     cy.loginAsAppropriateUser();
     cy.navigateTo('plans');

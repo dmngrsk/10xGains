@@ -1,9 +1,9 @@
 <div class="timer-container mat-elevation-z6">
-  <span class="px-4 timer-display">
+  <span class="px-4 timer-display" data-cy="session-timer">
     {{ timerText }}
   </span>
   <mat-divider [vertical]="true" class="mx-2"></mat-divider>
-  <button mat-icon-button (click)="onCompleteSession()">
+  <button mat-icon-button (click)="onCompleteSession()" data-cy="complete-session-button">
     <mat-icon>check</mat-icon>
   </button>
 </div>

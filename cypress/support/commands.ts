@@ -1,59 +1,28 @@
-/* eslint-disable @typescript-eslint/no-namespace */
-
-declare global {
-  namespace Cypress {
-    interface Chainable {
-      /**
-       * Smart login command that automatically determines the appropriate login strategy
-       * based on test environment and \@smoke tag presence.
-       * @param options Optional configuration to override default behavior.
-       */
-      loginAsAppropriateUser(options?: { forceCanary?: boolean; customEmail?: string }): ReturnType<typeof loginAsAppropriateUser>;
-
-      /**
-       * Get one or more DOM elements by their data-cy attribute value.
-       * @param selector The data-cy attribute value of the element to get.
-       * @returns A chainable object that can be used to interact with the element.
-       */
-      getByDataCy(selector: string): ReturnType<typeof getByDataCy>;
-
-      /**
-       * Navigate to a page by clicking the appropriate button.
-       * @param button The button to click.
-       * @returns A chainable object that can be used to interact with the element.
-       */
-      navigateTo(button: 'home' | 'plans' | 'history' | 'progress' | 'settings'): ReturnType<typeof navigateTo>;
-    }
-
-    interface Cypress {
-      /**
-       * Tags associated with the current test.
-       */
-      currentTestTags?: string[];
-    }
-  }
-}
-
 Cypress.Commands.add('loginAsAppropriateUser', loginAsAppropriateUser);
 Cypress.Commands.add('getByDataCy', getByDataCy);
 Cypress.Commands.add('navigateTo', navigateTo);
+Cypress.Commands.add('longPress', { prevSubject: 'element' }, (s, d) => longPress(s, d as unknown as number));
 
 function loginAsAppropriateUser(): void {
   const useCanaryUser = isSmoke() || !isStaging();
   return useCanaryUser ? loginAsCanaryUser() : loginAsEphemeralUser();
 }
 
-function getByDataCy(selector: string): Cypress.Chainable<JQuery<HTMLElement>> {
-  return cy.get(`[data-cy=${selector}]`);
+function getByDataCy(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>> {
+  return cy.get(`[data-cy=${selector}]`, options);
 }
 
 function navigateTo(button: 'home' | 'plans' | 'history' | 'progress' | 'settings'): void {
   cy.getByDataCy(`bottom-navigation-${button}`).click();
 }
 
+function longPress(subject: JQuery<HTMLElement>, duration: number = 500): Cypress.Chainable<JQuery<HTMLElement>> {
+  cy.wrap(subject).trigger('pointerdown', { button: 0 });
+  cy.wait(duration);
+  return cy.wrap(subject).trigger('pointerup', { force: true });
+}
+
 export {};
-
-
 
 /**
  * Helper functions for commands
@@ -92,4 +61,5 @@ function fillLoginForm(email: string, password: string): void {
   cy.getByDataCy('login-button').click();
 
   cy.url().should('include', '/home');
+  cy.getByDataCy('session-card').should('exist');
 }

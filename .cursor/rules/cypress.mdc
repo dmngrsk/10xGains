@@ -1,6 +1,6 @@
 ---
 description:
-globs: *.cy.ts
+globs: *.html,*.cy.ts
 alwaysApply: false
 ---
 ### Additional guidelines for E2E testing with Cypress
@@ -15,3 +15,4 @@ alwaysApply: false
 - Implement retry-ability for flaky tests
 - Use the Cypress Dashboard for CI integration and test analytics
 - Leverage visual testing for UI regression testing
+

@@ -16,8 +16,7 @@
       <mat-autocomplete
         #auto="matAutocomplete"
         [displayWith]="displayExercise"
-        (optionSelected)="onSelectionChanged($event)"
-      >
+        (optionSelected)="onSelectionChanged($event)">
         @if (filteredExercises$ | async; as exercises) {
           @for (exercise of exercises; track exercise.id) {
             <mat-option [value]="exercise">

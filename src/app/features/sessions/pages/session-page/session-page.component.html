@@ -4,7 +4,8 @@
       @if (viewModel.error) {
         <txg-notice
           [descriptionText]="viewModel.error!"
-          [isError]="true">
+          [isError]="true"
+          data-cy="session-error-notice">
         </txg-notice>
       } @else {
         <txg-session-header [metadata]="viewModel.metadata!" data-cy="session-header" />

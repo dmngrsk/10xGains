@@ -1,16 +1,17 @@
 @if (!isAddAction && setVm; as currentSet) {
   <button mat-raised-button txgLongPress
+    [attr.data-cy]="'set-bubble'"
+    [attr.aria-label]="'Set ' + currentSet.status.toLowerCase()"
     [class.completed]="currentSet.status === 'COMPLETED' || currentSet.status === 'FAILED'"
     [disabled]="isReadOnly"
     (txgClick)="onSetClicked()"
-    (txgLongPress)="onSetLongPressed()"
-  >
+    (txgLongPress)="onSetLongPressed()">
     <div class="flex flex-col items-center justify-center">
-      <span class="text-xl font-medium leading-none">
+      <span class="text-xl font-medium leading-none" data-cy="set-bubble-text">
         {{ bubbleText }}
       </span>
       @if (bubbleWeightText) {
-        <span class="text-[0.625rem] font-normal leading-none mt-px">
+        <span class="text-[0.625rem] font-normal leading-none mt-px" data-cy="set-bubble-weight-text">
           {{ bubbleWeightText }}
         </span>
       }
@@ -20,7 +21,7 @@
   <button mat-raised-button class="add-action-bubble"
     [disabled]="isReadOnly"
     (click)="onAddClicked()"
-  >
+    data-cy="add-set-bubble">
     <span>
       <mat-icon>add</mat-icon>
     </span>

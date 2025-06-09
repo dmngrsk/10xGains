@@ -2,7 +2,9 @@
   <div class="flex justify-center p-4 min-h-[calc(100vh-12.25rem)]">
     @if (viewModel(); as viewModel) {
       @if (viewModel.isLoading || pageRecentlyChanged()) {
-        <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
+        <div class="flex justify-center items-center min-h-[calc(100vh-12.25rem)]">
+          <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
+        </div>
       } @else if (viewModel.error) {
         <txg-notice
           [descriptionText]="viewModel.error!"

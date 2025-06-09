@@ -1,9 +1,9 @@
-<h2 mat-dialog-title class="text-xl font-semibold">{{ titleText }}</h2>
+<h2 mat-dialog-title class="text-xl font-semibold" data-cy="add-edit-set-dialog-title">{{ titleText }}</h2>
 
-<mat-dialog-content [formGroup]="setForm" class="!pt-4">
+<mat-dialog-content [formGroup]="setForm" class="!pt-4" data-cy="add-edit-set-dialog-content">
   <mat-form-field appearance="outline" class="w-full mb-3">
     <mat-label>Reps</mat-label>
-    <input matInput formControlName="reps">
+    <input matInput formControlName="reps" data-cy="add-edit-set-dialog-reps-input">
     @if (setForm.get('reps')?.hasError('required')) {
       <mat-error>{{ validationMessages.required }}</mat-error>
     }
@@ -17,7 +17,7 @@
 
   <mat-form-field appearance="outline" class="w-full">
     <mat-label>Weight (kg)</mat-label>
-    <input matInput formControlName="weight">
+    <input matInput formControlName="weight" data-cy="add-edit-set-dialog-weight-input">
     @if (setForm.get('weight')?.hasError('required')) {
       <mat-error>{{ validationMessages.required }}</mat-error>
     }
@@ -30,15 +30,15 @@
   </mat-form-field>
 
   <div class="flex flex-col flex-grow gap-2">
-    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid">
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid" data-cy="add-edit-set-dialog-save-button">
       <span>{{ saveButtonText }}</span>
     </button>
     @if (isSetDeletable) {
-      <button mat-raised-button color="warn" type="button" (click)="onDelete()" class="action-button">
+      <button mat-raised-button color="warn" type="button" (click)="onDelete()" class="action-button" data-cy="add-edit-set-dialog-delete-button">
         <span>Delete Set</span>
       </button>
     }
-    <button mat-raised-button (click)="onCancel()">
+    <button mat-raised-button (click)="onCancel()" data-cy="add-edit-set-dialog-cancel-button">
       <span>Cancel</span>
     </button>
   </div>
