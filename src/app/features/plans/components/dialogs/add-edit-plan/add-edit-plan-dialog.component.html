@@ -1,9 +1,9 @@
-<h1 mat-dialog-title>{{ data.isEditMode ? 'Edit Plan Details' : 'Create New Plan' }}</h1>
-<div mat-dialog-content class="!pt-4">
+<h1 mat-dialog-title data-cy="add-edit-plan-dialog-title">{{ data.isEditMode ? 'Edit Plan Details' : 'Create New Plan' }}</h1>
+<mat-dialog-content class="!pt-4" data-cy="add-edit-plan-dialog-content">
   <form [formGroup]="planForm" class="flex flex-col space-y-4">
     <mat-form-field appearance="outline">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name" required>
+      <input matInput formControlName="name" required data-cy="add-edit-plan-dialog-name-input">
       @if (planForm.get('name')?.hasError('required') && planForm.get('name')?.touched) {
         <mat-error>{{ validationMessages.required }}</mat-error>
       }
@@ -11,21 +11,24 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Description (optional)</mat-label>
-      <textarea matInput formControlName="description" cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="3"></textarea>
+      <textarea matInput formControlName="description"
+        cdkTextareaAutosize #autosize="cdkTextareaAutosize" cdkAutosizeMinRows="3"
+        data-cy="add-edit-plan-dialog-description-input">
+      </textarea>
     </mat-form-field>
   </form>
 
   <div class="mt-6 flex flex-col gap-3">
-    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="planForm.invalid" class="w-full">
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="planForm.invalid" class="w-full" data-cy="add-edit-plan-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Changes' : 'Create Plan' }}</span>
     </button>
     @if (data.isEditMode) {
-      <button mat-raised-button color="warn" (click)="onDeletePlanRequest()" class="w-full">
+      <button mat-raised-button color="warn" (click)="onDeletePlanRequest()" class="w-full" data-cy="add-edit-plan-dialog-delete-button">
         <span>Delete Plan</span>
       </button>
     }
-    <button mat-raised-button (click)="onCancel()" class="w-full">
+    <button mat-raised-button (click)="onCancel()" class="w-full" data-cy="add-edit-plan-dialog-cancel-button">
       <span>Cancel</span>
     </button>
   </div>
-</div>
+</mat-dialog-content>

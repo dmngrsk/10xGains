@@ -38,28 +38,29 @@
           (setAdded)="onSetAdded($event)"
           (setEdited)="onSetEdited($event)"
           (setDeleted)="onSetDeleted($event)"
-          (setReordered)="onSetReordered($event)">
+          (setReordered)="onSetReordered($event)"
+          data-cy="training-day-list">
         </txg-plan-day-list>
 
         <div class="flex flex-col justify-end items-center mt-6 gap-2">
           @if (!isReadOnlySignal()) {
-            <button mat-raised-button class="w-full" (click)="onDayAdded()">
+            <button mat-raised-button class="w-full" (click)="onDayAdded()" data-cy="plan-add-day-button">
               <mat-icon>add</mat-icon>
               <span>Add Training Day</span>
             </button>
           }
           @if (viewModel.sessionCount === 0) {
-            <button mat-raised-button class="w-full" (click)="onPreviewToggled()">
+            <button mat-raised-button class="w-full" (click)="onPreviewToggled()" data-cy="plan-toggle-preview-button">
               <mat-icon>{{ !viewModel.isPreview ? 'visibility' : 'visibility_off' }}</mat-icon>
               <span>{{ !viewModel.isPreview ? 'Enable Preview' : 'Disable Preview' }}</span>
             </button>
           }
           @if (!isReadOnlySignal()) {
-            <button mat-raised-button class="w-full" (click)="onPlanEdited()">
+            <button mat-raised-button class="w-full" (click)="onPlanEdited()" data-cy="plan-edit-button">
               <span>Edit Training Plan</span>
             </button>
           }
-          <button mat-flat-button [disabled]="viewModel.plan.isActive" class="w-full" (click)="onPlanActivated()">
+          <button mat-flat-button [disabled]="!canActivatePlanSignal()" class="w-full" (click)="onPlanActivated()" data-cy="plan-activate-button">
             <mat-icon>rocket_launch</mat-icon>
             <span>Activate Training Plan</span>
           </button>

@@ -1,6 +1,7 @@
 <div class="set-list-container">
   @if (sets && sets.length > 0) {
-    <div class="mb-2" cdkDropList [cdkDropListData]="sets" (cdkDropListDropped)="onSetReordered($event)" [cdkDropListDisabled]="isReadOnly">
+    <div class="mb-2" cdkDropList [cdkDropListData]="sets" [cdkDropListDisabled]="isReadOnly"
+      (cdkDropListDropped)="onSetReordered($event)">
       @for (set of sets; track set.id; let i = $index) {
         <div cdkDrag cdkDragLockAxis="y" [cdkDragDisabled]="isReadOnly">
           <txg-plan-exercise-set-item
@@ -10,7 +11,8 @@
             [set]="set"
             [isReadOnly]="isReadOnly"
             (setEdited)="onSetEdited($event)"
-            (setDeleted)="onSetDeleted($event)">
+            (setDeleted)="onSetDeleted($event)"
+            data-cy="plan-exercise-set-item">
           </txg-plan-exercise-set-item>
         </div>
       }

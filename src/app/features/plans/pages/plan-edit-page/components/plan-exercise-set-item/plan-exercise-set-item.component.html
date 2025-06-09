@@ -8,7 +8,7 @@
             </button>
         </div>
       }
-      <div [class.pl-6]="isReadOnly" class="set-details flex-grow">
+      <div [class.pl-6]="isReadOnly" class="set-details flex-grow" data-cy="plan-exercise-set-details">
         <span class="font-medium text-gray-700">{{ set.expectedReps }}</span>
         <span class="text-gray-500"> x </span>
         <span class="font-medium text-gray-700">{{ set.expectedWeight }}</span>
@@ -16,14 +16,12 @@
       </div>
 
       @if (!isReadOnly) {
-        <ng-container>
-          <button mat-icon-button color="primary" (click)="onSetEdited()" aria-label="Edit set">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button mat-icon-button color="warn" (click)="onSetDeleted()" aria-label="Delete set">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </ng-container>
+        <button mat-icon-button color="primary" (click)="onSetEdited()" aria-label="Edit set" data-cy="plan-exercise-set-edit-button">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="onSetDeleted()" aria-label="Delete set" data-cy="plan-exercise-set-delete-button">
+          <mat-icon>delete</mat-icon>
+        </button>
       }
     </div>
   </mat-card-content>

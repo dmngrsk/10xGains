@@ -1,10 +1,13 @@
 // You can read more here: https://on.cypress.io/configuration
 
-// Import commands.js using ES2015 syntax:
-import './commands';
-
 // @ts-expect-error - @cypress/grep is not typed
 import registerCypressGrep from '@cypress/grep';
+import './commands';
+
+beforeEach(() => {
+  cy.viewport('samsung-s10');
+});
+
 registerCypressGrep();
 
 // Quick-and-dirty way to retrieve the tags from the test options object.
@@ -15,8 +18,4 @@ Cypress.on('test:before:run', (_, runnable) => {
   const testTags = testWithTags?._testConfig?.unverifiedTestConfig?.tags;
 
   Cypress.currentTestTags = testTags || [];
-});
-
-beforeEach(() => {
-  cy.viewport('samsung-s10');
 });

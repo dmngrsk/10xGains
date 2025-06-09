@@ -1,9 +1,9 @@
-<h2 mat-dialog-title>{{ data.isEditMode ? 'Edit Day' : 'Add New Day' }}</h2>
-<mat-dialog-content class="!pt-4">
+<h2 mat-dialog-title data-cy="add-edit-day-dialog-title">{{ data.isEditMode ? 'Edit Day' : 'Add New Day' }}</h2>
+<mat-dialog-content class="!pt-4" data-cy="add-edit-day-dialog-content">
   <form [formGroup]="dayForm" id="dayDialogForm" (ngSubmit)="onSave()" class="flex flex-col gap-3">
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name">
+      <input matInput formControlName="name" data-cy="add-edit-day-dialog-name-input">
       @if (dayForm.get('name')?.hasError('required')) {
         <mat-error>{{ validationMessages.required }}</mat-error>
       }
@@ -11,20 +11,20 @@
 
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Description (optional)</mat-label>
-      <textarea matInput formControlName="description" rows="3"></textarea>
+      <textarea matInput formControlName="description" rows="3" data-cy="add-edit-day-dialog-description-input"></textarea>
     </mat-form-field>
   </form>
 
   <div class="mt-4 flex flex-col gap-2">
-    <button mat-flat-button color="primary" type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full">
+    <button mat-flat-button type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full" data-cy="add-edit-day-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Changes' : 'Add Day' }}</span>
     </button>
     @if (data.isEditMode) {
-      <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full">
+      <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full" data-cy="add-edit-day-dialog-delete-button">
         <span>Delete Day</span>
       </button>
     }
-    <button mat-raised-button (click)="onCancel()" class="w-full">
+    <button mat-raised-button (click)="onCancel()" class="w-full" data-cy="add-edit-day-dialog-cancel-button">
       <span>Cancel</span>
     </button>
   </div>

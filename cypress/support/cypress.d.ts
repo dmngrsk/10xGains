@@ -3,9 +3,27 @@ namespace Cypress {
     /**
      * Smart login command that automatically determines the appropriate login strategy
      * based on test environment and \@smoke tag presence.
-     * @param options Optional configuration to override default behavior.
      */
-    loginAsAppropriateUser(options?: { forceCanary?: boolean; customEmail?: string }): ReturnType<typeof loginAsAppropriateUser>;
+    login(): void;
+
+    /**
+     * Teardown the test environment by deleting the ephemeral user and cleaning up the test data.
+     * The scope of the cleanup is defined by the test tags.
+     */
+    teardown(): void;
+
+    /**
+     * Navigate to a page by clicking the appropriate button.
+     * @param button The bottom navigation button to click.
+     * @returns A chainable object that can be used to interact with the element.
+     */
+    navigateTo(button: 'home' | 'plans' | 'history' | 'progress' | 'settings'): void;
+
+    /**
+     * Navigate to the previous page by clicking the back button.
+     * @returns A chainable object that can be used to interact with the element.
+     */
+    navigateBack(): void;
 
     /**
      * Get one or more DOM elements by their data-cy attribute value.
@@ -13,14 +31,7 @@ namespace Cypress {
      * @param options Optional configuration to override default behavior.
      * @returns A chainable object that can be used to interact with the element.
      */
-    getByDataCy(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): ReturnType<typeof getByDataCy>;
-
-    /**
-     * Navigate to a page by clicking the appropriate button.
-     * @param button The bottom navigation button to click.
-     * @returns A chainable object that can be used to interact with the element.
-     */
-    navigateTo(button: 'home' | 'plans' | 'history' | 'progress' | 'settings'): ReturnType<typeof navigateTo>;
+    getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>>;
 
     /**
      * Simulate a long press on an element.
@@ -28,7 +39,7 @@ namespace Cypress {
      * @param duration The duration of the long press in milliseconds.
      * @returns A chainable object that can be used to interact with the element.
      */
-    longPress(subject: JQuery<HTMLElement>, duration: number = 500): ReturnType<typeof longPress>;
+    longPress(duration: number = 500): Cypress.Chainable<JQuery<HTMLElement>>;
   }
 
   interface Cypress {

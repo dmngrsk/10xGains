@@ -7,7 +7,7 @@
     }
 
     @if (sessionCount > 0) {
-      <p class="font-semibold text-[var(--mat-sys-primary)]">
+      <p class="font-semibold text-[var(--mat-sys-primary)]" data-cy="plan-metadata-read-only-notice">
         NOTE: This training plan has been used in {{ sessionCount }} training {{ sessionCount === 1 ? 'session' : 'sessions' }}. It cannot be edited.
       </p>
     }

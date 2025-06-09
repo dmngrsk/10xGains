@@ -1,5 +1,6 @@
 @if (exercises.length > 0) {
-  <mat-accordion multi="true" cdkDropList [cdkDropListData]="exercises" (cdkDropListDropped)="onExerciseReordered($event)" [cdkDropListDisabled]="isReadOnly">
+  <mat-accordion multi="true" cdkDropList [cdkDropListData]="exercises" [cdkDropListDisabled]="isReadOnly"
+    (cdkDropListDropped)="onExerciseReordered($event)">
     <div class="flex flex-col gap-2">
       @for (exercise of exercises; track exercise.id; let i = $index) {
         <txg-plan-exercise-item
@@ -16,7 +17,8 @@
           (setAdded)="onSetAdded($event)"
           (setEdited)="onSetEdited($event)"
           (setDeleted)="onSetDeleted($event)"
-          (setReordered)="onSetReordered($event)">
+          (setReordered)="onSetReordered($event)"
+          data-cy="plan-exercise-item">
         </txg-plan-exercise-item>
       }
     </div>

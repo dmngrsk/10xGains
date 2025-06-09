@@ -1,10 +1,10 @@
-<h2 mat-dialog-title>Edit Exercise Progression</h2>
+<h2 mat-dialog-title data-cy="edit-exercise-progression-dialog-title">Edit Exercise Progression</h2>
 
-<mat-dialog-content [formGroup]="progressionForm" class="!pt-4">
+<mat-dialog-content [formGroup]="progressionForm" class="!pt-4" data-cy="edit-exercise-progression-dialog-content">
   <div class="flex flex-col gap-4">
     <mat-form-field appearance="outline">
       <mat-label>Weight increment (kg)</mat-label>
-      <input matInput formControlName="weightIncrement">
+      <input matInput formControlName="weightIncrement" data-cy="edit-exercise-progression-dialog-weight-increment-input">
       @if (progressionForm.get('weightIncrement')?.hasError('required')) {
         <mat-error>{{ validationMessages.required }}</mat-error>
       }
@@ -75,6 +75,6 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="progressionForm.invalid">Save</button>
+  <button mat-button (click)="onCancel()" data-cy="edit-exercise-progression-dialog-cancel-button">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="progressionForm.invalid" data-cy="edit-exercise-progression-dialog-save-button">Save</button>
 </mat-dialog-actions>

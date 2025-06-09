@@ -120,13 +120,14 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | AUTH-06 | User data is isolated; User A cannot access User B's data via API or direct URL manipulation (RLS check). | Critical | No |
 | **Plan Management**| PLAN-01 | An authenticated user can create a new training plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
-| | PLAN-03 | In the plan editor, a user can add a new training day. | High | No |
-| | PLAN-04 | In the plan editor, a user can add a new exercise to a day (both existing and newly created exercises). | High | No |
-| | PLAN-05 | In the plan editor, a user can add, edit, and delete a set for an exercise. | High | No |
-| | PLAN-06 | In the plan editor, a user can reorder days, exercises, and sets using drag-and-drop and verify the order is saved. | Medium | No |
-| | PLAN-07 | A user can activate a plan, which then correctly appears as the active plan on the home page. | High | No |
-| | PLAN-08 | A plan that has been used in a session becomes read-only and all edit/delete/add controls are hidden or disabled. | High | No |
-| | PLAN-09 | A user can delete a training plan that has not been used in any sessions. | Medium | No |
+| | PLAN-03 | In the plan editor, a user can add, edit and delete a new training day. | High | No |
+| | PLAN-04 | In the plan editor, a user can add an exercise to a day, edit its progression, and delete it from a day. | High | No |
+| | PLAN-05 | In the plan editor, a user can create a global exercise and add this exercise to a training day in a plan. | Medium | No |
+| | PLAN-06 | In the plan editor, a user can add, edit, and delete a set for an exercise. | High | No |
+| | PLAN-07 | In the plan editor, a user can reorder days, exercises, and sets using drag-and-drop and verify the order is saved. | Medium | No |
+| | PLAN-08 | A user can activate a plan, which then correctly appears as the active plan on the home page. | High | No |
+| | PLAN-09 | A plan that has been used in a session becomes read-only and all edit/delete/add controls are hidden or disabled. | High | No |
+| | PLAN-10 | A user can delete a training plan that has not been used in any sessions. | Medium | No |
 | **Session Tracking**| SESS-01 | A user can start a new session from an active plan on the home page. | Critical | **Yes** |
 | | SESS-02 | A user can tap a set bubble to cycle through its states (Pending -> Completed -> Failed -> Pending). | Critical | No |
 | | SESS-03 | A user can long-press a set bubble to open the edit dialog and successfully update its details. | High | No |

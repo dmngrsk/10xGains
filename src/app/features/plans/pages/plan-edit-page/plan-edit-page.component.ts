@@ -65,6 +65,12 @@ export class PlanEditPageComponent implements OnInit {
   readonly viewModel = this.facade.viewModel;
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
   readonly isReadOnlySignal = computed(() => this.viewModel().isPreview || this.viewModel().sessionCount > 0);
+  readonly canActivatePlanSignal = computed(() =>
+    this.viewModel().plan
+      && !this.viewModel().plan!.isActive
+      && this.viewModel().plan!.days!.length > 0
+      && this.viewModel().plan!.days!.flatMap(d => d.exercises).length > 0
+      && this.viewModel().plan!.days!.flatMap(d => d.exercises!).flatMap(e => e.sets).length > 0);
 
   @ViewChild('mainScrollContainer') mainScrollContainer!: ElementRef;
 

@@ -13,7 +13,7 @@
           <mat-icon>drag_indicator</mat-icon>
         </div>
       }
-      <mat-panel-title class="flex-grow">
+      <mat-panel-title class="flex-grow" data-cy="plan-exercise-name">
         <span class="font-medium text-md">{{ exercise.exerciseName }}</span>
       </mat-panel-title>
     </div>
@@ -39,24 +39,24 @@
   @if (!isReadOnly) {
     <div class="flex flex-col justify-end items-center mt-6 gap-2">
       @if (progression) {
-        <button mat-raised-button class="w-full" (click)="onSetAdded()">
+        <button mat-raised-button class="w-full" (click)="onSetAdded()" data-cy="plan-exercise-add-set-button">
           <mat-icon>add</mat-icon>
           Add Set
         </button>
-        <button mat-raised-button class="w-full" (click)="onProgressionEdited()">
+        <button mat-raised-button class="w-full" (click)="onProgressionEdited()" data-cy="plan-exercise-edit-progression-button">
           Edit Exercise Progression
         </button>
       } @else {
-        <button mat-flat-button class="w-full" (click)="onProgressionEdited()">
+        <button mat-flat-button class="w-full" (click)="onProgressionEdited()" data-cy="plan-exercise-add-progression-button">
           <mat-icon>add</mat-icon>
           Add Exercise Progression
         </button>
-        <button mat-raised-button class="w-full" (click)="onSetAdded()">
+        <button mat-raised-button class="w-full" (click)="onSetAdded()" data-cy="plan-exercise-add-set-button">
           <mat-icon>add</mat-icon>
           Add Set
         </button>
       }
-      <button mat-raised-button class="w-full" (click)="onExerciseDeleted()">
+      <button mat-raised-button class="w-full" (click)="onExerciseDeleted()" data-cy="plan-exercise-delete-button">
         Delete Exercise
       </button>
     </div>
