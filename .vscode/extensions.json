@@ -3,6 +3,7 @@
   "recommendations": [
     "angular.ng-template",
     "denoland.vscode-deno",
+    "github.vscode-github-actions",
     "ms-ossdata.vscode-postgresql"
   ]
 }

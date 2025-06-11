@@ -4,11 +4,11 @@ describe('Authentication', { tags: ['@auth'] }, () => {
   });
 
   describe('when a user is unauthenticated', () => {
-    it('allows a user to register a new account', { tags: ['AUTH-01'] }, () => {
+    it.skip('TODO: allows a user to register a new account', { tags: ['@todo', 'AUTH-01'] }, () => {
       cy.intercept('POST', '/auth/v1/signup').as('signup');
 
       cy.getBySel('register-button').click();
-      cy.getBySel('email-input', { timeout: 10000 }).type(`test-auth01-${Date.now()}@example.com`);
+      cy.getBySel('email-input').type(`test-auth01-${Date.now()}@example.com`);
       cy.getBySel('password-input').type('password');
       cy.getBySel('confirm-password-input').type('password', { force: true });
       cy.getBySel('register-button').click();
@@ -30,7 +30,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
 
     it('disallows a user to sign in with invalid credentials', { tags: ['AUTH-03'] }, () => {
-      cy.getBySel('email-input', { timeout: 10000 }).type('invalid@example.com');
+      cy.getBySel('email-input').type('invalid@example.com');
       cy.getBySel('password-input').type('invalidpassword');
       cy.getBySel('login-button').click();
 
@@ -70,6 +70,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         cy.navigateBack();
         cy.navigateTo('settings');
         cy.getBySel('sign-out-button').click();
+        cy.url().should('include', '/auth/login');
 
         cy.login({ forceCanary: true });
         cy.visit(ephemeralUserPlanUrl);

@@ -70,7 +70,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel('complete-session-button').click();
 
       cy.url().should('include', '/home');
-      cy.getBySel('session-card', { timeout: 10000 }).should('be.visible');
+      cy.getBySel('session-card').should('be.visible');
       cy.getBySel('session-card').should('contain.text', 'Workout B'); // Next workout from the plan
       cy.getBySel('session-card').should('contain.text', 'Squat: 3x5 @ 102.5 kg'); // Progression rules applied
     });
@@ -90,7 +90,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel('confirmation-dialog-confirm-button').click();
 
       cy.url().should('include', '/home');
-      cy.getBySel('session-card', { timeout: 10000 }).should('be.visible');
+      cy.getBySel('session-card').should('be.visible');
       cy.getBySel('session-card').should('contain.text', 'Workout B'); // Next workout from the plan
       cy.getBySel('session-card').should('contain.text', 'Squat: 3x5 @ 100 kg'); // Progression rules not applied due to incomplete sets
     });

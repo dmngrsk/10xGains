@@ -6,6 +6,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
+import { EnvironmentService } from '@shared/services/environment.service';
 import { BottomNavigationBarComponent } from './components/bottom-navigation-bar/bottom-navigation-bar.component';
 
 @Component({
@@ -28,6 +29,7 @@ export class MainLayoutComponent {
   @Input() title: string = '10xGains';
   @Input() loadingSignal?: Signal<boolean>;
   @Input() backNavigation?: string | null;
+  environmentService: EnvironmentService = inject(EnvironmentService);
 
   private router = inject(Router);
   private location = inject(Location);

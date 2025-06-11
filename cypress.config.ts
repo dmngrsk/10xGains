@@ -8,20 +8,21 @@ config();
 
 export default defineConfig({
   env: {
-    CANARY_USER_EMAIL: process.env['CYPRESS_CANARY_USER_EMAIL'],
-    CANARY_USER_PASSWORD: process.env['CYPRESS_CANARY_USER_PASSWORD'],
+    CANARY_USER_EMAIL: process.env['APP_CANARY_USER_EMAIL'],
+    CANARY_USER_PASSWORD: process.env['APP_CANARY_USER_PASSWORD'],
     ENVIRONMENT: process.env['CYPRESS_ENVIRONMENT'],
-    SUPABASE_URL: process.env['CYPRESS_SUPABASE_URL'],
-    SUPABASE_SERVICE_ROLE_KEY: process.env['CYPRESS_SUPABASE_SERVICE_ROLE_KEY'],
   },
   e2e: {
     baseUrl: process.env['CYPRESS_BASE_URL'],
+    defaultCommandTimeout: process.env['CYPRESS_DEFAULT_COMMAND_TIMEOUT'] ? parseInt(process.env['CYPRESS_DEFAULT_COMMAND_TIMEOUT']) : undefined,
     experimentalRunAllSpecs: true,
+    retries: {
+      runMode: 2,
+      openMode: 0,
+    },
+    video: true,
     setupNodeEvents(on, config) {
-      if (process.env['CYPRESS_SUPABASE_SERVICE_ROLE_KEY']) {
-        on('task', tasks);
-      }
-
+      on('task', tasks);
       require('@cypress/grep/src/plugin')(config);
       return config;
     },

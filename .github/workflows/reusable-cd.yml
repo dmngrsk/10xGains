@@ -1,0 +1,178 @@
+name: Reusable Continuous Deployment Workflow
+
+on:
+  workflow_call:
+    inputs:
+      defer:
+        type: boolean
+        default: true
+        description: 'Whether to defer deployment to the environment'
+      environment:
+        type: string
+        required: true
+        description: 'Environment to deploy to (staging or production)'
+      e2e_scope:
+        type: string
+        required: true
+        description: 'Scope of E2E tests to run (full or smoke)'
+
+jobs:
+  defer:
+    name: Defer deployment
+    runs-on: ubuntu-latest
+    if: inputs.defer
+    environment:
+      name: ${{ inputs.environment }}-cd
+    steps:
+      - name: Wait for approval
+        run: |
+          echo "Approval received, deploying to ${{ inputs.environment }} environment..."
+
+  database:
+    name: Deploy database migrations to Supabase
+    runs-on: ubuntu-latest
+    needs: [defer]
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Validate environment value
+        if: inputs.environment != 'staging' && inputs.environment != 'production'
+        run: |
+          echo "Error: environment must be either 'staging' or 'production'"
+          exit 1
+
+      - name: Validate e2e_scope value
+        if: inputs.e2e_scope != 'full' && inputs.e2e_scope != 'smoke'
+        run: |
+          echo "Error: e2e_scope must be either 'full' or 'smoke'"
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy database migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          supabase link --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
+          supabase db push
+
+  backend:
+    name: Deploy Supabase Edge Functions
+    needs: [database]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy Supabase Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
+          supabase functions deploy
+
+  frontend:
+    name: Deploy Angular application to Azure Static Web App
+    needs: [backend]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Install Azure SWA CLI
+        run: |
+          npm install -g @azure/static-web-apps-cli
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ inputs.environment }}
+          path: dist/
+
+      - name: Deploy Azure Static Web App using Azure SWA CLI
+        # The specified 'production' environment is in the context of the Azure SWA resource.
+        # Note: The standard Azure SWA deploy action requires the trigger 'on: push' to execute.
+        # This is why we're deploying directly to the resource via the CLI instead of using the standard action.
+        run: |
+          swa deploy ./dist/10x-gains/browser \
+            --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --env production \
+            --deployment-token ${{ secrets.AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN }}
+
+  e2e:
+    name: Run E2E Tests
+    needs: [frontend]
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable --immutable-cache
+
+      - name: Run smoke E2E tests
+        if: inputs.e2e_scope == 'smoke'
+        env:
+          APP_CANARY_USER_EMAIL: ${{ secrets.APP_CANARY_USER_EMAIL }}
+          APP_CANARY_USER_PASSWORD: ${{ secrets.APP_CANARY_USER_PASSWORD }}
+          CYPRESS_BASE_URL: ${{ vars.APP_URL }}
+          CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
+          CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
+        run: |
+          yarn e2e:smoke
+
+      - name: Run full E2E tests
+        if: inputs.e2e_scope == 'full'
+        env:
+          APP_CANARY_USER_EMAIL: ${{ secrets.APP_CANARY_USER_EMAIL }}
+          APP_CANARY_USER_PASSWORD: ${{ secrets.APP_CANARY_USER_PASSWORD }}
+          CYPRESS_BASE_URL: ${{ vars.APP_URL }}
+          CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
+          CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          yarn e2e:run
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ inputs.environment }}
+          path: |
+            cypress/videos/
+            cypress/screenshots/
+            cypress/results/
+          retention-days: 7

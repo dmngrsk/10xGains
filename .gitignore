@@ -58,6 +58,7 @@ testem.log
 
 # Environment files
 .env
+.env.*
 src/environments/environment.*.ts
 
 # System files

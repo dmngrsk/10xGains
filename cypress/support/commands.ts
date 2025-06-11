@@ -83,7 +83,7 @@ function loginAsEphemeralUser(): void {
 function fillLoginForm(email: string, password: string): void {
   cy.visit('/auth/login');
 
-  cy.getBySel('email-input', { timeout: 10000 }).type(email);
+  cy.getBySel('email-input').type(email);
   cy.getBySel('password-input').type(password);
   cy.getBySel('login-button').click();
 

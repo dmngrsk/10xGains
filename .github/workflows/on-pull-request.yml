@@ -1,0 +1,72 @@
+name: On pull request to main branch
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      environment: staging
+      build_name: ${{ github.event.pull_request.head.ref }}
+      build_sha: ${{ github.event.pull_request.head.sha }}
+    secrets: inherit
+
+  cd-staging:
+    name: CD Staging
+    uses: ./.github/workflows/reusable-cd.yml
+    needs: [ci]
+    with:
+      environment: staging
+      e2e_scope: full
+    secrets: inherit
+
+  ci-comment:
+    name: CI / Add status comment
+    runs-on: ubuntu-latest
+    if: always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'pull_request'
+    needs: [ci]
+    steps:
+      - name: Add a detailed comment about the CI job results
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: { jobs } } = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: context.runId });
+
+            const ciJobPrefix = 'CI / ';
+            const ciCurrentJobName = 'CI / Add status comment';
+            const ciJobs = jobs.filter(job => job.name.includes(ciJobPrefix) && job.name !== ciCurrentJobName);
+
+            let commentBody = '### CI Job Results\n\n';
+            commentBody += '| Job | Status | Details |\n';
+            commentBody += '|-----|--------|---------|\n';
+
+            for (const job of ciJobs) {
+              const jobName = job.name.replace(ciJobPrefix, '');
+              const jobStatus = `**${job.conclusion === 'success' ? '✅' : job.conclusion === 'failure' ? '❌' : '⚠️'} ${job.conclusion.toUpperCase()}**`;
+              const jobDetails = `[View Details](${job.html_url})`;
+              commentBody += `| ${jobName} | ${jobStatus} | ${jobDetails} |\n`;
+            }
+
+            commentBody += '\n### Summary\n';
+            commentBody += ciJobs.every(job => job.conclusion === 'success')
+              ? '\n✅ **All checks passed successfully!**'
+              : '\n❌ **Some checks have not passed. Please review the details above.**';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
