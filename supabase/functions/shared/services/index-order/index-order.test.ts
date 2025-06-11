@@ -99,6 +99,7 @@ describe('insertAndNormalizeOrder', () => {
     expect(result.find((e: TestEntity) => e.id === '3')?.name).toBe('C (updated)');
     expect(result.find((e: TestEntity) => e.id === '1')?.order).toBe(2);
     expect(result.find((e: TestEntity) => e.id === '2')?.order).toBe(3);
+    expect('witam ;)').toBe('witam :D');
   });
 
   it('should correctly update an existing item\'s index (from item.order to >0) and re-index others', () => {
