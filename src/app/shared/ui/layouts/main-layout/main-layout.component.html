@@ -1,12 +1,26 @@
 <mat-toolbar color="primary" class="flex justify-start gap-2 items-center shadow-md fixed top-0 left-0 right-0 z-[100] h-16">
-  @if (showBackNavigation()) {
-    <button class="!text-[var(--mat-sys-primary)]" mat-icon-button (click)="onNavigateBack()" data-cy="main-layout-back-button">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-  } @else {
-    <img ngSrc="assets/images/logotype.png" alt="10xGains Logo" width="1024" height="1024" priority="true" class="h-10 w-10 object-contain" />
-  }
-  <span class="text-xl font-semibold">{{ title }}</span>
+  <div class="flex flex-row w-full justify-between items-center">
+    <div class="flex flex-row items-center gap-2">
+      @if (showBackNavigation()) {
+        <button class="!text-[var(--mat-sys-primary)]" mat-icon-button (click)="onNavigateBack()" data-cy="main-layout-back-button">
+          <mat-icon>arrow_back</mat-icon>
+        </button>
+      } @else {
+        <img ngSrc="assets/images/logotype.png" alt="10xGains Logo" width="1024" height="1024" priority="true" class="h-10 w-10 object-contain" />
+      }
+      <span class="text-xl font-semibold">{{ title }}</span>
+    </div>
+    @if (!environmentService.production) {
+      <div class="flex flex-col items-end">
+        <span class="text-xs text-[var(--mat-sys-primary)]">
+          {{ environmentService.buildName }}
+        </span>
+        <span class="text-xs text-[var(--mat-sys-primary)]">
+          {{ environmentService.buildSha }}
+        </span>
+      </div>
+    }
+  </div>
 </mat-toolbar>
 
 @if (showFullScreenLoader()) {

@@ -110,7 +110,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       });
     });
 
-    it.skip('TODO: allows a user to reorder training days, exercises and sets', { tags: ['PLAN-07'] }, () => {
+    it.skip('TODO: allows a user to reorder training days, exercises and sets', { tags: ['@todo', 'PLAN-07'] }, () => {
       // Reorder days
       // ...
 
@@ -124,7 +124,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
     it('allows a user to activate a plan', { tags: ['PLAN-08'] }, () => {
       cy.getBySel('plan-activate-button').click();
 
-      cy.url().should('include', '/home', { timeout: 10000 });
+      cy.url().should('include', '/home');
       cy.getBySel('session-card').should('contain.text', 'Workout A'); // First workout from the plan
       cy.getBySel('session-card').should('contain.text', 'Squat: 3x5 @ 100 kg'); // Initial squat weight from the plan
       cy.getBySel('session-card').should('contain.text', 'Bench Press: 3x5 @ 70 kg'); // Initial bench press weight from the plan

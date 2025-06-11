@@ -1,0 +1,44 @@
+name: On release
+
+on:
+  release:
+    types: [published, edited]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  ci-staging:
+    name: CI Staging
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      environment: staging
+      build_name: ${{ github.event.release.tag_name }}
+      build_sha: ${{ github.event.release.target_commitish }}
+    secrets: inherit
+
+  cd-staging:
+    name: CD Staging
+    uses: ./.github/workflows/reusable-cd.yml
+    needs: [ci-staging]
+    with:
+      environment: staging
+      e2e_scope: full
+    secrets: inherit
+
+  ci-production:
+    name: CI Production
+    uses: ./.github/workflows/reusable-ci.yml
+    with:
+      environment: production
+    secrets: inherit
+
+  cd-production:
+    name: CD Production
+    uses: ./.github/workflows/reusable-cd.yml
+    needs: [ci-production, cd-staging]
+    with:
+      environment: production
+      e2e_scope: smoke
+    secrets: inherit

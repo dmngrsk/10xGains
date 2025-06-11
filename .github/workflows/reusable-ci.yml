@@ -1,0 +1,140 @@
+name: Reusable Continuous Integration Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      build_name:
+        type: string
+      build_sha:
+        type: string
+
+jobs:
+  lint:
+    name: Lint code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate environment value
+        if: inputs.environment != 'staging' && inputs.environment != 'production'
+        run: |
+          echo "Error: environment must be either 'staging' or 'production'"
+          exit 1
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+
+      - name: Run linter
+        run: |
+          yarn lint
+
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    needs: [lint]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable --immutable-cache
+
+      - name: Run unit tests with coverage
+        run: |
+          yarn test:coverage
+
+      - name: Upload unit test coverage
+        if: inputs.environment == 'staging'
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-coverage
+          path: coverage/
+          retention-days: 7
+
+  build:
+    name: Build Angular application
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    needs: [lint, test]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Yarn
+        run: |
+          corepack enable
+          corepack prepare yarn@4.5.3 --activate
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable --immutable-cache
+
+      - name: Generate environment file
+        run: |
+          IS_PRODUCTION=$([[ "${{ inputs.environment }}" == "production" ]] && echo "true" || echo "false")
+
+          echo "export const environment = {
+            production: ${IS_PRODUCTION},
+            build: {
+              name: '${{ inputs.build_name }}',
+              sha: '${{ inputs.build_sha }}',
+            },
+            supabase: {
+              url: '${{ vars.SUPABASE_URL }}',
+              key: '${{ secrets.SUPABASE_ANON_KEY }}',
+            }
+          };" > src/environments/environment.${{ inputs.environment }}.ts
+
+      - name: Build application
+        run: |
+          yarn build:${{ inputs.environment }}
+
+      - name: Upload build artifacts for staging
+        if: inputs.environment == 'staging'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-staging
+          path: dist/
+          retention-days: 7
+
+      - name: Upload build artifacts for production
+        if: inputs.environment == 'production'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-production
+          path: dist/
+          retention-days: 30

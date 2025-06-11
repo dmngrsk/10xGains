@@ -23,4 +23,12 @@ export class EnvironmentService {
   get supabaseKey(): string {
     return this.env.supabase.key;
   }
+
+  get buildName(): string {
+    return this.env.build?.name ?? '';
+  }
+
+  get buildSha(): string {
+    return this.env.build?.sha.substring(0, 7) ?? '';
+  }
 }
