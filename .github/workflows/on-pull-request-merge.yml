@@ -1,0 +1,34 @@
+name: On pull request merge to main branch
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  tag-on-merge:
+    name: Create date-based release tag
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important to fetch all tags
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Generate and push a date-based tag
+        id: tag
+        run: |
+          DATE_TAG_PREFIX="v$(date -u +'%Y%m%d')"
+          DATE_TAG_COUNT=$(git tag -l "${DATE_TAG_PREFIX}.*" | wc -l)
+          DATE_TAG_TO_PUSH="${DATE_TAG_PREFIX}.$((${DATE_TAG_COUNT} + 1))"
+
+          git tag $DATE_TAG_TO_PUSH
+          git push origin $DATE_TAG_TO_PUSH
