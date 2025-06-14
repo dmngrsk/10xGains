@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse } from '@shared/utils/api-helpers.ts';
-import type { UserProfileDto, UpdateUserProfileCommand } from '@shared/models/api-types.ts';
+import type { UserProfileDto, UpsertUserProfileCommand } from '@shared/models/api-types.ts';
 import type { ApiHandlerContext } from '@shared/utils/api-handler.ts';
 
-const UpdateUserProfilePayloadSchema = z.object({
+const UpsertUserProfilePayloadSchema = z.object({
   first_name: z.string().optional(),
   active_training_plan_id: z.string().uuid({ message: 'Invalid UUID format for active training plan ID.' }).nullable().optional(),
 })
@@ -11,7 +11,7 @@ const UpdateUserProfilePayloadSchema = z.object({
   message: "Request body must contain at least one field to update."
 });
 
-export async function handleUpdateUserProfile(
+export async function handleUpsertUserProfile(
   { supabaseClient, user, rawPathParams, req }: Pick<ApiHandlerContext, 'supabaseClient' | 'user' | 'rawPathParams' | 'req'>
 ): Promise<Response> {
   if (!rawPathParams || !rawPathParams.id) {
@@ -22,7 +22,7 @@ export async function handleUpdateUserProfile(
     return createErrorResponse(403, 'Forbidden: You can only update your own profile.');
   }
 
-  let body: UpdateUserProfileCommand;
+  let body: UpsertUserProfileCommand;
   try {
     body = await req.json();
   } catch (e) {
@@ -30,7 +30,7 @@ export async function handleUpdateUserProfile(
     return createErrorResponse(400, 'Invalid JSON body.');
   }
 
-  const validationResult = UpdateUserProfilePayloadSchema.safeParse(body);
+  const validationResult = UpsertUserProfilePayloadSchema.safeParse(body);
 
   if (!validationResult.success) {
     return createErrorResponse(400, 'Validation failed', validationResult.error.flatten());
@@ -72,7 +72,7 @@ export async function handleUpdateUserProfile(
 
     return createSuccessResponse<UserProfileDto>(200, data as UserProfileDto);
   } catch (e) {
-    console.error('Unexpected error in handleUpdateUserProfile:', e);
+    console.error('Unexpected error in handleUpsertUserProfile:', e);
     return createErrorResponse(500, 'An unexpected error occurred.', { details: (e as Error).message });
   }
 }

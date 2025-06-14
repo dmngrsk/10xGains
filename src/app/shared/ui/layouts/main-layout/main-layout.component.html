@@ -2,20 +2,20 @@
   <div class="flex flex-row w-full justify-between items-center">
     <div class="flex flex-row items-center gap-2">
       @if (showBackNavigation()) {
-        <button class="!text-[var(--mat-sys-primary)]" mat-icon-button (click)="onNavigateBack()" data-cy="main-layout-back-button">
+        <button class="!text-primary" mat-icon-button (click)="onNavigateBack()" data-cy="navigation-back-button">
           <mat-icon>arrow_back</mat-icon>
         </button>
       } @else {
-        <img ngSrc="assets/images/logotype.png" alt="10xGains Logo" width="1024" height="1024" priority="true" class="h-10 w-10 object-contain" />
+        <img ngSrc="assets/images/logo-nav.png" alt="10xGains Logo" width="1024" height="1024" priority="true" class="h-8 w-8 mx-1 object-contain" />
       }
       <span class="text-xl font-semibold">{{ title }}</span>
     </div>
     @if (!environmentService.production) {
       <div class="flex flex-col items-end">
-        <span class="text-xs text-[var(--mat-sys-primary)]">
+        <span class="text-xs text-primary">
           {{ environmentService.buildName }}
         </span>
-        <span class="text-xs text-[var(--mat-sys-primary)]">
+        <span class="text-xs text-primary">
           {{ environmentService.buildSha }}
         </span>
       </div>

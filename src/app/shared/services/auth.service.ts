@@ -1,112 +1,162 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, ReplaySubject } from 'rxjs';
-import { map, first } from 'rxjs/operators';
-import { Session, User } from '@supabase/supabase-js';
+import { Observable, from, of, concat, OperatorFunction } from 'rxjs';
+import { catchError, map, shareReplay } from 'rxjs/operators';
+import { AuthError, AuthSession, AuthResponse as SupabaseAuthResponse, User } from '@supabase/supabase-js';
+import { ProfileService } from '@shared/api/profile.service';
+import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SupabaseService } from '../db/supabase.service';
 
-
-export interface LoginRequest {
+export interface AuthCommand {
   email: string;
   password: string;
 }
 
-export interface LoginResponse {
-  user: User;
-  session: Session;
+export interface AuthResponse {
+  success: boolean;
+  error?: string;
 }
 
+export type LoginCommand = AuthCommand;
+export type LoginResponse = AuthResponse;
+
+export type LogoutResponse = AuthResponse;
+
+export type RegisterCommand = AuthCommand;
+export type RegisterResponse = AuthResponse & { userId?: string; emailVerified?: boolean; };
+
+export type ResetPasswordCommand = { email: string; };
+export type ResetPasswordResponse = AuthResponse;
+
+export type ChangePasswordCommand = { password: string; };
+export type ChangePasswordResponse = AuthResponse;
+
+/**
+ * Provides authentication-related functionalities by wrapping the Supabase client.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private currentUserSubject = new BehaviorSubject<User | null>(null);
-  public currentUser$ = this.currentUserSubject.asObservable();
-  public readonly currentUser = toSignal(this.currentUser$, { initialValue: null });
+  private readonly supabase = inject(SupabaseService).client;
+  private readonly profileService = inject(ProfileService);
 
-  private authStateInitialized = new ReplaySubject<boolean>(1);
-  public authStateInitialized$ = this.authStateInitialized.asObservable();
+  /**
+   * An observable that emits the currently authenticated user object, or `null` if unauthenticated.
+   */
+  readonly currentUser$: Observable<User | null>;
 
-  private supabaseService = inject(SupabaseService);
-  private router = inject(Router);
+  /**
+   * A signal that holds the currently authenticated user object, or `null` if unauthenticated.
+   */
+  readonly currentUser: Signal<User | null>;
 
   constructor() {
-    this.supabaseService.client.auth.getSession().then(({ data: { session } }) => {
-      const user = session?.user ?? null;
-      this.currentUserSubject.next(user);
-      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
-        this.authStateInitialized.next(true);
-      }
-    }).catch(() => {
-      this.currentUserSubject.next(null);
-      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
-        this.authStateInitialized.next(true);
-      }
-    });
+    this.currentUser$ = concat(
+      from(this.supabase.auth.getSession()).pipe(map(({ data }) => data.session)),
+      new Observable<AuthSession | null>(observer => {
+        const {
+          data: { subscription }
+        } = this.supabase.auth.onAuthStateChange((_event, session) => {
+          observer.next(session);
+        });
 
-    this.supabaseService.client.auth.onAuthStateChange((event, session) => {
-      const user = session?.user ?? null;
-      this.currentUserSubject.next(user);
-      if (!this.isReplaySubjectEmitted(this.authStateInitialized)) {
-        this.authStateInitialized.next(true);
-      }
-    });
-  }
-
-  private isReplaySubjectEmitted(subject: ReplaySubject<boolean>): boolean {
-    let emitted = false;
-    const sub = subject.pipe(first()).subscribe(() => {
-      emitted = true;
-    });
-    if (!emitted) {
-      sub.unsubscribe();
-    }
-    return emitted;
-  }
-
-  login(request: LoginRequest): Promise<LoginResponse> {
-    return new Promise((resolve, reject) => {
-      this.supabaseService.client.auth.signInWithPassword({
-        email: request.email,
-        password: request.password
+        return () => {
+          subscription.unsubscribe();
+        };
       })
-      .then(({ data, error }) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-        if (data?.user && data.session) {
-          resolve({ user: data.user, session: data.session });
-        } else {
-          const errMsg = 'Login failed: No user data or session returned';
-          reject(new Error(errMsg));
-        }
-      })
-      .catch(err => {
-        reject(err);
-      });
-    });
+    ).pipe(
+      map(session => session?.user ?? null),
+      shareReplay(1)
+    );
+
+    this.currentUser = toSignal(this.currentUser$, { initialValue: null });
   }
 
-  async logout(): Promise<void> {
-    const { error } = await this.supabaseService.client.auth.signOut();
-    if (error) {
-      throw error;
-    }
-    this.router.navigate(['/auth/login']);
+  /**
+   * Signs in a user with their email and password.
+   * @param command The login command containing email and password.
+   * @returns An `Observable<LoginResponse>` that emits an object indicating success or failure.
+   */
+  login(command: LoginCommand): Observable<LoginResponse> {
+    return from(this.supabase.auth.signInWithPassword(command)).pipe(this.toAuthResponse());
   }
 
-  isAuthenticated(): Observable<boolean> {
-    return this.currentUser$.pipe(
-      map(user => !!user)
+  /**
+   * Signs out the currently authenticated user.
+   * @returns An `Observable<LogoutResponse>` that emits an object indicating success or failure.
+   */
+  logout(): Observable<LogoutResponse> {
+    return from(this.supabase.auth.signOut()).pipe(this.toAuthResponse());
+  }
+
+  /**
+   * Registers a new user with their email and password.
+   * @param command The registration command containing email and password.
+   * @returns An `Observable<RegisterResponse>` that emits an object indicating success, whether the email is verified after registration, or failure.
+   * As a side effect, a user profile is created for the freshly registered user in the `public.user_profiles` table if the email is verified.
+   */
+  register(command: RegisterCommand): Observable<RegisterResponse> {
+    const options = {}; // { emailRedirectTo: `${window.location.origin}/auth/verify-email` };
+    return from(this.supabase.auth.signUp({ ...command, options })).pipe(
+      this.toRegisterResponse(),
+      tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.upsertUserProfile(r.userId!, { first_name: '' }))
     );
   }
 
-  async changePassword(newPassword: string): Promise<void> {
-    const { error } = await this.supabaseService.client.auth.updateUser({ password: newPassword });
-    if (error) {
-      throw error;
-    }
+  /**
+   * Sends a password reset link to the user's email.
+   * @param command The command containing the user's email.
+   * @returns An `Observable<ResetPasswordResponse>` that emits an object indicating success or failure.
+   */
+  resetPassword(command: ResetPasswordCommand): Observable<ResetPasswordResponse> {
+    return from(this.supabase.auth.resetPasswordForEmail(command.email)).pipe(this.toAuthResponse());
+  }
+
+  /**
+   * Updates the password for the currently authenticated user.
+   * @param command The command containing the new password.
+   * @returns An `Observable<ChangePasswordResponse>` that emits an object indicating success or failure.
+   */
+  changePassword(command: ChangePasswordCommand): Observable<ChangePasswordResponse> {
+    return from(this.supabase.auth.updateUser(command)).pipe(this.toAuthResponse());
+  }
+
+  /**
+   * Checks if a user is currently authenticated.
+   * @returns An `Observable<boolean>` that emits `true` if a user is authenticated, otherwise `false`.
+   */
+  isAuthenticated(): Observable<boolean> {
+    return from(this.supabase.auth.getUser()).pipe(map(({ data }) => !!data.user));
+  }
+
+  private mapSupabaseResponse<T, R extends AuthResponse>(mapper: (value: T) => R): OperatorFunction<T, R> {
+    return (source: Observable<T>) => source.pipe(
+      map(mapper),
+      catchError((error: Error) => of({ success: false, error: error.message } as R)));
+  }
+
+  private toAuthResponse(): OperatorFunction<{ error: AuthError | null }, AuthResponse> {
+    return this.mapSupabaseResponse(({ error }) => {
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      return { success: true };
+    });
+  }
+
+  private toRegisterResponse(): OperatorFunction<SupabaseAuthResponse, RegisterResponse> {
+    return this.mapSupabaseResponse(({ data, error }) => {
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      if (!data.user) {
+        return { success: false, error: 'Registration failed - no user data returned' };
+      }
+
+      const emailVerified = data.user.identities?.some(i => i.provider === 'email' && i.identity_data?.['email_verified']) ?? false;
+
+      return { success: true, userId: data.user.id, emailVerified };
+    });
   }
 }

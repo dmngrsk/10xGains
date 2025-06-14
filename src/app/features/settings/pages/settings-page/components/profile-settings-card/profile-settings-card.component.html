@@ -1,6 +1,6 @@
 <mat-card>
   <mat-card-header>
-    <mat-card-title class="!font-medium !text-[var(--mat-sys-primary)]">Profile Settings</mat-card-title>
+    <mat-card-title class="!font-medium !text-primary">Profile Settings</mat-card-title>
   </mat-card-header>
   <mat-card-content class="mt-8">
     <form [formGroup]="profileForm">
@@ -29,10 +29,13 @@
         <input matInput formControlName="email" readonly>
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full mt-4">
-        <mat-label>AI suggestions remaining</mat-label>
-        <input matInput formControlName="aiSuggestionsRemaining" readonly>
-      </mat-form-field>
+      <!-- TODO: Show and possibly adjust after AI suggestions are implemented -->
+      @if (false) {
+        <mat-form-field appearance="outline" class="w-full mt-4">
+          <mat-label>AI suggestions remaining</mat-label>
+          <input matInput formControlName="aiSuggestionsRemaining" readonly>
+        </mat-form-field>
+      }
 
     </form>
   </mat-card-content>

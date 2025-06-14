@@ -1,5 +1,5 @@
 <div class="fixed bottom-16 h-16 left-0 right-0 bg-surface z-100">
-  <mat-divider></mat-divider>
+  <mat-divider class="!border-t-outline-variant"></mat-divider>
   <div class="flex flex-row items-center justify-between px-2 py-1">
     <mat-paginator hidePageSize="true"
       [length]="length"
@@ -9,7 +9,7 @@
       (page)="onPageChanged($event)"
       data-cy="history-paginator">
     </mat-paginator>
-    <button mat-icon-button class="mb-[0.5rem] mx-2" [class.filter-specified]="filterSpecified" (click)="onFilterClicked()" data-cy="history-filter-button">
+    <button mat-icon-button class="mb-[0.5rem] mx-2" [class.!text-primary]="filterSpecified" (click)="onFilterClicked()" data-cy="history-filter-button">
       <mat-icon>filter_list</mat-icon>
     </button>
   </div>

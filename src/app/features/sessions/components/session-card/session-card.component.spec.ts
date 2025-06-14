@@ -71,10 +71,9 @@ describe('SessionCardComponent', () => {
     });
 
     describe('PENDING state', () => {
-      it('should return only the formatted date', () => {
+      it('should return empty string', () => {
         component.sessionData = createMockSession('PENDING', testMockDate);
-        const expectedFormattedDate = formattedDate(baseMockDate);
-        expect(component.sessionDateTimeText).toBe(expectedFormattedDate);
+        expect(component.sessionDateTimeText).toBe('');
       });
     });
 

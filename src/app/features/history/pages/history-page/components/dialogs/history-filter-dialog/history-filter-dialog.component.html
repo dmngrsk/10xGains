@@ -14,7 +14,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Start date</mat-label>
-        <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY">
+        <input matInput [matDatepicker]="pickerFrom" formControlName="dateFrom" placeholder="DD/MM/YYYY" data-cy="history-filter-dialog-date-from-input">
         <mat-datepicker-toggle matSuffix [for]="pickerFrom"></mat-datepicker-toggle>
         <mat-datepicker #pickerFrom></mat-datepicker>
         @if (filterForm.get('dateFrom')?.hasError('matDatepickerParse') && filterForm.get('dateFrom')?.touched) {
@@ -27,7 +27,7 @@
 
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>End date</mat-label>
-        <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY">
+        <input matInput [matDatepicker]="pickerTo" formControlName="dateTo" placeholder="DD/MM/YYYY" data-cy="history-filter-dialog-date-to-input">
         <mat-datepicker-toggle matSuffix [for]="pickerTo"></mat-datepicker-toggle>
         <mat-datepicker #pickerTo></mat-datepicker>
         @if (filterForm.get('dateTo')?.hasError('matDatepickerParse') && filterForm.get('dateTo')?.touched) {
@@ -48,6 +48,10 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="onCancelled()" type="button">Cancel</button>
-  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid">Apply Filters</button>
+  <button mat-button (click)="onCancelled()" type="button">
+    Cancel
+  </button>
+  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid" data-cy="history-filter-dialog-apply-filters-button">
+    Apply Filters
+  </button>
 </mat-dialog-actions>

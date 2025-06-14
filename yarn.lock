@@ -36,6 +36,7 @@ __metadata:
     "@vitest/coverage-v8": "npm:^3.2.2"
     "@vitest/ui": "npm:^3.2.2"
     angular-eslint: "npm:19.3.0"
+    autoprefixer: "npm:^10.4.21"
     cypress: "npm:^14.4.1"
     deno: "npm:^2.3.5"
     dotenv: "npm:^16.5.0"
@@ -7140,7 +7141,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"autoprefixer@npm:^10.4.9":
+"autoprefixer@npm:^10.4.21, autoprefixer@npm:^10.4.9":
   version: 10.4.21
   resolution: "autoprefixer@npm:10.4.21"
   dependencies:

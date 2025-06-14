@@ -184,9 +184,9 @@ Widok Ustawień będzie składał się z głównego komponentu kontenerowego (`S
     updated_at: string | null; 
   };
   ```
-- **`UpdateUserProfileCommand`** (z `src/app/shared/api/api.types.ts`):
+- **`UpsertUserProfileCommand`** (z `src/app/shared/api/api.types.ts`):
   ```typescript
-  export type UpdateUserProfileCommand = {
+  export type UpsertUserProfileCommand = {
     first_name?: string;
   };
   ```
@@ -218,8 +218,8 @@ Widok Ustawień będzie składał się z głównego komponentu kontenerowego (`S
   - Metoda `saveProfile(firstName: string | null)`:
     - Pobiera `currentUser.id` z `AuthService`.
     - Ustawia `viewModel.update(s => ({ ...s, isLoading: true, error: null }))`.
-    - Przygotowuje `UpdateUserProfileCommand`.
-    - Wywołuje `ProfileService.updateUserProfile(userId, command)`.
+    - Przygotowuje `UpsertUserProfileCommand`.
+    - Wywołuje `ProfileService.upsertUserProfile(userId, command)`.
     - W przypadku sukcesu: aktualizuje `viewModel.profile.firstName`, `viewModel.isLoading = false`, wyświetla powiadomienie przez `MatSnackBar`.
     - W przypadku błędu: ustawia `viewModel.error`, `viewModel.isLoading = false`, wyświetla powiadomienie przez `MatSnackBar`.
   - Metoda `logout()`:
@@ -238,7 +238,7 @@ Widok Ustawień będzie składał się z głównego komponentu kontenerowego (`S
     - Powinien zawierać metodę np. `changePassword(currentPassword: string, newPassword: string): Observable<void>`
   - `ProfileService` (np. `src/app/shared/api/profile.service.ts`): Enkapsuluje logikę komunikacji z API `/user-profiles`.
     - `getUserProfile(userId: string): Observable<UserProfileDto>`
-    - `updateUserProfile(userId: string, command: UpdateUserProfileCommand): Observable<UserProfileDto>`
+    - `upsertUserProfile(userId: string, command: UpsertUserProfileCommand): Observable<UserProfileDto>`
   - `MatSnackBar`: Do wyświetlania powiadomień (toast).
   - `MatDialog`: Do wyświetlania dialogów (potwierdzenie wylogowania przez fasadę, zmiana hasła przez `SettingsPageComponent`).
 
@@ -274,7 +274,7 @@ Widok Ustawień będzie składał się z głównego komponentu kontenerowego (`S
   - Przycisk "Zapisz" w `ProfileSettingsCardComponent` jest wyłączony, jeśli `profileForm.invalid` LUB `profileForm.pristine` LUB `isLoading` (przekazane jako `@Input`) jest `true`.
 - **Endpoint `PUT /user-profiles/{id}`**:
   - Backend waliduje, czy `id` użytkownika pasuje do zalogowanego użytkownika (403 Forbidden).
-  - Backend waliduje ciało żądania (`UpdateUserProfileCommand`).
+  - Backend waliduje ciało żądania (`UpsertUserProfileCommand`).
   - Błędy walidacji z backendu (400 Bad Request) powinny być wyświetlone użytkownikowi poprzez `viewModel.error`.
 
 ## 9. Obsługa błędów
@@ -306,7 +306,7 @@ Widok Ustawień będzie składał się z głównego komponentu kontenerowego (`S
     - `src/app/shared/api/profile.service.ts`
 2.  **Zdefiniowanie `SettingsPageViewModel`, `ProfileSettingsCardViewModel`** w `src/app/features/settings/models/settings-page.viewmodel.ts`, oraz **`ChangePasswordCommand`** w `src/app/features/auth/models/auth.commands.ts`.
 3.  **Zdefiniowanie Routingu** w `settings.routes.ts` i rejestracja w `app.routes.ts` (zgodnie z sekcją 2).
-4.  **Implementacja `ProfileService`** (sprawdzenie, czy aktualna implementacja `getUserProfile` i `updateUserProfile` spełnia wymagania, jeśli nie, zaktualizowanie jej).
+4.  **Implementacja `ProfileService`** (sprawdzenie, czy aktualna implementacja `getUserProfile` i `upsertUserProfile` spełnia wymagania, jeśli nie, zaktualizowanie jej).
 5.  **Implementacja `AuthService`**:
     - Upewnij się, że posiada metodę `changePassword(currentPassword: string, newPass: string): Observable<void>` (lub odpowiednik).
     - Upewnij się, że posiada metodę `logout(): Observable<void>` (lub `Promise<void>`).

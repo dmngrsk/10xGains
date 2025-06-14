@@ -40,9 +40,9 @@ Na podstawie `src/app/shared/api/api.types.ts`:
     // Obejmuje: id, first_name, active_training_plan_id, created_at, updated_at
     ```
 - **Command Model**:
-  - `UpdateUserProfileCommand`: Używany jako typ ciała żądania dla PUT.
+  - `UpsertUserProfileCommand`: Używany jako typ ciała żądania dla PUT.
     ```typescript
-    // export type UpdateUserProfileCommand = Pick<UserProfileDto, "first_name" | "active_training_plan_id">;
+    // export type UpsertUserProfileCommand = Pick<UserProfileDto, "first_name" | "active_training_plan_id">;
     ```
 
 ## 4. Szczegóły odpowiedzi
@@ -106,10 +106,10 @@ Na podstawie `src/app/shared/api/api.types.ts`:
 6.  Jeśli sukces, zwraca `200 OK` z danymi profilu (`UserProfileDto`).
 
 ### PUT /user-profiles/{id} (w `user-profile-id/methods/put.ts`)
-1.  "Path Handler" (`handleUserProfileByIdRoute`) używa `routeRequestToMethods` do przekazania żądania do `handleUpdateUserProfile`.
-2.  `handleUpdateUserProfile` otrzymuje `ApiHandlerContext`.
+1.  "Path Handler" (`handleUserProfileByIdRoute`) używa `routeRequestToMethods` do przekazania żądania do `handleUpsertUserProfile`.
+2.  `handleUpsertUserProfile` otrzymuje `ApiHandlerContext`.
 3.  **Autoryzacja**: Sprawdza, czy `context.rawPathParams.id` jest równy `context.user.id`. Jeśli nie, zwraca `403 Forbidden`.
-4.  Parsuje i waliduje ciało żądania (`UpdateUserProfileCommand`) przy użyciu schematu Zod:
+4.  Parsuje i waliduje ciało żądania (`UpsertUserProfileCommand`) przy użyciu schematu Zod:
     *   `first_name`: `string`, wymagany, niepusty.
     *   `active_training_plan_id`: `string (UUID)` lub `null`.
     *   Jeśli walidacja nie powiedzie się, zwraca `400 Bad Request` z odpowiednimi komunikatami o błędach.
@@ -129,7 +129,7 @@ Na podstawie `src/app/shared/api/api.types.ts`:
 - **Uwierzytelnianie**: Zapewniane przez `createMainRouterHandler` poprzez weryfikację tokena JWT. Wszystkie żądania bez ważnego tokena JWT będą odrzucane z kodem `401 Unauthorized`.
 - **Autoryzacja**: Kluczowym elementem jest weryfikacja, czy parametr `{id}` w ścieżce URL jest identyczny z `id` użytkownika uzyskanym z tokena JWT (`context.user.id`). Jeśli ID nie pasują, żądanie jest odrzucane z kodem `403 Forbidden`. Uniemożliwia to użytkownikom dostęp lub modyfikację profili innych użytkowników.
 - **Walidacja danych wejściowych**:
-    - Ciało żądania dla `PUT` jest walidowane przy użyciu Zod (na podstawie `UpdateUserProfileCommand`), aby zapobiec nieprawidłowym danym i potencjalnym atakom (np. Mass Assignment). Sprawdzane są typy danych, wymagane pola oraz formaty (np. UUID).
+    - Ciało żądania dla `PUT` jest walidowane przy użyciu Zod (na podstawie `UpsertUserProfileCommand`), aby zapobiec nieprawidłowym danym i potencjalnym atakom (np. Mass Assignment). Sprawdzane są typy danych, wymagane pola oraz formaty (np. UUID).
     - Parametr ścieżki `{id}` jest niejawnie walidowany jako UUID przez mechanizm dopasowania ścieżki, a jego zgodność z ID użytkownika jest sprawdzana jawnie.
 - **Ochrona RLS (Row-Level Security)**: Dodatkowa warstwa zabezpieczeń na poziomie bazy danych. Wszystkie zapytania do tabeli `user_profiles` będą podlegać politykom RLS, które powinny ograniczać dostęp tylko do wierszy, gdzie `id = auth.uid()`. Logika aplikacji (sprawdzanie `id === user.id`) działa jako pierwsza linia obrony i zapewnia bardziej szczegółowe kody odpowiedzi HTTP.
 - **Najmniejsze uprawnienia**: Funkcja Supabase Edge Function powinna działać z minimalnymi wymaganymi uprawnieniami.
@@ -181,9 +181,9 @@ supabase/
 3.  **Path Handler (`user-profiles/handlers/user-profile-id/handler.ts`)**:
     *   Zdefiniuj `ABSOLUTE_PATH_PATTERN` jako `/user-profiles/:id`.
     *   Zaimportuj `routeRequestToMethods` z `shared/api-handler.ts`.
-    *   Zaimportuj "Method Handlers" `handleGetUserProfile` (z `methods/get.ts`) i `handleUpdateUserProfile` (z `methods/put.ts`).
+    *   Zaimportuj "Method Handlers" `handleGetUserProfile` (z `methods/get.ts`) i `handleUpsertUserProfile` (z `methods/put.ts`).
     *   Wyeksportuj funkcję `handleUserProfileByIdRoute(req, context)`:
-        *   Wywołaj `routeRequestToMethods` z `req`, `ABSOLUTE_PATH_PATTERN`, mapą metod HTTP do odpowiednich handlerów (`{ GET: handleGetUserProfile, PUT: handleUpdateUserProfile }`) i `context`.
+        *   Wywołaj `routeRequestToMethods` z `req`, `ABSOLUTE_PATH_PATTERN`, mapą metod HTTP do odpowiednich handlerów (`{ GET: handleGetUserProfile, PUT: handleUpsertUserProfile }`) i `context`.
 
 4.  **Method Handler dla GET (`user-profiles/handlers/user-profile-id/methods/get.ts`)**:
     *   Wyeksportuj asynchroniczną funkcję `handleGetUserProfile(context: ApiHandlerContext)`.
@@ -195,28 +195,28 @@ supabase/
         *   Zwróć `createSuccessResponse(200, data)`.
 
 5.  **Method Handler dla PUT (`user-profiles/handlers/user-profile-id/methods/put.ts`)**:
-    *   Wyeksportuj asynchroniczną funkcję `handleUpdateUserProfile(context: ApiHandlerContext)`.
+    *   Wyeksportuj asynchroniczną funkcję `handleUpsertUserProfile(context: ApiHandlerContext)`.
     *   Zaimplementuj logikę aktualizacji profilu:
         *   Pobierz `userId` z `context.user.id` i `pathId` z `context.rawPathParams.id`.
         *   **Autoryzacja**: Porównaj `userId` i `pathId`. Jeśli różne, zwróć `createErrorResponse(403, 'Forbidden')`.
         *   Odczytaj ciało żądania: `const body = await context.request.json()`.
-        *   **Walidacja**: Zdefiniuj schemat Zod dla `UpdateUserProfileCommand`:
+        *   **Walidacja**: Zdefiniuj schemat Zod dla `UpsertUserProfileCommand`:
             ```typescript
             // Wewnątrz put.ts lub w dedykowanym pliku walidacji
             import { z } from 'zod';
-            const UpdateUserProfilePayloadSchema = z.object({
+            const UpsertUserProfilePayloadSchema = z.object({
               first_name: z.string().min(1, { message: 'First name is required.' }),
               active_training_plan_id: z.string().uuid({ message: 'Invalid UUID format for active training plan ID.' }).nullable(),
             });
             ```
-        *   Waliduj `body` używając `UpdateUserProfilePayloadSchema.safeParse(body)`.
+        *   Waliduj `body` używając `UpsertUserProfilePayloadSchema.safeParse(body)`.
         *   Jeśli walidacja nie powiedzie się (`!result.success`), zwróć `createErrorResponse(400, 'Validation failed', result.error.flatten())`.
         *   Użyj `context.supabaseClient.from('user_profiles').update(result.data).eq('id', userId).select().single()` do aktualizacji profilu.
         *   Obsłuż błędy (np. `error` z Supabase, `data` jest `null` -> `404 Not Found`, jeśli profil nie istniałby do aktualizacji).
         *   Zwróć `createSuccessResponse(200, data)`.
 
 6.  **Współdzielone typy i pomocnicy**:
-    *   Upewnij się, że `UserProfileDto` i `UpdateUserProfileCommand` są poprawnie zdefiniowane w `src/app/shared/api/api.types.ts`.
+    *   Upewnij się, że `UserProfileDto` i `UpsertUserProfileCommand` są poprawnie zdefiniowane w `src/app/shared/api/api.types.ts`.
     *   Użyj `createSuccessResponse` i `createErrorResponse` z `supabase/functions/shared/api-helpers.ts`.
 
 7.  **Testowanie**:

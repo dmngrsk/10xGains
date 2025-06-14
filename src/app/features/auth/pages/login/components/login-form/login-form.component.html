@@ -1,0 +1,18 @@
+<form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+  <txg-email-input formControlName="email" data-cy="login-email-input"></txg-email-input>
+  <txg-password-input formControlName="password" data-cy="login-password-input"></txg-password-input>
+
+  @if (error(); as error) {
+    <div class="text-error text-md ml-1" data-cy="login-error-message">
+      {{ error }}
+    </div>
+  }
+
+  <button mat-flat-button type="submit" class="mt-4 h-12 text-base font-medium" [disabled]="loginForm.invalid || isLoading()" data-cy="login-sign-in-button">
+    @if (isLoading()) {
+      <span>Signing in...</span>
+    } @else {
+      <span>Sign In</span>
+    }
+  </button>
+</form>

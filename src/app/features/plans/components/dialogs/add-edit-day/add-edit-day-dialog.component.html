@@ -1,9 +1,9 @@
-<h2 mat-dialog-title data-cy="add-edit-day-dialog-title">{{ data.isEditMode ? 'Edit Day' : 'Add New Day' }}</h2>
-<mat-dialog-content class="!pt-4" data-cy="add-edit-day-dialog-content">
+<h2 mat-dialog-title data-cy="add-edit-plan-day-dialog-title">{{ data.isEditMode ? 'Edit Day' : 'Add New Day' }}</h2>
+<mat-dialog-content class="!pt-4" data-cy="add-edit-plan-day-dialog-content">
   <form [formGroup]="dayForm" id="dayDialogForm" (ngSubmit)="onSave()" class="flex flex-col gap-3">
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Name</mat-label>
-      <input matInput formControlName="name" data-cy="add-edit-day-dialog-name-input">
+      <input matInput formControlName="name" data-cy="add-edit-plan-day-dialog-name-input">
       @if (dayForm.get('name')?.hasError('required')) {
         <mat-error>{{ validationMessages.required }}</mat-error>
       }
@@ -16,11 +16,11 @@
   </form>
 
   <div class="mt-4 flex flex-col gap-2">
-    <button mat-flat-button type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full" data-cy="add-edit-day-dialog-save-button">
+    <button mat-flat-button type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full" data-cy="add-edit-plan-day-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Changes' : 'Add Day' }}</span>
     </button>
     @if (data.isEditMode) {
-      <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full" data-cy="add-edit-day-dialog-delete-button">
+      <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full" data-cy="add-edit-plan-day-dialog-delete-button">
         <span>Delete Day</span>
       </button>
     }

@@ -1,11 +1,11 @@
 <mat-card>
   <mat-card-header>
-    <mat-card-title class="!font-medium !text-[var(--mat-sys-primary)]">Account Settings</mat-card-title>
+    <mat-card-title class="!font-medium !text-primary">Account Settings</mat-card-title>
   </mat-card-header>
   <mat-card-content class="mt-7">
     <div class="flex flex-col space-y-2">
-      <button mat-raised-button (click)="onPasswordChanged()" data-cy="change-password-button">Change Password</button>
-      <button mat-raised-button (click)="onSignedOut()" data-cy="sign-out-button">Sign Out</button>
+      <button mat-raised-button (click)="onPasswordChanged()" data-cy="settings-change-password-button">Change Password</button>
+      <button mat-raised-button (click)="onSignedOut()" data-cy="settings-sign-out-button">Sign Out</button>
     </div>
   </mat-card-content>
 </mat-card>

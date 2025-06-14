@@ -1,3 +1,5 @@
+import { dataCy } from "./selectors";
+
 Cypress.Commands.add('login', login);
 Cypress.Commands.add('teardown', teardown);
 Cypress.Commands.add('navigateTo', navigateTo);
@@ -32,11 +34,11 @@ function teardown(): void {
 }
 
 function navigateTo(button: 'home' | 'plans' | 'history' | 'progress' | 'settings'): void {
-  cy.getBySel(`bottom-navigation-${button}`).click({ force: true });
+  cy.getBySel(`${dataCy.shared.navigation.bottom.prefix}${button}`).click({ force: true });
 }
 
 function navigateBack(): void {
-  cy.getBySel('main-layout-back-button').click({ force: true });
+  cy.getBySel(dataCy.shared.navigation.back).click({ force: true });
 }
 
 function getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>> {
@@ -57,6 +59,14 @@ export {};
 const isSmoke = () => Cypress.currentTestTags?.includes('@smoke') ?? false;
 const isStaging = () => Cypress.env('ENVIRONMENT') === 'development' || Cypress.env('ENVIRONMENT') === 'staging';
 
+const getProcessedTestTags = () => {
+  const tags = Cypress.currentTestTags ?? [];
+  return tags
+    .filter(tag => !tag.startsWith('@'))
+    .map(tag => tag.toLowerCase().replace(/-/g, ''))
+    .join('');
+};
+
 function loginAsCanaryUser(): void {
   const email = Cypress.env('CANARY_USER_EMAIL');
   const password = Cypress.env('CANARY_USER_PASSWORD');
@@ -73,20 +83,21 @@ function loginAsEphemeralUser(): void {
     throw new Error('Ephemeral users can only be created in staging environment');
   }
 
-  cy.task<{ userId: string; email: string; password: string }>('users:createEphemeral').then(({ userId, email, password }) => {
-    cy.wrap(userId).as('ephemeralUserId');
+  cy.task<{ userId: string; email: string; password: string }>('users:createEphemeral', { prefix: getProcessedTestTags() || 'test' })
+    .then(({ userId, email, password }) => {
+      cy.wrap(userId).as('ephemeralUserId');
 
-    fillLoginForm(email, password);
-  });
+      fillLoginForm(email, password);
+    });
 }
 
 function fillLoginForm(email: string, password: string): void {
   cy.visit('/auth/login');
 
-  cy.getBySel('email-input').type(email);
-  cy.getBySel('password-input').type(password);
-  cy.getBySel('login-button').click();
+  cy.getBySel(dataCy.auth.login.emailInput).type(email);
+  cy.getBySel(dataCy.auth.login.passwordInput).type(password);
+  cy.getBySel(dataCy.auth.login.signInButton).click();
 
   cy.url().should('include', '/home');
-  cy.getBySel('session-card').should('exist');
+  cy.getBySel(dataCy.home.sessionCard).should('exist');
 }

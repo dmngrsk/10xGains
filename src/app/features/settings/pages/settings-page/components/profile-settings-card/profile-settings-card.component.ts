@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { UpdateUserProfileCommand } from '@shared/api/api.types';
+import { UpsertUserProfileCommand } from '@shared/api/api.types';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { ProfileSettingsCardViewModel } from '../../../../models/settings-page.viewmodel';
 
@@ -26,7 +26,7 @@ export class ProfileSettingsCardComponent implements OnInit, OnChanges {
   private readonly fb = inject(FormBuilder);
 
   @Input() profile!: ProfileSettingsCardViewModel;
-  @Output() profileSaved = new EventEmitter<UpdateUserProfileCommand | null>();
+  @Output() profileSaved = new EventEmitter<UpsertUserProfileCommand | null>();
 
   profileForm!: FormGroup;
 

@@ -112,13 +112,18 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Feature Area | Scenario ID | Scenario Description | Priority | **Smoke Test** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Authentication** | AUTH-01 | A new user can successfully register and is automatically signed in. | Critical | No |
-| | AUTH-02 | A registered user can successfully sign in with valid credentials. | Critical | **Yes** |
-| | AUTH-03 | A user with invalid credentials is shown a specific error message. | High | No |
-| | AUTH-04 | An unauthenticated user attempting to access a protected route (e.g., `/home`) is redirected to `/auth/login`. | Critical | No |
-| | AUTH-05 | An authenticated user attempting to access an auth route (e.g., `/auth/login`) is redirected to `/home`. | High | No |
-| | AUTH-06 | An authenticated user can successfully sign out, and is redirected to `/auth/login`. | High | No |
-| | AUTH-07 | User data is isolated; User A cannot access User B's data via API or direct URL manipulation (RLS check). | Critical | No |
+| **Authentication** | AUTH-01 | A user can register and sign in when email verification is disabled. | Critical | No |
+| | AUTH-02 | A user sees a pending verification notice when email verification is enabled. | High | No |
+| | AUTH-03 | A user can confirm their account with an activation link. | Critical | No |
+| | AUTH-04 | A user can sign in with valid credentials. | Critical | **Yes** |
+| | AUTH-05 | A user cannot sign in with invalid credentials. | High | No |
+| | AUTH-06 | An unauthenticated user is redirected to the login page from a protected page. | Critical | No |
+| | AUTH-07 | A user can request a password reset. | High | No |
+| | AUTH-08 | A user can change their password via a reset link. | High | No |
+| | AUTH-09 | An authenticated user is redirected to the home page from the login page. | High | No |
+| | AUTH-10 | An authenticated user can sign out. | High | No |
+| | AUTH-11 | A user cannot access another user's data (RLS check). | Critical | No |
+| | AUTH-12 | A user is redirected to the login page when the session expires. | Critical | No
 | **Plan Management**| PLAN-01 | An authenticated user can create a new training plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
 | | PLAN-03 | In the plan editor, a user can add, edit and delete a new training day. | High | No |

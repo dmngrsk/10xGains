@@ -166,7 +166,7 @@ export class PlanEditPageFacade {
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
 
     const session$ = this.sessionService.createSession(planId);
-    const user$ = this.profileService.updateUserProfile(this.authService.currentUser()!.id, { active_training_plan_id: planId }).pipe(
+    const user$ = this.profileService.upsertUserProfile(this.authService.currentUser()!.id, { active_training_plan_id: planId }).pipe(
       tapIf(response => !!response?.data, response => this.internalUserProfile = response.data!),
       catchError(err => this.handleError<PlanServiceResponse<null>>(err))
     );

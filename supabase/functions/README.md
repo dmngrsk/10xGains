@@ -204,7 +204,7 @@ Creates or updates the profile information for the authenticated user (upsert be
 -   **Authorization**: Bearer token required. The `{id}` in the path MUST match the authenticated user's ID.
 -   **URL Path Parameter**:
     -   `id` (UUID): The ID of the user profile to update or create.
--   **Request Body**: `UpdateUserProfileCommand` (at least one of `first_name` or `active_training_plan_id` must be provided)
+-   **Request Body**: `UpsertUserProfileCommand` (at least one of `first_name` or `active_training_plan_id` must be provided)
     ```json
     {
       "first_name": "string (optional)",

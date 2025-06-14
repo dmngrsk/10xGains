@@ -1,0 +1,19 @@
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+  <txg-email-input formControlName="email" data-cy="register-email-input"></txg-email-input>
+  <txg-password-input label="Password" formControlName="password" data-cy="register-password-input"></txg-password-input>
+  <txg-password-input label="Confirm password" formControlName="confirmPassword" data-cy="register-confirm-password-input"></txg-password-input>
+
+  @if (error(); as error) {
+    <div class="text-error text-md ml-1">
+      {{ error }}
+    </div>
+  }
+
+  <button mat-flat-button type="submit" class="mt-4 h-12 text-base font-medium" data-cy="register-sign-up-button" [disabled]="registerForm.invalid || isLoading()">
+    @if (isLoading()) {
+      <span>Signing up...</span>
+    } @else {
+      <span>Sign Up</span>
+    }
+  </button>
+</form>

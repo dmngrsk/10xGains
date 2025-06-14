@@ -1,19 +1,19 @@
-<mat-card class="flex flex-col" data-cy="plan-card">
+<mat-card class="flex flex-col" data-cy="plan-list-card">
   <mat-card-header class="!mb-3">
-    <mat-card-title class="!font-bold !text-xl text-[var(--mat-sys-primary)]">{{ plan.name }}</mat-card-title>
+    <mat-card-title class="!font-bold !text-xl text-primary">{{ plan.name }}</mat-card-title>
     @if (plan.isActive) {
-      <mat-card-subtitle class="!text-sm !text-[var(--mat-sys-primary)]">Active Plan</mat-card-subtitle>
+      <mat-card-subtitle class="!text-sm !text-primary">Active Plan</mat-card-subtitle>
     }
   </mat-card-header>
 
   <mat-card-content>
     <div class="flex flex-col gap-3 mb-4">
       @if (plan.description) {
-        <p class="text-sm">{{ plan.description }}</p>
+        <p class="text-sm text-secondary">{{ plan.description }}</p>
       }
 
       @if (plan.createdAt) {
-        <p class="text-sm !text-gray-500">Created: {{ plan.createdAt | date:'MMM d, yyyy' }}</p>
+        <p class="text-sm text-secondary">Created: {{ plan.createdAt | date:'MMM d, yyyy' }}</p>
       }
     </div>
 
@@ -21,14 +21,14 @@
       <div class="space-y-4">
         @for (day of plan.days; track day.name ? day.name : $index; let dayIndex = $index) {
           <div>
-            <p class="text-lg text-[var(--mat-sys-primary)] mb-2">{{ day.name ? day.name : 'Day ' + (dayIndex + 1) }}</p>
+            <p class="text-lg text-primary mb-2">{{ day.name ? day.name : 'Day ' + (dayIndex + 1) }}</p>
 
             @if (day.description) {
-              <p class="text-sm !text-gray-500 !mt-2 !mb-2">{{ day.description }}</p>
+              <p class="text-sm !text-secondary !mt-2 !mb-2">{{ day.description }}</p>
             }
 
-            @if (day.exercises && day.exercises.length > 0) {
-              <div class="!mt-3">
+            <div class="!mt-3">
+              @if (day.exercises && day.exercises.length > 0) {
                 <ul class="list-disc list-inside text-sm">
                   @for (exercise of day.exercises; track exercise.exerciseName; let exIndex = $index) {
                     <li>
@@ -36,19 +36,19 @@
                     </li>
                   }
                 </ul>
-              </div>
-            } @else {
-              <p class="text-sm">No exercises specified for this day.</p>
-            }
+              } @else {
+                <p class="text-sm">No exercises specified for this day.</p>
+              }
+            </div>
           </div>
         }
       </div>
     } @else {
-      <p class="text-sm text-[var(--mat-sys-primary)]">No training days defined for this plan.</p>
+      <p class="text-sm">No training days defined for this plan.</p>
     }
   </mat-card-content>
   <mat-card-actions class="my-2">
-    <button mat-raised-button (click)="onPlanClicked()" class="w-full" data-cy="view-plan-button">
+    <button mat-raised-button (click)="onPlanClicked()" class="w-full" data-cy="plan-list-view-plan-button">
       View Plan
     </button>
   </mat-card-actions>
