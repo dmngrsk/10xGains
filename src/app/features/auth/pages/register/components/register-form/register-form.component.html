@@ -9,11 +9,11 @@
     </div>
   }
 
-  <button mat-flat-button type="submit" class="mt-4 h-12 text-base font-medium" data-cy="register-sign-up-button" [disabled]="registerForm.invalid || isLoading()">
+  <txg-loader-button class="mt-4" [isLoading]="isLoading()" [disabled]="registerForm.invalid" data-cy="register-sign-up-button">
     @if (isLoading()) {
       <span>Signing up...</span>
     } @else {
       <span>Sign Up</span>
     }
-  </button>
+  </txg-loader-button>
 </form>

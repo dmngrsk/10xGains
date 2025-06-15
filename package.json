@@ -9,7 +9,7 @@
     "start:staging": "ng serve --configuration=staging",
     "start:production": "ng serve --configuration=production",
     "build": "ng build",
-    "build:dev": "ng build --configuration=development",
+    "build:development": "ng build --configuration=development",
     "build:staging": "ng build --configuration=staging",
     "build:production": "ng build --configuration=production",
     "lint": "echo \"Running eslint...\" && eslint \"{src,cypress}/**/*.{ts,html}\" && echo \"Running deno lint...\" && deno lint supabase/functions/**/*.ts",

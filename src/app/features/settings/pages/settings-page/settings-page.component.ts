@@ -43,6 +43,12 @@ export class SettingsPageComponent implements OnInit {
   ngOnInit(): void {
     this.facade.loadInitialData();
     this.initialLoadFinished.set(true);
+
+    if (history.state?.action === 'changePassword') {
+      const { action: _, ...stateWithoutAction } = history.state;
+      history.replaceState(stateWithoutAction, '');
+      this.onPasswordChanged();
+    }
   }
 
   onProfileSaved(command: UpsertUserProfileCommand | null): void {

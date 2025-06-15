@@ -2,28 +2,31 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { ResetPasswordCommand } from '@shared/services/auth.service';
+import { LoaderButtonComponent } from '@shared/ui/components/loader-button/loader-button.component';
 import { EmailInputComponent } from '../../../../components/email-input/email-input.component';
 
 @Component({
-  selector: 'txg-forgot-password-form',
+  selector: 'txg-reset-password-form',
   standalone: true,
   imports: [
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
-    EmailInputComponent
+    EmailInputComponent,
+    LoaderButtonComponent
   ],
-  templateUrl: './forgot-password-form.component.html'
+  templateUrl: './reset-password-form.component.html'
 })
-export class ForgotPasswordFormComponent {
+export class ResetPasswordFormComponent {
   private fb = inject(FormBuilder);
 
-  @Output() formSubmitted = new EventEmitter<string>();
+  @Output() formSubmitted = new EventEmitter<ResetPasswordCommand>();
 
   isLoading = signal(false);
   error = signal<string | null>(null);
 
-  forgotPasswordForm: FormGroup = this.fb.group({
+  resetPasswordForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]]
   });
 
@@ -36,11 +39,11 @@ export class ForgotPasswordFormComponent {
   }
 
   onSubmit(): void {
-    if (this.forgotPasswordForm.invalid) {
-      this.forgotPasswordForm.markAllAsTouched();
+    if (this.resetPasswordForm.invalid) {
+      this.resetPasswordForm.markAllAsTouched();
       return;
     }
 
-    this.formSubmitted.emit(this.forgotPasswordForm.value.email);
+    this.formSubmitted.emit(this.resetPasswordForm.value);
   }
 }

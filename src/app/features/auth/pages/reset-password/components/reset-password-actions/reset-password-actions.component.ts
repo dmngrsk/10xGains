@@ -4,14 +4,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { RouterLink } from '@angular/router';
 
 @Component({
-  selector: 'txg-forgot-password-actions',
+  selector: 'txg-reset-password-actions',
   standalone: true,
   imports: [
     CommonModule,
     MatButtonModule,
     RouterLink
   ],
-  templateUrl: './forgot-password-actions.component.html'
+  templateUrl: './reset-password-actions.component.html'
 })
-export class ForgotPasswordActionsComponent {
+export class ResetPasswordActionsComponent {
 }

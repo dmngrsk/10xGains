@@ -32,15 +32,15 @@ export function dateRangeValidator(dateFromKey: string, dateToKey: string): Vali
 
     if (isInvalid) {
       dateFromErrors['dateRangeInvalid'] = true;
-      dateFromCtrl.setErrors(dateFromErrors);
+      dateFromCtrl.setErrors(dateFromErrors, { emitEvent: false });
     } else {
       // If the specific error exists, remove it
       if (dateFromErrors['dateRangeInvalid']) {
         delete dateFromErrors['dateRangeInvalid'];
         if (Object.keys(dateFromErrors).length === 0) {
-          dateFromCtrl.setErrors(null);
+          dateFromCtrl.setErrors(null, { emitEvent: false });
         } else {
-          dateFromCtrl.setErrors(dateFromErrors);
+          dateFromCtrl.setErrors(dateFromErrors, { emitEvent: false });
         }
       }
     }
@@ -51,9 +51,9 @@ export function dateRangeValidator(dateFromKey: string, dateToKey: string): Vali
       const dateToErrors = { ...dateToCtrl.errors };
       delete dateToErrors['dateRangeInvalid'];
       if (Object.keys(dateToErrors).length === 0) {
-        dateToCtrl.setErrors(null);
+        dateToCtrl.setErrors(null, { emitEvent: false });
       } else {
-        dateToCtrl.setErrors(dateToErrors);
+        dateToCtrl.setErrors(dateToErrors, { emitEvent: false });
       }
     }
 

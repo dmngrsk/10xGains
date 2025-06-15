@@ -5,7 +5,7 @@ export const authSelectors = {
     signInButton: 'login-sign-in-button',
     errorMessage: 'login-error-message',
     signUpButton: 'login-sign-up-button',
-    forgotPasswordButton: 'login-forgot-password-button',
+    resetPasswordButton: 'login-reset-password-button',
   },
   register: {
     emailInput: 'register-email-input',
@@ -14,9 +14,9 @@ export const authSelectors = {
     signUpButton: 'register-sign-up-button',
     successNotice: 'auth-layout-subtitle',
   },
-  forgotPassword: {
-    emailInput: 'forgot-password-email-input',
-    requestPasswordResetButton: 'forgot-password-request-password-reset-button',
+  resetPassword: {
+    emailInput: 'reset-password-email-input',
+    requestSignInLinkButton: 'reset-password-request-link-button',
     successNotice: 'auth-layout-subtitle',
   },
   changePassword: {

@@ -118,8 +118,8 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | AUTH-04 | A user can sign in with valid credentials. | Critical | **Yes** |
 | | AUTH-05 | A user cannot sign in with invalid credentials. | High | No |
 | | AUTH-06 | An unauthenticated user is redirected to the login page from a protected page. | Critical | No |
-| | AUTH-07 | A user can request a password reset. | High | No |
-| | AUTH-08 | A user can change their password via a reset link. | High | No |
+| | AUTH-07 | A user can request a magiclink to sign in. | High | No |
+| | AUTH-08 | A user can sign in via the magiclink, and is automatically moved to the password change section. | High | No |
 | | AUTH-09 | An authenticated user is redirected to the home page from the login page. | High | No |
 | | AUTH-10 | An authenticated user can sign out. | High | No |
 | | AUTH-11 | A user cannot access another user's data (RLS check). | Critical | No |

@@ -3,6 +3,7 @@ import { Component, EventEmitter, Output, inject, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormControl } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { RegisterCommand } from '@shared/services/auth.service';
+import { LoaderButtonComponent } from '@shared/ui/components/loader-button/loader-button.component';
 import { EmailInputComponent } from '../../../../components/email-input/email-input.component';
 import { PasswordInputComponent } from '../../../../components/password-input/password-input.component';
 import { passwordMatchValidator } from '../../../../utils/validators/password-match.validator';
@@ -16,7 +17,8 @@ import { passwordStrengthValidator } from '../../../../utils/validators/password
     ReactiveFormsModule,
     MatButtonModule,
     EmailInputComponent,
-    PasswordInputComponent
+    PasswordInputComponent,
+    LoaderButtonComponent
   ],
   templateUrl: './register-form.component.html'
 })

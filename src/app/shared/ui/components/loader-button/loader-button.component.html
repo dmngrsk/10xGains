@@ -1,0 +1,8 @@
+<button mat-flat-button class="w-full" [disabled]="isLoading || disabled">
+  <div class="flex items-center gap-2">
+    @if (isLoading) {
+      <mat-progress-spinner class="w-5 h-5" [diameter]="20" mode="indeterminate"></mat-progress-spinner>
+    }
+    <ng-content></ng-content>
+  </div>
+</button>

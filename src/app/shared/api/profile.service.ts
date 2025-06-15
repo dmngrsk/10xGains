@@ -30,6 +30,20 @@ export class ProfileService {
   }
 
   /**
+   * Creates a default, empty user profile for a given user ID.
+   * @param userId The unique identifier of the user whose profile is to be created.
+   * @returns An Observable emitting a `ProfileServiceResponse` containing the created `UserProfileDto`.
+   * Throws an error if the userId is not provided.
+   */
+  createDefaultUserProfile(userId: string): Observable<ProfileServiceResponse<UserProfileDto>> {
+    if (!userId) {
+      return throwError(() => new Error('User ID is required to create default user profile.'));
+    }
+
+    return this.upsertUserProfile(userId, { first_name: '' });
+  }
+
+  /**
    * Creates or updates the user profile for a given user ID.
    * @param userId The unique identifier of the user whose profile is to be updated.
    * @param command The command object containing the profile data to update.

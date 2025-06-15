@@ -5,33 +5,47 @@
 ### 1.1. Directory and File Structure
 - `src/app/features/auth/`
   - `auth.routes.ts` – routing configuration for the auth module
-  - `components/`
+  - `pages/`
     - `login/`
-      - `login.component.ts|html|scss`
+      - `login-page.component.ts|html|scss`
     - `register/`
-      - `register.component.ts|html|scss`
-    - `forgot-password/`
-      - `forgot-password.component.ts|html|scss`
+      - `register-page.component.ts|html|scss`
     - `reset-password/`
-      - `reset-password.component.ts|html|scss`
-    - `shared/`
-      - `auth-layout/`
-        - `auth-layout.component.ts|html|scss` – shared layout for authentication pages
-  - `services/`
-    - `auth.service.ts` – Supabase client integration and API call logic
-    - `auth.models.ts` – data interfaces (AuthRequest, AuthResponse, ErrorResponse)
-  - `guards/`
-    - `auth.guard.ts` – protects routes that require authentication
-    - `no-auth.guard.ts` – prevents authenticated users from accessing auth routes
+      - `reset-password-page.component.ts|html|scss`
+    - `callback/`
+      - `callback-page.component.ts` – handles Supabase auth redirects
+- `src/app/shared/ui/layouts`
+  - `auth-layout/`
+    - `auth-layout.component.ts|html|scss` – shared layout for authentication pages
 
 ### 1.2. Routing and Lazy Loading
 ```ts
-// auth.routes.ts
-export const AUTH_ROUTES: Route[] = [
-  { path: 'login', component: LoginComponent, canActivate: [NoAuthGuard] },
-  { path: 'register', component: RegisterComponent, canActivate: [NoAuthGuard] },
-  { path: 'forgot-password', component: ForgotPasswordComponent, canActivate: [NoAuthGuard] },
-  { path: 'reset-password/:token', component: ResetPasswordComponent, canActivate: [NoAuthGuard] },
+// src/app/features/auth/auth.routes.ts
+export const AUTH_ROUTES: Routes = [
+  {
+    path: 'callback',
+    loadComponent: () => import('./pages/callback/callback-page.component').then(c => c.CallbackPageComponent)
+  },
+  {
+    path: 'login',
+    loadComponent: () => import('./pages/login/login-page.component').then(c => c.LoginPageComponent),
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('./pages/register/register-page.component').then(c => c.RegisterPageComponent),
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: 'reset-password',
+    loadComponent: () => import('./pages/reset-password/reset-password-page.component').then(c => c.ResetPasswordPageComponent),
+    canActivate: [noAuthGuard]
+  },
+  {
+    path: '',
+    redirectTo: 'login',
+    pathMatch: 'full'
+  }
 ];
 
 // app.routes.ts
@@ -46,17 +60,17 @@ export const AUTH_ROUTES: Route[] = [
 - **AppLayoutComponent** (unchanged): used for protected areas of the application.
 - Utilize Tailwind CSS for responsive spacing and consistent margins.
 
-### 1.4. Components and Forms
-- **RegisterComponent**
-  - Fields: `email`, `password`, `confirmPassword`
-  - Reactive Forms with validators: `required`, `email`, `minLength(8)`, and a custom `passwordMatchValidator`
-- **LoginComponent**
+### 1.4. Pages and Forms
+- **LoginPageComponent**
   - Fields: `email`, `password`
   - Validators: `required`, `email`
-- **ForgotPasswordComponent**
+- **RegisterPageComponent**
+  - Fields: `email`, `password`, `confirmPassword`
+  - Reactive Forms with validators: `required`, `email`, `minLength(8)`, and a custom `passwordMatchValidator`
+- **ResetPasswordPageComponent**
   - Field: `email` with `required` and `email` validators
-- **ResetPasswordComponent**
-  - Fields: `newPassword`, `confirmPassword` with the same validators as the registration form
+- **CallbackPageComponent**
+  - No form. Handles auth callbacks from Supabase for actions like email verification and password resets. Redirects the user to the appropriate page after the action is complete.
 - Shared UI elements: `<mat-form-field>`, `<input matInput>`, and buttons disabled when the form is invalid.
 
 ### 1.5. Validation and Error Messages
@@ -67,41 +81,46 @@ export const AUTH_ROUTES: Route[] = [
 - Server errors (e.g., user already exists, invalid credentials) → display the Supabase error message or a unified notification.
 
 ### 1.6. User Scenarios
-1. **Registration**: User completes the form → `authService.register()` → on success show "Registration complete, please check your email." → redirect to `/auth/login`.
+1. **Registration**: User completes the form → `authService.register()` → The subsequent flow depends on the Supabase email provider configuration:
+   - **With Email Verification**: On success, the app shows "Registration initiated, please check your email for a verification link." Supabase sends an email. The user clicks the link and is redirected to `/auth/callback?type=register`. The callback handler creates a default user profile, shows a success snackbar, and redirects to `/auth/login`.
+   - **Without Email Verification**: The user is automatically logged in and redirected to the `/home` page. A default user profile is created in the background.
 2. **Login**: `authService.login()` → on success store session and token, then redirect to `/home`.
 3. **Logout**: `authService.logout()` → clear session → redirect to `/auth/login`.
 4. **Password Recovery**:
-   - Request reset: call `authService.requestPasswordRecovery()` on `/auth/forgot-password`, sending an email with the reset link.
-   - Reset password: on `/auth/reset-password/:token` call `authService.resetPassword(token, newPassword)`, show a success message, and redirect to login.
+   - Request reset: User provides email on `/auth/reset-password`. Call `authService.resetPassword()`, which sends a magic link.
+   - Reset password: User clicks the link, which logs them in and redirects to `/auth/callback?type=reset-password`. The callback handler redirects to the `/settings` page, where the user can securely update their password.
 
-## 2. Application Logic (Angular AuthService)
+## 2. Application Logic (Shared AuthService)
+
+The `AuthService` located at `@shared/services/auth.service.ts` will handle all interactions with the Supabase client for authentication.
 
 ### 2.1. Registration (Sign Up)
-- Call: `supabaseService.client.auth.signUp({ email, password })`
-- On success: redirect to `/auth/login` with a confirmation message.
+- Call: `supabase.auth.signUp({ email, password, options: { emailRedirectTo: '<your-app-url>/auth/callback?type=register' } })`
+- On success: Show a message prompting the user to check their email. The rest of the flow is handled by the callback page.
 
 ### 2.2. Login (Sign In)
-- Call: `supabaseService.client.auth.signInWithPassword({ email, password })`
+- Call: `supabase.auth.signInWithPassword({ email, password })`
 - On success: save session and token, redirect to `/home`.
 
 ### 2.3. Logout (Sign Out)
-- Call: `supabaseService.client.auth.signOut()`
+- Call: `supabase.auth.signOut()`
 - Clear the local session and redirect to `/auth/login`.
 
 ### 2.4. Forgot & Reset Password
-- Request: `supabaseService.client.auth.resetPasswordForEmail(email, { redirectTo: '<your-app-url>/auth/reset-password' })`
-- Reset: `supabaseService.client.auth.updateUser({ password: newPassword }, { token })`
-- Handle notifications via snack bars and inline form messages.
+- Request: `supabase.auth.resetPasswordForEmail(email, { redirectTo: '<your-app-url>/auth/callback?type=reset-password' })`
+- Reset: The user is redirected to a protected `settings` page to update their password after clicking the magic link. The `updateUser` logic will be handled on that page, not directly in the auth feature.
 
 ### 2.5. Error Handling and Validation
 - Client-side (Reactive Forms) validators: `required`, `email`, `minLength`, `passwordMatch`.
-- AuthService catches and maps Supabase errors into defined `ErrorResponse` types.
+- `AuthService` catches and maps Supabase errors into defined `ErrorResponse` types.
 - Components display error or success messages using snack bars and inline form feedback.
 
 ### 2.6. Guards and Session Management
-- **AuthGuard**: blocks unauthenticated access to protected routes by checking for an active session via `supabaseService.client.auth.getSession()`.
-- **NoAuthGuard**: prevents authenticated users from accessing `auth/*` routes, redirecting them to `/home`.
+- **AuthGuard**: blocks unauthenticated access to protected routes by checking for an active session. Located at `@shared/utils/guards/auth.guard.ts`.
+- **NoAuthGuard**: prevents authenticated users from accessing `/auth/*` routes, redirecting them to `/home`. Located at `@shared/utils/guards/no-auth.guard.ts`.
 
 ### 2.7. Navigation After Auth Events
 - After successful login: redirect to `/home`.
 - After logout: redirect to `/auth/login`.
+- After successful registration (and email verification): redirect to `/auth/login`.
+- After password reset: redirect to `/settings`.

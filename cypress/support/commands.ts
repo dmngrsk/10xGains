@@ -5,6 +5,7 @@ Cypress.Commands.add('teardown', teardown);
 Cypress.Commands.add('navigateTo', navigateTo);
 Cypress.Commands.add('navigateBack', navigateBack);
 Cypress.Commands.add('getBySel', getBySel);
+Cypress.Commands.add('getMatSnackBar', getMatSnackBar);
 Cypress.Commands.add('longPress', { prevSubject: 'element' }, (s, d) => longPress(s, d as unknown as number));
 
 function login({ forceCanary }: { forceCanary?: boolean } = {}): void {
@@ -43,6 +44,10 @@ function navigateBack(): void {
 
 function getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>> {
   return cy.get(`[data-cy=${selector}]`, options);
+}
+
+function getMatSnackBar(): Cypress.Chainable<JQuery<HTMLElement>> {
+  return cy.get('simple-snack-bar');
 }
 
 function longPress(element: JQuery<HTMLElement>, duration: number = 500): Cypress.Chainable<JQuery<HTMLElement>> {

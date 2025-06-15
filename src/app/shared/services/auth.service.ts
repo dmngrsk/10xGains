@@ -25,11 +25,13 @@ export type LogoutResponse = AuthResponse;
 export type RegisterCommand = AuthCommand;
 export type RegisterResponse = AuthResponse & { userId?: string; emailVerified?: boolean; };
 
-export type ResetPasswordCommand = { email: string; };
+export type ResetPasswordCommand = Pick<AuthCommand, 'email'>;
 export type ResetPasswordResponse = AuthResponse;
 
-export type ChangePasswordCommand = { password: string; };
+export type ChangePasswordCommand = Pick<AuthCommand, 'password'>;
 export type ChangePasswordResponse = AuthResponse;
+
+export type AuthenticationStatusResponse = { isAuthenticated: boolean; userId?: string; };
 
 /**
  * Provides authentication-related functionalities by wrapping the Supabase client.
@@ -38,7 +40,7 @@ export type ChangePasswordResponse = AuthResponse;
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly supabase = inject(SupabaseService).client;
+  readonly supabase = inject(SupabaseService).client;
   private readonly profileService = inject(ProfileService);
 
   /**
@@ -97,10 +99,10 @@ export class AuthService {
    * As a side effect, a user profile is created for the freshly registered user in the `public.user_profiles` table if the email is verified.
    */
   register(command: RegisterCommand): Observable<RegisterResponse> {
-    const options = {}; // { emailRedirectTo: `${window.location.origin}/auth/verify-email` };
+    const options = { emailRedirectTo: `${window.location.origin}/auth/callback?type=register` };
     return from(this.supabase.auth.signUp({ ...command, options })).pipe(
       this.toRegisterResponse(),
-      tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.upsertUserProfile(r.userId!, { first_name: '' }))
+      tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.createDefaultUserProfile(r.userId!))
     );
   }
 
@@ -110,7 +112,8 @@ export class AuthService {
    * @returns An `Observable<ResetPasswordResponse>` that emits an object indicating success or failure.
    */
   resetPassword(command: ResetPasswordCommand): Observable<ResetPasswordResponse> {
-    return from(this.supabase.auth.resetPasswordForEmail(command.email)).pipe(this.toAuthResponse());
+    const options = { redirectTo: `${window.location.origin}/auth/callback?type=reset-password` };
+    return from(this.supabase.auth.resetPasswordForEmail(command.email, options )).pipe(this.toAuthResponse());
   }
 
   /**
@@ -126,8 +129,8 @@ export class AuthService {
    * Checks if a user is currently authenticated.
    * @returns An `Observable<boolean>` that emits `true` if a user is authenticated, otherwise `false`.
    */
-  isAuthenticated(): Observable<boolean> {
-    return from(this.supabase.auth.getUser()).pipe(map(({ data }) => !!data.user));
+  isAuthenticated(): Observable<AuthenticationStatusResponse> {
+    return from(this.supabase.auth.getUser()).pipe(map(({ data }) => ({ isAuthenticated: !!data.user, userId: data.user?.id })));
   }
 
   private mapSupabaseResponse<T, R extends AuthResponse>(mapper: (value: T) => R): OperatorFunction<T, R> {

@@ -3,6 +3,10 @@ import { noAuthGuard } from '@shared/utils/guards/no-auth.guard';
 
 export const AUTH_ROUTES: Routes = [
   {
+    path: 'callback',
+    loadComponent: () => import('./pages/callback/callback.component').then(c => c.CallbackComponent)
+  },
+  {
     path: 'login',
     loadComponent: () => import('./pages/login/login-page.component').then(c => c.LoginPageComponent),
     canActivate: [noAuthGuard]
@@ -13,18 +17,8 @@ export const AUTH_ROUTES: Routes = [
     canActivate: [noAuthGuard]
   },
   {
-    path: 'forgot-password',
-    loadComponent: () => import('./pages/forgot-password/forgot-password-page.component').then(c => c.ForgotPasswordPageComponent),
-    canActivate: [noAuthGuard]
-  },
-  {
-    path: 'change-password',
-    loadComponent: () => import('./pages/change-password/change-password-page.component').then(c => c.ChangePasswordPageComponent),
-    canActivate: [noAuthGuard]
-  },
-  {
-    path: 'callback',
-    loadComponent: () => import('./pages/callback/callback-page.component').then(c => c.CallbackPageComponent),
+    path: 'reset-password',
+    loadComponent: () => import('./pages/reset-password/reset-password-page.component').then(c => c.ResetPasswordPageComponent),
     canActivate: [noAuthGuard]
   },
   {

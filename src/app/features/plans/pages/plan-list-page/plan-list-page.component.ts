@@ -78,15 +78,15 @@ export class PlanListPageComponent implements OnInit, AfterViewInit, OnDestroy {
         map(result => result.value as CreateTrainingPlanCommand),
         switchMap(createCmd => this.facade.createPlan(createCmd)),
         tapIf(response => !!response.data && !!response.data.id, response => {
-          this.snackBar.open('Nowy plan został utworzony.', 'OK', { duration: 3000 });
+          this.snackBar.open('Plan created.', 'Close', { duration: 3000 });
           this.router.navigate(['plans', response.data!.id]);
         }),
         tapIf(response => !!response.error || !response.data, response => {
-          const errorMessage = response.error || 'Nie udało się utworzyć nowego planu.';
-          this.snackBar.open(errorMessage, 'Zamknij', { duration: 5000 });
+          const errorMessage = response.error || 'Failed to create new plan.';
+          this.snackBar.open(errorMessage, 'Close', { duration: 5000 });
         }),
         catchError((err: Error) => {
-          this.snackBar.open(err.message || 'Wystąpił krytyczny błąd podczas operacji planu.', 'Zamknij', { duration: 5000 });
+          this.snackBar.open(err.message || 'Critical error occurred while creating a plan.', 'Close', { duration: 5000 });
           return EMPTY;
         })
       )
