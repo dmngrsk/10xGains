@@ -1,10 +1,10 @@
 <div class="flex flex-col items-center justify-center text-center p-8 w-full h-full">
   @if (iconName) {
-    <mat-icon [class.!text-red-600]="isError" class="!text-5xl !w-14 !h-14 mb-4">{{ iconName }}</mat-icon>
+    <mat-icon [ngClass]="isError ? '!text-error' : '!text-primary'" class="!text-5xl !w-14 !h-14 mb-4">{{ iconName }}</mat-icon>
   }
-  <p [class.text-red-600]="isError" class="text-xl font-medium text-[var(--mat-sys-primary)] mb-4">{{ titleText }}</p>
+  <p [ngClass]="isError ? 'text-error' : 'text-primary'" class="text-xl font-medium mb-4">{{ titleText }}</p>
   @if (descriptionText) {
-    <p [class.text-red-600]="isError" class="text-gray-500 mb-4">{{ descriptionText }}</p>
+    <p [ngClass]="isError ? 'text-error' : 'text-secondary'" class="mb-4">{{ descriptionText }}</p>
   }
   @if (buttonText) {
     <button mat-flat-button (click)="onButtonClicked()" class="mt-2">

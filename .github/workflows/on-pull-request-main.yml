@@ -21,8 +21,8 @@ jobs:
       build_sha: ${{ github.event.pull_request.head.sha }}
     secrets: inherit
 
-  cd-staging:
-    name: CD Staging
+  cd:
+    name: CD
     uses: ./.github/workflows/reusable-cd.yml
     needs: [ci]
     with:
@@ -61,7 +61,49 @@ jobs:
 
             commentBody += '\n### Summary\n';
             commentBody += ciJobs.every(job => job.conclusion === 'success')
-              ? '\n✅ **All checks passed successfully!**'
+              ? '\n✅ **All checks passed successfully!**\n\nDeployment to staging is awaiting an approval. Review and approve the deployment below.'
+              : '\n❌ **Some checks have not passed. Please review the details above.**';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+
+  cd-comment:
+    name: CD / Add status comment
+    runs-on: ubuntu-latest
+    if: always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'pull_request'
+    needs: [cd]
+    steps:
+      - name: Add a detailed comment about the CD job results
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const { data: { jobs } } = await github.rest.actions.listJobsForWorkflowRun({ owner, repo, run_id: context.runId });
+
+            const cdJobPrefix = 'CD / ';
+            const cdCurrentJobName = 'CD / Add status comment';
+            const cdDeferJobName = 'CD / Defer deployment';
+            const cdJobs = jobs.filter(job => job.name.includes(cdJobPrefix) && job.name !== cdCurrentJobName && job.name !== cdDeferJobName);
+
+            let commentBody = '### CD Job Results\n\n';
+            commentBody += '| Job | Status | Details |\n';
+            commentBody += '|-----|--------|---------|\n';
+
+            for (const job of cdJobs) {
+              const jobName = job.name.replace(cdJobPrefix, '');
+              const jobStatus = `**${job.conclusion === 'success' ? '✅' : job.conclusion === 'failure' ? '❌' : '⚠️'} ${job.conclusion.toUpperCase()}**`;
+              const jobDetails = `[View Details](${job.html_url})`;
+              commentBody += `| ${jobName} | ${jobStatus} | ${jobDetails} |\n`;
+            }
+
+            commentBody += '\n### Summary\n';
+            commentBody += cdJobs.every(job => job.conclusion === 'success')
+              ? '\n✅ **All checks passed successfully!**\n\nRefer to the staging environment for the latest changes.'
               : '\n❌ **Some checks have not passed. Please review the details above.**';
 
             github.rest.issues.createComment({

@@ -1,0 +1,8 @@
+<txg-auth-layout [subtitle]="!isRegistered() ? 'Create your account' : 'Registration successful! Check your email for a verification link.'">
+  @if (!isRegistered()) {
+    <txg-register-form #registerForm authContent (formSubmitted)="onFormSubmitted($event)"></txg-register-form>
+  }
+  @if (!isRegistered()) {
+    <txg-register-actions authActions></txg-register-actions>
+  }
+</txg-auth-layout>

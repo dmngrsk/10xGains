@@ -18,15 +18,15 @@
       @if (activeSession(); as session) {
         <div class="p-4">
           <div class="mb-4">
-            <p class="text-2xl text-[var(--mat-sys-primary)] font-medium">{{ greetingText }}</p>
-            <p class="text-sm mt-2 text-gray-500">This is your upcoming workout:</p>
+            <p class="text-2xl text-primary font-medium">{{ greetingText }}</p>
+            <p class="text-sm mt-2 text-secondary">This is your upcoming workout:</p>
           </div>
 
           <txg-session-card
             [sessionData]="session"
             (sessionNavigated)="onSessionNavigated($event)"
             (sessionAbandoned)="onSessionAbandoned($event)"
-            data-cy="session-card">
+            data-cy="home-session-card">
           </txg-session-card>
         </div>
       } @else {

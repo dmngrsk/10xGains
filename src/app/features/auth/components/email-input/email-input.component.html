@@ -1,0 +1,14 @@
+<mat-form-field appearance="outline" class="w-full">
+  <mat-label>Email</mat-label>
+  <input matInput type="email" placeholder="Your email address" [value]="value" [disabled]="isDisabled" (input)="onValueChange($event)" (blur)="onTouched()">
+</mat-form-field>
+@if (formControl.hasError('required') && formControl.touched) {
+  <mat-error>
+    {{ validationMessages.required }}
+  </mat-error>
+}
+@if (formControl.hasError('email') && formControl.touched) {
+  <mat-error>
+    {{ validationMessages.email }}
+  </mat-error>
+}

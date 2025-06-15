@@ -50,7 +50,7 @@ export class SessionCardComponent {
 
     switch (this.sessionData.status) {
       case 'PENDING': {
-        return displayDate;
+        return '';
       }
 
       case 'IN_PROGRESS': {

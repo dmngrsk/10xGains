@@ -103,6 +103,9 @@
               "buildTarget": "10x-gains:build:staging"
             },
             "development": {
+              "allowedHosts": [
+                ".ngrok-free.app"
+              ],
               "buildTarget": "10x-gains:build:development"
             }
           },

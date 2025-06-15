@@ -1,12 +1,12 @@
 <mat-card>
   <mat-card-header>
-    <mat-card-title class="!font-medium !text-[var(--mat-sys-primary)]">Profile Settings</mat-card-title>
+    <mat-card-title class="!font-medium !text-primary">Profile Settings</mat-card-title>
   </mat-card-header>
   <mat-card-content class="mt-8">
     <form [formGroup]="profileForm">
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Your name</mat-label>
-        <input matInput formControlName="firstName" required minlength="2" maxlength="50">
+        <input matInput formControlName="firstName" required minlength="2" maxlength="50" data-cy="settings-profile-name-input">
         @if (profileForm.get('firstName')?.hasError('required')) {
           <mat-error>
             {{ validationMessages.required }}
@@ -26,18 +26,22 @@
 
       <mat-form-field appearance="outline" class="w-full mt-4">
         <mat-label>Email</mat-label>
-        <input matInput formControlName="email" readonly>
+        <input matInput formControlName="email" readonly data-cy="settings-profile-email-input">
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="w-full mt-4">
-        <mat-label>AI suggestions remaining</mat-label>
-        <input matInput formControlName="aiSuggestionsRemaining" readonly>
-      </mat-form-field>
+      <!-- TODO: Show and possibly adjust after AI suggestions are implemented -->
+      @if (false) {
+        <mat-form-field appearance="outline" class="w-full mt-4">
+          <mat-label>AI suggestions remaining</mat-label>
+          <input matInput formControlName="aiSuggestionsRemaining" readonly>
+        </mat-form-field>
+      }
 
     </form>
   </mat-card-content>
   <mat-card-actions class="mb-2">
-    <button class="w-full" mat-flat-button color="primary" type="submit" [disabled]="profileForm.invalid || profileForm.pristine" (click)="onProfileSaved()">
+    <button class="w-full" mat-flat-button color="primary" type="submit" data-cy="settings-profile-save-button"
+      [disabled]="profileForm.invalid || profileForm.pristine" (click)="onProfileSaved()">
       Save Settings
     </button>
   </mat-card-actions>

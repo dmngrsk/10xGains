@@ -1,8 +1,8 @@
 <mat-card class="flex flex-col">
   <mat-card-header>
-    <mat-card-title class="!text-xl !font-medium text-[var(--mat-sys-primary)]">{{ sessionData.title }}</mat-card-title>
+    <mat-card-title class="!text-xl !font-medium text-primary">{{ sessionData.title }}</mat-card-title>
     @if (sessionDateTimeText) {
-      <mat-card-subtitle class="!text-sm !text-[var(--mat-sys-primary)]">
+      <mat-card-subtitle class="!text-sm !font-normal !text-secondary">
         {{ sessionDateTimeText }}
       </mat-card-subtitle>
     }
@@ -15,14 +15,16 @@
         }
       </ul>
     } @else {
-      <p class="text-sm text-gray-500">No exercises defined for this session.</p>
+      <p class="text-sm">No exercises defined for this session.</p>
     }
   </mat-card-content>
   @if (buttonText) {
     <mat-card-actions class="mt-auto mb-2">
       <div class="flex flex-col gap-2 w-full">
         @if (isAbandonableSession) {
-          <p class="ml-2 mb-2 text-sm text-gray-500">Did you complete your workout? If you didn't, you can abandon this session and start a new one.</p>
+          <p class="mx-2 mb-4 text-sm text-secondary">
+            Did you complete your workout? If not, you can abandon this session and start a new one.
+          </p>
           <button mat-flat-button (click)="onSessionAbandoned()" class="w-full">
             Abandon Session
           </button>

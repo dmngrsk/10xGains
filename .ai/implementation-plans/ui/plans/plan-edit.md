@@ -183,7 +183,7 @@ Dialogi (Standalone Components, w osobnym katalogu ./dialogs):
 
 ## 5. Typy
 Główne typy DTO pochodzą z `src/app/shared/api/api.types.ts`:
-- `UserProfileDto`, `UpdateUserProfileCommand`
+- `UserProfileDto`, `UpsertUserProfileCommand`
 - `TrainingPlanDto`, `CreateTrainingPlanCommand`, `UpdateTrainingPlanCommand`
 - `TrainingPlanDayDto`, `CreateTrainingPlanDayCommand`, `UpdateTrainingPlanDayCommand`, `ReorderTrainingPlanDayCommand`
 - `ExerciseDto`, `CreateExerciseCommand`, `UpdateExerciseCommand`

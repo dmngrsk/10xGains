@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { PasswordInputComponent } from '@features/auth/components/password-input/password-input.component';
+import { passwordMatchValidator } from '@features/auth/utils/validators/password-match.validator';
+import { passwordStrengthValidator } from '@features/auth/utils/validators/password-strength.validator';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 @Component({
@@ -14,9 +15,8 @@ import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
     CommonModule,
     ReactiveFormsModule,
     MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule
+    MatButtonModule,
+    PasswordInputComponent
   ],
   templateUrl: './change-password-dialog.component.html'
 })
@@ -32,9 +32,9 @@ export class ChangePasswordDialogComponent {
 
   constructor() {
     this.changePasswordForm = this.fb.group({
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
-      confirmNewPassword: ['', [Validators.required, Validators.minLength(8)]]
-    }, { validators: passwordsMatchValidator });
+      newPassword: ['', [Validators.required, passwordStrengthValidator()]],
+      confirmNewPassword: ['', [Validators.required]]
+    }, { validators: passwordMatchValidator('newPassword', 'confirmNewPassword') });
   }
 
   onPasswordChanged(): void {
@@ -43,26 +43,4 @@ export class ChangePasswordDialogComponent {
       this.dialogRef.close(password);
     }
   }
-}
-
-// TODO: Move to shared, reuse in the auth module (registration, password reset, etc.)
-export function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
-  const newPassword = control.get('newPassword');
-  const confirmNewPassword = control.get('confirmNewPassword');
-
-  if (!newPassword || !confirmNewPassword) {
-    return null;
-  }
-
-  if (confirmNewPassword.hasError('passwordsMismatch')) {
-    const errors = { ...confirmNewPassword.errors };
-    delete errors['passwordsMismatch'];
-    confirmNewPassword.setErrors(Object.keys(errors).length > 0 ? errors : null);
-  }
-
-  if (newPassword.value !== confirmNewPassword.value) {
-    confirmNewPassword.setErrors({ ...confirmNewPassword.errors, passwordsMismatch: true });
-  }
-
-  return null;
 }

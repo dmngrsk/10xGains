@@ -14,8 +14,8 @@ if (supabaseUrl && supabaseKey) {
 }
 
 export const tasks = {
-  async 'users:createEphemeral'(): Promise<{ userId: string; email: string; password: string }> {
-    const email = generateTestEmail();
+  async 'users:createEphemeral'({ prefix }: { prefix: string }): Promise<{ userId: string; email: string; password: string }> {
+    const email = generateTestEmail(prefix);
     const password = generateTestPassword();
 
     const { data: createData, error: createError } = await supabase!.auth.admin.createUser({ email, password, email_confirm: true });
@@ -73,7 +73,7 @@ export const tasks = {
   }
 };
 
-function generateTestEmail(): string {
+function generateTestEmail(prefix: string): string {
   const timestamp = new Date();
   const pad = (n: number, length: number = 2) => n.toString().padStart(length, '0');
 
@@ -85,10 +85,9 @@ function generateTestEmail(): string {
     pad(timestamp.getSeconds()) +
     pad(timestamp.getMilliseconds(), 3);
 
-  const random = Math.floor(Math.random() * 10000);
-  return `test-${formattedDate}-rand${pad(random, 4)}@10xgains.com`;
+  return `${prefix}-${formattedDate}@10xgains.com`;
 }
 
 function generateTestPassword(): string {
-  return Math.random().toString(36).substring(2, 15);
+  return Math.random().toString(36).substring(2, 15) + 'Aa1!';
 }

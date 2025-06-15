@@ -1,11 +1,11 @@
-<h2 mat-dialog-title data-cy="add-edit-set-dialog-title">{{ data.isEditMode ? 'Edit Set' : 'Add Set' }}</h2>
+<h2 mat-dialog-title data-cy="add-edit-plan-set-dialog-title">{{ data.isEditMode ? 'Edit Set' : 'Add Set' }}</h2>
 
-<mat-dialog-content class="!pt-4" data-cy="add-edit-set-dialog-content">
+<mat-dialog-content class="!pt-4" data-cy="add-edit-plan-set-dialog-content">
   <form [formGroup]="setForm" id="setForm">
     <div class="flex flex-col gap-4">
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Reps</mat-label>
-        <input matInput type="text" formControlName="reps" placeholder="Reps" data-cy="add-edit-set-dialog-reps-input">
+        <input matInput type="text" formControlName="reps" placeholder="Reps" data-cy="add-edit-plan-set-dialog-reps-input">
         @if (setForm.get('reps')?.hasError('required')) {
           <mat-error>{{ validationMessages.required }}</mat-error>
         }
@@ -19,7 +19,7 @@
 
       <mat-form-field appearance="outline" class="w-full">
         <mat-label>Weight</mat-label>
-        <input matInput type="text" formControlName="weight" placeholder="Weight" data-cy="add-edit-set-dialog-weight-input">
+        <input matInput type="text" formControlName="weight" placeholder="Weight" data-cy="add-edit-plan-set-dialog-weight-input">
         <span matTextSuffix>kg</span>
         @if (setForm.get('weight')?.hasError('required')) {
           <mat-error>{{ validationMessages.required }}</mat-error>
@@ -34,7 +34,7 @@
     </div>
   </form>
   <div class="flex flex-col gap-2 mt-6">
-    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid" class="w-full" data-cy="add-edit-set-dialog-save-button">
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid" class="w-full" data-cy="add-edit-plan-set-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Set' : 'Add Set' }}</span>
     </button>
     @if (data.isEditMode) {

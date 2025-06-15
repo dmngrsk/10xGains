@@ -1,13 +1,13 @@
 @if (plan) {
   <div class="flex flex-col gap-4 mb-6">
-    <p class="text-xl font-bold text-[var(--mat-sys-primary)]">{{ plan.name }}</p>
+    <p class="text-xl font-bold text-primary">{{ plan.name }}</p>
 
     @if (plan.description) {
-      <p>{{ plan.description }}</p>
+      <p class="text-sm text-secondary">{{ plan.description }}</p>
     }
 
     @if (sessionCount > 0) {
-      <p class="font-semibold text-[var(--mat-sys-primary)]" data-cy="plan-metadata-read-only-notice">
+      <p class="font-semibold text-primary" data-cy="plan-metadata-read-only-notice">
         NOTE: This training plan has been used in {{ sessionCount }} training {{ sessionCount === 1 ? 'session' : 'sessions' }}. It cannot be edited.
       </p>
     }

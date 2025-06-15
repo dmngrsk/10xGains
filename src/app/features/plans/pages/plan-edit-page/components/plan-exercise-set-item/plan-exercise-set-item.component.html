@@ -1,18 +1,18 @@
-<mat-card class="min-h-12 mb-2 hover:bg-gray-50 transition-colors duration-150">
+<mat-card class="min-h-12 mb-2 transition-colors duration-150">
   <mat-card-content>
     <div class="flex min-h-12 items-center justify-between">
       @if (!isReadOnly) {
-        <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-gray-400 hover:text-gray-600">
+        <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-outline">
           <button mat-icon-button>
             <mat-icon>drag_indicator</mat-icon>
             </button>
         </div>
       }
       <div [class.pl-6]="isReadOnly" class="set-details flex-grow" data-cy="plan-exercise-set-details">
-        <span class="font-medium text-gray-700">{{ set.expectedReps }}</span>
-        <span class="text-gray-500"> x </span>
-        <span class="font-medium text-gray-700">{{ set.expectedWeight }}</span>
-        <span class="text-gray-500 ml-1">kg</span>
+        <span class="font-medium">{{ set.expectedReps }}</span>
+        <span class="text-secondary"> x </span>
+        <span class="font-medium">{{ set.expectedWeight }}</span>
+        <span class="text-secondary ml-1">kg</span>
       </div>
 
       @if (!isReadOnly) {

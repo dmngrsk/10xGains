@@ -1,4 +1,4 @@
-<h3 class="text-xl text-[var(--mat-sys-primary)] font-semibold mb-4">Training Days</h3>
+<h3 class="text-xl text-primary font-semibold mb-4">Training Days</h3>
 
 @if (days.length > 0) {
   <mat-accordion multi="true" cdkDropList [cdkDropListData]="days" [cdkDropListDisabled]="isReadOnly"
@@ -28,5 +28,5 @@
     </div>
   </mat-accordion>
 } @else {
-  <p class="text-gray-500 py-4">No days defined for this plan. Add the first one!</p>
+  <p class="py-4">No days defined for this plan. Add the first one!</p>
 }

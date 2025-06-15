@@ -2,7 +2,7 @@
   <button mat-raised-button txgLongPress
     [attr.data-cy]="'set-bubble'"
     [attr.aria-label]="'Set ' + currentSet.status.toLowerCase()"
-    [class.completed]="currentSet.status === 'COMPLETED' || currentSet.status === 'FAILED'"
+    [ngClass]="currentSet.status === 'COMPLETED' || currentSet.status === 'FAILED' ? '!bg-primary !text-on-primary' : ''"
     [disabled]="isReadOnly"
     (txgClick)="onSetClicked()"
     (txgLongPress)="onSetLongPressed()">

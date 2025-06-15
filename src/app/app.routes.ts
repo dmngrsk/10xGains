@@ -1,12 +1,10 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@shared/utils/guards/auth.guard';
-import { noAuthGuard } from '@shared/utils/guards/no-auth.guard';
 
 export const routes: Routes = [
   {
     path: 'auth',
-    loadChildren: () => import('@features/auth/auth.routes').then(m => m.AUTH_ROUTES),
-    canActivate: [noAuthGuard]
+    loadChildren: () => import('@features/auth/auth.routes').then(m => m.AUTH_ROUTES)
   },
   {
     path: 'history',

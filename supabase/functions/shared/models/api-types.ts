@@ -23,7 +23,7 @@ import type { Database } from './database-types.ts';
 // 1. User Profile DTO and Command
 export type UserProfileDto = Database["public"]["Tables"]["user_profiles"]["Row"];
 
-export type UpdateUserProfileCommand = Partial<Pick<UserProfileDto, "first_name" | "active_training_plan_id">>;
+export type UpsertUserProfileCommand = Partial<Pick<UserProfileDto, "first_name" | "active_training_plan_id">>;
 
 // 2. Training Plan DTO and Commands
 export type TrainingPlanDto = Database["public"]["Tables"]["training_plans"]["Row"] & {

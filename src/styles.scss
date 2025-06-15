@@ -4,7 +4,34 @@
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 
-.mat-app-background { background: var(--mat-sys-surface); }
+/*
+ * Dynamically generate Material Design color system variables.
+ * See: https://m3.material.io/styles/color/roles
+ * See: https://material.angular.dev/guide/system-variables
+ *
+ * IMPORTANT: The @apply directive might not work in TailwindCSS v4. Consider downgrading to v3.
+ * See: https://github.com/tailwindlabs/tailwindcss/discussions/16429
+ */
+$material-color-role-tokens: (
+  primary, on-primary, primary-container, on-primary-container,
+  surface, on-surface, surface-variant, on-surface-variant,
+  error, on-error, error-container, on-error-container,
+  outline, outline-variant,
+  secondary, on-secondary, secondary-container, on-secondary-container,
+  tertiary, on-tertiary, tertiary-container, on-tertiary-container,
+);
+
+:root {
+  @each $token in $material-color-role-tokens {
+    --color-#{$token}: var(--mat-sys-#{$token});
+  }
+}
+
+@theme {
+  @each $token in $material-color-role-tokens {
+    --color-#{$token}: var(--mat-sys-#{$token});
+  }
+}
 
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
 .mdc-notched-outline__notch { border-right: none; }

@@ -4,12 +4,12 @@
       <mat-card-title class="!text-lg !font-semibold">
         {{ exercise.exerciseName }}
       </mat-card-title>
-      <mat-card-subtitle class="!text-sm !font-normal">
+      <mat-card-subtitle class="!text-sm !font-normal !text-secondary">
         {{ exerciseInfoText }}
       </mat-card-subtitle>
     </div>
     @if (areAllSetsCompleted) {
-      <span class="text-[var(--mat-sys-primary)]">
+      <span class="text-primary">
         <mat-icon>check</mat-icon>
       </span>
     }

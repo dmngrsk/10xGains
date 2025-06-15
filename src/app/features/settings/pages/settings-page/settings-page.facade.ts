@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, finalize, map, switchMap, tap, first, of, from } from 'rxjs';
-import { UpdateUserProfileCommand } from '@shared/api/api.types';
+import { UpsertUserProfileCommand } from '@shared/api/api.types';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { SettingsPageViewModel } from '../../models/settings-page.viewmodel';
@@ -65,11 +65,11 @@ export class SettingsPageFacade {
     ).subscribe();
   }
 
-  saveProfile(command: UpdateUserProfileCommand): Observable<boolean> {
+  saveProfile(command: UpsertUserProfileCommand): Observable<boolean> {
     const currentUser = this.authService.currentUser();
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
 
-    return this.profileService.updateUserProfile(currentUser!.id, command).pipe(
+    return this.profileService.upsertUserProfile(currentUser!.id, command).pipe(
       tap(response => {
         this.viewModel.update(vm => ({
           ...vm,
@@ -92,7 +92,7 @@ export class SettingsPageFacade {
   changePassword(password: string): Observable<boolean> {
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
 
-    return from(this.authService.changePassword(password)).pipe(
+    return from(this.authService.changePassword({ password })).pipe(
       tap(() => this.viewModel.update(s => ({ ...s, isLoading: false }))),
       map(() => true),
       catchError(err => {

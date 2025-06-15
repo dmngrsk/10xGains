@@ -3,25 +3,24 @@ import { noAuthGuard } from '@shared/utils/guards/no-auth.guard';
 
 export const AUTH_ROUTES: Routes = [
   {
+    path: 'callback',
+    loadComponent: () => import('./pages/callback/callback.component').then(c => c.CallbackComponent)
+  },
+  {
     path: 'login',
-    loadComponent: () => import('./components/login/login.component').then(c => c.LoginComponent),
+    loadComponent: () => import('./pages/login/login-page.component').then(c => c.LoginPageComponent),
     canActivate: [noAuthGuard]
   },
   {
     path: 'register',
-    loadComponent: () => import('./components/register/register.component').then(c => c.RegisterComponent),
-    canActivate: [noAuthGuard]
-  },
-  /*{
-    path: 'forgot-password',
-    loadComponent: () => import('./components/forgot-password/forgot-password.component').then(c => c.ForgotPasswordComponent),
+    loadComponent: () => import('./pages/register/register-page.component').then(c => c.RegisterPageComponent),
     canActivate: [noAuthGuard]
   },
   {
-    path: 'reset-password/:token',
-    loadComponent: () => import('./components/reset-password/reset-password.component').then(c => c.ResetPasswordComponent),
+    path: 'reset-password',
+    loadComponent: () => import('./pages/reset-password/reset-password-page.component').then(c => c.ResetPasswordPageComponent),
     canActivate: [noAuthGuard]
-  },*/
+  },
   {
     path: '',
     redirectTo: 'login',

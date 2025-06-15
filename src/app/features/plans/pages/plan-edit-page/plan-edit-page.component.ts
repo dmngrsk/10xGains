@@ -109,7 +109,7 @@ export class PlanEditPageComponent implements OnInit {
           if (this.isUpdatePlanDialogResult(result)) {
             const command: UpdateTrainingPlanCommand = result.value;
             return this.facade.updatePlan(command).pipe(
-              tapIf(success => !!success, () => this.snackBar.open('Plan details updated.', 'OK', { duration: 3000 })),
+              tapIf(success => !!success, () => this.snackBar.open('Plan details updated.', 'Close', { duration: 3000 })),
               tapIf(success => !success && viewModel.error, (response) => {
                 const errorMessage = response.error || 'Failed to update plan.';
                 this.snackBar.open(errorMessage, 'Close', { duration: 3000 });
@@ -137,7 +137,7 @@ export class PlanEditPageComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tapIf(response => !response.error, () => {
-          this.snackBar.open(`Plan "${plan.name}" has been deleted.`, 'OK', { duration: 3000 });
+          this.snackBar.open(`Plan "${plan.name}" has been deleted.`, 'Close', { duration: 3000 });
           this.router.navigate(['/plans']);
         }),
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to delete plan.', 'Close', { duration: 5000 })),
@@ -156,7 +156,7 @@ export class PlanEditPageComponent implements OnInit {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         tapIf(response => !response.error, () => {
-          this.snackBar.open('Plan activated.', 'OK', { duration: 3000 });
+          this.snackBar.open('Plan activated.', 'Close', { duration: 3000 });
           this.router.navigate(['/home']);
         }),
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to activate plan.', 'Close', { duration: 5000 })),
@@ -186,7 +186,7 @@ export class PlanEditPageComponent implements OnInit {
           };
           return this.facade.createPlanDay(command);
         }),
-        tapIf(response => !!response?.data, () => this.snackBar.open('Day added.', 'OK', { duration: 2000 })),
+        tapIf(response => !!response?.data, () => this.snackBar.open('Day added.', 'Close', { duration: 2000 })),
         tapIf(response => !response?.data, (response) => this.snackBar.open(response?.error || 'Failed to add day.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to add day', this.snackBar),
       ).subscribe();
@@ -217,7 +217,7 @@ export class PlanEditPageComponent implements OnInit {
           if (this.isUpdateDayDialogResult(result)) {
             const command: UpdateTrainingPlanDayCommand = result.value;
             return this.facade.updatePlanDay(dayId, command).pipe(
-              tapIf(success => !!success, () => this.snackBar.open('Day updated.', 'OK', { duration: 2000 })),
+              tapIf(success => !!success, () => this.snackBar.open('Day updated.', 'Close', { duration: 2000 })),
               tapIf(success => !success, (response) => {
                 const errorMessage = response.error || 'Failed to update day.';
                 this.snackBar.open(errorMessage, 'Close', { duration: 4000 });
@@ -245,7 +245,7 @@ export class PlanEditPageComponent implements OnInit {
     this.facade.deletePlanDay(dayId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !response.error, () => this.snackBar.open('Day deleted.', 'OK', { duration: 2000 })),
+        tapIf(response => !response.error, () => this.snackBar.open('Day deleted.', 'Close', { duration: 2000 })),
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to delete day.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to delete day', this.snackBar)
       ).subscribe();
@@ -269,7 +269,7 @@ export class PlanEditPageComponent implements OnInit {
     this.facade.updatePlanDay(dayId, command)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !!response.data, () => this.snackBar.open('Day order updated.', 'OK', { duration: 2000 })),
+        tapIf(response => !!response.data, () => this.snackBar.open('Day order updated.', 'Close', { duration: 2000 })),
         tapIf(response => !response.data, response => this.snackBar.open(response.error || 'Failed to update day order.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to reorder day', this.snackBar)
       ).subscribe();
@@ -314,7 +314,7 @@ export class PlanEditPageComponent implements OnInit {
           if (shouldOpenProgressionDialog) {
             this.onProgressionEdited({ exerciseId });
           }
-          this.snackBar.open('Exercise added.', 'OK', { duration: 2000 });
+          this.snackBar.open('Exercise added.', 'Close', { duration: 2000 });
         }),
         tapIf(response => !response?.data, (response) => this.snackBar.open(response?.error || 'Failed to add exercise.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to add exercise', this.snackBar)
@@ -345,7 +345,7 @@ export class PlanEditPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         filter(result => !!result),
         switchMap(() => this.facade.deletePlanExercise(dayId, exerciseId)),
-        tapIf(response => !response?.error, () => this.snackBar.open('Exercise deleted.', 'OK', { duration: 2000 })),
+        tapIf(response => !response?.error, () => this.snackBar.open('Exercise deleted.', 'Close', { duration: 2000 })),
         tapIf(response => !!response?.error, (response) => this.snackBar.open(response?.error || 'Failed to delete exercise.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to delete exercise', this.snackBar)
       ).subscribe();
@@ -365,7 +365,7 @@ export class PlanEditPageComponent implements OnInit {
     this.facade.updatePlanExercise(dayId, exerciseId, command)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !!response.data, () => this.snackBar.open('Exercise order updated.', 'OK', { duration: 2000 })),
+        tapIf(response => !!response.data, () => this.snackBar.open('Exercise order updated.', 'Close', { duration: 2000 })),
         tapIf(response => !response.data, response => this.snackBar.open(response.error || 'Failed to update exercise order.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to reorder exercise', this.snackBar)
       ).subscribe();
@@ -390,7 +390,7 @@ export class PlanEditPageComponent implements OnInit {
         takeUntilDestroyed(this.destroyRef),
         filter(result => this.isSaveProgressionDialogResult(result)),
         switchMap(result => this.facade.upsertExerciseProgression(exerciseId, result.value)),
-        tapIf(response => !!response?.data, () => this.snackBar.open('Exercise progression updated.', 'OK', { duration: 2000 })),
+        tapIf(response => !!response?.data, () => this.snackBar.open('Exercise progression updated.', 'Close', { duration: 2000 })),
         tapIf(response => !response?.data, (response) => this.snackBar.open(response?.error || 'Failed to update exercise progression.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to update exercise progression', this.snackBar)
       ).subscribe();
@@ -431,7 +431,7 @@ export class PlanEditPageComponent implements OnInit {
         set_index: newSetIndex
       }),
       switchMap(command => this.facade.addPlanExerciseSet(dayId, exerciseId, command)),
-      tapIf(response => !!response?.data, () => this.snackBar.open('Set added.', 'OK', { duration: 2000 })),
+      tapIf(response => !!response?.data, () => this.snackBar.open('Set added.', 'Close', { duration: 2000 })),
       tapIf(response => !response?.data, (response) => this.snackBar.open(response?.error || 'Failed to add set.', 'Close', { duration: 4000 })),
       catchAndDisplayError('Failed to add set', this.snackBar),
     ).subscribe();
@@ -468,7 +468,7 @@ export class PlanEditPageComponent implements OnInit {
               set_index: set.setIndex
             };
             return this.facade.updatePlanExerciseSet(dayId, exerciseId, setId, command).pipe(
-              tapIf(response => !!response?.data, () => this.snackBar.open('Set updated.', 'OK', { duration: 2000 })),
+              tapIf(response => !!response?.data, () => this.snackBar.open('Set updated.', 'Close', { duration: 2000 })),
               tapIf(response => !response?.data, (response) => this.snackBar.open(response?.error || 'Failed to update set.', 'Close', { duration: 4000 })),
             );
           } else if (this.isDeleteSetDialogResult(result)) {
@@ -496,7 +496,7 @@ export class PlanEditPageComponent implements OnInit {
     this.facade.deletePlanExerciseSet(dayId, exerciseId, setId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !response.error, () => this.snackBar.open('Set deleted.', 'OK', { duration: 2000 })),
+        tapIf(response => !response.error, () => this.snackBar.open('Set deleted.', 'Close', { duration: 2000 })),
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to delete set.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to delete set', this.snackBar)
       ).subscribe();
@@ -517,7 +517,7 @@ export class PlanEditPageComponent implements OnInit {
     this.facade.updatePlanExerciseSet(dayId, exerciseId, setId, command)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !!response.data, () => this.snackBar.open('Set order updated.', 'OK', { duration: 2000 })),
+        tapIf(response => !!response.data, () => this.snackBar.open('Set order updated.', 'Close', { duration: 2000 })),
         tapIf(response => !response.data, response => this.snackBar.open(response.error || 'Failed to update set order.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to reorder set', this.snackBar)
       ).subscribe();

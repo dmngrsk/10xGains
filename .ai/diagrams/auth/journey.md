@@ -1,110 +1,71 @@
-# User Journey Diagram for Authentication Module
+# User Journey Diagram for Authentication
 
-## User Journey Analysis
+This document contains a Mermaid diagram that visualizes the user flows for registration, login, and password recovery based on the specifications.
 
-1. User paths from reference files:
-   - Registration: new users create an account via the Register form.
-   - Login: existing users enter credentials and authenticate.
-   - Password Recovery: users initiate a reset request via Forgot Password, receive an email, and reset their password.
-   - Logout: authenticated users log out to end their session.
-2. Main journeys and states:
-   - Unauthenticated Access: entry point to authentication flow.
-   - Login Journey: DisplayLogin -> ValidateLogin -> LoginSuccess or DisplayLogin(Error).
-   - Registration Journey: DisplayRegister -> ValidateRegister -> SendVerification -> AwaitEmailVerification -> RegistrationConfirmed -> RegistrationSuccess.
-   - Password Recovery Journey: DisplayForgot -> ValidateEmail -> EmailSent -> DisplayReset -> ValidateReset -> ResetSuccess.
-   - Authenticated State: main application after successful login or registration.
-3. Decision points and alternative paths:
-   - Form validation decisions at Submit events (valid vs invalid inputs).
-   - Credential verification decision (login success vs failure).
-   - Email verification decision in registration (email link clicked vs pending).
-   - Token validation and reset input decisions in password recovery.
-4. State purpose descriptions:
-   - DisplayLogin: user enters email and password.
-   - ValidateLogin: inputs are checked client-side and server-side.
-   - DisplayRegister: user enters registration details.
-   - ValidateRegister: registration inputs are validated.
-   - SendVerification: system sends an email verification link.
-   - AwaitEmailVerification: user waits to confirm their email.
-   - RegistrationConfirmed: user clicks the email link to verify.
-   - DisplayForgot: user requests a password reset.
-   - EmailSent: system sends password reset link via email.
-   - DisplayReset: user sets a new password using the reset link.
-   - ValidateReset: new password inputs are validated.
-   - ResetSuccess: password has been successfully updated.
-   - Authenticated: user has an active session and can access the main app.
-   - Logout: user ends their session and returns to Unauthenticated.
-
-## Mermaid Diagram
-
+<mermaid_diagram>
 ```mermaid
 stateDiagram-v2
     [*] --> Unauthenticated
 
-    state "Authentication Flow" {
-        [*] --> Choice
-
-        state Choice <<choice>>
-        Choice --> Login : Select Login
-        Choice --> Register : Select Register
-        Choice --> ForgotPassword : Select Forgot Password
-
-        state "Login Flow" {
-            [*] --> DisplayLogin
-            DisplayLogin --> InputValidLogin : Submit [valid]
-            DisplayLogin --> DisplayLogin : Submit [invalid]
-            InputValidLogin --> LoginSuccess : Credentials OK
-            InputValidLogin --> DisplayLogin : Credentials Invalid
-        }
-
-        state "Registration Flow" {
-            [*] --> DisplayRegister
-            DisplayRegister --> InputValidReg : Submit [valid]
-            DisplayRegister --> DisplayRegister : Submit [invalid]
-            InputValidReg --> SendVerification : Inputs Valid
-            InputValidReg --> DisplayRegister : Validation Error
-            SendVerification --> "Await Email Verification"
-            "Await Email Verification" --> RegistrationConfirmed : Email Link Clicked
-            RegistrationConfirmed --> RegistrationSuccess
-        }
-
-        state "Password Recovery Flow" {
-            [*] --> DisplayForgot
-            DisplayForgot --> EmailValid : Submit [valid]
-            DisplayForgot --> DisplayForgot : Submit [invalid]
-            EmailValid --> EmailSent : Request Sent
-            EmailValid --> DisplayForgot : Validation Error
-            EmailSent --> DisplayReset : Email Link Clicked
-
-            state "Reset Password" {
-                [*] --> DisplayReset
-                DisplayReset --> InputValidReset : Submit [valid]
-                DisplayReset --> DisplayReset : Submit [invalid]
-                InputValidReset --> ResetSuccess : Password Updated
-                InputValidReset --> DisplayReset : Validation Error
-                ResetSuccess --> RecoveryComplete
-            }
-        }
-
-        LoginSuccess --> EndAuthFlow
-        RegistrationSuccess --> Choice
-        RecoveryComplete --> Choice
+    state "Unauthenticated User" as ExploringApp {
+      note left of Unauthenticated
+        User has no active session.
+        They can navigate between Login,
+        Register, and Forgot Password pages.
+      end note
+      Unauthenticated --> LoginPage: Wants to log in
+      Unauthenticated --> RegisterPage: Wants to create account
+      LoginPage --> ResetPasswordPage: Clicks 'Forgot Password?'
     }
 
-    EndAuthFlow --> Authenticated : Session Established
-    Authenticated --> Logout : Logout
-    Logout --> Unauthenticated
+    state "Registration Process" as Registration {
+      RegisterPage --> SubmitRegistration: User submits form
+      state verification_check <<choice>>
+      SubmitRegistration --> verification_check: Is email verification enabled?
+      verification_check --> AwaitVerification: Yes
+      verification_check --> Authenticated: No, auto-login
 
-    Authenticated --> [*]
+      AwaitVerification --> HandleRegisterCallback: User clicks email link
+      note left of AwaitVerification
+        User is notified to check email.
+        The link is /auth/callback?type=register
+      end note
+      HandleRegisterCallback --> CreateProfile: Callback handler processes token
+      CreateProfile --> LoginPage: Redirect after success
+    }
 
-    note right of DisplayRegister
-      Email, password, confirm password fields
-    end note
+    state "Login Process" as Login {
+      LoginPage --> ValidateCredentials: User submits form
+      state login_check <<choice>>
+      ValidateCredentials --> login_check: Credentials valid?
+      login_check --> Authenticated: Yes
+      login_check --> LoginPage: No, show error
+    }
 
-    note right of DisplayLogin
-      Email and password fields
-    end note
+    state "Password Recovery" as Recovery {
+      ResetPasswordPage --> RequestPasswordReset: User submits email
+      note right of RequestPasswordReset
+        User is notified to check email.
+        The link is /auth/callback?type=reset-password
+      end note
+      RequestPasswordReset --> HandleResetCallback: User clicks magic link
+      HandleResetCallback --> AuthenticatedWithReset: User is logged in
+    }
 
-    note right of DisplayForgot
-      Email field for reset link
-    end note
+    state "Authenticated Session" as AppAccess {
+      Authenticated: User has active session
+      Authenticated --> HomePage
+
+      AuthenticatedWithReset: User authenticated via reset link
+      AuthenticatedWithReset --> SettingsPage
+      SettingsPage --> HomePage: Password updated
+
+      HomePage --> Logout: User clicks 'Logout'
+      SettingsPage --> Logout: User clicks 'Logout'
+      Logout --> ClearSession
+      ClearSession --> LoginPage: Redirect after logout
+    }
+
+    AppAccess --> [*]: Session ends
 ```
+</mermaid_diagram> 

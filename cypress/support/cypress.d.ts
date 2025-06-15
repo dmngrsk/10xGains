@@ -35,6 +35,12 @@ namespace Cypress {
     getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>>;
 
     /**
+     * Get the Material Snackbar element.
+     * @returns A chainable object that can be used to interact with the element.
+     */
+    getMatSnackBar(): Cypress.Chainable<JQuery<HTMLElement>>;
+
+    /**
      * Simulate a long press on an element.
      * @param subject The element to long press.
      * @param duration The duration of the long press in milliseconds.

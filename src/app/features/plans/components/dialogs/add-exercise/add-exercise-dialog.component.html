@@ -1,6 +1,6 @@
-<h2 mat-dialog-title data-cy="add-exercise-dialog-title">Add New Exercise</h2>
+<h2 mat-dialog-title data-cy="add-plan-exercise-dialog-title">Add New Exercise</h2>
 
-<mat-dialog-content class="!pt-4" data-cy="add-exercise-dialog-content">
+<mat-dialog-content class="!pt-4" data-cy="add-plan-exercise-dialog-content">
   <form [formGroup]="exerciseForm">
     <mat-form-field appearance="outline" class="w-full mt-1">
       <mat-label>Exercise</mat-label>
@@ -12,14 +12,14 @@
         formControlName="exerciseControl"
         [matAutocomplete]="auto"
         (input)="onAutocompleteInput($event)"
-        data-cy="add-exercise-dialog-exercise-input"/>
+        data-cy="add-plan-exercise-dialog-exercise-input"/>
       <mat-autocomplete
         #auto="matAutocomplete"
         [displayWith]="displayExercise"
         (optionSelected)="onSelectionChanged($event)">
         @if (filteredExercises$ | async; as exercises) {
           @for (exercise of exercises; track exercise.id) {
-            <mat-option [value]="exercise" data-cy="add-exercise-dialog-exercise-autocomplete-option">
+            <mat-option [value]="exercise" data-cy="add-plan-exercise-dialog-exercise-autocomplete-option">
               {{ exercise.name }}
             </mat-option>
           }
@@ -41,8 +41,8 @@
     </mat-form-field>
 
     @if (isCreatingNewExercise()) {
-      <div class="new-exercise-form mt-4 pt-4 border-t border-gray-200">
-        <p class="text-sm text-gray-600 mt-2 mb-5" data-cy="add-exercise-dialog-new-exercise-global-notice">
+      <div class="new-exercise-form mt-4 pt-4 border-t border-outline-variant">
+        <p class="text-sm text-secondary mt-2 mb-5" data-cy="add-plan-exercise-dialog-new-global-exercise-notice">
           You are creating a new exercise that will be added to the global list.
         </p>
         <mat-form-field appearance="outline" class="w-full pt-2">
@@ -67,7 +67,7 @@
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()" data-cy="add-exercise-dialog-cancel-button">Cancel</button>
-  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="isSaveDisabled()" data-cy="add-exercise-dialog-save-button">
-    <span>{{ isCreatingNewExercise() ? 'Create and Add Exercise' : 'Add Exercise' }}</span>
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="isSaveDisabled()" data-cy="add-plan-exercise-dialog-save-button">
+    <span>{{ isCreatingNewExercise() ? 'Create Exercise' : 'Add Exercise' }}</span>
   </button>
 </mat-dialog-actions>

@@ -4,8 +4,9 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { filter, take, switchMap } from 'rxjs';
-import { UpdateUserProfileCommand } from '@shared/api/api.types';
+import { UpsertUserProfileCommand } from '@shared/api/api.types';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
@@ -33,6 +34,7 @@ export class SettingsPageComponent implements OnInit {
   private readonly facade = inject(SettingsPageFacade);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
 
   readonly viewModel = this.facade.viewModel;
   readonly isLoadingSignal = computed(() => this.facade.viewModel().isLoading);
@@ -41,9 +43,15 @@ export class SettingsPageComponent implements OnInit {
   ngOnInit(): void {
     this.facade.loadInitialData();
     this.initialLoadFinished.set(true);
+
+    if (history.state?.action === 'changePassword') {
+      const { action: _, ...stateWithoutAction } = history.state;
+      history.replaceState(stateWithoutAction, '');
+      this.onPasswordChanged();
+    }
   }
 
-  onProfileSaved(command: UpdateUserProfileCommand | null): void {
+  onProfileSaved(command: UpsertUserProfileCommand | null): void {
     this.facade.saveProfile(command!).pipe(
       take(1),
       tapIf(success => success, () => this.snackBar.open('Profile updated successfully.', 'Close', { duration: 3000 })),
@@ -72,7 +80,10 @@ export class SettingsPageComponent implements OnInit {
   onSignedOut(): void {
     this.facade.signOut().pipe(
       take(1),
-      tapIf(success => success, () => this.snackBar.open('Signed out successfully.', 'Close', { duration: 3000 })),
+      tapIf(success => success, () => {
+        this.snackBar.open('Signed out successfully.', 'Close', { duration: 3000 });
+        this.router.navigate(['/auth/login']);
+      }),
       tapIf(success => !success, () => this.snackBar.open('Failed to sign out.', 'Close', { duration: 3000 }))
     ).subscribe();
   }
