@@ -73,8 +73,8 @@ const getProcessedTestTags = () => {
 };
 
 function loginAsCanaryUser(): void {
-  const email = Cypress.env('CANARY_USER_EMAIL');
-  const password = Cypress.env('CANARY_USER_PASSWORD');
+  const email = Cypress.env('CANARY_USER_EMAIL').trim();
+  const password = Cypress.env('CANARY_USER_PASSWORD').trim();
 
   if (!email || !password) {
     throw new Error('Canary user credentials not found in environment variables');

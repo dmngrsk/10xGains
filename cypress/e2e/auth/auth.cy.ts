@@ -2,7 +2,12 @@ import { dataCy } from '../../support/selectors';
 
 describe('Authentication', { tags: ['@auth'] }, () => {
   beforeEach(() => {
+    cy.wrap(null).as('ephemeralUserId');
     cy.visit('/auth/login');
+  });
+
+  afterEach(() => {
+    cy.teardown();
   });
 
   describe('when a user is unauthenticated', () => {
@@ -21,9 +26,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.home.noActiveTrainingPlanNotice).should('be.visible');
 
       cy.wait('@signup').then((interception) => {
-        cy.wrap(interception.response!.body.user.id).as('ephemeralUserId').then(() => {
-          cy.teardown();
-        });
+        cy.task('users:deleteEphemeral', { userId: interception.response!.body.user.id });
       });
     });
 
@@ -50,7 +53,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
 
     it('allows a user to sign in with valid credentials', { tags: ['@smoke', 'AUTH-04'] }, () => {
-      cy.login({ forceCanary: true });
+      cy.login();
 
       cy.url().should('include', '/home');
     });
@@ -124,24 +127,39 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
 
     it('prevents unauthorized data access via API or direct URL manipulation (RLS check)', { tags: ['AUTH-11'] }, () => {
+      let userId1: string;
+      let userId2: string;
+
+      // Sign in as the first ephemeral user and get the plan URL.
       cy.login();
+      cy.get('@ephemeralUserId').then((userId) => {
+        userId1 = userId as unknown as string;
 
-      cy.navigateTo('plans');
-      cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
+        cy.navigateTo('plans');
+        cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
+        cy.getBySel(dataCy.plans.planEdit.metadata).should('be.visible');
 
-      cy.url().then((ephemeralUserPlanUrl) => {
-        cy.navigateBack();
-        cy.navigateTo('settings');
-        cy.getBySel(dataCy.settings.account.signOutButton).click();
-        cy.url().should('include', '/auth/login');
+        cy.url().then((ephemeralUserPlanUrl) => {
+          cy.navigateBack();
+          cy.navigateTo('settings');
+          cy.getBySel(dataCy.settings.account.signOutButton).click();
+          cy.url().should('include', '/auth/login');
 
-        cy.login({ forceCanary: true });
-        cy.visit(ephemeralUserPlanUrl);
+          // Sign in as the second ephemeral user and try to access the first user's plan.
+          cy.login();
+          cy.get('@ephemeralUserId').then((userId) => {
+            userId2 = userId as unknown as string;
+            cy.visit(ephemeralUserPlanUrl);
 
-        cy.getBySel(dataCy.plans.planEdit.errorNotice).should('be.visible');
+            cy.getBySel(dataCy.plans.planEdit.errorNotice).should('be.visible');
+
+            // Clean up the ephemeral users.
+            cy.task('users:deleteEphemeral', { userId: userId1 });
+            cy.task('users:deleteEphemeral', { userId: userId2 });
+            cy.wrap(null).as('ephemeralUserId');
+          });
+        });
       });
-
-      cy.teardown();
     });
 
     it('redirects the user to login page when session is expired', { tags: ['AUTH-12'] }, () => {
