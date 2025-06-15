@@ -53,7 +53,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
 
     it('allows a user to sign in with valid credentials', { tags: ['@smoke', 'AUTH-04'] }, () => {
-      cy.login();
+      cy.login({ forceCanary: true });
 
       cy.url().should('include', '/home');
     });
