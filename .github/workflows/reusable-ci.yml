@@ -128,7 +128,7 @@ jobs:
 
       - name: Generate webmanifest file
         run: |
-          WEBMANIFEST_FILE="src/manifest.webmanifest"
+          WEBMANIFEST_FILE="src/site.webmanifest"
 
           jq \
             --arg name "${{ vars.APP_WEBMANIFEST_NAME }}" \
