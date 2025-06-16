@@ -140,7 +140,6 @@ jobs:
             "$WEBMANIFEST_FILE" > "${WEBMANIFEST_FILE}.tmp"
 
           mv "${WEBMANIFEST_FILE}.tmp" "$WEBMANIFEST_FILE"
-          rm "${WEBMANIFEST_FILE}.tmp"
 
           echo "Generated ${WEBMANIFEST_FILE}:"
           cat "${WEBMANIFEST_FILE}"
