@@ -106,7 +106,7 @@ jobs:
       - name: Generate environment file
         run: |
           TEMPLATE_FILE="src/environments/environment.ts"
-          OUTPUT_FILE="src/environments/environment.example.ts"
+          OUTPUT_FILE="src/environments/environment.${{ inputs.environment }}.ts"
 
           cp "$TEMPLATE_FILE" "$OUTPUT_FILE"
 
@@ -123,7 +123,7 @@ jobs:
             -e "s|__SUPABASE_ANON_KEY__|${{ secrets.SUPABASE_ANON_KEY }}|g" \
             "$OUTPUT_FILE"
 
-          echo "Generated ${OUTPUT_FILE}:"
+          echo "Generated ${OUTPUT_FILE}:\n"
           cat "${OUTPUT_FILE}"
 
       - name: Generate webmanifest file
@@ -141,7 +141,7 @@ jobs:
 
           mv "${WEBMANIFEST_FILE}.tmp" "$WEBMANIFEST_FILE"
 
-          echo "Generated ${WEBMANIFEST_FILE}:"
+          echo "Generated ${WEBMANIFEST_FILE}:\n"
           cat "${WEBMANIFEST_FILE}"
 
       - name: Build application
