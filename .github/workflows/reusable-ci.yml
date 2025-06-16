@@ -105,19 +105,45 @@ jobs:
 
       - name: Generate environment file
         run: |
-          IS_PRODUCTION=$([[ "${{ inputs.environment }}" == "production" ]] && echo "true" || echo "false")
+          TEMPLATE_FILE="src/environments/environment.ts"
+          OUTPUT_FILE="src/environments/environment.example.ts"
 
-          echo "export const environment = {
-            production: ${IS_PRODUCTION},
-            build: {
-              name: '${{ inputs.build_name }}',
-              sha: '${{ inputs.build_sha }}',
-            },
-            supabase: {
-              url: '${{ vars.SUPABASE_URL }}',
-              key: '${{ secrets.SUPABASE_ANON_KEY }}',
-            }
-          };" > src/environments/environment.${{ inputs.environment }}.ts
+          cp "$TEMPLATE_FILE" "$OUTPUT_FILE"
+
+          if [[ "${{ inputs.environment }}" == "production" ]]; then
+            echo "Setting 'production' flag to true for production environment."
+            sed -i 's/production: false,/production: true,/' "$OUTPUT_FILE"
+          fi
+
+          sed -i \
+            -e "s|enableServiceWorker: false,|enableServiceWorker: true,|g" \
+            -e "s|__BUILD_NAME__|${{ inputs.build_name }}|g" \
+            -e "s|__BUILD_SHA__|${{ inputs.build_sha }}|g" \
+            -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
+            -e "s|__SUPABASE_ANON_KEY__|${{ secrets.SUPABASE_ANON_KEY }}|g" \
+            "$OUTPUT_FILE"
+
+          echo "Generated ${OUTPUT_FILE}:"
+          cat "${OUTPUT_FILE}"
+
+      - name: Generate webmanifest file
+        run: |
+          WEBMANIFEST_FILE="src/manifest.webmanifest"
+
+          jq \
+            --arg name "${{ vars.APP_WEBMANIFEST_NAME }}" \
+            --arg short_name "${{ vars.APP_WEBMANIFEST_SHORT_NAME }}" \
+            '
+              (if $name != "" then .name = $name else . end) |
+              (if $short_name != "" then .short_name = $short_name else . end)
+            ' \
+            "$WEBMANIFEST_FILE" > "${WEBMANIFEST_FILE}.tmp"
+
+          mv "${WEBMANIFEST_FILE}.tmp" "$WEBMANIFEST_FILE"
+          rm "${WEBMANIFEST_FILE}.tmp"
+
+          echo "Generated ${WEBMANIFEST_FILE}:"
+          cat "${WEBMANIFEST_FILE}"
 
       - name: Build application
         run: |

@@ -5,9 +5,9 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"10x-gains@workspace:.":
+"10xGains@workspace:.":
   version: 0.0.0-use.local
-  resolution: "10x-gains@workspace:."
+  resolution: "10xGains@workspace:."
   dependencies:
     "@analogjs/platform": "npm:^1.15.1"
     "@analogjs/vite-plugin-angular": "npm:^1.15.1"
@@ -26,6 +26,7 @@ __metadata:
     "@angular/platform-browser": "npm:^19.2.0"
     "@angular/platform-browser-dynamic": "npm:^19.2.0"
     "@angular/router": "npm:^19.2.0"
+    "@angular/service-worker": "npm:^19.2.0"
     "@cypress/grep": "npm:^4.1.0"
     "@nx/angular": "npm:^20.7.2"
     "@nx/devkit": "npm:^20.7.2"
@@ -661,6 +662,20 @@ __metadata:
     "@angular/platform-browser": 19.2.6
     rxjs: ^6.5.3 || ^7.4.0
   checksum: 10c0/53c179e06ed4f5f167e262377bb2e60368ac717994205838aa2a834dd09ffff37036dbe2e1cd1070ae1bb9cb777ccab148e0ddc29f0d3704a20133fdf28c5fe3
+  languageName: node
+  linkType: hard
+
+"@angular/service-worker@npm:^19.2.0":
+  version: 19.2.14
+  resolution: "@angular/service-worker@npm:19.2.14"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/core": 19.2.14
+    rxjs: ^6.5.3 || ^7.4.0
+  bin:
+    ngsw-config: ngsw-config.js
+  checksum: 10c0/2145c576b31ec4e52d6faa0f462ee5deb68cddad4c9462a876162a0640646fcde7f7f75f4fad237a3aa2b44a4ecf087bf056200c58fcac466925474bd567b35f
   languageName: node
   linkType: hard
 

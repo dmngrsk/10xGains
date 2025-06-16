@@ -112,7 +112,7 @@ jobs:
         # Note: The standard Azure SWA deploy action requires the trigger 'on: push' to execute.
         # This is why we're deploying directly to the resource via the CLI instead of using the standard action.
         run: |
-          swa deploy ./dist/10x-gains/browser \
+          swa deploy ./dist/10xGains/browser \
             --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
             --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --env production \
