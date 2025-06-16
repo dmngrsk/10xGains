@@ -33,7 +33,7 @@ jobs:
   ci-comment:
     name: CI / Add status comment
     runs-on: ubuntu-latest
-    if: always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'pull_request'
+    if: always() && github.event_name == 'pull_request'
     needs: [ci]
     steps:
       - name: Add a detailed comment about the CI job results
@@ -74,7 +74,7 @@ jobs:
   cd-comment:
     name: CD / Add status comment
     runs-on: ubuntu-latest
-    if: always() && !contains(needs.*.result, 'cancelled') && github.event_name == 'pull_request'
+    if: always() && github.event_name == 'pull_request'
     needs: [cd]
     steps:
       - name: Add a detailed comment about the CD job results
@@ -89,6 +89,8 @@ jobs:
             const cdCurrentJobName = 'CD / Add status comment';
             const cdDeferJobName = 'CD / Defer deployment';
             const cdJobs = jobs.filter(job => job.name.includes(cdJobPrefix) && job.name !== cdCurrentJobName && job.name !== cdDeferJobName);
+
+            if (cdJobs.length === 0) return;
 
             let commentBody = '### CD Job Results\n\n';
             commentBody += '| Job | Status | Details |\n';

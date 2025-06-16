@@ -9,7 +9,7 @@
 - Supabase: PostgreSQL database, authentication, and Edge Functions for custom REST API endpoints.
 
 ## AI
-- Perplexity API (Sonar model): Cost-effective AI-driven training suggestions.
+- OpenRouter API: Cost-effective AI-driven training suggestions.
 
 ## CI/CD and Hosting
 - GitHub Actions: For CI/CD pipelines.

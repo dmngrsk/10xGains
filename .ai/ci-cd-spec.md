@@ -11,6 +11,8 @@ This document describes the Continuous Integration and Continuous Deployment pip
 #### Staging Environment
 ```yaml
 # Variables (vars)
+APP_WEBMANIFEST_NAME: App name shown in the web manifest
+APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
 APP_URL: URL of the staging application
 AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
 AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
@@ -31,6 +33,8 @@ SUPABASE_SERVICE_ROLE_KEY: Service role key for Supabase (used in E2E tests)
 #### Production Environment
 ```yaml
 # Variables (vars)
+APP_WEBMANIFEST_NAME: App name shown in the web manifest
+APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
 APP_URL: URL of the production application
 AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
 AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource

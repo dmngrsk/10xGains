@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "10x-gains": {
+    "10xGains": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
-            "outputPath": "dist/10x-gains",
+            "outputPath": "dist/10xGains",
             "index": "src/index.html",
             "browser": "src/main.ts",
             "polyfills": [
@@ -27,6 +27,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/assets",
+              "src/site.webmanifest",
               "src/staticwebapp.config.json"
             ],
             "styles": [
@@ -55,7 +56,8 @@
                   "with": "src/environments/environment.production.ts"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json"
             },
             "staging": {
               "budgets": [
@@ -97,16 +99,16 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "10x-gains:build:production"
+              "buildTarget": "10xGains:build:production"
             },
             "staging": {
-              "buildTarget": "10x-gains:build:staging"
+              "buildTarget": "10xGains:build:staging"
             },
             "development": {
               "allowedHosts": [
                 ".ngrok-free.app"
               ],
-              "buildTarget": "10x-gains:build:development"
+              "buildTarget": "10xGains:build:development"
             }
           },
           "defaultConfiguration": "development"

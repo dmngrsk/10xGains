@@ -3,24 +3,15 @@
 
 ## Table of Contents
 - [Project Description](#project-description)
-- [Project Scope](#project-scope)
 - [Tech Stack](#tech-stack)
 - [Getting Started Locally](#getting-started-locally)
 - [Available Scripts](#available-scripts)
+- [Project Scope](#project-scope)
 - [Project Status](#project-status)
 - [License](#license)
 
 ## Project Description
 10xGains is a streamlined platform designed to lower the entry barrier for powerlifting and weightlifting. The application enables users to create, customize, and track personalized training plans with AI-driven suggestions, ensuring safe and effective workout routines. Key features include secure user registration/login, flexible training plan creation, active workout session tracking, and comprehensive workout history.
-
-## Project Scope
-The current MVP scope includes:
-- **User Account System**: Secure user registration and login.
-- **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
-- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers and detailed editing capabilities.
-- **Workout History**: Chronological record of past workout sessions.
-- **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
-
 
 ## Tech Stack
 - **Frontend**: Angular 19, Angular Material Design 3, Tailwind CSS 4
@@ -57,21 +48,23 @@ The current MVP scope includes:
 4.  **Configure environment variables for the Angular app:**
 
     The frontend needs to know how to connect to your local Supabase instance.
-    - Create a copy of the development environment file:
-      ```bash
-      cp src/environments/environment.ts src/environments/environment.development.ts
-      ```
-    - The Angular CLI will use this file during local development.
-    - Open `src/environments/environment.development.ts` and replace the placeholder values with the credentials from the `supabase start` output:
-      ```typescript
-      export const environment = {
-        production: false,
-        supabase: {
-          url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
-          key: 'YOUR_LOCAL_SUPABASE_ANON_KEY', // The long JWT string
-        }
-      };
-      ```
+
+    Create a copy of the development environment file:
+    ```bash
+    cp src/environments/environment.ts src/environments/environment.development.ts
+    ```
+    The Angular CLI will use this file during local development.
+
+    Open `src/environments/environment.development.ts` and replace the placeholder values with the credentials from the `supabase start` output:
+    ```typescript
+    export const environment = {
+      production: false,
+      supabase: {
+        url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
+        key: 'YOUR_LOCAL_SUPABASE_ANON_KEY', // The long JWT string
+      }
+    };
+    ```
 5.  **Apply database migrations and seed data:**
 
     This command resets your local database and applies all schema changes from the `supabase/migrations` folder.
@@ -114,7 +107,7 @@ Below are the most important scripts defined in `package.json`.
 
 ### Building the Application
 
-- `yarn build` - Builds the application for production. The output is placed in the `dist/10x-gains` directory.
+- `yarn build` - Builds the application for production. The output is placed in the `dist/10xGains` directory.
 - `yarn build:[development|staging]` - Builds the application using the `development` or `staging` configuration.
 
 ### Linting and Formatting
@@ -136,6 +129,14 @@ Below are the most important scripts defined in `package.json`.
 - `yarn e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
 - `yarn e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `yarn e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI pipeline.
+
+## Project Scope
+The current MVP scope includes:
+- **User Account System**: Secure user registration and login.
+- **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
+- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers and detailed editing capabilities.
+- **Workout History**: Chronological record of past workout sessions.
+- **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status
 The project is currently in early development (MVP stage) with version `0.1.0`. Features are actively being developed and refined.
