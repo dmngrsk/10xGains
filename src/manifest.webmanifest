@@ -1,0 +1,24 @@
+{
+  "name": "10xGains",
+  "short_name": "10xGains",
+  "icons": [
+    {
+      "src": "/assets/favicon/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/assets/favicon/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#ba005c",
+  "background_color": "#fff8f8",
+  "orientation": "portrait",
+  "scope": "./"
+}

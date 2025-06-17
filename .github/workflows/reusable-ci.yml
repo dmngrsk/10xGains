@@ -123,12 +123,13 @@ jobs:
             -e "s|__SUPABASE_ANON_KEY__|${{ secrets.SUPABASE_ANON_KEY }}|g" \
             "$OUTPUT_FILE"
 
-          echo "Generated ${OUTPUT_FILE}:\n"
+          echo "Generated ${OUTPUT_FILE}:"
+          echo ""
           cat "${OUTPUT_FILE}"
 
       - name: Generate webmanifest file
         run: |
-          WEBMANIFEST_FILE="src/site.webmanifest"
+          WEBMANIFEST_FILE="src/manifest.webmanifest"
 
           jq \
             --arg name "${{ vars.APP_WEBMANIFEST_NAME }}" \
@@ -141,7 +142,8 @@ jobs:
 
           mv "${WEBMANIFEST_FILE}.tmp" "$WEBMANIFEST_FILE"
 
-          echo "Generated ${WEBMANIFEST_FILE}:\n"
+          echo "Generated ${WEBMANIFEST_FILE}:"
+          echo ""
           cat "${WEBMANIFEST_FILE}"
 
       - name: Build application

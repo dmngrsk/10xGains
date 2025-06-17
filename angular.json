@@ -27,7 +27,7 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/assets",
-              "src/site.webmanifest",
+              "src/manifest.webmanifest",
               "src/staticwebapp.config.json"
             ],
             "styles": [
