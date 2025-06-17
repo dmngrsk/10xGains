@@ -1,7 +1,10 @@
 export const sessionsSelectors = {
-  header: 'session-header',
-  timer: 'session-timer',
-  completeButton: 'complete-session-button',
+  header: {
+    title: 'session-header-title',
+    plan: 'session-header-plan',
+    date: 'session-header-date',
+    status: 'session-header-status',
+  },
   set: {
     bubble: 'set-bubble',
     bubbleText: 'set-bubble-text',
@@ -15,5 +18,7 @@ export const sessionsSelectors = {
       weightInput: 'add-edit-set-dialog-weight-input',
       saveButton: 'add-edit-set-dialog-save-button',
     },
-  }
+  },
+  timer: 'session-timer',
+  completeButton: 'complete-session-button',
 };

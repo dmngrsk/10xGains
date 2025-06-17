@@ -15,7 +15,8 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionNavigateButton).click();
 
       cy.url().should('match', /\/sessions\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
-      cy.getBySel(dataCy.sessions.header).should('be.visible').and('contain.text', 'Workout A');
+      cy.getBySel(dataCy.sessions.header.title).should('be.visible').and('contain.text', 'Workout A');
+      cy.getBySel(dataCy.sessions.header.plan).should('be.visible').and('contain.text', 'Test Training Plan');
     });
   });
 
@@ -42,6 +43,9 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         cy.getBySel(dataCy.sessions.set.bubble).first().should('have.attr', 'aria-label', ariaLabel);
         cy.getBySel(dataCy.sessions.set.bubbleText).first().should('contain.text', bubbleText);
       });
+
+      cy.getBySel(dataCy.sessions.header.status).should('contain.text', 'IN PROGRESS');
+      cy.getBySel(dataCy.sessions.header.date).should('be.visible');
     });
 
     it('opens edit dialog on long-press and save changes', { tags: ['SESS-03'] }, () => {

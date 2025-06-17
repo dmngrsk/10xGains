@@ -1,12 +1,12 @@
 <div class="flex flex-row justify-between">
   <div class="flex flex-col">
-    <p class="text-xl font-bold text-primary">{{ metadata.dayName }}</p>
-    <p class="text-sm text-primary">{{ metadata.planName }}</p>
+    <p class="text-xl font-bold text-primary" data-cy="session-header-title">{{ metadata.dayName }}</p>
+    <p class="text-sm text-primary" data-cy="session-header-plan">{{ metadata.planName }}</p>
   </div>
   <div class="flex flex-col items-end">
-    <p class="text-md text-primary">{{ metadata.date | date:'MMM d, yyyy' }}</p>
+    <p class="text-md text-primary" data-cy="session-header-date">{{ metadata.date | date:'MMM d, yyyy' }}</p>
     @if (metadata.status) {
-      <p class="text-sm text-primary">{{ metadata.status.replace('_', ' ') }}</p>
+      <p class="text-sm text-primary" data-cy="session-header-status">{{ metadata.status.replace('_', ' ') }}</p>
     }
   </div>
 </div>
