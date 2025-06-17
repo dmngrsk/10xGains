@@ -1,7 +1,7 @@
 @if (!isAddAction && setVm; as currentSet) {
   <button mat-raised-button txgLongPress
     [attr.data-cy]="'set-bubble'"
-    [attr.data-cy-set-status]="currentSet.status.toLowerCase()"
+    [attr.data-cy-set-status]="currentSet.status"
     [ngClass]="currentSet.status === 'COMPLETED' || currentSet.status === 'FAILED' ? '!bg-primary !text-on-primary' : ''"
     [disabled]="isReadOnly"
     (txgClick)="onSetClicked()"

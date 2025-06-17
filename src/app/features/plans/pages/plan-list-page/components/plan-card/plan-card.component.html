@@ -21,13 +21,13 @@
       <div class="space-y-4">
         @for (day of plan.days; track day.name ? day.name : $index; let dayIndex = $index) {
           <div>
-            <p class="text-lg text-primary mb-2">{{ day.name ? day.name : 'Day ' + (dayIndex + 1) }}</p>
+            <p class="text-lg text-primary font-medium mb-2">{{ day.name ? day.name : 'Day ' + (dayIndex + 1) }}</p>
 
             @if (day.description) {
-              <p class="text-sm !text-secondary !mt-2 !mb-2">{{ day.description }}</p>
+              <p class="text-sm text-secondary my-2">{{ day.description }}</p>
             }
 
-            <div class="!mt-3">
+            <div class="mt-3">
               @if (day.exercises && day.exercises.length > 0) {
                 <ul class="list-disc list-inside text-sm">
                   @for (exercise of day.exercises; track exercise.exerciseName; let exIndex = $index) {

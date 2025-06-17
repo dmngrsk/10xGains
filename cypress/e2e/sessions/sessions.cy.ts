@@ -72,7 +72,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('allows a user to complete a session', { tags: ['SESS-05'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
-      cy.getBySel(dataCy.sessions.set.bubble).filter('[aria-label="Set pending"]').should('not.exist');
+      cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
 
       cy.url().should('include', '/home');
@@ -83,7 +83,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-06'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
-      cy.getBySel(dataCy.sessions.set.bubble).filter('[aria-label="Set pending"]').should('exist');
+      cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
       cy.getBySel(dataCy.shared.dialogs.confirmation.title).should('be.visible').and('contain.text', 'Complete Session');
       cy.getBySel(dataCy.shared.dialogs.confirmation.content).should('be.visible').and('contain.text', 'Not all sets have been marked as completed or failed.');
