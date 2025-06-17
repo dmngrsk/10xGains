@@ -1,3 +1,4 @@
+import { CdkDragHandle } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +10,7 @@ import { TrainingPlanExerciseSetViewModel } from '@features/plans/models/trainin
   selector: 'txg-plan-exercise-set-item',
   standalone: true,
   imports: [
+    CdkDragHandle,
     CommonModule,
     MatIconModule,
     MatButtonModule,

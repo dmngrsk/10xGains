@@ -27,20 +27,20 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('cycles through set states on tap', { tags: ['SESS-02'] }, () => {
       const bubbleStateSequence = [
-        { ariaLabel: 'Set completed', bubbleText: '5' },
-        { ariaLabel: 'Set failed', bubbleText: '4' },
-        { ariaLabel: 'Set failed', bubbleText: '3' },
-        { ariaLabel: 'Set failed', bubbleText: '2' },
-        { ariaLabel: 'Set failed', bubbleText: '1' },
-        { ariaLabel: 'Set failed', bubbleText: '0' },
-        { ariaLabel: 'Set pending', bubbleText: '5' },
-        { ariaLabel: 'Set completed', bubbleText: '5' },
+        { ariaLabel: 'COMPLETED', bubbleText: '5' },
+        { ariaLabel: 'FAILED', bubbleText: '4' },
+        { ariaLabel: 'FAILED', bubbleText: '3' },
+        { ariaLabel: 'FAILED', bubbleText: '2' },
+        { ariaLabel: 'FAILED', bubbleText: '1' },
+        { ariaLabel: 'FAILED', bubbleText: '0' },
+        { ariaLabel: 'PENDING', bubbleText: '5' },
+        { ariaLabel: 'COMPLETED', bubbleText: '5' },
       ];
 
       bubbleStateSequence.forEach(({ ariaLabel, bubbleText }) => {
         cy.getBySel(dataCy.sessions.set.bubble).first().click();
 
-        cy.getBySel(dataCy.sessions.set.bubble).first().should('have.attr', 'aria-label', ariaLabel);
+        cy.getBySel(dataCy.sessions.set.bubble).first().should('have.attr', 'data-cy-set-status', ariaLabel);
         cy.getBySel(dataCy.sessions.set.bubbleText).first().should('contain.text', bubbleText);
       });
 
