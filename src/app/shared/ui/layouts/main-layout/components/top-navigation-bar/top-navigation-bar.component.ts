@@ -38,8 +38,8 @@ export class TopNavigationBarComponent {
     return this.environmentService.buildName;
   }
 
-  get buildSha(): string {
-    return this.environmentService.buildSha;
+  get buildVersion(): string {
+    return this.environmentService.buildVersion;
   }
 
   onNavigateBack(): void {
