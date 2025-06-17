@@ -14,8 +14,8 @@ jobs:
     uses: ./.github/workflows/reusable-ci.yml
     with:
       environment: staging
-      build_name: ${{ github.event.release.tag_name }}
-      build_sha: ${{ github.event.release.target_commitish }}
+      build_name: ${{ github.event.release.target_commitish }}
+      build_sha: ${{ github.event.release.tag_name }}
     secrets: inherit
 
   cd-staging:
