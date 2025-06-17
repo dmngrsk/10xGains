@@ -3,7 +3,6 @@ import { Component, DestroyRef, inject, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatCardModule } from '@angular/material/card';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
 import { AuthService, LoginCommand, LoginResponse } from '@shared/services/auth.service';
 import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { LoginActionsComponent } from './components/login-actions/login-actions.component';
@@ -36,20 +35,19 @@ export class LoginPageComponent {
 
     this.authService
       .login(command)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.loginForm.setLoading(false))
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: LoginResponse) => {
           if (response.success) {
             this.router.navigate(['/home']);
           } else {
             this.loginForm.setError(response.error || 'Login failed');
+            this.loginForm.setLoading(false);
           }
         },
         error: (error: Error) => {
           this.loginForm.setError(error.message);
+          this.loginForm.setLoading(false);
         }
       });
   }

@@ -1,6 +1,5 @@
 import { Component, DestroyRef, inject, signal, ViewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs/operators';
 import { AuthService, ResetPasswordCommand, ResetPasswordResponse } from '@shared/services/auth.service';
 import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { ResetPasswordActionsComponent } from './components/reset-password-actions/reset-password-actions.component';
@@ -30,20 +29,19 @@ export class ResetPasswordPageComponent {
     this.resetPasswordForm.setError(null);
 
     this.authService.resetPassword(command)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.resetPasswordForm.setLoading(false))
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response: ResetPasswordResponse) => {
           if (response.success) {
             this.passwordResetRequested.set(true);
           } else {
             this.resetPasswordForm.setError(response.error || 'Password reset failed');
+            this.resetPasswordForm.setLoading(false)
           }
         },
         error: (error: Error) => {
           this.resetPasswordForm.setError(error.message);
+          this.resetPasswordForm.setLoading(false)
         }
       });
   }
