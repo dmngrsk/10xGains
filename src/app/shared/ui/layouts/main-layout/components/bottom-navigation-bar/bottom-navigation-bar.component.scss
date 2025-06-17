@@ -5,14 +5,24 @@ mat-toolbar {
 .nav-item-container {
   top: 50%;
   transform: translate(-50%, -50%);
+}
 
-  .active-nav-item {
-    mat-icon {
-      color: var(--color-primary);
-    }
+.nav-item-container .active-nav-item {
+  mat-icon {
+    color: var(--color-primary);
+  }
 
-    span {
-      color: var(--color-primary);
-    }
+  span {
+    color: var(--color-primary);
+  }
+}
+
+:not(.nav-item-container .active-nav-item) {
+  mat-icon {
+    color: var(--color-outline);
+  }
+
+  span {
+    color: var(--color-outline);
   }
 }
