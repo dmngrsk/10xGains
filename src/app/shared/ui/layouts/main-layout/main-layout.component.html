@@ -1,29 +1,4 @@
-<mat-toolbar color="primary" class="flex !bg-primary justify-start gap-2 items-center shadow-md fixed top-0 left-0 right-0 z-[100] h-16">
-  <div class="flex flex-row w-full justify-between items-center">
-    <div class="flex flex-row items-center gap-2">
-      @if (showBackNavigation()) {
-        <button class="!text-white" mat-icon-button (click)="onNavigateBack()" data-cy="navigation-back-button">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-      } @else {
-        <img ngSrc="assets/images/logo-nav.png" alt="10xGains Logo"
-          width="1024" height="1024" priority="true"
-          class="h-8 w-8 mx-1 object-contain filter brightness-0 invert" />
-      }
-      <span class="text-xl text-white font-semibold">{{ title }}</span>
-    </div>
-    @if (!environmentService.production) {
-      <div class="flex flex-col items-end absolute right-0 mr-4">
-        <span class="text-xs text-white">
-          {{ environmentService.buildName }}
-        </span>
-        <span class="text-xs text-white">
-          {{ environmentService.buildSha }}
-        </span>
-      </div>
-    }
-  </div>
-</mat-toolbar>
+<txg-top-navigation-bar [title]="title" [backNavigation]="backNavigation" />
 
 @if (showFullScreenLoader()) {
   <div [class.pb-16]="showBottomNavigation()" class="flex pt-14 justify-center items-center fixed inset-0 z-50">

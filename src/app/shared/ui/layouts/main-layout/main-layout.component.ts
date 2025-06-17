@@ -1,26 +1,21 @@
-import { CommonModule, Location, NgOptimizedImage } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, Signal, effect, signal, WritableSignal, computed, inject } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
 import { EnvironmentService } from '@shared/services/environment.service';
 import { BottomNavigationBarComponent } from './components/bottom-navigation-bar/bottom-navigation-bar.component';
+import { TopNavigationBarComponent } from './components/top-navigation-bar/top-navigation-bar.component';
 
 @Component({
   selector: 'txg-main-layout',
   standalone: true,
   imports: [
     CommonModule,
-    NgOptimizedImage,
-    MatButtonModule,
-    MatIconModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
-    MatToolbarModule,
-    BottomNavigationBarComponent
+    BottomNavigationBarComponent,
+    TopNavigationBarComponent,
   ],
   templateUrl: './main-layout.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -46,10 +41,6 @@ export class MainLayoutComponent {
 
   readonly showContent: Signal<boolean> = computed(() => {
     return !this.loadingSignal || !this.loadingSignal();
-  });
-
-  readonly showBackNavigation: Signal<boolean> = computed(() => {
-    return this.backNavigation !== undefined;
   });
 
   readonly showBottomNavigation: Signal<boolean> = computed(() => {

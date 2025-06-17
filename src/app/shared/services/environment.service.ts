@@ -29,6 +29,6 @@ export class EnvironmentService {
   }
 
   get buildSha(): string {
-    return this.env.build?.sha.substring(0, 7) ?? '';
+    return this.env.build?.sha?.startsWith('v') ? this.env.build.sha : this.env.build?.sha.substring(0, 7) ?? '';
   }
 }
