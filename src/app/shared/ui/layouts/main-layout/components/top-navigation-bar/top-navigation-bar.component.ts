@@ -1,5 +1,6 @@
 import { Location, NgOptimizedImage } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, Input, Signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
@@ -11,6 +12,7 @@ import { EnvironmentService } from '@shared/services/environment.service';
   imports: [
     MatToolbarModule,
     MatIconModule,
+    MatButtonModule,
     NgOptimizedImage
   ],
   templateUrl: './top-navigation-bar.component.html',

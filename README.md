@@ -17,16 +17,16 @@
 - **Frontend**: Angular 19, Angular Material Design 3, Tailwind CSS 4
 - **Backend**: Supabase (for PostgreSQL, serverless API via Supabase Edge Functions and authentication)
 - **AI Integration**: OpenRouter API for AI-driven training plan suggestions
-- **Test Suite**: Cypress (e2e), Vitest (unit)
+- **Test Suite**: Vitest (unit), Cypress (e2e)
 - **CI/CD and Hosting**: GitHub Actions, Azure Static Web Apps
 
 ## Getting Started Locally
 
 ### Prerequisites
 - **Node.js**: Version specified in `.nvmrc` (e.g., `22.14.0`)
+- **Yarn**: This project uses `yarn` for package management
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
-- **Yarn**: This project uses `yarn` for package management
 
 ### Installation
 1.  **Clone the repository:**
@@ -128,7 +128,7 @@ Below are the most important scripts defined in `package.json`.
 
 - `yarn e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
 - `yarn e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
-- `yarn e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI pipeline.
+- `yarn e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 
 ## Project Scope
 The current MVP scope includes:
@@ -139,7 +139,7 @@ The current MVP scope includes:
 - **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status
-The project is currently in early development (MVP stage) with version `0.1.0`. Features are actively being developed and refined.
+The project is currently in early development. Features are actively being developed and refined.
 
 ## License
 This project is licensed under the [MIT License](LICENSE.md). 
