@@ -99,6 +99,8 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
 
+    this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, date: s.metadata?.date ?? new Date(), status: 'IN_PROGRESS' as SessionStatus } }));
+
     const setId = setPayload.id;
     let apiCallProvider: () => Observable<SessionSetDto | null>;
 

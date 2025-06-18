@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { AutoHideScrollbarDirective } from '@shared/utils/directives/auto-hide-scrollbar.directive';
 import { SessionExerciseViewModel, SessionSetViewModel } from '../../../../models/session-page.viewmodel';
 import { SessionSetBubbleComponent } from '../session-set-bubble/session-set-bubble.component';
 
@@ -12,7 +13,8 @@ import { SessionSetBubbleComponent } from '../session-set-bubble/session-set-bub
     CommonModule,
     SessionSetBubbleComponent,
     MatButtonModule,
-    MatIconModule
+    MatIconModule,
+    AutoHideScrollbarDirective,
   ],
   templateUrl: './session-set-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

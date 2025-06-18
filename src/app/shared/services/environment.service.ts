@@ -25,10 +25,10 @@ export class EnvironmentService {
   }
 
   get buildName(): string {
-    return this.env.build?.name ?? '';
+    return this.env.build?.name || '';
   }
 
-  get buildSha(): string {
-    return this.env.build?.sha?.startsWith('v') ? this.env.build.sha : this.env.build?.sha.substring(0, 7) ?? '';
+  get buildVersion(): string {
+    return this.env.build?.tag || this.env.build?.sha?.substring(0, 7) || '';
   }
 }

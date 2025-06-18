@@ -35,3 +35,13 @@ $material-color-role-tokens: (
 
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
 .mdc-notched-outline__notch { border-right: none; }
+
+/* Hide scrollbars dynamically - to be used with txgAutoHideScrollbar directive */
+.txg-auto-hide-scrollbar {
+  scrollbar-width: none; // For Firefox
+  -ms-overflow-style: none; // For IE and Edge
+
+  &::-webkit-scrollbar {
+    display: none; // For Chrome, Safari, and Opera
+  }
+}

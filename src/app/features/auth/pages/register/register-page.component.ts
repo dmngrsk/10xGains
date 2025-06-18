@@ -3,7 +3,6 @@ import { Component, DestroyRef, ViewChild, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, RouterModule } from '@angular/router';
-import { finalize } from 'rxjs';
 import { AuthService, RegisterCommand, RegisterResponse } from '@shared/services/auth.service';
 import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { RegisterActionsComponent } from './components/register-actions/register-actions.component';
@@ -37,10 +36,7 @@ export class RegisterPageComponent {
     this.registerForm.setError(null);
 
     this.authService.register(request)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.registerForm.setLoading(false))
-      )
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (result: RegisterResponse) => {
           if (result.success) {
@@ -52,10 +48,12 @@ export class RegisterPageComponent {
             }
           } else {
             this.registerForm.setError(result.error || 'An unexpected error occurred.');
+            this.registerForm.setLoading(false);
           }
         },
         error: (error: Error) => {
           this.registerForm.setError(error.message);
+          this.registerForm.setLoading(false);
         }
       });
   }

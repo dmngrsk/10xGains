@@ -4,6 +4,7 @@ export const environment = {
   build: {
     name: '__BUILD_NAME__',
     sha: '__BUILD_SHA__',
+    tag: '__BUILD_TAG__',
   },
   supabase: {
     url: '__SUPABASE_URL__',

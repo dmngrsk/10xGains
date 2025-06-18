@@ -8,7 +8,7 @@
             </button>
         </div>
       }
-      <div [class.pl-6]="isReadOnly" class="set-details flex-grow" data-cy="plan-exercise-set-details">
+      <div [class.px-6]="isReadOnly" class="set-details flex-grow pr-6" data-cy="plan-exercise-set-details">
         <span class="font-medium">{{ set.expectedReps }}</span>
         <span class="text-secondary"> x </span>
         <span class="font-medium">{{ set.expectedWeight }}</span>
@@ -16,10 +16,10 @@
       </div>
 
       @if (!isReadOnly) {
-        <button mat-icon-button color="primary" (click)="onSetEdited()" aria-label="Edit set" data-cy="plan-exercise-set-edit-button">
+        <button mat-icon-button color="primary" (click)="onSetEdited()" data-cy="plan-exercise-set-edit-button">
           <mat-icon>edit</mat-icon>
         </button>
-        <button mat-icon-button color="warn" (click)="onSetDeleted()" aria-label="Delete set" data-cy="plan-exercise-set-delete-button">
+        <button mat-icon-button color="warn" (click)="onSetDeleted()" data-cy="plan-exercise-set-delete-button">
           <mat-icon>delete</mat-icon>
         </button>
       }
