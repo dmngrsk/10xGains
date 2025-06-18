@@ -99,8 +99,6 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
 
-    this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, date: s.metadata?.date ?? new Date(), status: 'IN_PROGRESS' as SessionStatus } }));
-
     const setId = setPayload.id;
     let apiCallProvider: () => Observable<SessionSetDto | null>;
 
@@ -284,6 +282,10 @@ export class SessionPageFacade {
 
   private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
     this.viewModel.update(session => {
+      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
+      const updatedSessionDate = session.metadata?.date ?? new Date();
+      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
+
       const updatedExercises = session.exercises.map(ex => {
         if (ex.trainingPlanExerciseId === exerciseId) {
           const setIndex = ex.sets.findIndex(s => s.id === set.id);
@@ -298,7 +300,8 @@ export class SessionPageFacade {
         }
         return ex;
       });
-      return { ...session, exercises: updatedExercises, error: null };
+
+      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
     });
   }
 

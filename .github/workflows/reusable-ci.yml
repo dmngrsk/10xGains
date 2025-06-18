@@ -121,7 +121,7 @@ jobs:
             -e "s|enableServiceWorker: false,|enableServiceWorker: true,|g" \
             -e "s|__BUILD_NAME__|${{ inputs.build_name }}|g" \
             -e "s|__BUILD_SHA__|${{ inputs.build_sha }}|g" \
-            -e "s|__BUILD_TAG__|${{ vars.BUILD_TAG }}|g" \
+            -e "s|__BUILD_TAG__|${{ inputs.build_tag }}|g" \
             -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
             -e "s|__SUPABASE_ANON_KEY__|${{ secrets.SUPABASE_ANON_KEY }}|g" \
             "$OUTPUT_FILE"
