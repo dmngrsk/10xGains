@@ -1,4 +1,4 @@
-<div class="flex flex-nowrap gap-2 pb-3 items-center overflow-x-auto">
+<div txgAutoHideScrollbar class="flex flex-nowrap gap-2 pb-3 items-center overflow-x-auto">
   @for (set of exercise.sets; track set.id; let i = $index) {
     <txg-session-set-bubble
       [class.ml-[2px]]="i === 0"
