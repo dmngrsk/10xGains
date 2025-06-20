@@ -66,6 +66,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).clear().type('5');
       cy.getBySel(dataCy.plans.dialogs.exerciseProgression.saveButton).click();
       cy.getBySel(dataCy.plans.dialogs.exerciseProgression.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Exercise progression updated');
 
       // Delete an exercise
       cy.getBySel(dataCy.plans.planEdit.exercises.deleteButton).click();

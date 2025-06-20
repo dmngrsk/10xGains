@@ -61,7 +61,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID is required'));
     }
 
-    const url = `training-plans/${planId}`;
+    const url = `/training-plans/${planId}`;
     return this.apiService.get<TrainingPlanDto>(url);
   }
 
@@ -75,7 +75,7 @@ export class PlanService {
       return throwError(() => new Error('Plan name in command is required for creation'));
     }
 
-    const url = 'training-plans';
+    const url = '/training-plans';
     return this.apiService.post<CreateTrainingPlanCommand, TrainingPlanDto>(url, command);
   }
 
@@ -93,7 +93,7 @@ export class PlanService {
       return throwError(() => new Error('Command with name or description is required for update'));
     }
 
-    const url = `training-plans/${planId}`;
+    const url = `/training-plans/${planId}`;
     return this.apiService.put<UpdateTrainingPlanCommand, TrainingPlanDto>(url, command);
   }
 
@@ -107,7 +107,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID is required for deletion'));
     }
 
-    const url = `training-plans/${planId}`;
+    const url = `/training-plans/${planId}`;
     return this.apiService.delete(url);
   }
 
@@ -125,7 +125,7 @@ export class PlanService {
       return throwError(() => new Error('Day name in command is required'));
     }
 
-    const url = `training-plans/${planId}/days`;
+    const url = `/training-plans/${planId}/days`;
     return this.apiService.post<CreateTrainingPlanDayCommand, TrainingPlanDayDto>(url, command);
   }
 
@@ -144,7 +144,7 @@ export class PlanService {
       return throwError(() => new Error('Command is required for update'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}`;
+    const url = `/training-plans/${planId}/days/${dayId}`;
     return this.apiService.put<UpdateTrainingPlanDayCommand, TrainingPlanDayDto>(url, command);
   }
 
@@ -159,7 +159,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID and Day ID are required for delete'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}`;
+    const url = `/training-plans/${planId}/days/${dayId}`;
     return this.apiService.delete(url);
   }
 
@@ -181,7 +181,7 @@ export class PlanService {
       return throwError(() => new Error('Order index must be non-negative if provided'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}/exercises`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises`;
     return this.apiService.post<CreateTrainingPlanExerciseCommand, TrainingPlanExerciseDto>(url, command);
   }
 
@@ -201,7 +201,7 @@ export class PlanService {
       return throwError(() => new Error('Command with a non-negative order_index is required'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
     return this.apiService.put<UpdateTrainingPlanExerciseCommand, TrainingPlanExerciseDto>(url, command);
   }
 
@@ -217,7 +217,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID, Day ID, and Training Plan Exercise ID are required for delete'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises/${trainingPlanExerciseId}`;
     return this.apiService.delete(url);
   }
 
@@ -240,7 +240,7 @@ export class PlanService {
       return throwError(() => new Error('Set index must be non-negative if provided'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets`;
     return this.apiService.post<CreateTrainingPlanExerciseSetCommand, TrainingPlanExerciseSetDto>(url, command);
   }
 
@@ -276,7 +276,7 @@ export class PlanService {
       return throwError(() => new Error('Set index must be non-negative if provided'));
     }
 
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
     return this.apiService.put<UpdateTrainingPlanExerciseSetCommand, TrainingPlanExerciseSetDto>(url, command);
   }
 
@@ -292,7 +292,7 @@ export class PlanService {
     if (!planId || !dayId || !planExerciseId || !setId) {
       return throwError(() => new Error('Plan ID, Day ID, Plan Exercise ID, and Set ID are required for delete'));
     }
-    const url = `training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
+    const url = `/training-plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
     return this.apiService.delete(url);
   }
 
@@ -308,7 +308,7 @@ export class PlanService {
       return throwError(() => new Error('Plan ID and Exercise ID are required to get progression'));
     }
 
-    const url = `training-plans/${planId}/progressions/${exerciseId}`;
+    const url = `/training-plans/${planId}/progressions/${exerciseId}`;
     return this.apiService.get<TrainingPlanExerciseProgressionDto | undefined>(url);
   }
 
@@ -331,7 +331,7 @@ export class PlanService {
       return throwError(() => new Error('Command is required for updating progression'));
     }
 
-    const url = `training-plans/${planId}/progressions/${exerciseId}`;
+    const url = `/training-plans/${planId}/progressions/${exerciseId}`;
     return this.apiService.put<UpsertTrainingPlanExerciseProgressionCommand, TrainingPlanExerciseProgressionDto>(url, command);
   }
 }

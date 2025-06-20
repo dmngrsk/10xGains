@@ -19,28 +19,32 @@ export class ApiService {
   private supabaseService = inject(SupabaseService);
 
   public get<T>(url: string): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'GET' });
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'GET' });
     return from(promise.then(this.handleFunctionResponse));
   }
 
   public post<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'POST', body: body });
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'POST', body: body });
     return from(promise.then(this.handleFunctionResponse));
   }
 
   public put<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'PUT', body: body });
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'PUT', body: body });
     return from(promise.then(this.handleFunctionResponse));
   }
 
   public delete(url: string): Observable<ApiServiceResponse<null>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<null>>(url, { method: 'DELETE' });
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<null>>(this.formatApiUrl(url), { method: 'DELETE' });
     return from(promise.then(this.handleFunctionResponse));
   }
 
   public patch<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(url, { method: 'PATCH', body: body });
+    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'PATCH', body: body });
     return from(promise.then(this.handleFunctionResponse));
+  }
+
+  private formatApiUrl(url: string): string {
+    return 'api/' + url.replace(/^\/+|\/+$/g, "");
   }
 
   private async handleFunctionResponse<T>(response: { data: ApiInternalResponse<T> | null; error: Error | null }): Promise<ApiServiceResponse<T>> {

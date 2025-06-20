@@ -1,0 +1,11 @@
+{
+  "imports": {
+    "hono": "https://deno.land/x/hono@v4.2.7/mod.ts",
+    "hono/cors": "https://deno.land/x/hono@v4.2.7/middleware.ts",
+    "supabase": "https://esm.sh/@supabase/supabase-js@2",
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
+  },
+  "tasks": {
+    "start": "deno run --allow-all --unstable index.ts"
+  }
+}

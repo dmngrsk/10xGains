@@ -377,7 +377,7 @@ export class PlanEditPageComponent implements OnInit {
 
     const dialogData: EditExerciseProgressionDialogData = {
       weight_increment: progression?.weightIncrement ?? undefined,
-      deload_strategy: progression?.deloadStrategy ?? undefined,
+      deload_strategy: progression?.deloadStrategy as 'PROPORTIONAL' | 'REFERENCE_SET' | 'CUSTOM' | undefined,
       reference_set_index: progression?.referenceSetIndex ?? undefined,
       failure_count_for_deload: progression?.failureCountForDeload ?? undefined,
       deload_percentage: progression?.deloadPercentage ?? undefined,

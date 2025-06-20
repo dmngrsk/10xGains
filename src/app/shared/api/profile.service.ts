@@ -25,7 +25,7 @@ export class ProfileService {
       return throwError(() => new Error('User ID is required to get user profile.'));
     }
 
-    const url = `user-profiles/${userId}`;
+    const url = `/user-profiles/${userId}`;
     return this.apiService.get<UserProfileDto>(url)
   }
 
@@ -55,7 +55,7 @@ export class ProfileService {
       return throwError(() => new Error('User ID is required to update user profile.'));
     }
 
-    const url = `user-profiles/${userId}`;
+    const url = `/user-profiles/${userId}`;
     return this.apiService.put<UpsertUserProfileCommand, UserProfileDto>(url, command);
   }
 }
