@@ -76,7 +76,8 @@ The API function has a `deno.json` file that manages dependencies and Deno-speci
 {
   "imports": {
     "hono": "https://deno.land/x/hono@v4.2.7/mod.ts",
-    "hono/cors": "https://deno.land/x/hono@v4.2.7/middleware.ts",
+    "hono/middleware": "https://deno.land/x/hono@v4.2.7/middleware.ts",
+    "hono/utils/http-status": "https://deno.land/x/hono@v4.2.7/utils/http-status.ts",
     "supabase": "https://esm.sh/@supabase/supabase-js@2",
     "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
   }
@@ -207,7 +208,7 @@ Lists all available exercises. Supports pagination and sorting.
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of exercises to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
-    -   `sort` (optional, string, default: `id.desc`): Sort criteria (e.g., `name.asc`).
+    -   `sort` (optional, string, default: `name.asc`): Sort criteria (e.g., `id.asc`).
 -   **Response (200 OK)**: An array of `ExerciseDto` objects.
     ```json
     {
@@ -324,7 +325,7 @@ Lists all training plans for the authenticated user. Supports pagination and sor
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of plans to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
-    -   `sort` (optional, string, default: `created_at:desc`): Sort criteria (e.g., `name:asc`, `created_at:desc`).
+    -   `sort` (optional, string, default: `created_at.desc`): Sort criteria (e.g., `name.asc`, `created_at.desc`).
 -   **Response (200 OK)**: An array of `TrainingPlanDto` objects.
     ```json
     {
@@ -1048,7 +1049,7 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of sessions to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
-    -   `order` (optional, string, default: `session_date.desc`): Sort criteria (e.g., `session_date.asc`, `status.asc`).
+    -   `sort` (optional, string, default: `session_date.desc`): Sort criteria (e.g., `session_date.asc`, `status.asc`).
     -   `status` (optional, string): Filter by session status (e.g., `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
     -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).

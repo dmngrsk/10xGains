@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
+import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { TrainingPlanDto, UpdateTrainingPlanCommand } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validateCommandBody, validatePathParams } from "../../utils/validation.ts";
@@ -23,33 +23,20 @@ export async function handlePutTrainingPlanById(c: Context<AppContext>) {
   const { command, error: commandError } = await validateCommandBody<typeof COMMAND_SCHEMA, UpdateTrainingPlanCommand>(c, COMMAND_SCHEMA);
   if (commandError) return commandError;
 
-  const supabaseClient = c.get('supabase');
-  const user = c.get('user');
+  const planRepository = c.get('planRepository');
 
   try {
-    const { data, error } = await supabaseClient
-      .from('training_plans')
-      .update(command!)
-      .eq('id', path!.planId)
-      .eq('user_id', user.id)
-      .select()
-      .single();
+    const updatedTrainingPlan = await planRepository.update(path!.planId, command!);
 
-    if (error) {
-      console.error('Error updating training plan:', error);
-      if (error.code === 'PGRST116') {
-        const errorData = createErrorDataWithLogging(404, 'Training plan not found for update', undefined, error.code, error);
-        return c.json(errorData, 404);
-      }
-      const errorData = createErrorDataWithLogging(500, 'Failed to update training plan', { details: error.message }, undefined, error);
-      return c.json(errorData, 500);
+    if (!updatedTrainingPlan) {
+      const errorData = createErrorDataWithLogging(404, 'Training plan not found for update');
+      return c.json(errorData, 404);
     }
 
-    const successData = createSuccessData<TrainingPlanDto>(data as TrainingPlanDto);
+    const successData = createSuccessData<TrainingPlanDto>(updatedTrainingPlan);
     return c.json(successData, 200);
   } catch (e) {
-    console.error('Unexpected error in handlePutTrainingPlanById:', e);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred', { details: (e as Error).message }, undefined, e);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to update training plan';
+    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handlePutTrainingPlanById.name, fallbackMessage);
   }
 }

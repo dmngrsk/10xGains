@@ -14,7 +14,7 @@ import { CompleteSessionSetCommand,
 export interface GetSessionsParams {
   limit?: number;
   offset?: number;
-  order?: string;
+  sort?: string;
   status?: string[];
   date_from?: string;
   date_to?: string;
@@ -44,8 +44,8 @@ export class SessionService {
     if (params.offset !== undefined) {
       queryParams.append('offset', params.offset.toString());
     }
-    if (params.order !== undefined) {
-      queryParams.append('order', params.order);
+    if (params.sort !== undefined) {
+      queryParams.append('sort', params.sort);
     }
     if (params.status !== undefined) {
       queryParams.append('status', params.status.join(','));

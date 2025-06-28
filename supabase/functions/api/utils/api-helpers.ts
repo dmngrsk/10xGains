@@ -1,3 +1,7 @@
+import { Context } from "hono";
+import { AppContext } from "../context.ts";
+import type { StatusCode } from 'hono/utils/http-status';
+
 /**
  * Standard API error response
  */
@@ -6,7 +10,7 @@ export interface ApiErrorResponse {
   error: string;
 
   /** HTTP status */
-  status: number;
+  status: StatusCode;
 
   /** Additional error details (optional) */
   details?: Record<string, unknown>;
@@ -54,10 +58,14 @@ export interface ErrorDetails {
 }
 
 /**
- * Log a structured error message
+ * Logs a structured error message to the console.
+ *
+ * This function takes an `ErrorDetails` object and formats it into a JSON string
+ * for consistent, parsable error logging.
+ *
+ * @param {ErrorDetails} error - The error details object to log.
  */
 export function logError(error: ErrorDetails): void {
-  // Format the error for console output
   const logEntry = {
     timestamp: new Date().toISOString(),
     level: 'error',
@@ -84,43 +92,32 @@ export function logError(error: ErrorDetails): void {
     }
   }
 
-  // Log as JSON for better parsing in log management systems
+  // TODO: Add telemetry
   console.error(JSON.stringify(logEntry));
 }
 
 /**
- * Create a request object for error logging
- */
-export function createRequestInfo(req: Request): ErrorDetails['request'] {
-  try {
-    const url = new URL(req.url);
-    return {
-      method: req.method,
-      path: url.pathname,
-      headers: Object.fromEntries(req.headers),
-      query: Object.fromEntries(url.searchParams),
-    };
-  } catch {
-    // Fallback if URL parsing fails
-    return {
-      method: req.method,
-      path: 'unknown',
-    };
-  }
-}
-
-/**
- * Create error data object with logging (use with c.json(errorData, statusCode))
+ * Creates a standardized API error response and logs the error details.
+ *
+ * This function is a wrapper that first logs the error using `logError` and
+ * then constructs the client-facing error response.
+ *
+ * @param {StatusCode} status - The HTTP status code for the response.
+ * @param {string} message - The error message for the client.
+ * @param {Record<string, unknown>} [details] - Optional additional details for the client.
+ * @param {string} [code] - Optional error code for client-side handling.
+ * @param {unknown} [originalError] - The original error object for server-side logging.
+ * @param {ErrorDetails['request']} [requestInfo] - The request information for logging.
+ * @returns {ApiErrorResponse} The structured error response object.
  */
 export function createErrorDataWithLogging(
-  status: number,
+  status: StatusCode,
   message: string,
   details?: Record<string, unknown>,
   code?: string,
   originalError?: unknown,
   requestInfo?: ErrorDetails['request']
 ): ApiErrorResponse {
-  // Log the error with structured format
   logError({
     statusCode: status,
     message,
@@ -130,6 +127,24 @@ export function createErrorDataWithLogging(
     request: requestInfo,
   });
 
+  return createErrorData(status, message, details, code);
+}
+
+/**
+ * Creates a standardized API error response object.
+ *
+ * @param {StatusCode} status - The HTTP status code.
+ * @param {string} message - The error message.
+ * @param {Record<string, unknown>} [details] - Optional additional error details.
+ * @param {string} [code] - Optional error code.
+ * @returns {ApiErrorResponse} The structured error response.
+ */
+export function createErrorData(
+  status: StatusCode,
+  message: string,
+  details?: Record<string, unknown>,
+  code?: string
+): ApiErrorResponse {
   return {
     error: message,
     status,
@@ -139,23 +154,14 @@ export function createErrorDataWithLogging(
 }
 
 /**
- * Create error data object (use with c.json(errorData, statusCode))
- */
-export function createErrorData(
-  message: string,
-  details?: Record<string, unknown>,
-  code?: string
-): ApiErrorResponse {
-  return {
-    error: message,
-    status: 0, // Will be set by the status code parameter in c.json()
-    ...(details && { details }),
-    ...(code && { code }),
-  };
-}
-
-/**
- * Create success data object (use with c.json(successData, statusCode))
+ * Creates a standardized API success response object.
+ *
+ * @template T - The type of the data being returned.
+ * @param {T} data - The payload to be returned in the response.
+ * @param {object} [metadata] - Optional metadata.
+ * @param {number} [metadata.totalCount] - The total number of records available.
+ * @param {string} [metadata.message] - A success message.
+ * @returns {ApiSuccessResponse<T>} The structured success response.
  */
 export function createSuccessData<T>(
   data: T,
@@ -169,33 +175,34 @@ export function createSuccessData<T>(
 }
 
 /**
- * @deprecated Use createErrorData instead for better performance
- * Helper function to create error responses
+ * Generic handler for repository errors with fallback to general server error.
+ *
+ * @param {Context<AppContext>} c - Hono context
+ * @param {Error} error - The caught error
+ * @param {(error: Error) => T | null} repositoryErrorHandler - Function to handle repository-specific errors (e.g., planRepository.handlePlanError)
+ * @param {string} operationName - Name of the operation for logging purposes
+ * @param {string} fallbackMessage - Message to use for the generic 500 error
+ * @returns {Response} A JSON response containing the error details.
  */
-export function createErrorResponse(
-  status: number,
-  message: string,
-  details?: Record<string, unknown>,
-  code?: string,
-  originalError?: unknown,
-  requestInfo?: ErrorDetails['request']
-): Response {
-  // Log the error with structured format
-  logError({
-    statusCode: status,
-    message,
-    context: details,
-    code,
-    originalError,
-    request: requestInfo,
-  });
+export function handleRepositoryError<T extends { status: StatusCode }>(
+  c: Context<AppContext>,
+  error: Error,
+  repositoryErrorHandler: (error: Error) => T | null,
+  operationName: string,
+  fallbackMessage: string
+) {
+  const repositoryError = repositoryErrorHandler(error);
+  if (repositoryError) {
+    return c.json(repositoryError, repositoryError.status);
+  }
 
-  const errorResponse: ApiErrorResponse = {
-    error: message,
-    status,
-    ...(details && { details }),
-    ...(code && { code }),
-  };
-
-  return new Response(JSON.stringify(errorResponse), { status, headers: { 'Content-Type': 'application/json' } });
+  console.error(`Unexpected error in ${operationName}:`, error);
+  const errorData = createErrorDataWithLogging(
+    500,
+    fallbackMessage,
+    { details: (error as Error).message },
+    undefined,
+    error
+  );
+  return c.json(errorData, 500);
 }

@@ -92,7 +92,7 @@ export class HistoryPageFacade {
     const queryParams: GetSessionsParams = {
       limit: pageSize,
       offset: currentPage * pageSize,
-      order: 'session_date.desc',
+      sort: 'session_date.desc',
       status: ['COMPLETED'],
       date_from: filters.dateFrom ?? undefined,
       date_to: filters.dateTo ?? undefined,

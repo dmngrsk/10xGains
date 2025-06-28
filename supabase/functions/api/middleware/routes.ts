@@ -31,11 +31,11 @@ import { handleDeleteTrainingPlanExerciseById } from '../handlers/training-plan-
 import { handleGetTrainingPlanExerciseSets } from '../handlers/training-plan-exercise-sets/get.ts';
 import { handleCreateTrainingPlanExerciseSet } from '../handlers/training-plan-exercise-sets/post.ts';
 import { handleGetTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/get-id.ts';
-import { handleUpdateTrainingPlanExerciseSet } from '../handlers/training-plan-exercise-sets/put-id.ts';
-import { handleDeleteTrainingPlanExerciseSet } from '../handlers/training-plan-exercise-sets/delete-id.ts';
+import { handlePutTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/put-id.ts';
+import { handleDeleteTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/delete-id.ts';
 import { handleGetTrainingPlanExerciseProgressions } from '../handlers/training-plan-exercise-progressions/get.ts';
-import { handleGetTrainingPlanExerciseProgression } from '../handlers/training-plan-exercise-progressions/get-id.ts';
-import { handleUpsertTrainingPlanExerciseProgression } from '../handlers/training-plan-exercise-progressions/put-id.ts';
+import { handleGetTrainingPlanExerciseProgressionById } from '../handlers/training-plan-exercise-progressions/get-id.ts';
+import { handlePutTrainingPlanExerciseProgressionById } from '../handlers/training-plan-exercise-progressions/put-id.ts';
 import { handleGetTrainingSessionSets } from '../handlers/training-session-sets/get.ts';
 import { handleCreateTrainingSessionSet } from '../handlers/training-session-sets/post.ts';
 import { handleGetTrainingSessionSetById } from '../handlers/training-session-sets/get-id.ts';
@@ -104,16 +104,16 @@ function createTrainingPlanExerciseSetRoutes(): Hono<AppContext> {
     .get('/', requiredAuthMiddleware, handleGetTrainingPlanExerciseSets)
     .post('/', requiredAuthMiddleware, handleCreateTrainingPlanExerciseSet)
     .get('/:setId', requiredAuthMiddleware, handleGetTrainingPlanExerciseSetById)
-    .put('/:setId', requiredAuthMiddleware, handleUpdateTrainingPlanExerciseSet)
-    .delete('/:setId', requiredAuthMiddleware, handleDeleteTrainingPlanExerciseSet);
+    .put('/:setId', requiredAuthMiddleware, handlePutTrainingPlanExerciseSetById)
+    .delete('/:setId', requiredAuthMiddleware, handleDeleteTrainingPlanExerciseSetById);
 }
 
 // /api/training-plans/:planId/progressions
 function createTrainingPlanExerciseProgressionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
     .get('/', requiredAuthMiddleware, handleGetTrainingPlanExerciseProgressions)
-    .get('/:exerciseId', requiredAuthMiddleware, handleGetTrainingPlanExerciseProgression)
-    .put('/:exerciseId', requiredAuthMiddleware, handleUpsertTrainingPlanExerciseProgression);
+    .get('/:exerciseId', requiredAuthMiddleware, handleGetTrainingPlanExerciseProgressionById)
+    .put('/:exerciseId', requiredAuthMiddleware, handlePutTrainingPlanExerciseProgressionById);
 }
 
 // /api/training-sessions

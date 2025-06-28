@@ -61,7 +61,7 @@ export class HomePageFacade {
         }
 
         const sessionsParams: GetSessionsParams = {
-          order: 'session_date.desc',
+          sort: 'session_date.desc',
           limit: 1,
           status: ['PENDING', 'IN_PROGRESS'],
           plan_id: profile.active_training_plan_id,

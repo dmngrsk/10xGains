@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging } from '../../utils/api-helpers.ts';
+import { createErrorDataWithLogging, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { AppContext } from '../../context.ts';
 import { validatePathParams } from '../../utils/validation.ts';
 
@@ -12,33 +12,20 @@ export async function handleDeleteTrainingSessionById(c: Context<AppContext>) {
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);
   if (pathError) return pathError;
 
-  const supabaseClient = c.get('supabase');
-  const user = c.get('user');
+  const sessionRepository = c.get('sessionRepository');
 
   try {
-    const { error, data } = await supabaseClient
-      .from('training_sessions')
-      .delete()
-      .eq('id', path!.sessionId)
-      .eq('user_id', user.id)
-      .select();
+    const deleted = await sessionRepository.delete(path!.sessionId);
 
-    if (error) {
-      console.error(`Error deleting training session ${path!.sessionId} for user ${user.id}:`, error);
-      const errorData = createErrorDataWithLogging(500, 'Failed to delete training session', { details: error.message }, undefined, error);
-      return c.json(errorData, 500);
-    }
-
-    if (!data || data.length === 0) {
-      const errorData = createErrorDataWithLogging(404, 'Training session not found or not authorized to delete.');
+    if (!deleted) {
+      const errorData = createErrorDataWithLogging(404, 'Training session not found for deletion.');
       return c.json(errorData, 404);
     }
 
     return c.body(null, 204);
 
-  } catch (error) {
-    console.error('Unexpected error in handleDeleteTrainingSessionById:', error);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred.', { details: (error as Error).message }, undefined, error);
-    return c.json(errorData, 500);
+  } catch (e) {
+    const fallbackMessage = 'Failed to delete training session';
+    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleDeleteTrainingSessionById.name, fallbackMessage);
   }
 }

@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import type { SessionSetDto, UpdateSessionSetCommand } from '../../models/api-types.ts';
-import { insertAndNormalizeOrder } from '../../services/index-order/index-order.ts';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
+import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { AppContext } from '../../context.ts';
 import { validateCommandBody, validatePathParams } from "../../utils/validation.ts";
 
@@ -33,97 +32,20 @@ export async function handleUpdateTrainingSessionSetById(c: Context<AppContext>)
   const { command, error: commandError } = await validateCommandBody<typeof COMMAND_SCHEMA, UpdateSessionSetCommand>(c, COMMAND_SCHEMA);
   if (commandError) return commandError;
 
-  const supabaseClient = c.get('supabase');
-  const user = c.get('user');
+  const sessionRepository = c.get('sessionRepository');
 
   try {
-    const { data: trainingSession, error: sessionFetchError } = await supabaseClient
-      .from('training_sessions')
-      .select('*')
-      .eq('id', path!.sessionId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const updatedSet = await sessionRepository.updateSet(path!.sessionId, path!.setId, command!);
 
-    if (sessionFetchError) {
-      console.error('Error fetching training session for PUT:', sessionFetchError);
-      const errorData = createErrorDataWithLogging(500, 'Error verifying session access.', { details: sessionFetchError.message }, undefined, sessionFetchError);
-      return c.json(errorData, 500);
-    }
-    if (!trainingSession) {
-      const errorData = createErrorDataWithLogging(404, `Training session with ID ${path!.sessionId} not found or access denied.`);
+    if (!updatedSet) {
+      const errorData = createErrorDataWithLogging(404, `Session set with ID ${path!.setId} not found for update.`);
       return c.json(errorData, 404);
     }
 
-    const { data: existingSet, error: existingSetError } = await supabaseClient
-      .from('session_sets')
-      .select('*')
-      .eq('id', path!.setId)
-      .eq('training_session_id', path!.sessionId)
-      .maybeSingle();
-
-    if (existingSetError) {
-      console.error('Error fetching existing session set for PUT:', existingSetError);
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch session set for update.', { details: existingSetError.message }, undefined, existingSetError);
-      return c.json(errorData, 500);
-    }
-    if (!existingSet) {
-      const errorData = createErrorDataWithLogging(404, `Session set with ID ${path!.setId} not found in session ${path!.sessionId}.`);
-      return c.json(errorData, 404);
-    }
-
-    const setToUpdatePlanExerciseId = existingSet.training_plan_exercise_id;
-
-    const { data: allCurrentSetsForExerciseDb, error: allSetsError } = await supabaseClient
-      .from('session_sets')
-      .select('*')
-      .eq('training_session_id', path!.sessionId)
-      .eq('training_plan_exercise_id', setToUpdatePlanExerciseId)
-      .order('set_index', { ascending: true });
-
-    if (allSetsError) {
-      console.error('Error fetching sibling session sets for reordering:', allSetsError);
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch sibling sets for reordering.', { details: allSetsError.message }, undefined, allSetsError);
-      return c.json(errorData, 500);
-    }
-    const allCurrentSetsForExercise: SessionSetDto[] = (allCurrentSetsForExerciseDb || []) as SessionSetDto[];
-
-    const updatedSetData: SessionSetDto = {
-      ...existingSet,
-      ...command!,
-      set_index: command!.set_index !== undefined ? command!.set_index : existingSet.set_index,
-      status: command!.status !== undefined ? command!.status : existingSet.status,
-      completed_at: command!.completed_at !== undefined ? command!.completed_at : existingSet.completed_at,
-    };
-
-    const normalizedSets = insertAndNormalizeOrder<SessionSetDto>(
-      allCurrentSetsForExercise,
-      updatedSetData,
-      (s: SessionSetDto) => s.id,
-      (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx })
-    );
-
-    const setsToUpsertInDb = normalizedSets.map((s: SessionSetDto) => {
-      const { id, ...dataToUpsert } = s;
-      return { id, ...dataToUpsert };
-    });
-
-    const { data: upsertedSets, error: upsertError } = await supabaseClient
-      .from('session_sets')
-      .upsert(setsToUpsertInDb, { onConflict: 'id' })
-      .select();
-
-    if (upsertError) {
-      console.error('Error upserting session sets for PUT:', upsertError);
-      const errorData = createErrorDataWithLogging(500, 'Failed to update session set(s).', { details: upsertError.message }, undefined, upsertError);
-      return c.json(errorData, 500);
-    }
-
-    const successData = createSuccessData<SessionSetDto>(upsertedSets?.find(s => s.id === path!.setId) as SessionSetDto);
+    const successData = createSuccessData<SessionSetDto>(updatedSet);
     return c.json(successData, 200);
   } catch (e) {
-    console.error('Unexpected error in handleUpdateTrainingSessionSetById:', e);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred while updating the session set.', { details: (e as Error).message }, undefined, e);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to update session set';
+    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleUpdateTrainingSessionSetById.name, fallbackMessage);
   }
 }

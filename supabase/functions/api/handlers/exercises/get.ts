@@ -1,29 +1,30 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
+import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { ExerciseDto } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validateQueryParams } from "../../utils/validation.ts";
 
-const DEFAULT_PAGE_LIMIT = 20;
-const MAX_PAGE_LIMIT = 100;
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const DEFAULT_OFFSET = 0;
 const DEFAULT_SORT_COLUMN = 'name';
 const DEFAULT_SORT_DIRECTION = 'asc';
 
 const QUERY_SCHEMA = z.object({
   limit: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_PAGE_LIMIT),
-    z.number().int().min(1).max(MAX_PAGE_LIMIT).default(DEFAULT_PAGE_LIMIT)
+    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_LIMIT),
+    z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT)
   ),
   offset: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : 0),
-    z.number().int().min(0).default(0)
+    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_OFFSET),
+    z.number().int().min(0).default(DEFAULT_OFFSET)
   ),
   sort: z.preprocess(
     (val: unknown) => (val ? String(val) : `${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`),
-    z.string().regex(/^[a-zA-Z_]+\.(asc|desc)$/, {
-      message: 'Sort parameter must be in format column_name.(asc|desc)'
-    }).default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
+    z.string()
+      .regex(/^[a-zA-Z_]+\.(asc|desc)$/, 'Sort parameter must be in format column_name.(asc|desc)')
+      .default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
   )
 });
 
@@ -31,27 +32,16 @@ export async function handleGetExercises(c: Context<AppContext>) {
   const { query, error: queryError } = validateQueryParams(c, QUERY_SCHEMA);
   if (queryError) return queryError;
 
-  const supabaseClient = c.get('supabase');
+  const exerciseRepository = c.get('exerciseRepository');
 
   try {
-    const [sortColumn, sortDirection] = query!.sort.split('.') as [string, 'asc' | 'desc'];
-    const { data, count, error } = await supabaseClient
-      .from('exercises')
-      .select('*', { count: 'exact' })
-      .range(query!.offset, query!.offset + query!.limit - 1)
-      .order(sortColumn, { ascending: sortDirection === 'asc' });
+    const queryOptions = { limit: query!.limit, offset: query!.offset, sort: query!.sort };
+    const result = await exerciseRepository.findAll(queryOptions);
 
-    if (error) {
-      console.error('Error fetching exercises:', error);
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch exercises', { details: error.message });
-      return c.json(errorData, 500);
-    }
-
-    const successData = createSuccessData<ExerciseDto[]>(data, { totalCount: count ?? undefined });
+    const successData = createSuccessData<ExerciseDto[]>(result.data, { totalCount: result.totalCount });
     return c.json(successData, 200);
   } catch (e) {
-    console.error('Unexpected error in handleGetExercises:', e);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred', { details: (e as Error).message });
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to get exercises';
+    return handleRepositoryError(c, e as Error, exerciseRepository.handleExerciseError, handleGetExercises.name, fallbackMessage);
   }
 }

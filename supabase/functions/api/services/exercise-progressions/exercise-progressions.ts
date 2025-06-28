@@ -56,7 +56,7 @@ export function resolveExerciseProgressions(
           if (!actualSet) {
             throw new Error(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}).`);
           }
-          if (actualSet.status !== 'COMPLETED' || actualSet.actual_reps < (expectedSet.expected_reps ?? 0) || actualSet.actual_weight < (expectedSet.expected_weight ?? 0)) {
+          if (actualSet.status !== 'COMPLETED' || (actualSet.actual_reps ?? 0) < (expectedSet.expected_reps ?? 0) || (actualSet.actual_weight ?? 0) < (expectedSet.expected_weight ?? 0)) {
             exerciseSetsSuccessful = false;
             break;
           }

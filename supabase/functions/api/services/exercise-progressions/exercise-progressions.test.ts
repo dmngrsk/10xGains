@@ -19,7 +19,7 @@ const mockSessionSet = (id: string, tpeId: string, index: number, actualWeight: 
   expected_reps: actualReps,
   actual_reps: actualReps,
   actual_weight: actualWeight,
-  status,
+  status: status as SessionSetDto['status'],
   completed_at: new Date().toISOString(),
 });
 
@@ -43,7 +43,7 @@ const mockExerciseProgression = (
   exercise_id: exerciseId,
   training_plan_id: 'tp1',
   weight_increment: weightIncrement,
-  deload_strategy: deloadStrategy,
+  deload_strategy: deloadStrategy as TrainingPlanExerciseProgressionDto['deload_strategy'],
   deload_percentage: deloadPercentage,
   consecutive_failures: consecutiveFailures,
   failure_count_for_deload: failureCountForDeload,

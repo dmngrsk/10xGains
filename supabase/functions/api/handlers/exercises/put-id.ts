@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
+import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { ExerciseDto, UpdateExerciseCommand } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validateCommandBody, validatePathParams } from "../../utils/validation.ts";
@@ -23,31 +23,20 @@ export async function handlePutExerciseById(c: Context<AppContext>) {
   const { command, error: commandError } = await validateCommandBody<typeof COMMAND_SCHEMA, UpdateExerciseCommand>(c, COMMAND_SCHEMA);
   if (commandError) return commandError;
 
-  const supabaseClient = c.get('supabase');
+  const exerciseRepository = c.get('exerciseRepository');
 
   try {
-    const { data, error } = await supabaseClient
-      .from('exercises')
-      .update(command!)
-      .eq('id', path!.exerciseId)
-      .select()
-      .single();
+    const updatedExercise = await exerciseRepository.update(path!.exerciseId, command!);
 
-    if (error) {
-      console.error('Error updating exercise:', error);
-      if (error.code === 'PGRST116') {
-        const errorData = createErrorDataWithLogging(404, 'Exercise not found for update');
-        return c.json(errorData, 404);
-      }
-      const errorData = createErrorDataWithLogging(500, 'Failed to update exercise', { details: error.message }, undefined, error);
-      return c.json(errorData, 500);
+    if (!updatedExercise) {
+      const errorData = createErrorDataWithLogging(404, 'Exercise not found for update');
+      return c.json(errorData, 404);
     }
 
-    const successData = createSuccessData<ExerciseDto>(data as ExerciseDto);
+    const successData = createSuccessData<ExerciseDto>(updatedExercise);
     return c.json(successData, 200);
   } catch (e) {
-    console.error('Unexpected error in handlePutExerciseById:', e);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred', { details: (e as Error).message }, undefined, e);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to update exercise';
+    return handleRepositoryError(c, e as Error, exerciseRepository.handleExerciseError, handlePutExerciseById.name, fallbackMessage);
   }
 }

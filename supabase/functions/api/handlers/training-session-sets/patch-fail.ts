@@ -21,7 +21,7 @@ export async function handleFailTrainingSessionSet(c: Context<AppContext>) {
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);
   if (pathError) return pathError;
 
-  const { query, error: queryError } = await validateQueryParams(c, QUERY_SCHEMA);
+  const { query, error: queryError } = validateQueryParams(c, QUERY_SCHEMA);
   if (queryError) return queryError;
 
   const getUpdateData = (_sessionSet: SessionSetDto) => ({

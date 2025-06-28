@@ -1,41 +1,28 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
-import type { TrainingPlanExerciseDto, TrainingPlanExerciseSetDto } from '../../models/api-types.ts';
+import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
+import type { TrainingPlanExerciseDto } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validatePathParams } from "../../utils/validation.ts";
 
 const PATH_SCHEMA = z.object({
-  planId: z.string().uuid(),
-  dayId: z.string().uuid(),
+  planId: z.string().uuid('Invalid planId format'),
+  dayId: z.string().uuid('Invalid dayId format'),
 });
 
 export async function handleGetTrainingPlanExercises(c: Context<AppContext>) {
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);
   if (pathError) return pathError;
 
-  const supabaseClient = c.get('supabase');
+  const planRepository = c.get('planRepository');
 
   try {
-    const { data, error } = await supabaseClient
-      .from('training_plan_exercises')
-      .select('*, sets:training_plan_exercise_sets(*)')
-      .eq('training_plan_day_id', path!.dayId)
-      .order('order_index', { ascending: true });
+    const exercises = await planRepository.findExercisesByDayId(path!.planId, path!.dayId);
 
-    if (error) {
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch training plan exercises', { details: error.message }, undefined, error);
-      return c.json(errorData, 500);
-    }
-
-    data?.forEach((exercise: TrainingPlanExerciseDto) => {
-      exercise.sets?.sort((a: TrainingPlanExerciseSetDto, b: TrainingPlanExerciseSetDto) => a.set_index - b.set_index);
-    });
-
-    const successData = createSuccessData<TrainingPlanExerciseDto[]>(data ?? []);
+    const successData = createSuccessData<TrainingPlanExerciseDto[]>(exercises);
     return c.json(successData, 200);
   } catch (error) {
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred', { details: (error as Error).message }, undefined, error);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to get training plan exercises';
+    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetTrainingPlanExercises.name, fallbackMessage);
   }
 }

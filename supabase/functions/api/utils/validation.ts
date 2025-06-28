@@ -4,7 +4,16 @@ import { createErrorDataWithLogging } from './api-helpers.ts';
 import type { AppContext } from '../context.ts';
 
 /**
- * Helper function to validate path parameters
+ * Validates the path parameters of a request against a Zod schema.
+ *
+ * It uses a Zod schema to parse and validate the path parameters from the request context.
+ * If validation fails, it returns a `400 Bad Request` response with detailed errors.
+ *
+ * @template T - The Zod schema type.
+ * @template U - The inferred type from the schema.
+ * @param {Context<AppContext>} c - The Hono context of the request.
+ * @param {T} schema - The Zod schema to validate against.
+ * @returns {{ path?: U, error?: Response }} An object containing either the validated path parameters or an error Response.
  */
 export function validatePathParams<T extends z.ZodTypeAny, U extends z.infer<T>>(
   c: Context<AppContext>,
@@ -30,7 +39,16 @@ export function validatePathParams<T extends z.ZodTypeAny, U extends z.infer<T>>
 }
 
 /**
- * Helper function to validate query parameters
+ * Validates the query parameters of a request against a Zod schema.
+ *
+ * It parses the query parameters from the request context and validates them.
+ * If validation fails, it returns a `400 Bad Request` response.
+ *
+ * @template T - The Zod schema type.
+ * @template U - The inferred type from the schema.
+ * @param {Context<AppContext>} c - The Hono context of the request.
+ * @param {T} schema - The Zod schema for validation.
+ * @returns {{ query?: U, error?: Response }} An object containing either the validated query parameters or an error Response.
  */
 export function validateQueryParams<T extends z.ZodTypeAny, U extends z.infer<T>>(
   c: Context<AppContext>,
@@ -59,7 +77,17 @@ export function validateQueryParams<T extends z.ZodTypeAny, U extends z.infer<T>
 }
 
 /**
- * Helper function to validate request body
+ * Asynchronously validates the JSON body of a request against a Zod schema.
+ *
+ * It attempts to parse the request body as JSON and then validates it.
+ * It handles JSON parsing errors and validation errors, returning a `400 Bad Request`
+ * response in case of failure.
+ *
+ * @template T - The Zod schema type.
+ * @template U - The inferred type from the schema.
+ * @param {Context<AppContext>} c - The Hono context of the request.
+ * @param {T} schema - The Zod schema for validation.
+ * @returns {Promise<{ command?: U, error?: Response }>} A promise that resolves to an object containing either the validated body (command) or an error Response.
  */
 export async function validateCommandBody<T extends z.ZodTypeAny, U extends z.infer<T>>(
   c: Context<AppContext>,

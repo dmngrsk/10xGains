@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
+import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
 import type { TrainingPlanExerciseSetDto } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validatePathParams } from "../../utils/validation.ts";
@@ -15,27 +15,15 @@ export async function handleGetTrainingPlanExerciseSets(c: Context<AppContext>) 
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);
   if (pathError) return pathError;
 
-  const supabaseClient = c.get('supabase');
+  const planRepository = c.get('planRepository');
 
   try {
-    const { data: sets, error: setsError } = await supabaseClient
-      .from('training_plan_exercise_sets')
-      .select('*')
-      .eq('training_plan_exercise_id', path!.exerciseId)
-      .order('set_index', { ascending: true });
+    const sets = await planRepository.findSetsByExerciseId(path!.planId, path!.dayId, path!.exerciseId);
 
-    if (setsError) {
-      console.error('Error fetching exercise sets:', setsError);
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch exercise sets', { details: setsError.message }, undefined, setsError);
-      return c.json(errorData, 500);
-    }
-
-    const successData = createSuccessData<TrainingPlanExerciseSetDto[]>(sets ?? []);
+    const successData = createSuccessData<TrainingPlanExerciseSetDto[]>(sets);
     return c.json(successData, 200);
-
   } catch (error) {
-    console.error('Error during GET all sets processing:', error);
-    const errorData = createErrorDataWithLogging(500, 'Internal server error during all sets retrieval.', { details: (error as Error).message }, undefined, error);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to get training plan exercise sets';
+    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetTrainingPlanExerciseSets.name, fallbackMessage);
   }
 }

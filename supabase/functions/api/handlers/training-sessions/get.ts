@@ -1,20 +1,31 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import { createErrorDataWithLogging, createSuccessData } from '../../utils/api-helpers.ts';
-import type { SessionSetDto, TrainingSessionDto } from '../../models/api-types.ts';
+import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
+import type { TrainingSessionDto } from '../../models/api-types.ts';
 import type { AppContext } from '../../context.ts';
 import { validateQueryParams } from '../../utils/validation.ts';
+
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
+const DEFAULT_OFFSET = 0;
+const DEFAULT_SORT_COLUMN = 'session_date';
+const DEFAULT_SORT_DIRECTION = 'asc';
 
 const QUERY_SCHEMA = z.object({
   limit: z.preprocess(
     (val) => (val ? Number(val) : undefined),
-    z.number().int().nonnegative().optional()
+    z.number().int().nonnegative().max(MAX_LIMIT).optional().default(DEFAULT_LIMIT)
   ),
   offset: z.preprocess(
     (val) => (val ? Number(val) : undefined),
-    z.number().int().nonnegative().optional()
+    z.number().int().nonnegative().optional().default(DEFAULT_OFFSET)
   ),
-  order: z.string().regex(/^(session_date)\.(asc|desc)$/).default('session_date.desc').optional(),
+  sort: z.preprocess(
+    (val: unknown) => (val ? String(val) : `${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`),
+    z.string()
+      .regex(/^[a-zA-Z_]+\.(asc|desc)$/, 'Sort parameter must be in format column_name.(asc|desc)')
+      .default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
+  ),
   status: z.preprocess(
     (val) => (typeof val === 'string' ? val.split(',').map(s => s.trim()) : undefined),
     z.array(z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])).optional()
@@ -34,64 +45,23 @@ export async function handleGetTrainingSessions(c: Context<AppContext>) {
   const { query, error: queryError } = validateQueryParams(c, QUERY_SCHEMA);
   if (queryError) return queryError;
 
-  const supabaseClient = c.get('supabase');
-  const user = c.get('user');
+  const sessionRepository = c.get('sessionRepository');
 
   try {
-    let supabaseQuery = supabaseClient
-      .from('training_sessions')
-      .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)', { count: 'exact' })
-      .eq('user_id', user.id);
+    const result = await sessionRepository.findAll({
+      limit: query!.limit,
+      offset: query!.offset,
+      sort: query!.sort,
+      status: query!.status,
+      date_from: query!.date_from,
+      date_to: query!.date_to,
+      plan_id: query!.plan_id,
+    });
 
-    if (query!.status && query!.status.length > 0) {
-      supabaseQuery = supabaseQuery.in('status', query!.status);
-    }
-
-    if (query!.date_from) {
-      supabaseQuery = supabaseQuery.gte('session_date', query!.date_from);
-    }
-
-    if (query!.date_to) {
-      supabaseQuery = supabaseQuery.lte('session_date', query!.date_to);
-    }
-
-    if (query!.order) {
-      const [field, direction] = query!.order.split('.');
-      supabaseQuery = supabaseQuery.order(field, { ascending: direction === 'asc' });
-    } else {
-      supabaseQuery = supabaseQuery.order('session_date', { ascending: false });
-    }
-
-    if (query!.plan_id) {
-      supabaseQuery = supabaseQuery.eq('training_plan_id', query!.plan_id);
-    }
-
-    if (query!.limit !== undefined && query!.offset !== undefined) {
-      supabaseQuery = supabaseQuery.range(query!.offset, query!.offset + query!.limit - 1);
-    } else if (query!.limit !== undefined) {
-      supabaseQuery = supabaseQuery.limit(query!.limit);
-    }
-
-    const { data, count, error } = await supabaseQuery;
-
-    if (error) {
-      console.error('Error fetching training sessions:', error);
-      const errorData = createErrorDataWithLogging(500, 'Failed to fetch training sessions', { details: error.message }, undefined, error);
-      return c.json(errorData, 500);
-    }
-
-    data?.forEach((session: TrainingSessionDto) =>
-      session.sets?.sort((a: SessionSetDto, b: SessionSetDto) =>
-        a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
-        a.set_index - b.set_index
-      )
-    );
-
-    const successData = createSuccessData<TrainingSessionDto[]>(data || [], { totalCount: count! });
+    const successData = createSuccessData<TrainingSessionDto[]>(result.data, { totalCount: result.totalCount });
     return c.json(successData, 200);
   } catch (e) {
-    console.error('Unexpected error in handleGetTrainingSessions:', e);
-    const errorData = createErrorDataWithLogging(500, 'An unexpected error occurred.', { details: (e as Error).message }, undefined, e);
-    return c.json(errorData, 500);
+    const fallbackMessage = 'Failed to fetch training sessions';
+    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetTrainingSessions.name, fallbackMessage);
   }
 }
