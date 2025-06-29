@@ -53,6 +53,9 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.getBySel(dataCy.plans.dialogs.days.deleteButton).click();
       cy.getBySel(dataCy.shared.dialogs.confirmation.confirmButton).click();
       cy.getBySel(dataCy.plans.planEdit.days.item).should('not.exist');
+
+      // Verify the plan is still visible
+      cy.getBySel(dataCy.plans.planEdit.metadata).should('exist');
     });
 
     it('allows a user to add an exercise to a day, edit its progression, and delete it', { tags: ['PLAN-04'] }, () => {
@@ -72,6 +75,9 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.getBySel(dataCy.plans.planEdit.exercises.deleteButton).click();
       cy.getBySel(dataCy.shared.dialogs.confirmation.confirmButton).click();
       cy.getBySel(dataCy.plans.planEdit.exercises.item).should('not.exist');
+
+      // Verify the plan is still visible
+      cy.getBySel(dataCy.plans.planEdit.metadata).should('exist');
     });
 
     it('allows a user to create a global exercise and add this exercise to a training day in a plan', { tags: ['PLAN-05'] }, () => {
@@ -102,6 +108,9 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       // Delete a set
       cy.getBySel(dataCy.plans.planEdit.sets.deleteButton).click();
       cy.getBySel(dataCy.plans.planEdit.sets.item).should('not.exist');
+
+      // Verify the plan is still visible
+      cy.getBySel(dataCy.plans.planEdit.metadata).should('exist');
     });
   });
 

@@ -352,7 +352,23 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      replace_collection: {
+        Args: {
+          p_table_name: string
+          p_parent_column: string
+          p_parent_id: string
+          p_records: Json
+        }
+        Returns: Json[]
+      }
+      replace_collections_batch: {
+        Args: {
+          p_operations: Json
+        }
+        Returns: undefined
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

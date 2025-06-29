@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-06-20T11:18:19.039Z
+ * Last updated: 2025-06-28T23:32:37.304Z
  */
 
 export type Json =
@@ -369,7 +369,23 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      replace_collection: {
+        Args: {
+          p_table_name: string
+          p_parent_column: string
+          p_parent_id: string
+          p_records: Json
+        }
+        Returns: Json[]
+      }
+      replace_collections_batch: {
+        Args: {
+          p_operations: Json
+        }
+        Returns: undefined
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

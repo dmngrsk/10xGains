@@ -1,5 +1,5 @@
 import type { SupabaseClient } from 'supabase';
-import type { Database } from '../models/database-types.ts';
+import type { Database, Json } from '../models/database-types.ts';
 import type {
   TrainingSessionDto,
   CreateTrainingSessionCommand,
@@ -12,7 +12,7 @@ import type {
 } from '../models/api-types.ts';
 import { ApiErrorResponse, createErrorData, createErrorDataWithLogging } from "../utils/api-helpers.ts";
 import { resolveExerciseProgressions } from '../services/exercise-progressions/exercise-progressions.ts';
-import { insertAndNormalizeOrder } from '../services/index-order/index-order.ts';
+import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase.ts';
 
 export interface TrainingSessionQueryOptions {
   limit: number;
@@ -82,7 +82,7 @@ export class SessionRepository {
       throw error;
     }
 
-    // Sort session sets within each session
+    // Sort nested data by order indices
     data?.forEach((session: TrainingSessionDto) =>
       session.sets?.sort((a: SessionSetDto, b: SessionSetDto) =>
         a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
@@ -112,7 +112,7 @@ export class SessionRepository {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Not found
+        return null;
       }
       throw error;
     }
@@ -235,33 +235,43 @@ export class SessionRepository {
         completed_at: null
       })) as SessionSetDto[];
 
-    // Step 4: Upsert session and sets (TODO: Use transaction)
-    const { data: upsertedSessions, error: upsertError } = await this.supabase
-      .from('training_sessions')
-      .upsert(recordsToUpsert, { onConflict: 'id' })
-      .select();
+    // Step 4: Use batch operations to atomically create session and sets
+    const batchOperations = [
+      {
+        table_name: 'training_sessions',
+        records: recordsToUpsert
+      },
+      {
+        table_name: 'session_sets',
+        parent_column: 'training_session_id',
+        parent_id: newSessionId,
+        records: newSessionSets
+      }
+    ];
 
-    if (upsertError || !upsertedSessions || upsertedSessions.length === 0) {
-      throw upsertError || new Error('Failed to save training sessions');
+    const { error: batchError } = await this.supabase.rpc('replace_collections_batch', {
+      p_operations: batchOperations.filter(op => op.records.length > 0) as Json
+    });
+
+    if (batchError) {
+      throw batchError;
     }
 
-    const { error: upsertSessionSetsError } = await this.supabase
-      .from('session_sets')
-      .insert(newSessionSets)
-      .select();
+    const { data: createdSession, error: fetchError } = await this.supabase
+      .from('training_sessions')
+      .select('*')
+      .eq('id', newSessionId)
+      .eq('user_id', userId)
+      .single();
 
-    if (upsertSessionSetsError) {
-      throw upsertSessionSetsError;
+    if (fetchError || !createdSession) {
+      throw fetchError || new Error('Failed to fetch newly created session');
     }
 
     const newlyCreatedSession = {
-      ...upsertedSessions.find(s => s.id === newSessionId),
+      ...createdSession,
       sets: newSessionSets
     };
-
-    if (!newlyCreatedSession) {
-      throw new Error('Failed to identify newly created session after save.');
-    }
 
     return newlyCreatedSession as TrainingSessionDto;
   }
@@ -286,7 +296,7 @@ export class SessionRepository {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Not found
+        return null;
       }
       throw error;
     }
@@ -435,55 +445,58 @@ export class SessionRepository {
       planExerciseProgressions
     );
 
-    // Step 4: Update data (TODO: Use transaction)
-    if (exerciseSetsToUpdate.length > 0) {
-      const { error: upsertSetsError } = await this.supabase
-        .from('training_plan_exercise_sets')
-        .upsert(exerciseSetsToUpdate, { onConflict: 'id' });
+    // Step 4: Fetch full session and update all data in a single atomic transaction
+    const sessionSetsToUpdate = sessionSets
+      .filter(ss => ss.status === 'PENDING')
+      .map(ss => ({ ...ss, status: 'SKIPPED' as const }));
 
-      if (upsertSetsError) {
-        throw upsertSetsError;
-      }
-    }
-
-    if (exerciseProgressionsToUpdate.length > 0) {
-      const { error: upsertProgressionsError } = await this.supabase
-        .from('training_plan_exercise_progressions')
-        .upsert(exerciseProgressionsToUpdate, { onConflict: 'id' });
-
-      if (upsertProgressionsError) {
-        throw upsertProgressionsError;
-      }
-    }
-
-    if (sessionSets.filter(ss => ss.status === 'PENDING').length > 0) {
-      const { error: updatePendingSetsError } = await this.supabase
-        .from('session_sets')
-        .update({ status: 'SKIPPED' })
-        .eq('training_session_id', sessionId)
-        .eq('status', 'PENDING');
-
-      if (updatePendingSetsError) {
-        throw updatePendingSetsError;
-      }
-    }
-
-    const { data: updatedSessionEntry, error: updateSessionError } = await this.supabase
+    const { data: fullSession, error: fullSessionError } = await this.supabase
       .from('training_sessions')
-      .update({ status: 'COMPLETED' })
+      .select('*')
       .eq('id', sessionId)
       .eq('user_id', userId)
-      .select('*')
       .single();
 
-    if (updateSessionError) {
-      if (updateSessionError.code === 'PGRST116') {
+    if (fullSessionError) {
+      if (fullSessionError.code === 'PGRST116') {
         return null;
       }
-      throw updateSessionError;
+      throw fullSessionError;
     }
 
-    return updatedSessionEntry as TrainingSessionDto;
+    const completedSession = {
+      ...fullSession,
+      status: 'COMPLETED' as const
+    };
+
+    const batchOperations = [
+      {
+        table_name: 'session_sets',
+        records: sessionSetsToUpdate
+      },
+      {
+        table_name: 'training_plan_exercise_sets',
+        records: exerciseSetsToUpdate
+      },
+      {
+        table_name: 'training_plan_exercise_progressions',
+        records: exerciseProgressionsToUpdate
+      },
+      {
+        table_name: 'training_sessions',
+        records: [completedSession]
+      }
+    ];
+
+    const { error: batchError } = await this.supabase.rpc('replace_collections_batch', {
+      p_operations: batchOperations.filter(op => op.records.length > 0) as Json
+    });
+
+    if (batchError) {
+      throw batchError;
+    }
+
+    return completedSession as TrainingSessionDto;
   }
 
   /**
@@ -543,21 +556,8 @@ export class SessionRepository {
   async createSet(sessionId: string, command: CreateSessionSetCommand): Promise<SessionSetDto> {
     await this.verifySessionOwnership(sessionId);
 
-    const { data: allCurrentSetsForExerciseDb, error: allSetsError } = await this.supabase
-      .from('session_sets')
-      .select('*')
-      .eq('training_session_id', sessionId)
-      .eq('training_plan_exercise_id', command.training_plan_exercise_id)
-      .order('set_index', { ascending: true });
-
-    if (allSetsError) {
-      throw allSetsError;
-    }
-
-    const allCurrentSetsForExercise: SessionSetDto[] = (allCurrentSetsForExerciseDb || []) as SessionSetDto[];
-
     const newSetId = crypto.randomUUID();
-    const newSetForNormalization: SessionSetDto = {
+    const newSetData: SessionSetDto = {
       id: newSetId,
       training_session_id: sessionId,
       training_plan_exercise_id: command.training_plan_exercise_id,
@@ -569,29 +569,23 @@ export class SessionRepository {
       completed_at: command.completed_at || null,
     } as SessionSetDto;
 
-    const normalizedSets = insertAndNormalizeOrder<SessionSetDto>(
-      allCurrentSetsForExercise,
-      newSetForNormalization,
+    const updatedSets = await createEntityInCollection<SessionSetDto>(
+      this.supabase,
+      'session_sets',
+      'training_plan_exercise_id',
+      command.training_plan_exercise_id,
+      newSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
       (s: SessionSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
     );
 
-    const setsToUpsertInDb = normalizedSets.map((s: SessionSetDto) => {
-      const { id, ...dataToUpsert } = s;
-      return { id, ...dataToUpsert };
-    });
-
-    const { data: upsertedSets, error: upsertError } = await this.supabase
-      .from('session_sets')
-      .upsert(setsToUpsertInDb, { onConflict: 'id' })
-      .select();
-
-    if (upsertError) {
-      throw upsertError;
+    const createdSet = updatedSets.find((s: SessionSetDto) => s.id === newSetId);
+    if (!createdSet) {
+      throw new Error('Failed to create session set');
     }
 
-    return upsertedSets?.find((s: SessionSetDto) => s.id === newSetId) as SessionSetDto;
+    return createdSet;
   }
 
   /**
@@ -620,21 +614,6 @@ export class SessionRepository {
       return null;
     }
 
-    const setToUpdatePlanExerciseId = existingSet.training_plan_exercise_id;
-
-    const { data: allCurrentSetsForExerciseDb, error: allSetsError } = await this.supabase
-      .from('session_sets')
-      .select('*')
-      .eq('training_session_id', sessionId)
-      .eq('training_plan_exercise_id', setToUpdatePlanExerciseId)
-      .order('set_index', { ascending: true });
-
-    if (allSetsError) {
-      throw allSetsError;
-    }
-
-    const allCurrentSetsForExercise: SessionSetDto[] = (allCurrentSetsForExerciseDb || []) as SessionSetDto[];
-
     const updatedSetData: SessionSetDto = {
       ...existingSet,
       ...command,
@@ -643,29 +622,18 @@ export class SessionRepository {
       completed_at: command.completed_at !== undefined ? command.completed_at : existingSet.completed_at,
     };
 
-    const normalizedSets = insertAndNormalizeOrder<SessionSetDto>(
-      allCurrentSetsForExercise,
+    const updatedSets = await updateEntityInCollection<SessionSetDto>(
+      this.supabase,
+      'session_sets',
+      'training_plan_exercise_id',
+      existingSet.training_plan_exercise_id,
       updatedSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
       (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx })
     );
 
-    const setsToUpsertInDb = normalizedSets.map((s: SessionSetDto) => {
-      const { id, ...dataToUpsert } = s;
-      return { id, ...dataToUpsert };
-    });
-
-    const { data: upsertedSets, error: upsertError } = await this.supabase
-      .from('session_sets')
-      .upsert(setsToUpsertInDb, { onConflict: 'id' })
-      .select();
-
-    if (upsertError) {
-      throw upsertError;
-    }
-
-    return upsertedSets?.find(s => s.id === setId) as SessionSetDto;
+    return updatedSets.find(s => s.id === setId) || null;
   }
 
   /**
@@ -693,52 +661,16 @@ export class SessionRepository {
       return false;
     }
 
-    const setToUpdatePlanExerciseId = existingSet.training_plan_exercise_id;
-
-    const { data: allCurrentSetsForExerciseDb, error: allSetsError } = await this.supabase
-      .from('session_sets')
-      .select('*')
-      .eq('training_session_id', sessionId)
-      .eq('training_plan_exercise_id', setToUpdatePlanExerciseId)
-      .order('set_index', { ascending: true });
-
-    if (allSetsError) {
-      throw allSetsError;
-    }
-
-    const allCurrentSetsForExercise: SessionSetDto[] = (allCurrentSetsForExerciseDb.filter(s => s.id !== setId) || []) as SessionSetDto[];
-
-    const normalizedSets = insertAndNormalizeOrder<SessionSetDto>(
-      allCurrentSetsForExercise,
-      null,
+    await deleteEntityFromCollection<SessionSetDto>(
+      this.supabase,
+      'session_sets',
+      'training_plan_exercise_id',
+      existingSet.training_plan_exercise_id,
+      setId,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
       (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx })
     );
-
-    const setsToUpsertInDb = normalizedSets.map((s: SessionSetDto) => {
-      const { id, ...dataToUpsert } = s;
-      return { id, ...dataToUpsert };
-    });
-
-    // TODO: Use transaction
-    const { error: deleteError } = await this.supabase
-      .from('session_sets')
-      .delete()
-      .eq('id', setId);
-
-    if (deleteError) {
-      throw deleteError;
-    }
-
-    const { error: upsertError } = await this.supabase
-      .from('session_sets')
-      .upsert(setsToUpsertInDb, { onConflict: 'id' })
-      .select();
-
-    if (upsertError) {
-      throw upsertError;
-    }
 
     return true;
   }

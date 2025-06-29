@@ -17,6 +17,11 @@ import type {
   UpsertTrainingPlanExerciseProgressionCommand
 } from '../models/api-types.ts';
 import { ApiErrorResponse, createErrorData } from "../utils/api-helpers.ts";
+import {
+  createEntityInCollection,
+  updateEntityInCollection,
+  deleteEntityFromCollection
+} from '../utils/supabase.ts';
 
 export interface TrainingPlanQueryOptions {
   limit: number;
@@ -125,7 +130,7 @@ export class PlanRepository {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Not found
+        return null;
       }
       throw error;
     }
@@ -180,7 +185,7 @@ export class PlanRepository {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Not found
+        return null;
       }
       throw error;
     }
@@ -239,7 +244,7 @@ export class PlanRepository {
       throw error;
     }
 
-    // Sort nested data
+    // Sort nested data by order indices
     const sortedData = data?.map(day => ({
       ...day,
       exercises: day.exercises?.sort((a, b) => a.order_index - b.order_index).map(exercise => ({
@@ -296,22 +301,26 @@ export class PlanRepository {
   async createDay(planId: string, command: CreateTrainingPlanDayCommand): Promise<TrainingPlanDayDto> {
     await this.verifyPlanOwnership(planId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_plan_id: planId,
-      p_name: command.name,
-      p_description: command.description,
-      p_target_order_index: command.order_index,
+    const newDay: TrainingPlanDayDto = {
+      id: crypto.randomUUID(),
+      training_plan_id: planId,
+      name: command.name,
+      description: command.description || null,
+      order_index: command.order_index || 1,
     };
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('create_training_plan_day', rpcCommand).single();
+    const updatedDays = await createEntityInCollection<TrainingPlanDayDto>(
+      this.supabase,
+      'training_plan_days',
+      'training_plan_id',
+      planId,
+      newDay,
+      (d: TrainingPlanDayDto) => d.id,
+      (d: TrainingPlanDayDto) => d.order_index,
+      (d: TrainingPlanDayDto, order: number) => ({ ...d, order_index: order })
+    );
 
-    if (error) {
-      throw error;
-    }
-
-    return data as TrainingPlanDayDto;
+    return updatedDays.find(d => d.name === newDay.name && d.description === newDay.description) || updatedDays[updatedDays.length - 1];
   }
 
   /**
@@ -325,25 +334,39 @@ export class PlanRepository {
   async updateDay(planId: string, dayId: string, command: UpdateTrainingPlanDayCommand): Promise<TrainingPlanDayDto | null> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_day_id: dayId,
-      p_name: command.name,
-      p_description: command.description,
-      p_target_order_index: command.order_index,
-    };
+    const { data: existingDay, error: existingDayError } = await this.supabase
+      .from('training_plan_days')
+      .select('*')
+      .eq('id', dayId)
+      .eq('training_plan_id', planId)
+      .single();
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('update_training_plan_day', rpcCommand).single();
-
-    if (error) {
-      if (error.message.includes('not found')) {
+    if (existingDayError) {
+      if (existingDayError.code === 'PGRST116') {
         return null;
       }
-      throw error;
+      throw existingDayError;
     }
 
-    return data as TrainingPlanDayDto;
+    const updatedDay: TrainingPlanDayDto = {
+      ...existingDay,
+      name: command.name !== undefined ? command.name : existingDay.name,
+      description: command.description !== undefined ? command.description : existingDay.description,
+      order_index: command.order_index !== undefined ? command.order_index : existingDay.order_index,
+    };
+
+    const updatedDays = await updateEntityInCollection<TrainingPlanDayDto>(
+      this.supabase,
+      'training_plan_days',
+      'training_plan_id',
+      planId,
+      updatedDay,
+      (d: TrainingPlanDayDto) => d.id,
+      (d: TrainingPlanDayDto) => d.order_index,
+      (d: TrainingPlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
+    );
+
+    return updatedDays.find(d => d.id === dayId) || null;
   }
 
   /**
@@ -356,17 +379,16 @@ export class PlanRepository {
   async deleteDay(planId: string, dayId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_day_id: dayId,
-    };
-
-    // deno-lint-ignore no-explicit-any
-    const { error } = await (this.supabase as any).rpc('delete_training_plan_day', rpcCommand);
-
-    if (error) {
-      throw error;
-    }
+    await deleteEntityFromCollection<TrainingPlanDayDto>(
+      this.supabase,
+      'training_plan_days',
+      'training_plan_id',
+      planId,
+      dayId,
+      (d: TrainingPlanDayDto) => d.id,
+      (d: TrainingPlanDayDto) => d.order_index,
+      (d: TrainingPlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
+    );
 
     return true;
   }
@@ -391,7 +413,7 @@ export class PlanRepository {
       throw error;
     }
 
-    // Sort nested sets
+    // Sort nested data by order indices
     const sortedData = data?.map(exercise => ({
       ...exercise,
       sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
@@ -439,21 +461,25 @@ export class PlanRepository {
   async createExercise(planId: string, dayId: string, command: CreateTrainingPlanExerciseCommand): Promise<TrainingPlanExerciseDto> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_day_id: dayId,
-      p_exercise_id: command.exercise_id,
-      p_target_order_index: command.order_index,
+    const newExercise: TrainingPlanExerciseDto = {
+      id: crypto.randomUUID(),
+      training_plan_day_id: dayId,
+      exercise_id: command.exercise_id,
+      order_index: command.order_index || 1,
     };
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('create_training_plan_exercise', rpcCommand).single();
+    const updatedExercises = await createEntityInCollection<TrainingPlanExerciseDto>(
+      this.supabase,
+      'training_plan_exercises',
+      'training_plan_day_id',
+      dayId,
+      newExercise,
+      (e: TrainingPlanExerciseDto) => e.id,
+      (e: TrainingPlanExerciseDto) => e.order_index,
+      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+    );
 
-    if (error) {
-      throw error;
-    }
-
-    return data as TrainingPlanExerciseDto;
+    return updatedExercises.find(e => e.exercise_id === newExercise.exercise_id) || updatedExercises[updatedExercises.length - 1];
   }
 
   /**
@@ -468,23 +494,37 @@ export class PlanRepository {
   async updateExercise(planId: string, dayId: string, exerciseId: string, command: UpdateTrainingPlanExerciseCommand): Promise<TrainingPlanExerciseDto | null> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_training_plan_exercise_id: exerciseId,
-      p_target_order_index: command.order_index,
-    };
+    const { data: existingExercise, error: existingExerciseError } = await this.supabase
+      .from('training_plan_exercises')
+      .select('*')
+      .eq('id', exerciseId)
+      .eq('training_plan_day_id', dayId)
+      .single();
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('update_training_plan_exercise_order', rpcCommand).single();
-
-    if (error) {
-      if (error.message.includes('not found')) {
+    if (existingExerciseError) {
+      if (existingExerciseError.code === 'PGRST116') {
         return null;
       }
-      throw error;
+      throw existingExerciseError;
     }
 
-    return data as TrainingPlanExerciseDto;
+    const updatedExercise: TrainingPlanExerciseDto = {
+      ...existingExercise,
+      order_index: command.order_index !== undefined ? command.order_index : existingExercise.order_index,
+    };
+
+    const updatedExercises = await updateEntityInCollection<TrainingPlanExerciseDto>(
+      this.supabase,
+      'training_plan_exercises',
+      'training_plan_day_id',
+      dayId,
+      updatedExercise,
+      (e: TrainingPlanExerciseDto) => e.id,
+      (e: TrainingPlanExerciseDto) => e.order_index,
+      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+    );
+
+    return updatedExercises.find(e => e.id === exerciseId) || null;
   }
 
   /**
@@ -498,17 +538,16 @@ export class PlanRepository {
   async deleteExercise(planId: string, dayId: string, exerciseId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_plan_exercise_id: exerciseId,
-    };
-
-    // deno-lint-ignore no-explicit-any
-    const { error } = await (this.supabase as any).rpc('delete_training_plan_exercise', rpcCommand);
-
-    if (error) {
-      throw error;
-    }
+    await deleteEntityFromCollection<TrainingPlanExerciseDto>(
+      this.supabase,
+      'training_plan_exercises',
+      'training_plan_day_id',
+      dayId,
+      exerciseId,
+      (e: TrainingPlanExerciseDto) => e.id,
+      (e: TrainingPlanExerciseDto) => e.order_index,
+      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+    );
 
     return true;
   }
@@ -578,22 +617,26 @@ export class PlanRepository {
   async createSet(planId: string, dayId: string, exerciseId: string, command: CreateTrainingPlanExerciseSetCommand): Promise<TrainingPlanExerciseSetDto> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_training_plan_exercise_id: exerciseId,
-      p_expected_reps: command.expected_reps,
-      p_expected_weight: command.expected_weight,
-      p_target_set_index: command.set_index,
+    const newSet: TrainingPlanExerciseSetDto = {
+      id: crypto.randomUUID(),
+      training_plan_exercise_id: exerciseId,
+      expected_reps: command.expected_reps,
+      expected_weight: command.expected_weight,
+      set_index: command.set_index || 1,
     };
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('create_training_plan_exercise_set', rpcCommand);
+    const updatedSets = await createEntityInCollection<TrainingPlanExerciseSetDto>(
+      this.supabase,
+      'training_plan_exercise_sets',
+      'training_plan_exercise_id',
+      exerciseId,
+      newSet,
+      (s: TrainingPlanExerciseSetDto) => s.id,
+      (s: TrainingPlanExerciseSetDto) => s.set_index,
+      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+    );
 
-    if (error) {
-      throw error;
-    }
-
-    return data[0] as TrainingPlanExerciseSetDto;
+    return updatedSets.find(s => s.expected_reps === newSet.expected_reps && s.expected_weight === newSet.expected_weight) || updatedSets[updatedSets.length - 1];
   }
 
   /**
@@ -609,25 +652,39 @@ export class PlanRepository {
   async updateSet(planId: string, dayId: string, exerciseId: string, setId: string, command: UpdateTrainingPlanExerciseSetCommand): Promise<TrainingPlanExerciseSetDto | null> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_set_id: setId,
-      p_expected_reps: command.expected_reps,
-      p_expected_weight: command.expected_weight,
-      p_target_set_index: command.set_index,
-    };
+    const { data: existingSet, error: existingSetError } = await this.supabase
+      .from('training_plan_exercise_sets')
+      .select('*')
+      .eq('id', setId)
+      .eq('training_plan_exercise_id', exerciseId)
+      .single();
 
-    // deno-lint-ignore no-explicit-any
-    const { data, error } = await (this.supabase as any).rpc('update_training_plan_exercise_set', rpcCommand).single();
-
-    if (error) {
-      if (error.message.includes('not found')) {
+    if (existingSetError) {
+      if (existingSetError.code === 'PGRST116') {
         return null;
       }
-      throw error;
+      throw existingSetError;
     }
 
-    return data as TrainingPlanExerciseSetDto;
+    const updatedSet: TrainingPlanExerciseSetDto = {
+      ...existingSet,
+      expected_reps: command.expected_reps !== undefined ? command.expected_reps : existingSet.expected_reps,
+      expected_weight: command.expected_weight !== undefined ? command.expected_weight : existingSet.expected_weight,
+      set_index: command.set_index !== undefined ? command.set_index : existingSet.set_index,
+    };
+
+    const updatedSets = await updateEntityInCollection<TrainingPlanExerciseSetDto>(
+      this.supabase,
+      'training_plan_exercise_sets',
+      'training_plan_exercise_id',
+      exerciseId,
+      updatedSet,
+      (s: TrainingPlanExerciseSetDto) => s.id,
+      (s: TrainingPlanExerciseSetDto) => s.set_index,
+      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+    );
+
+    return updatedSets.find(s => s.id === setId) || null;
   }
 
   /**
@@ -642,17 +699,16 @@ export class PlanRepository {
   async deleteSet(planId: string, dayId: string, exerciseId: string, setId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
-    const rpcCommand = {
-      p_user_id: this.getUserId(),
-      p_set_id: setId,
-    };
-
-    // deno-lint-ignore no-explicit-any
-    const { error } = await (this.supabase as any).rpc('delete_training_plan_exercise_set', rpcCommand);
-
-    if (error) {
-      throw error;
-    }
+    await deleteEntityFromCollection<TrainingPlanExerciseSetDto>(
+      this.supabase,
+      'training_plan_exercise_sets',
+      'training_plan_exercise_id',
+      exerciseId,
+      setId,
+      (s: TrainingPlanExerciseSetDto) => s.id,
+      (s: TrainingPlanExerciseSetDto) => s.set_index,
+      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+    );
 
     return true;
   }
@@ -824,4 +880,6 @@ export class PlanRepository {
       }
     }
   }
+
+
 }
