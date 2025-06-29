@@ -11,7 +11,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterModule } from '@angular/router';
 import { EMPTY } from 'rxjs';
 import { filter, map, switchMap, catchError } from 'rxjs/operators';
-import { CreateTrainingPlanCommand } from '@shared/api/api.types';
+import { CreatePlanCommand } from '@shared/api/api.types';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
@@ -75,7 +75,7 @@ export class PlanListPageComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(
         takeUntilDestroyed(this.destroyRef),
         filter(this.isCreatePlanCommandResult),
-        map(result => result.value as CreateTrainingPlanCommand),
+        map(result => result.value as CreatePlanCommand),
         switchMap(createCmd => this.facade.createPlan(createCmd)),
         tapIf(response => !!response.data && !!response.data.id, response => {
           this.snackBar.open('Plan created.', 'Close', { duration: 3000 });

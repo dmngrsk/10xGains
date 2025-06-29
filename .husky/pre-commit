@@ -1,1 +1,11 @@
+#!/bin/sh
+
+# Check if any files in supabase/functions/api/models/ are staged
+if git diff --cached --name-only | grep -q "^supabase/functions/api/models/"; then
+  echo "API models changed, running copy-api-types.js..."
+  node scripts/copy-api-types.js
+  git add src/app/shared/api/api.types.ts src/app/shared/db/database.types.ts
+fi
+
+# Run lint-staged for code formatting/linting
 npx lint-staged

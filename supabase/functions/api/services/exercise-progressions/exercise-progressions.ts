@@ -1,35 +1,35 @@
 import { handleProportionalDeload } from './deload-strategies/proportional-deload.ts';
-import type { SessionSetDto, TrainingPlanExerciseDto, TrainingPlanExerciseProgressionDto, TrainingPlanExerciseSetDto } from '../../models/api-types.ts';
+import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanExerciseSetDto } from '../../models/api.types.ts';
 import { groupBy } from "../../utils/collections.ts";
 
 /**
  * Resolves exercise progressions based on completed session sets and current progression rules.
  *
  * This function compares the actual performed sets from a training session against the expected sets
- * defined in the training plan. Based on whether all sets for an exercise were successfully completed,
+ * defined in the plan. Based on whether all sets for an exercise were successfully completed,
  * it determines how the exercise progression should be updated (e.g., increase weight, deload).
  * It also calculates the new set configurations (e.g., updated target weights) for the next session.
  *
  * @param sessionSets - An array of `SessionSetDto` objects representing the sets performed during the training session.
- * @param planExercises - An array of `TrainingPlanExerciseDto` objects detailing the exercises planned for the session,
+ * @param planExercises - An array of `PlanExerciseDto` objects detailing the exercises planned for the session,
  *                        including their expected sets (`sets` property).
- * @param exerciseProgressions - An array of `TrainingPlanExerciseProgressionDto` objects representing the current
+ * @param exerciseProgressions - An array of `PlanExerciseProgressionDto` objects representing the current
  *                               progression state for each exercise (e.g., deload rules, weight increment).
  * @returns An object containing two arrays:
- *          - `exerciseSetsToUpdate`: An array of `TrainingPlanExerciseSetDto` objects with updated targets for the next session.
- *          - `exerciseProgressionsToUpdate`: An array of `TrainingPlanExerciseProgressionDto` objects with updated progression states.
+ *          - `exerciseSetsToUpdate`: An array of `PlanExerciseSetDto` objects with updated targets for the next session.
+ *          - `exerciseProgressionsToUpdate`: An array of `PlanExerciseProgressionDto` objects with updated progression states.
  */
 export function resolveExerciseProgressions(
   sessionSets: SessionSetDto[],
-  planExercises: TrainingPlanExerciseDto[],
-  exerciseProgressions: TrainingPlanExerciseProgressionDto[]
-): { exerciseSetsToUpdate: TrainingPlanExerciseSetDto[], exerciseProgressionsToUpdate: TrainingPlanExerciseProgressionDto[] } {
-  const exerciseSetsToUpdate: TrainingPlanExerciseSetDto[] = [];
-  const exerciseProgressionsToUpdate: TrainingPlanExerciseProgressionDto[] = [];
+  planExercises: PlanExerciseDto[],
+  exerciseProgressions: PlanExerciseProgressionDto[]
+): { exerciseSetsToUpdate: PlanExerciseSetDto[], exerciseProgressionsToUpdate: PlanExerciseProgressionDto[] } {
+  const exerciseSetsToUpdate: PlanExerciseSetDto[] = [];
+  const exerciseProgressionsToUpdate: PlanExerciseProgressionDto[] = [];
 
   const exerciseMap = groupBy(planExercises, 'exercise_id');
   const progressionMap = new Map(exerciseProgressions.map(p => [p.exercise_id, p]));
-  const actualPerformedExercises = new Set(sessionSets.map(ss => ss.training_plan_exercise_id));
+  const actualPerformedExercises = new Set(sessionSets.map(ss => ss.plan_exercise_id));
 
   for (const [exerciseId, scopedPlanExercises] of Object.entries(exerciseMap)) {
     const currentSets = scopedPlanExercises.map(pe => pe.sets).flat().filter(s => !!s);
@@ -49,7 +49,7 @@ export function resolveExerciseProgressions(
       if (actualPerformedExercises.has(scopedPlanExercise.id)) {
         exerciseFound = true;
         const expectedScopedPlanSets = scopedPlanExercise.sets || [];
-        const actualPerformedSets = sessionSets.filter(ss => ss.training_plan_exercise_id === scopedPlanExercise.id) || [];
+        const actualPerformedSets = sessionSets.filter(ss => ss.plan_exercise_id === scopedPlanExercise.id) || [];
 
         for (const expectedSet of expectedScopedPlanSets) {
           const actualSet = actualPerformedSets.find(as => as.set_index === expectedSet.set_index);
@@ -64,15 +64,15 @@ export function resolveExerciseProgressions(
       }
     }
 
-    const newSets: TrainingPlanExerciseSetDto[] = [];
-    const newProgression = { ...currentProgression, last_updated: new Date().toISOString() } as TrainingPlanExerciseProgressionDto;
+    const newSets: PlanExerciseSetDto[] = [];
+    const newProgression = { ...currentProgression, last_updated: new Date().toISOString() } as PlanExerciseProgressionDto;
     const exerciseSuccessful = exerciseFound && exerciseSetsSuccessful;
 
-    const progressWeight = (set: TrainingPlanExerciseSetDto) => {
+    const progressWeight = (set: PlanExerciseSetDto) => {
       return { ...set, expected_weight: set.expected_weight + currentProgression.weight_increment };
     };
 
-    const deloadWeight = (set: TrainingPlanExerciseSetDto): TrainingPlanExerciseSetDto => {
+    const deloadWeight = (set: PlanExerciseSetDto): PlanExerciseSetDto => {
       const strategy = currentProgression.deload_strategy || 'PROPORTIONAL';
       switch (strategy) {
         case 'PROPORTIONAL':
@@ -97,7 +97,7 @@ export function resolveExerciseProgressions(
     }
 
     exerciseSetsToUpdate.push(...newSets);
-    exerciseProgressionsToUpdate.push(newProgression as TrainingPlanExerciseProgressionDto);
+    exerciseProgressionsToUpdate.push(newProgression as PlanExerciseProgressionDto);
   }
 
   return { exerciseSetsToUpdate, exerciseProgressionsToUpdate };

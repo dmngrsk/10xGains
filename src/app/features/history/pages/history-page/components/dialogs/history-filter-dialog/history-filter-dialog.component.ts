@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Subject } from 'rxjs';
-import { HistoryFiltersViewModel, HistoryFilterTrainingPlan } from '@features/history/models/history-page.viewmodel';
+import { HistoryFiltersViewModel, HistoryFilterPlan } from '@features/history/models/history-page.viewmodel';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { dateRangeValidator } from '@shared/utils/forms/validators/date-range.validator';
 
@@ -42,8 +42,8 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
 
   filterForm!: FormGroup;
 
-  get availableTrainingPlans(): HistoryFilterTrainingPlan[] {
-    return this.data.filters.availableTrainingPlans || [];
+  get availablePlans(): HistoryFilterPlan[] {
+    return this.data.filters.availablePlans || [];
   }
 
   get pageSizeOptions(): number[] {
@@ -61,7 +61,7 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.filterForm = this.fb.group({
-      selectedTrainingPlanId: [this.data.filters.selectedTrainingPlanId],
+      selectedPlanId: [this.data.filters.selectedPlanId],
       dateFrom: [this.data.filters.dateFrom ? new Date(this.data.filters.dateFrom) : null],
       dateTo: [this.data.filters.dateTo ? new Date(this.data.filters.dateTo) : null],
       pageSize: [this.data.filters.pageSize],
@@ -81,12 +81,12 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
     dateTo?.setHours(23, 59, 59, 999);
 
     const filtersToEmit: HistoryFiltersViewModel = {
-      selectedTrainingPlanId: formValue.selectedTrainingPlanId,
+      selectedPlanId: formValue.selectedPlanId,
       dateFrom: dateFrom?.toISOString() || null,
       dateTo: dateTo?.toISOString() || null,
       pageSize: formValue.pageSize,
       pageSizeOptions: this.data.filters.pageSizeOptions,
-      availableTrainingPlans: this.data.filters.availableTrainingPlans,
+      availablePlans: this.data.filters.availablePlans,
     };
 
     this.dialogRef.close(filtersToEmit);

@@ -2,14 +2,14 @@ import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, switchMap, forkJoin } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
-import { TrainingPlanViewModel } from '@features/plans/models/training-plan.viewmodel';
-import { CreateTrainingPlanCommand, TrainingPlanDto, ExerciseDto, UserProfileDto } from '@shared/api/api.types';
+import { PlanViewModel } from '@features/plans/models/plan.viewmodel';
+import { CreatePlanCommand, PlanDto, ExerciseDto, ProfileDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { PlanService, PlanServiceResponse } from '../../api/plan.service';
 import { PlanListPageViewModel } from '../../models/plan-list-page.viewmodel';
-import { mapToTrainingPlanViewModel } from '../../models/training-plan.mapping';
+import { mapToPlanViewModel } from '../../models/plan.mapping';
 
 const PLAN_PAGE_SIZE = 5;
 
@@ -33,9 +33,9 @@ export class PlanListPageFacade {
 
   readonly viewModel = signal(initialState);
 
-  private internalUserProfile: UserProfileDto | null = null;
+  private internalProfile: ProfileDto | null = null;
   private internalExercises: ExerciseDto[] = [];
-  private internalActivePlanViewModel: TrainingPlanViewModel | null = null;
+  private internalActivePlanViewModel: PlanViewModel | null = null;
 
   loadPlanData(isLoadMore = false): void {
     const offset = isLoadMore ? this.viewModel().plans.length : 0;
@@ -49,16 +49,16 @@ export class PlanListPageFacade {
     this.plansService.getPlans(PLAN_PAGE_SIZE, offset).pipe(
       switchMap(plansResponse => {
         return this.getInitialData(isLoadMore).pipe(
-          map(({ userProfile, exercises, activePlanViewModel }) => ({
+          map(({ profile, exercises, activePlanViewModel }) => ({
             plansResponse,
-            userProfile,
+            profile,
             exercises,
             activePlanViewModel
           }))
         );
       }),
       map(data => {
-        const { plansResponse, userProfile, exercises, activePlanViewModel } = data;
+        const { plansResponse, profile, exercises, activePlanViewModel } = data;
         const viewModel = this.viewModel();
 
         if (plansResponse.error || !plansResponse.data) {
@@ -72,7 +72,7 @@ export class PlanListPageFacade {
           };
         }
 
-        const newMappedPlans = plansResponse.data.map(dto => mapToTrainingPlanViewModel(dto, exercises, userProfile!)).filter(p => !p.isActive);
+        const newMappedPlans = plansResponse.data.map(dto => mapToPlanViewModel(dto, exercises, profile!)).filter(p => !p.isActive);
         const updatedPlans = [...viewModel.plans, ...newMappedPlans];
         const newTotalPlans = plansResponse.totalCount ?? viewModel.totalPlans;
 
@@ -101,7 +101,7 @@ export class PlanListPageFacade {
     });
   }
 
-  createPlan(createCmd: CreateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
+  createPlan(createCmd: CreatePlanCommand): Observable<PlanServiceResponse<PlanDto>> {
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
     return this.plansService.createPlan(createCmd)
       .pipe(
@@ -111,24 +111,24 @@ export class PlanListPageFacade {
   }
 
   private getInitialData(isLoadMore: boolean): Observable<{
-    userProfile: UserProfileDto;
+    profile: ProfileDto;
     exercises: ExerciseDto[];
-    activePlanViewModel: TrainingPlanViewModel | null;
+    activePlanViewModel: PlanViewModel | null;
   }> {
-    if (this.internalUserProfile && this.internalExercises.length > 0 && isLoadMore) {
-      return of({ userProfile: this.internalUserProfile, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel });
+    if (this.internalProfile && this.internalExercises.length > 0 && isLoadMore) {
+      return of({ profile: this.internalProfile, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel });
     }
 
     return this.profileService
-      .getUserProfile(this.authService.currentUser()!.id)
+      .getProfile(this.authService.currentUser()!.id)
       .pipe(switchMap(profileResponse => {
         if (profileResponse.error) {
           throw profileResponse.error || new Error('Failed to load user profile.');
         } else {
-          this.internalUserProfile = profileResponse.data;
+          this.internalProfile = profileResponse.data;
         }
-        const activePlan$ = profileResponse.data?.active_training_plan_id
-          ? this.plansService.getPlan(profileResponse.data.active_training_plan_id)
+        const activePlan$ = profileResponse.data?.active_plan_id
+          ? this.plansService.getPlan(profileResponse.data.active_plan_id)
           : of({ data: null, error: null });
         return forkJoin({
           exercises: this.exerciseService.getExercises(),
@@ -142,9 +142,9 @@ export class PlanListPageFacade {
           if (activePlan.error) {
             throw activePlan.error || new Error('Failed to load active plan.');
           } else if (activePlan.data) {
-            this.internalActivePlanViewModel = mapToTrainingPlanViewModel(activePlan.data, this.internalExercises, this.internalUserProfile);
+            this.internalActivePlanViewModel = mapToPlanViewModel(activePlan.data, this.internalExercises, this.internalProfile);
           }
-          return { userProfile: this.internalUserProfile!, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel };
+          return { profile: this.internalProfile!, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel };
         }));
       }));
   }

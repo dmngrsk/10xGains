@@ -1,21 +1,21 @@
 import type { SupabaseClient } from 'supabase';
-import type { Database } from '../models/database-types.ts';
+import type { Database } from '../models/database.types.ts';
 import type {
-  TrainingPlanDto,
-  CreateTrainingPlanCommand,
-  UpdateTrainingPlanCommand,
-  TrainingPlanDayDto,
-  CreateTrainingPlanDayCommand,
-  UpdateTrainingPlanDayCommand,
-  TrainingPlanExerciseDto,
-  CreateTrainingPlanExerciseCommand,
-  UpdateTrainingPlanExerciseCommand,
-  TrainingPlanExerciseSetDto,
-  CreateTrainingPlanExerciseSetCommand,
-  UpdateTrainingPlanExerciseSetCommand,
-  TrainingPlanExerciseProgressionDto,
-  UpsertTrainingPlanExerciseProgressionCommand
-} from '../models/api-types.ts';
+  PlanDto,
+  CreatePlanCommand,
+  UpdatePlanCommand,
+  PlanDayDto,
+  CreatePlanDayCommand,
+  UpdatePlanDayCommand,
+  PlanExerciseDto,
+  CreatePlanExerciseCommand,
+  UpdatePlanExerciseCommand,
+  PlanExerciseSetDto,
+  CreatePlanExerciseSetCommand,
+  UpdatePlanExerciseSetCommand,
+  PlanExerciseProgressionDto,
+  UpsertPlanExerciseProgressionCommand
+} from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData } from "../utils/api-helpers.ts";
 import {
   createEntityInCollection,
@@ -23,18 +23,18 @@ import {
   deleteEntityFromCollection
 } from '../utils/supabase.ts';
 
-export interface TrainingPlanQueryOptions {
+export interface PlanQueryOptions {
   limit: number;
   offset: number;
   sort: string;
 }
 
-export interface TrainingPlanListResult {
-  data: TrainingPlanDto[];
+export interface PlanListResult {
+  data: PlanDto[];
   totalCount: number;
 }
 
-export interface TrainingPlanDayQueryOptions {
+export interface PlanDayQueryOptions {
   limit: number;
   offset: number;
 }
@@ -46,31 +46,31 @@ export class PlanRepository {
   ) {}
 
   /**
-   * Finds all training plans for the current user, with optional sorting and pagination.
+   * Finds all plans for the current user, with optional sorting and pagination.
    *
-   * @param {TrainingPlanQueryOptions} options - Options for sorting and pagination.
-   * @returns {Promise<TrainingPlanListResult>} A promise that resolves to the list of training plans and the total count.
+   * @param {PlanQueryOptions} options - Options for sorting and pagination.
+   * @returns {Promise<PlanListResult>} A promise that resolves to the list of plans and the total count.
    */
-  async findAll(options: TrainingPlanQueryOptions): Promise<TrainingPlanListResult> {
+  async findAll(options: PlanQueryOptions): Promise<PlanListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
     if (sortDirection !== 'asc' && sortDirection !== 'desc') {
       throw new Error('Invalid sort direction');
     }
 
     const { data, count, error } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .select(`
         *,
-        days:training_plan_days (
+        days:plan_days (
           *,
-          exercises:training_plan_exercises (
+          exercises:plan_exercises (
             *,
-            sets:training_plan_exercise_sets (
+            sets:plan_exercise_sets (
               *
             )
           )
         ),
-        progressions:training_plan_exercise_progressions (
+        progressions:plan_exercise_progressions (
           *
         )
       `, { count: 'exact' })
@@ -95,32 +95,32 @@ export class PlanRepository {
     })) || [];
 
     return {
-      data: sortedData as TrainingPlanDto[],
+      data: sortedData as PlanDto[],
       totalCount: count ?? 0
     };
   }
 
   /**
-   * Finds a single training plan by its ID.
+   * Finds a single plan by its ID.
    *
    * @param {string} planId - The ID of the plan to find.
-   * @returns {Promise<TrainingPlanDto | null>} A promise that resolves to the training plan or null if not found.
+   * @returns {Promise<PlanDto | null>} A promise that resolves to the plan or null if not found.
    */
-  async findById(planId: string): Promise<TrainingPlanDto | null> {
+  async findById(planId: string): Promise<PlanDto | null> {
     const { data, error } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .select(`
         *,
-        days:training_plan_days (
+        days:plan_days (
           *,
-          exercises:training_plan_exercises (
+          exercises:plan_exercises (
             *,
-            sets:training_plan_exercise_sets (
+            sets:plan_exercise_sets (
               *
             )
           )
         ),
-        progressions:training_plan_exercise_progressions (
+        progressions:plan_exercise_progressions (
           *
         )
       `)
@@ -135,17 +135,17 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanDto;
+    return data as PlanDto;
   }
 
   /**
-   * Creates a new training plan.
+   * Creates a new plan.
    *
    * @param {string} userId - The ID of the user creating the plan.
-   * @param {CreateTrainingPlanCommand} command - The command containing the plan's details.
-   * @returns {Promise<TrainingPlanDto>} A promise that resolves to the newly created training plan.
+   * @param {CreatePlanCommand} command - The command containing the plan's details.
+   * @returns {Promise<PlanDto>} A promise that resolves to the newly created plan.
    */
-  async create(userId: string, command: CreateTrainingPlanCommand): Promise<TrainingPlanDto> {
+  async create(userId: string, command: CreatePlanCommand): Promise<PlanDto> {
     const newPlanData = {
       name: command.name,
       description: command.description ?? null,
@@ -153,7 +153,7 @@ export class PlanRepository {
     };
 
     const { data, error } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .insert(newPlanData)
       .select()
       .single();
@@ -162,21 +162,21 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanDto;
+    return data as PlanDto;
   }
 
   /**
-   * Updates an existing training plan.
+   * Updates an existing plan.
    *
    * @param {string} planId - The ID of the plan to update.
-   * @param {UpdateTrainingPlanCommand} command - The command with the updated data.
-   * @returns {Promise<TrainingPlanDto | null>} A promise that resolves to the updated plan or null if not found.
+   * @param {UpdatePlanCommand} command - The command with the updated data.
+   * @returns {Promise<PlanDto | null>} A promise that resolves to the updated plan or null if not found.
    */
-  async update(planId: string, command: UpdateTrainingPlanCommand): Promise<TrainingPlanDto | null> {
+  async update(planId: string, command: UpdatePlanCommand): Promise<PlanDto | null> {
     await this.verifyPlanOwnership(planId);
 
     const { data, error } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .update(command)
       .eq('id', planId)
       .eq('user_id', this.getUserId())
@@ -190,11 +190,11 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanDto;
+    return data as PlanDto;
   }
 
   /**
-   * Deletes a training plan.
+   * Deletes a plan.
    *
    * @param {string} planId - The ID of the plan to delete.
    * @returns {Promise<boolean>} A promise that resolves to true if the deletion was successful.
@@ -203,7 +203,7 @@ export class PlanRepository {
     await this.verifyPlanOwnership(planId);
 
     const { error } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .delete()
       .eq('id', planId)
       .eq('user_id', this.getUserId());
@@ -218,25 +218,25 @@ export class PlanRepository {
   /**
    * Finds all training days for a given plan.
    *
-   * @param {string} planId - The ID of the training plan.
-   * @param {TrainingPlanDayQueryOptions} options - Options for pagination.
-   * @returns {Promise<TrainingPlanDayDto[]>} A promise that resolves to a list of training days.
+   * @param {string} planId - The ID of the plan.
+   * @param {PlanDayQueryOptions} options - Options for pagination.
+   * @returns {Promise<PlanDayDto[]>} A promise that resolves to a list of training days.
    */
-  async findDaysByPlanId(planId: string, options: TrainingPlanDayQueryOptions): Promise<TrainingPlanDayDto[]> {
+  async findDaysByPlanId(planId: string, options: PlanDayQueryOptions): Promise<PlanDayDto[]> {
     await this.verifyPlanOwnership(planId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_days')
+      .from('plan_days')
       .select(`
         *,
-        exercises:training_plan_exercises(
+        exercises:plan_exercises(
           *,
-          sets:training_plan_exercise_sets(
+          sets:plan_exercise_sets(
             *
           )
         )
       `)
-      .eq('training_plan_id', planId)
+      .eq('plan_id', planId)
       .order('order_index', { ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
 
@@ -253,7 +253,7 @@ export class PlanRepository {
       }))
     })) || [];
 
-    return sortedData as TrainingPlanDayDto[];
+    return sortedData as PlanDayDto[];
   }
 
   /**
@@ -261,24 +261,24 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the day to find.
-   * @returns {Promise<TrainingPlanDayDto | null>} A promise that resolves to the training day or null if not found.
+   * @returns {Promise<PlanDayDto | null>} A promise that resolves to the training day or null if not found.
    */
-  async findDayById(planId: string, dayId: string): Promise<TrainingPlanDayDto | null> {
+  async findDayById(planId: string, dayId: string): Promise<PlanDayDto | null> {
     await this.verifyPlanOwnership(planId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_days')
+      .from('plan_days')
       .select(`
         *,
-        exercises:training_plan_exercises(
+        exercises:plan_exercises(
           *,
-          sets:training_plan_exercise_sets(
+          sets:plan_exercise_sets(
             *
           )
         )
       `)
       .eq('id', dayId)
-      .eq('training_plan_id', planId)
+      .eq('plan_id', planId)
       .single();
 
     if (error) {
@@ -288,36 +288,37 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanDayDto;
+    return data as PlanDayDto;
   }
 
   /**
    * Creates a new training day within a plan.
    *
    * @param {string} planId - The ID of the parent plan.
-   * @param {CreateTrainingPlanDayCommand} command - The command with the new day's data.
-   * @returns {Promise<TrainingPlanDayDto>} A promise that resolves to the newly created training day.
+   * @param {CreatePlanDayCommand} command - The command with the new day's data.
+   * @returns {Promise<PlanDayDto>} A promise that resolves to the newly created training day.
    */
-  async createDay(planId: string, command: CreateTrainingPlanDayCommand): Promise<TrainingPlanDayDto> {
+  async createDay(planId: string, command: CreatePlanDayCommand): Promise<PlanDayDto> {
     await this.verifyPlanOwnership(planId);
 
-    const newDay: TrainingPlanDayDto = {
+    const newDay: PlanDayDto = {
       id: crypto.randomUUID(),
-      training_plan_id: planId,
+      plan_id: planId,
       name: command.name,
       description: command.description || null,
       order_index: command.order_index || 1,
     };
 
-    const updatedDays = await createEntityInCollection<TrainingPlanDayDto>(
+    const updatedDays = await createEntityInCollection<PlanDayDto>(
       this.supabase,
-      'training_plan_days',
-      'training_plan_id',
+      'plan_days',
+      'plan_id',
       planId,
+      'order_index',
       newDay,
-      (d: TrainingPlanDayDto) => d.id,
-      (d: TrainingPlanDayDto) => d.order_index,
-      (d: TrainingPlanDayDto, order: number) => ({ ...d, order_index: order })
+      (d: PlanDayDto) => d.id,
+      (d: PlanDayDto) => d.order_index,
+      (d: PlanDayDto, order: number) => ({ ...d, order_index: order })
     );
 
     return updatedDays.find(d => d.name === newDay.name && d.description === newDay.description) || updatedDays[updatedDays.length - 1];
@@ -328,17 +329,17 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the day to update.
-   * @param {UpdateTrainingPlanDayCommand} command - The command with the updated data.
-   * @returns {Promise<TrainingPlanDayDto | null>} A promise that resolves to the updated day or null if not found.
+   * @param {UpdatePlanDayCommand} command - The command with the updated data.
+   * @returns {Promise<PlanDayDto | null>} A promise that resolves to the updated day or null if not found.
    */
-  async updateDay(planId: string, dayId: string, command: UpdateTrainingPlanDayCommand): Promise<TrainingPlanDayDto | null> {
+  async updateDay(planId: string, dayId: string, command: UpdatePlanDayCommand): Promise<PlanDayDto | null> {
     await this.verifyPlanOwnership(planId, dayId);
 
     const { data: existingDay, error: existingDayError } = await this.supabase
-      .from('training_plan_days')
+      .from('plan_days')
       .select('*')
       .eq('id', dayId)
-      .eq('training_plan_id', planId)
+      .eq('plan_id', planId)
       .single();
 
     if (existingDayError) {
@@ -348,22 +349,23 @@ export class PlanRepository {
       throw existingDayError;
     }
 
-    const updatedDay: TrainingPlanDayDto = {
+    const updatedDay: PlanDayDto = {
       ...existingDay,
       name: command.name !== undefined ? command.name : existingDay.name,
       description: command.description !== undefined ? command.description : existingDay.description,
       order_index: command.order_index !== undefined ? command.order_index : existingDay.order_index,
     };
 
-    const updatedDays = await updateEntityInCollection<TrainingPlanDayDto>(
+    const updatedDays = await updateEntityInCollection<PlanDayDto>(
       this.supabase,
-      'training_plan_days',
-      'training_plan_id',
+      'plan_days',
+      'plan_id',
       planId,
+      'order_index',
       updatedDay,
-      (d: TrainingPlanDayDto) => d.id,
-      (d: TrainingPlanDayDto) => d.order_index,
-      (d: TrainingPlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
+      (d: PlanDayDto) => d.id,
+      (d: PlanDayDto) => d.order_index,
+      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
     );
 
     return updatedDays.find(d => d.id === dayId) || null;
@@ -379,15 +381,16 @@ export class PlanRepository {
   async deleteDay(planId: string, dayId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    await deleteEntityFromCollection<TrainingPlanDayDto>(
+    await deleteEntityFromCollection<PlanDayDto>(
       this.supabase,
-      'training_plan_days',
-      'training_plan_id',
+      'plan_days',
+      'plan_id',
       planId,
+      'order_index',
       dayId,
-      (d: TrainingPlanDayDto) => d.id,
-      (d: TrainingPlanDayDto) => d.order_index,
-      (d: TrainingPlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
+      (d: PlanDayDto) => d.id,
+      (d: PlanDayDto) => d.order_index,
+      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
     );
 
     return true;
@@ -398,15 +401,15 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
-   * @returns {Promise<TrainingPlanExerciseDto[]>} A promise that resolves to a list of exercises.
+   * @returns {Promise<PlanExerciseDto[]>} A promise that resolves to a list of exercises.
    */
-  async findExercisesByDayId(planId: string, dayId: string): Promise<TrainingPlanExerciseDto[]> {
+  async findExercisesByDayId(planId: string, dayId: string): Promise<PlanExerciseDto[]> {
     await this.verifyPlanOwnership(planId, dayId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercises')
-      .select('*, sets:training_plan_exercise_sets(*)')
-      .eq('training_plan_day_id', dayId)
+      .from('plan_exercises')
+      .select('*, sets:plan_exercise_sets(*)')
+      .eq('plan_day_id', dayId)
       .order('order_index', { ascending: true });
 
     if (error) {
@@ -419,7 +422,7 @@ export class PlanRepository {
       sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
     })) || [];
 
-    return sortedData as TrainingPlanExerciseDto[];
+    return sortedData as PlanExerciseDto[];
   }
 
   /**
@@ -428,16 +431,16 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the exercise to find.
-   * @returns {Promise<TrainingPlanExerciseDto | null>} A promise that resolves to the exercise or null if not found.
+   * @returns {Promise<PlanExerciseDto | null>} A promise that resolves to the exercise or null if not found.
    */
-  async findExerciseById(planId: string, dayId: string, exerciseId: string): Promise<TrainingPlanExerciseDto | null> {
+  async findExerciseById(planId: string, dayId: string, exerciseId: string): Promise<PlanExerciseDto | null> {
     await this.verifyPlanOwnership(planId, dayId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercises')
-      .select('*, sets:training_plan_exercise_sets(*)')
+      .from('plan_exercises')
+      .select('*, sets:plan_exercise_sets(*)')
       .eq('id', exerciseId)
-      .eq('training_plan_day_id', dayId)
+      .eq('plan_day_id', dayId)
       .single();
 
     if (error) {
@@ -447,7 +450,7 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanExerciseDto;
+    return data as PlanExerciseDto;
   }
 
   /**
@@ -455,28 +458,29 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
-   * @param {CreateTrainingPlanExerciseCommand} command - The command with the new exercise's data.
-   * @returns {Promise<TrainingPlanExerciseDto>} A promise that resolves to the newly created exercise.
+   * @param {CreatePlanExerciseCommand} command - The command with the new exercise's data.
+   * @returns {Promise<PlanExerciseDto>} A promise that resolves to the newly created exercise.
    */
-  async createExercise(planId: string, dayId: string, command: CreateTrainingPlanExerciseCommand): Promise<TrainingPlanExerciseDto> {
+  async createExercise(planId: string, dayId: string, command: CreatePlanExerciseCommand): Promise<PlanExerciseDto> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const newExercise: TrainingPlanExerciseDto = {
+    const newExercise: PlanExerciseDto = {
       id: crypto.randomUUID(),
-      training_plan_day_id: dayId,
+      plan_day_id: dayId,
       exercise_id: command.exercise_id,
       order_index: command.order_index || 1,
     };
 
-    const updatedExercises = await createEntityInCollection<TrainingPlanExerciseDto>(
+    const updatedExercises = await createEntityInCollection<PlanExerciseDto>(
       this.supabase,
-      'training_plan_exercises',
-      'training_plan_day_id',
+      'plan_exercises',
+      'plan_day_id',
       dayId,
+      'order_index',
       newExercise,
-      (e: TrainingPlanExerciseDto) => e.id,
-      (e: TrainingPlanExerciseDto) => e.order_index,
-      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+      (e: PlanExerciseDto) => e.id,
+      (e: PlanExerciseDto) => e.order_index,
+      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
     );
 
     return updatedExercises.find(e => e.exercise_id === newExercise.exercise_id) || updatedExercises[updatedExercises.length - 1];
@@ -488,17 +492,17 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the exercise to update.
-   * @param {UpdateTrainingPlanExerciseCommand} command - The command with the updated data.
-   * @returns {Promise<TrainingPlanExerciseDto | null>} A promise that resolves to the updated exercise or null if not found.
+   * @param {UpdatePlanExerciseCommand} command - The command with the updated data.
+   * @returns {Promise<PlanExerciseDto | null>} A promise that resolves to the updated exercise or null if not found.
    */
-  async updateExercise(planId: string, dayId: string, exerciseId: string, command: UpdateTrainingPlanExerciseCommand): Promise<TrainingPlanExerciseDto | null> {
+  async updateExercise(planId: string, dayId: string, exerciseId: string, command: UpdatePlanExerciseCommand): Promise<PlanExerciseDto | null> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
     const { data: existingExercise, error: existingExerciseError } = await this.supabase
-      .from('training_plan_exercises')
+      .from('plan_exercises')
       .select('*')
       .eq('id', exerciseId)
-      .eq('training_plan_day_id', dayId)
+      .eq('plan_day_id', dayId)
       .single();
 
     if (existingExerciseError) {
@@ -508,20 +512,21 @@ export class PlanRepository {
       throw existingExerciseError;
     }
 
-    const updatedExercise: TrainingPlanExerciseDto = {
+    const updatedExercise: PlanExerciseDto = {
       ...existingExercise,
       order_index: command.order_index !== undefined ? command.order_index : existingExercise.order_index,
     };
 
-    const updatedExercises = await updateEntityInCollection<TrainingPlanExerciseDto>(
+    const updatedExercises = await updateEntityInCollection<PlanExerciseDto>(
       this.supabase,
-      'training_plan_exercises',
-      'training_plan_day_id',
+      'plan_exercises',
+      'plan_day_id',
       dayId,
+      'order_index',
       updatedExercise,
-      (e: TrainingPlanExerciseDto) => e.id,
-      (e: TrainingPlanExerciseDto) => e.order_index,
-      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+      (e: PlanExerciseDto) => e.id,
+      (e: PlanExerciseDto) => e.order_index,
+      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
     );
 
     return updatedExercises.find(e => e.id === exerciseId) || null;
@@ -538,15 +543,16 @@ export class PlanRepository {
   async deleteExercise(planId: string, dayId: string, exerciseId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    await deleteEntityFromCollection<TrainingPlanExerciseDto>(
+    await deleteEntityFromCollection<PlanExerciseDto>(
       this.supabase,
-      'training_plan_exercises',
-      'training_plan_day_id',
+      'plan_exercises',
+      'plan_day_id',
       dayId,
+      'order_index',
       exerciseId,
-      (e: TrainingPlanExerciseDto) => e.id,
-      (e: TrainingPlanExerciseDto) => e.order_index,
-      (e: TrainingPlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
+      (e: PlanExerciseDto) => e.id,
+      (e: PlanExerciseDto) => e.order_index,
+      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
     );
 
     return true;
@@ -558,22 +564,22 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
-   * @returns {Promise<TrainingPlanExerciseSetDto[]>} A promise that resolves to a list of sets.
+   * @returns {Promise<PlanExerciseSetDto[]>} A promise that resolves to a list of sets.
    */
-  async findSetsByExerciseId(planId: string, dayId: string, exerciseId: string): Promise<TrainingPlanExerciseSetDto[]> {
+  async findSetsByExerciseId(planId: string, dayId: string, exerciseId: string): Promise<PlanExerciseSetDto[]> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercise_sets')
+      .from('plan_exercise_sets')
       .select('*')
-      .eq('training_plan_exercise_id', exerciseId)
+      .eq('plan_exercise_id', exerciseId)
       .order('set_index', { ascending: true });
 
     if (error) {
       throw error;
     }
 
-    return data as TrainingPlanExerciseSetDto[];
+    return data as PlanExerciseSetDto[];
   }
 
   /**
@@ -583,16 +589,16 @@ export class PlanRepository {
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
    * @param {string} setId - The ID of the set to find.
-   * @returns {Promise<TrainingPlanExerciseSetDto | null>} A promise that resolves to the set or null if not found.
+   * @returns {Promise<PlanExerciseSetDto | null>} A promise that resolves to the set or null if not found.
    */
-  async findSetById(planId: string, dayId: string, exerciseId: string, setId: string): Promise<TrainingPlanExerciseSetDto | null> {
+  async findSetById(planId: string, dayId: string, exerciseId: string, setId: string): Promise<PlanExerciseSetDto | null> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercise_sets')
+      .from('plan_exercise_sets')
       .select('*')
       .eq('id', setId)
-      .eq('training_plan_exercise_id', exerciseId)
+      .eq('plan_exercise_id', exerciseId)
       .single();
 
     if (error) {
@@ -602,7 +608,7 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanExerciseSetDto;
+    return data as PlanExerciseSetDto;
   }
 
   /**
@@ -611,29 +617,30 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
-   * @param {CreateTrainingPlanExerciseSetCommand} command - The command with the new set's data.
-   * @returns {Promise<TrainingPlanExerciseSetDto>} A promise that resolves to the newly created set.
+   * @param {CreatePlanExerciseSetCommand} command - The command with the new set's data.
+   * @returns {Promise<PlanExerciseSetDto>} A promise that resolves to the newly created set.
    */
-  async createSet(planId: string, dayId: string, exerciseId: string, command: CreateTrainingPlanExerciseSetCommand): Promise<TrainingPlanExerciseSetDto> {
+  async createSet(planId: string, dayId: string, exerciseId: string, command: CreatePlanExerciseSetCommand): Promise<PlanExerciseSetDto> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    const newSet: TrainingPlanExerciseSetDto = {
+    const newSet: PlanExerciseSetDto = {
       id: crypto.randomUUID(),
-      training_plan_exercise_id: exerciseId,
+      plan_exercise_id: exerciseId,
       expected_reps: command.expected_reps,
       expected_weight: command.expected_weight,
       set_index: command.set_index || 1,
     };
 
-    const updatedSets = await createEntityInCollection<TrainingPlanExerciseSetDto>(
+    const updatedSets = await createEntityInCollection<PlanExerciseSetDto>(
       this.supabase,
-      'training_plan_exercise_sets',
-      'training_plan_exercise_id',
+      'plan_exercise_sets',
+      'plan_exercise_id',
       exerciseId,
+      'set_index',
       newSet,
-      (s: TrainingPlanExerciseSetDto) => s.id,
-      (s: TrainingPlanExerciseSetDto) => s.set_index,
-      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+      (s: PlanExerciseSetDto) => s.id,
+      (s: PlanExerciseSetDto) => s.set_index,
+      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
     );
 
     return updatedSets.find(s => s.expected_reps === newSet.expected_reps && s.expected_weight === newSet.expected_weight) || updatedSets[updatedSets.length - 1];
@@ -646,17 +653,17 @@ export class PlanRepository {
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
    * @param {string} setId - The ID of the set to update.
-   * @param {UpdateTrainingPlanExerciseSetCommand} command - The command with the updated data.
-   * @returns {Promise<TrainingPlanExerciseSetDto | null>} A promise that resolves to the updated set or null if not found.
+   * @param {UpdatePlanExerciseSetCommand} command - The command with the updated data.
+   * @returns {Promise<PlanExerciseSetDto | null>} A promise that resolves to the updated set or null if not found.
    */
-  async updateSet(planId: string, dayId: string, exerciseId: string, setId: string, command: UpdateTrainingPlanExerciseSetCommand): Promise<TrainingPlanExerciseSetDto | null> {
+  async updateSet(planId: string, dayId: string, exerciseId: string, setId: string, command: UpdatePlanExerciseSetCommand): Promise<PlanExerciseSetDto | null> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
     const { data: existingSet, error: existingSetError } = await this.supabase
-      .from('training_plan_exercise_sets')
+      .from('plan_exercise_sets')
       .select('*')
       .eq('id', setId)
-      .eq('training_plan_exercise_id', exerciseId)
+      .eq('plan_exercise_id', exerciseId)
       .single();
 
     if (existingSetError) {
@@ -666,22 +673,23 @@ export class PlanRepository {
       throw existingSetError;
     }
 
-    const updatedSet: TrainingPlanExerciseSetDto = {
+    const updatedSet: PlanExerciseSetDto = {
       ...existingSet,
       expected_reps: command.expected_reps !== undefined ? command.expected_reps : existingSet.expected_reps,
       expected_weight: command.expected_weight !== undefined ? command.expected_weight : existingSet.expected_weight,
       set_index: command.set_index !== undefined ? command.set_index : existingSet.set_index,
     };
 
-    const updatedSets = await updateEntityInCollection<TrainingPlanExerciseSetDto>(
+    const updatedSets = await updateEntityInCollection<PlanExerciseSetDto>(
       this.supabase,
-      'training_plan_exercise_sets',
-      'training_plan_exercise_id',
+      'plan_exercise_sets',
+      'plan_exercise_id',
       exerciseId,
+      'set_index',
       updatedSet,
-      (s: TrainingPlanExerciseSetDto) => s.id,
-      (s: TrainingPlanExerciseSetDto) => s.set_index,
-      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+      (s: PlanExerciseSetDto) => s.id,
+      (s: PlanExerciseSetDto) => s.set_index,
+      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
     );
 
     return updatedSets.find(s => s.id === setId) || null;
@@ -699,15 +707,16 @@ export class PlanRepository {
   async deleteSet(planId: string, dayId: string, exerciseId: string, setId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
-    await deleteEntityFromCollection<TrainingPlanExerciseSetDto>(
+    await deleteEntityFromCollection<PlanExerciseSetDto>(
       this.supabase,
-      'training_plan_exercise_sets',
-      'training_plan_exercise_id',
+      'plan_exercise_sets',
+      'plan_exercise_id',
       exerciseId,
+      'set_index',
       setId,
-      (s: TrainingPlanExerciseSetDto) => s.id,
-      (s: TrainingPlanExerciseSetDto) => s.set_index,
-      (s: TrainingPlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+      (s: PlanExerciseSetDto) => s.id,
+      (s: PlanExerciseSetDto) => s.set_index,
+      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
     );
 
     return true;
@@ -716,22 +725,22 @@ export class PlanRepository {
   /**
    * Finds all exercise progressions for a given plan.
    *
-   * @param {string} planId - The ID of the training plan.
-   * @returns {Promise<TrainingPlanExerciseProgressionDto[]>} A promise that resolves to a list of progressions.
+   * @param {string} planId - The ID of the plan.
+   * @returns {Promise<PlanExerciseProgressionDto[]>} A promise that resolves to a list of progressions.
    */
-  async findProgressionsByPlanId(planId: string): Promise<TrainingPlanExerciseProgressionDto[]> {
+  async findProgressionsByPlanId(planId: string): Promise<PlanExerciseProgressionDto[]> {
     await this.verifyPlanOwnership(planId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercise_progressions')
+      .from('plan_exercise_progressions')
       .select('*')
-      .eq('training_plan_id', planId);
+      .eq('plan_id', planId);
 
     if (error) {
       throw error;
     }
 
-    return data as TrainingPlanExerciseProgressionDto[];
+    return data as PlanExerciseProgressionDto[];
   }
 
   /**
@@ -739,15 +748,15 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} exerciseId - The ID of the exercise.
-   * @returns {Promise<TrainingPlanExerciseProgressionDto | null>} A promise that resolves to the progression or null if not found.
+   * @returns {Promise<PlanExerciseProgressionDto | null>} A promise that resolves to the progression or null if not found.
    */
-  async findProgressionByExerciseId(planId: string, exerciseId: string): Promise<TrainingPlanExerciseProgressionDto | null> {
+  async findProgressionByExerciseId(planId: string, exerciseId: string): Promise<PlanExerciseProgressionDto | null> {
     await this.verifyPlanOwnership(planId);
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercise_progressions')
+      .from('plan_exercise_progressions')
       .select('*')
-      .eq('training_plan_id', planId)
+      .eq('plan_id', planId)
       .eq('exercise_id', exerciseId)
       .single();
 
@@ -758,7 +767,7 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanExerciseProgressionDto;
+    return data as PlanExerciseProgressionDto;
   }
 
   /**
@@ -766,16 +775,16 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} exerciseId - The ID of the exercise.
-   * @param {UpsertTrainingPlanExerciseProgressionCommand} command - The command with the progression data.
-   * @returns {Promise<TrainingPlanExerciseProgressionDto>} A promise that resolves to the created or updated progression.
+   * @param {UpsertPlanExerciseProgressionCommand} command - The command with the progression data.
+   * @returns {Promise<PlanExerciseProgressionDto>} A promise that resolves to the created or updated progression.
    */
-  async upsertProgression(planId: string, exerciseId: string, command: UpsertTrainingPlanExerciseProgressionCommand): Promise<TrainingPlanExerciseProgressionDto> {
+  async upsertProgression(planId: string, exerciseId: string, command: UpsertPlanExerciseProgressionCommand): Promise<PlanExerciseProgressionDto> {
     await this.verifyPlanOwnership(planId);
 
     const { data: existingProgression, error: existingProgressionError } = await this.supabase
-      .from('training_plan_exercise_progressions')
+      .from('plan_exercise_progressions')
       .select('*')
-      .eq('training_plan_id', planId)
+      .eq('plan_id', planId)
       .eq('exercise_id', exerciseId)
       .maybeSingle();
 
@@ -785,7 +794,7 @@ export class PlanRepository {
 
     const dataToUpsert = {
       id: existingProgression?.id || crypto.randomUUID(),
-      training_plan_id: planId,
+      plan_id: planId,
       exercise_id: exerciseId,
       weight_increment: command.weight_increment ?? existingProgression?.weight_increment ?? 0,
       failure_count_for_deload: command.failure_count_for_deload ?? existingProgression?.failure_count_for_deload ?? 0,
@@ -797,7 +806,7 @@ export class PlanRepository {
     };
 
     const { data, error } = await this.supabase
-      .from('training_plan_exercise_progressions')
+      .from('plan_exercise_progressions')
       .upsert(dataToUpsert, { onConflict: 'id' })
       .select()
       .single();
@@ -806,7 +815,7 @@ export class PlanRepository {
       throw error;
     }
 
-    return data as TrainingPlanExerciseProgressionDto;
+    return data as PlanExerciseProgressionDto;
   }
 
   /**
@@ -816,10 +825,10 @@ export class PlanRepository {
    */
   handlePlanOwnershipError(error: Error): ApiErrorResponse | null {
     const ownershipErrorMessages = [
-      'Training plan not found or user does not have access',
-      'Training plan day not found or user does not have access',
-      'Training plan exercise not found or user does not have access',
-      'Training plan exercise set not found or user does not have access'
+      'Plan not found or user does not have access',
+      'Plan day not found or user does not have access',
+      'Plan exercise not found or user does not have access',
+      'Plan exercise set not found or user does not have access'
     ];
 
     if (ownershipErrorMessages.some(msg => error.message.includes(msg))) {
@@ -845,8 +854,8 @@ export class PlanRepository {
 
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
     const { data, error }  = await this.supabase
-      .from('training_plans')
-      .select('id, days:training_plan_days(id, exercises:training_plan_exercises(id, sets:training_plan_exercise_sets(id)))')
+      .from('plans')
+      .select('id, days:plan_days(id, exercises:plan_exercises(id, sets:plan_exercise_sets(id)))')
       .eq('id', planId)
       .eq('user_id', this.getUserId())
       .maybeSingle();
@@ -856,25 +865,25 @@ export class PlanRepository {
     }
 
     if (!data) {
-      throw new Error('Training plan not found or user does not have access');
+      throw new Error('Plan not found or user does not have access');
     }
 
     if (dayId) {
       const day = data.days?.find(d => d.id === dayId);
       if (!day) {
-        throw new Error('Training plan day not found or user does not have access');
+        throw new Error('Plan day not found or user does not have access');
       }
 
       if (exerciseId) {
         const exercise = day.exercises?.find(e => e.id === exerciseId);
         if (!exercise) {
-          throw new Error('Training plan exercise not found or user does not have access');
+          throw new Error('Plan exercise not found or user does not have access');
         }
 
         if (setId) {
           const set = exercise.sets?.find(s => s.id === setId);
           if (!set) {
-            throw new Error('Training plan exercise set not found or user does not have access');
+            throw new Error('Plan exercise set not found or user does not have access');
           }
         }
       }

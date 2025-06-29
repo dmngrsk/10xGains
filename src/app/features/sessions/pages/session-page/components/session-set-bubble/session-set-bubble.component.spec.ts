@@ -10,7 +10,7 @@ const createMockSet = (overrides: Partial<SessionSetViewModel> = {}): SessionSet
   expectedReps: 10,
   weight: 100,
   actualReps: undefined,
-  trainingPlanExerciseId: 'tpex1',
+  planExerciseId: 'tpex1',
   ...overrides,
 });
 

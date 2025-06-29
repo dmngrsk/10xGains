@@ -54,10 +54,12 @@ create or replace function replace_collection(
     p_table_name text,
     p_parent_column text,
     p_parent_id uuid,
+    p_order_column text,
     p_records jsonb
 )
 returns jsonb
 language plpgsql
+set search_path = ''
 security definer
 as $$
 declare
@@ -66,6 +68,8 @@ declare
     upsert_query text;
     new_ids uuid[];
     record_count int;
+    operation_mode text;
+    update_columns text;
 begin
     -- Get count of records to process
     select jsonb_array_length(p_records) into record_count;
@@ -79,7 +83,7 @@ begin
         where value->>'id' is not null and value->>'id' != '';
 
         delete_query := format(
-            'DELETE FROM %I WHERE %I = $1',
+            'DELETE FROM public.%I WHERE %I = $1',
             p_table_name,
             p_parent_column
         );
@@ -96,18 +100,46 @@ begin
 
     -- Phase 2: Upsert the new/updated records
     if record_count > 0 then
+        -- Temporarily offset existing order column values to prevent conflicts during upsert
+        -- This handles scenarios like order swapping where unique constraints would be violated
+        if p_order_column is not null and p_parent_column is not null and p_parent_id is not null then
+            execute format(
+                'UPDATE public.%I SET %I = %I + 100 WHERE %I = $1',
+                p_table_name,
+                p_order_column,
+                p_order_column,
+                p_parent_column
+            ) using p_parent_id;
+        end if;
+
         -- Build dynamic upsert query
-        upsert_query := format(
-            'INSERT INTO %I SELECT * FROM jsonb_populate_recordset(null::%I, $1)
-             ON CONFLICT (id) DO UPDATE SET %s',
-            p_table_name,
-            p_table_name,
-            (select string_agg(column_name || ' = EXCLUDED.' || column_name, ', ')
-             from information_schema.columns
-             where table_name = p_table_name
-             and column_name not in ('id', 'created_at') -- don't update id or created_at
-            )
-        );
+        -- Only build UPDATE SET for columns that exist in the target table
+        
+        -- Get the columns that exist in the target table (excluding system columns)
+        select string_agg(column_name || ' = EXCLUDED.' || column_name, ', ')
+        into update_columns
+        from information_schema.columns
+        where table_schema = 'public'
+        and table_name = p_table_name
+        and column_name not in ('id', 'created_at');
+        
+        -- If no updateable columns found, just do insert with conflict resolution on id
+        if update_columns is null or update_columns = '' then
+            upsert_query := format(
+                'INSERT INTO public.%I SELECT * FROM jsonb_populate_recordset(null::public.%I, $1)
+                 ON CONFLICT (id) DO NOTHING',
+                p_table_name,
+                p_table_name
+            );
+        else
+            upsert_query := format(
+                'INSERT INTO public.%I SELECT * FROM jsonb_populate_recordset(null::public.%I, $1)
+                 ON CONFLICT (id) DO UPDATE SET %s',
+                p_table_name,
+                p_table_name,
+                update_columns
+            );
+        end if;
 
         -- Execute upsert
         execute upsert_query using p_records;
@@ -116,14 +148,14 @@ begin
         if p_parent_column is not null and p_parent_id is not null then
             -- Collection replacement mode: return all records for the parent
             execute format(
-                'SELECT jsonb_agg(to_jsonb(t.*)) FROM %I t WHERE %I = $1',
+                'SELECT jsonb_agg(to_jsonb(t.*)) FROM public.%I t WHERE %I = $1',
                 p_table_name,
                 p_parent_column
             ) using p_parent_id into result;
         else
             -- Upsert-only mode: return the upserted records
             execute format(
-                'SELECT jsonb_agg(to_jsonb(t.*)) FROM %I t WHERE id = ANY($1)',
+                'SELECT jsonb_agg(to_jsonb(t.*)) FROM public.%I t WHERE id = ANY($1)',
                 p_table_name
             ) using (select array_agg((value->>'id')::uuid) from jsonb_array_elements(p_records)) into result;
         end if;
@@ -133,6 +165,15 @@ begin
     end if;
 
     return coalesce(result, '[]'::jsonb);
+
+exception 
+    when others then
+        operation_mode := case 
+            when p_parent_column is not null and p_parent_id is not null then 'COLLECTION_REPLACEMENT'
+            else 'UPSERT_ONLY'
+        end;
+        
+        raise exception '[REPLACE_COLLECTION] ERROR in % operation on table public.%: % (SQLSTATE: %)', operation_mode, p_table_name, SQLERRM, SQLSTATE;
 end;
 $$;
 
@@ -144,6 +185,7 @@ create or replace function replace_collections_batch(
 )
 returns void
 language plpgsql
+set search_path = ''
 security definer
 as $$
 declare
@@ -151,6 +193,7 @@ declare
     table_name text;
     parent_column text;
     parent_id uuid;
+    order_column text;
     records jsonb;
 begin
     -- Validate that p_operations is an array
@@ -165,6 +208,7 @@ begin
         table_name := operation->>'table_name';
         parent_column := operation->>'parent_column';
         parent_id := (operation->>'parent_id')::uuid;
+        order_column := operation->>'order_column';
         records := operation->'records';
 
         -- Validate required fields
@@ -173,10 +217,11 @@ begin
         end if;
 
         -- Call the replace_collection function (ignore result)
-        perform replace_collection(
+        perform public.replace_collection(
             table_name,
             parent_column,
             parent_id,
+            order_column,
             coalesce(records, '[]'::jsonb)
         );
     end loop;
@@ -188,8 +233,8 @@ $$;
 -- ========================================
 
 -- Document the single collection replacement function
-comment on function replace_collection(text, text, uuid, jsonb) is
-'Generic function supporting two modes: 1) Collection replacement when parent_column and parent_id are provided (deletes items not in new collection and upserts all provided items), 2) Upsert-only mode when parent_column or parent_id is null (only upserts without deletions). Returns the updated records.';
+comment on function replace_collection(text, text, uuid, text, jsonb) is
+'Generic function supporting two modes: 1) Collection replacement when parent_column and parent_id are provided (deletes items not in new collection and upserts all provided items), 2) Upsert-only mode when parent_column or parent_id is null (only upserts without deletions). Optional order_column parameter handles unique constraint conflicts during order swapping. Returns the updated records.';
 
 -- Document the batch collection replacement function
 comment on function replace_collections_batch(jsonb) is

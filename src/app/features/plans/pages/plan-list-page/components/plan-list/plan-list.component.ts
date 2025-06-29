@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
-import { TrainingPlanViewModel } from '../../../../models/training-plan.viewmodel';
+import { PlanViewModel } from '../../../../models/plan.viewmodel';
 import { PlanCardComponent } from '../plan-card/plan-card.component';
 
 @Component({
@@ -12,7 +12,7 @@ import { PlanCardComponent } from '../plan-card/plan-card.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanListComponent {
-  @Input({ required: true }) plans!: TrainingPlanViewModel[];
+  @Input({ required: true }) plans!: PlanViewModel[];
   @Output() planClicked = new EventEmitter<string>();
 
   onPlanClicked(planId: string): void {

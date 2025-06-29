@@ -1,31 +1,31 @@
 import type { SupabaseClient } from 'supabase';
-import type { Database, Json } from '../models/database-types.ts';
+import type { Database, Json } from '../models/database.types.ts';
 import type {
-  TrainingSessionDto,
-  CreateTrainingSessionCommand,
-  UpdateTrainingSessionCommand,
+  SessionDto,
+  CreateSessionCommand,
+  UpdateSessionCommand,
   SessionSetDto,
   CreateSessionSetCommand,
   UpdateSessionSetCommand,
-  TrainingPlanExerciseDto,
-  TrainingPlanExerciseProgressionDto
-} from '../models/api-types.ts';
+  PlanExerciseDto,
+  PlanExerciseProgressionDto
+} from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData, createErrorDataWithLogging } from "../utils/api-helpers.ts";
 import { resolveExerciseProgressions } from '../services/exercise-progressions/exercise-progressions.ts';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase.ts';
 
-export interface TrainingSessionQueryOptions {
+export interface SessionQueryOptions {
   limit: number;
   offset: number;
   sort: string;
-  status?: TrainingSessionDto['status'][];
+  status?: SessionDto['status'][];
   date_from?: string;
   date_to?: string;
   plan_id?: string;
 }
 
-export interface TrainingSessionListResult {
-  data: TrainingSessionDto[];
+export interface SessionListResult {
+  data: SessionDto[];
   totalCount: number;
 }
 
@@ -38,13 +38,13 @@ export class SessionRepository {
   /**
    * Finds all training sessions matching the provided criteria.
    *
-   * @param {TrainingSessionQueryOptions} options - The query options for filtering and pagination.
-   * @returns {Promise<TrainingSessionListResult>} A promise that resolves to a list of sessions and the total count.
+   * @param {SessionQueryOptions} options - The query options for filtering and pagination.
+   * @returns {Promise<SessionListResult>} A promise that resolves to a list of sessions and the total count.
    */
-  async findAll(options: TrainingSessionQueryOptions): Promise<TrainingSessionListResult> {
+  async findAll(options: SessionQueryOptions): Promise<SessionListResult> {
     let supabaseQuery = this.supabase
-      .from('training_sessions')
-      .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)', { count: 'exact' })
+      .from('sessions')
+      .select('*, sets:session_sets!session_sets_session_id_fkey(*)', { count: 'exact' })
       .eq('user_id', this.getUserId());
 
     if (options.status && options.status.length > 0) {
@@ -60,7 +60,7 @@ export class SessionRepository {
     }
 
     if (options.plan_id) {
-      supabaseQuery = supabaseQuery.eq('training_plan_id', options.plan_id);
+      supabaseQuery = supabaseQuery.eq('plan_id', options.plan_id);
     }
 
     if (options.sort) {
@@ -83,15 +83,15 @@ export class SessionRepository {
     }
 
     // Sort nested data by order indices
-    data?.forEach((session: TrainingSessionDto) =>
+    data?.forEach((session: SessionDto) =>
       session.sets?.sort((a: SessionSetDto, b: SessionSetDto) =>
-        a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
+        a.plan_exercise_id.localeCompare(b.plan_exercise_id) ||
         a.set_index - b.set_index
       )
     );
 
     return {
-      data: data as TrainingSessionDto[] || [],
+      data: data as SessionDto[] || [],
       totalCount: count ?? 0
     };
   }
@@ -100,12 +100,12 @@ export class SessionRepository {
    * Finds a single training session by its ID.
    *
    * @param {string} sessionId - The ID of the session to find.
-   * @returns {Promise<TrainingSessionDto | null>} A promise that resolves to the session or null if not found.
+   * @returns {Promise<SessionDto | null>} A promise that resolves to the session or null if not found.
    */
-  async findById(sessionId: string): Promise<TrainingSessionDto | null> {
+  async findById(sessionId: string): Promise<SessionDto | null> {
     const { data, error } = await this.supabase
-      .from('training_sessions')
-      .select('*, sets:session_sets!session_sets_training_session_id_fkey(*)')
+      .from('sessions')
+      .select('*, sets:session_sets!session_sets_session_id_fkey(*)')
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
       .single();
@@ -119,56 +119,56 @@ export class SessionRepository {
 
     if (data.sets) {
       data.sets.sort((a: SessionSetDto, b: SessionSetDto) =>
-        a.training_plan_exercise_id.localeCompare(b.training_plan_exercise_id) ||
+        a.plan_exercise_id.localeCompare(b.plan_exercise_id) ||
         a.set_index - b.set_index
       );
     }
 
-    return data as TrainingSessionDto;
+    return data as SessionDto;
   }
 
   /**
-   * Creates a new training session based on a training plan.
+   * Creates a new training session based on a plan.
    *
    * It determines the next day to train and cancels any pending or in-progress sessions
    * before creating the new one.
    *
-   * @param {CreateTrainingSessionCommand} command - The command containing the details for the new session.
-   * @returns {Promise<TrainingSessionDto>} A promise that resolves to the newly created session.
+   * @param {CreateSessionCommand} command - The command containing the details for the new session.
+   * @returns {Promise<SessionDto>} A promise that resolves to the newly created session.
    */
-  async create(command: CreateTrainingSessionCommand): Promise<TrainingSessionDto> {
+  async create(command: CreateSessionCommand): Promise<SessionDto> {
     const userId = this.getUserId();
 
-    // Step 1: Fetch the training plan and its days
+    // Step 1: Fetch the plan and its days
     const { data: plan, error: planError } = await this.supabase
-      .from('training_plans')
+      .from('plans')
       .select(`
-        days:training_plan_days!inner(
+        days:plan_days!inner(
           id,
           order_index,
-          exercises:training_plan_exercises!inner(
-            sets:training_plan_exercise_sets!inner(
+          exercises:plan_exercises!inner(
+            sets:plan_exercise_sets!inner(
               *
             )
           )
         )
       `)
       .eq('user_id', userId)
-      .eq('id', command.training_plan_id as string)
+      .eq('id', command.plan_id as string)
       .single();
 
     if (planError || !plan) {
-      throw new Error('Training plan not found.');
+      throw new Error('Plan not found.');
     }
 
     const dayIds = plan.days.sort((a, b) => a.order_index - b.order_index).map(d => d.id);
 
     // Step 2: Fetch existing sessions to determine next day
     const { data: sessions, error: sessionsError } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .select('*')
       .eq('user_id', userId)
-      .eq('training_plan_id', command.training_plan_id as string)
+      .eq('plan_id', command.plan_id as string)
       .in('status', ['COMPLETED', 'PENDING', 'IN_PROGRESS'])
       .order('session_date', { ascending: false })
       .limit(10);
@@ -177,7 +177,7 @@ export class SessionRepository {
       throw sessionsError;
     }
 
-    let currentDayId = command.training_plan_day_id;
+    let currentDayId = command.plan_day_id;
     if (!currentDayId) {
       const latestCompletedSession = sessions!
         .filter(s => !!s.session_date)
@@ -185,11 +185,11 @@ export class SessionRepository {
         .find(s => s.status === 'COMPLETED');
 
       if (latestCompletedSession) {
-        const dayIndex = dayIds.indexOf(latestCompletedSession.training_plan_day_id!);
+        const dayIndex = dayIds.indexOf(latestCompletedSession.plan_day_id!);
         if (dayIndex !== -1) {
           currentDayId = dayIds[(dayIndex + 1) % dayIds.length];
         } else {
-          throw new Error('Failed to identify next day for training plan');
+          throw new Error('Failed to identify next day for plan');
         }
       } else if (!currentDayId) {
         currentDayId = dayIds[0];
@@ -197,14 +197,14 @@ export class SessionRepository {
     }
 
     // Step 3: Build records to upsert
-    const recordsToUpsert: TrainingSessionDto[] = [];
+    const recordsToUpsert: SessionDto[] = [];
     const sessionsInProgress = sessions!.filter(s => s.status === 'IN_PROGRESS' || s.status === 'PENDING');
 
     if (sessionsInProgress && sessionsInProgress.length > 0) {
       sessionsInProgress.forEach(s => {
         recordsToUpsert.push({
            ...s,
-           training_plan_day_id: s.training_plan_day_id!,
+           plan_day_id: s.plan_day_id!,
            status: 'CANCELLED',
         });
       });
@@ -214,8 +214,8 @@ export class SessionRepository {
     recordsToUpsert.push({
       id: newSessionId,
       user_id: userId,
-      training_plan_id: command.training_plan_id,
-      training_plan_day_id: currentDayId,
+      plan_id: command.plan_id,
+      plan_day_id: currentDayId,
       status: 'PENDING',
       session_date: null
     });
@@ -225,8 +225,8 @@ export class SessionRepository {
       .flatMap(e => (e.sets))
       .map((tpes) => ({
         id: crypto.randomUUID(),
-        training_session_id: newSessionId,
-        training_plan_exercise_id: tpes.training_plan_exercise_id,
+        session_id: newSessionId,
+        plan_exercise_id: tpes.plan_exercise_id,
         set_index: tpes.set_index,
         expected_reps: tpes.expected_reps,
         actual_reps: null,
@@ -238,12 +238,12 @@ export class SessionRepository {
     // Step 4: Use batch operations to atomically create session and sets
     const batchOperations = [
       {
-        table_name: 'training_sessions',
+        table_name: 'sessions',
         records: recordsToUpsert
       },
       {
         table_name: 'session_sets',
-        parent_column: 'training_session_id',
+        parent_column: 'session_id',
         parent_id: newSessionId,
         records: newSessionSets
       }
@@ -258,7 +258,7 @@ export class SessionRepository {
     }
 
     const { data: createdSession, error: fetchError } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .select('*')
       .eq('id', newSessionId)
       .eq('user_id', userId)
@@ -273,21 +273,21 @@ export class SessionRepository {
       sets: newSessionSets
     };
 
-    return newlyCreatedSession as TrainingSessionDto;
+    return newlyCreatedSession as SessionDto;
   }
 
   /**
    * Updates an existing training session.
    *
    * @param {string} sessionId - The ID of the session to update.
-   * @param {UpdateTrainingSessionCommand} command - The command with the updated data.
-   * @returns {Promise<TrainingSessionDto | null>} A promise that resolves to the updated session or null if not found.
+   * @param {UpdateSessionCommand} command - The command with the updated data.
+   * @returns {Promise<SessionDto | null>} A promise that resolves to the updated session or null if not found.
    */
-  async update(sessionId: string, command: UpdateTrainingSessionCommand): Promise<TrainingSessionDto | null> {
+  async update(sessionId: string, command: UpdateSessionCommand): Promise<SessionDto | null> {
     await this.verifySessionOwnership(sessionId);
 
     const { data, error } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .update(command)
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
@@ -301,7 +301,7 @@ export class SessionRepository {
       throw error;
     }
 
-    return data as TrainingSessionDto;
+    return data as SessionDto;
   }
 
   /**
@@ -314,7 +314,7 @@ export class SessionRepository {
     await this.verifySessionOwnership(sessionId);
 
     const { error, data } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .delete()
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
@@ -331,18 +331,18 @@ export class SessionRepository {
    * Marks a training session as complete and processes exercise progressions.
    *
    * This is a critical operation that calculates progression for each exercise
-   * in the completed session and updates the training plan accordingly.
+   * in the completed session and updates the plan accordingly.
    *
    * @param {string} sessionId - The ID of the session to complete.
-   * @returns {Promise<TrainingSessionDto | null>} A promise that resolves to the completed session.
+   * @returns {Promise<SessionDto | null>} A promise that resolves to the completed session.
    */
-  async complete(sessionId: string): Promise<TrainingSessionDto | null> {
+  async complete(sessionId: string): Promise<SessionDto | null> {
     const userId = this.getUserId();
 
     // Step 1: Fetch the training session
     const { data: existingSession, error: fetchSessionError } = await this.supabase
-      .from('training_sessions')
-      .select('id, training_plan_id, status, user_id')
+      .from('sessions')
+      .select('id, plan_id, status, user_id')
       .eq('id', sessionId)
       .eq('user_id', userId)
       .maybeSingle();
@@ -359,22 +359,22 @@ export class SessionRepository {
       throw new Error(`Session cannot be completed. Current status: ${existingSession.status}. Expected: IN_PROGRESS.`);
     }
 
-    if (!existingSession.training_plan_id) {
-      throw new Error('Training plan ID missing from the session. Cannot calculate progressions.');
+    if (!existingSession.plan_id) {
+      throw new Error('Plan ID missing from the session. Cannot calculate progressions.');
     }
 
-    // Step 2: Fetch all session sets and associated training plan exercise data
+    // Step 2: Fetch all session sets and associated plan exercise data
     const { data: setData, error: sessionSetsError } = await this.supabase
       .from('session_sets')
       .select(`
         *,
-        plan_exercises:training_plan_exercises!training_plan_exercise_id (
+        plan_exercises:plan_exercises!plan_exercise_id (
           exercises:exercises!exercise_id (
             *
           )
         )
       `)
-      .eq('training_session_id', sessionId);
+      .eq('session_id', sessionId);
 
     if (sessionSetsError) {
       throw sessionSetsError;
@@ -392,21 +392,21 @@ export class SessionRepository {
     ];
 
     const { data: planData, error: planDataError } = await this.supabase
-      .from('training_plan_days')
+      .from('plan_days')
       .select(`
-        exercises:training_plan_exercises!inner (
+        exercises:plan_exercises!inner (
           *,
-          sets:training_plan_exercise_sets!inner (
+          sets:plan_exercise_sets!inner (
             *
           ),
           global_exercises:exercises!exercise_id!inner (
-            progression:training_plan_exercise_progressions!exercise_id (
+            progression:plan_exercise_progressions!exercise_id (
               *
             )
           )
         )
       `)
-      .eq('training_plan_id', existingSession.training_plan_id)
+      .eq('plan_id', existingSession.plan_id)
       .in('exercises.exercise_id', exerciseIds);
 
     if (planDataError) {
@@ -424,7 +424,7 @@ export class SessionRepository {
         // deno-lint-ignore no-explicit-any
         .map(({ global_exercises: _, ...tpe }: any) => [tpe.id, tpe])
       ).values()
-    ] as TrainingPlanExerciseDto[];
+    ] as PlanExerciseDto[];
 
     const planExerciseProgressions = [...new Map(
       planData
@@ -437,7 +437,7 @@ export class SessionRepository {
         // deno-lint-ignore no-explicit-any
         .map((p: any) => [p.id, p])
       ).values()
-    ] as TrainingPlanExerciseProgressionDto[];
+    ] as PlanExerciseProgressionDto[];
 
     const { exerciseSetsToUpdate, exerciseProgressionsToUpdate } = resolveExerciseProgressions(
       sessionSets,
@@ -451,7 +451,7 @@ export class SessionRepository {
       .map(ss => ({ ...ss, status: 'SKIPPED' as const }));
 
     const { data: fullSession, error: fullSessionError } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .select('*')
       .eq('id', sessionId)
       .eq('user_id', userId)
@@ -475,15 +475,15 @@ export class SessionRepository {
         records: sessionSetsToUpdate
       },
       {
-        table_name: 'training_plan_exercise_sets',
+        table_name: 'plan_exercise_sets',
         records: exerciseSetsToUpdate
       },
       {
-        table_name: 'training_plan_exercise_progressions',
+        table_name: 'plan_exercise_progressions',
         records: exerciseProgressionsToUpdate
       },
       {
-        table_name: 'training_sessions',
+        table_name: 'sessions',
         records: [completedSession]
       }
     ];
@@ -496,7 +496,7 @@ export class SessionRepository {
       throw batchError;
     }
 
-    return completedSession as TrainingSessionDto;
+    return completedSession as SessionDto;
   }
 
   /**
@@ -511,8 +511,8 @@ export class SessionRepository {
     const { data, error } = await this.supabase
       .from('session_sets')
       .select('*')
-      .eq('training_session_id', sessionId)
-      .order('training_plan_exercise_id', { ascending: true })
+      .eq('session_id', sessionId)
+      .order('plan_exercise_id', { ascending: true })
       .order('set_index', { ascending: true });
 
     if (error) {
@@ -536,7 +536,7 @@ export class SessionRepository {
       .from('session_sets')
       .select('*')
       .eq('id', setId)
-      .eq('training_session_id', sessionId)
+      .eq('session_id', sessionId)
       .maybeSingle();
 
     if (error) {
@@ -559,8 +559,8 @@ export class SessionRepository {
     const newSetId = crypto.randomUUID();
     const newSetData: SessionSetDto = {
       id: newSetId,
-      training_session_id: sessionId,
-      training_plan_exercise_id: command.training_plan_exercise_id,
+      session_id: sessionId,
+      plan_exercise_id: command.plan_exercise_id,
       set_index: command.set_index,
       expected_reps: command.expected_reps,
       actual_reps: command.actual_reps,
@@ -572,8 +572,9 @@ export class SessionRepository {
     const updatedSets = await createEntityInCollection<SessionSetDto>(
       this.supabase,
       'session_sets',
-      'training_plan_exercise_id',
-      command.training_plan_exercise_id,
+      'plan_exercise_id',
+      command.plan_exercise_id,
+      'set_index',
       newSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
@@ -603,7 +604,7 @@ export class SessionRepository {
       .from('session_sets')
       .select('*')
       .eq('id', setId)
-      .eq('training_session_id', sessionId)
+      .eq('session_id', sessionId)
       .maybeSingle();
 
     if (existingSetError) {
@@ -625,8 +626,9 @@ export class SessionRepository {
     const updatedSets = await updateEntityInCollection<SessionSetDto>(
       this.supabase,
       'session_sets',
-      'training_plan_exercise_id',
-      existingSet.training_plan_exercise_id,
+      'plan_exercise_id',
+      existingSet.plan_exercise_id,
+      'set_index',
       updatedSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
@@ -650,7 +652,7 @@ export class SessionRepository {
       .from('session_sets')
       .select('*')
       .eq('id', setId)
-      .eq('training_session_id', sessionId)
+      .eq('session_id', sessionId)
       .maybeSingle();
 
     if (existingSetError) {
@@ -664,8 +666,9 @@ export class SessionRepository {
     await deleteEntityFromCollection<SessionSetDto>(
       this.supabase,
       'session_sets',
-      'training_plan_exercise_id',
-      existingSet.training_plan_exercise_id,
+      'plan_exercise_id',
+      existingSet.plan_exercise_id,
+      'set_index',
       setId,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
@@ -688,35 +691,35 @@ export class SessionRepository {
    */
   async patchSet(sessionId: string, setId: string, getUpdateData: (set: SessionSetDto) => Partial<SessionSetDto>): Promise<SessionSetDto | null> {
     const { data: sessionData, error: sessionError } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .select('*')
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
       .single();
 
     if (sessionError || !sessionData) {
-      throw new Error('Training session not found.');
+      throw new Error('Session not found.');
     }
 
     if (sessionData.status === 'COMPLETED') {
-      throw new Error(`Training session ${sessionId} is completed. Cannot update set.`);
+      throw new Error(`Session ${sessionId} is completed. Cannot update set.`);
     }
 
     const { data: currentSet, error: fetchError } = await this.supabase
       .from('session_sets')
       .select(`*`)
       .eq('id', setId)
-      .eq('training_session_id', sessionId)
+      .eq('session_id', sessionId)
       .single();
 
     if (fetchError || !currentSet) {
-      throw new Error('Training session set not found.');
+      throw new Error('Session set not found.');
     }
 
     // Update session status if needed
     if (sessionData.status === 'PENDING') {
       const { error: updateError } = await this.supabase
-        .from('training_sessions')
+        .from('sessions')
         .update({ status: 'IN_PROGRESS', session_date: new Date().toISOString() })
         .eq('id', sessionId)
         .select()
@@ -733,7 +736,7 @@ export class SessionRepository {
       .from('session_sets')
       .update(updateData as SessionSetDto)
       .eq('id', setId)
-      .eq('training_session_id', sessionId)
+      .eq('session_id', sessionId)
       .select(`*`)
       .single();
 
@@ -751,8 +754,8 @@ export class SessionRepository {
    */
   handleSessionOwnershipError(error: Error): ApiErrorResponse | null {
     const ownershipErrorMessages = [
-      'Training session not found or user does not have access',
-      'Training session set not found or user does not have access'
+      'Session not found or user does not have access',
+      'Session set not found or user does not have access'
     ];
 
     if (ownershipErrorMessages.some(msg => error.message.includes(msg))) {
@@ -768,7 +771,7 @@ export class SessionRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handleSessionNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Training session not found') || error.message.includes('Training session set not found')) {
+    if (error.message.includes('Session not found') || error.message.includes('Session set not found')) {
       return createErrorData(404, error.message, { type: 'session_not_found_error' }, 'SESSION_NOT_FOUND_ERROR');
     }
 
@@ -776,13 +779,13 @@ export class SessionRepository {
   }
 
   /**
-   * Handles errors when a training plan is not found, returning a formatted API error response.
+   * Handles errors when a plan is not found, returning a formatted API error response.
    * @param {Error} error - The error to handle.
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
-  handleTrainingPlanNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Training plan not found')) {
-      return createErrorData(400, 'Training plan not found.', { type: 'training_plan_not_found_error' }, 'TRAINING_PLAN_NOT_FOUND_ERROR');
+  handlePlanNotFoundError(error: Error): ApiErrorResponse | null {
+    if (error.message.includes('Plan not found')) {
+      return createErrorData(400, 'Plan not found.', { type: 'plan_not_found_error' }, 'PLAN_NOT_FOUND_ERROR');
     }
 
     return null;
@@ -802,13 +805,13 @@ export class SessionRepository {
   }
 
   /**
-   * Handles errors when a required training plan is missing, returning a formatted API error response.
+   * Handles errors when a required plan is missing, returning a formatted API error response.
    * @param {Error} error - The error to handle.
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
-  handleTrainingPlanMissingError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Training plan ID missing')) {
-      return createErrorDataWithLogging(500, 'Training plan ID missing from the session. Cannot calculate progressions.', { type: 'training_plan_missing_error' }, 'TRAINING_PLAN_MISSING_ERROR', error);
+  handlePlanMissingError(error: Error): ApiErrorResponse | null {
+    if (error.message.includes('Plan ID missing')) {
+      return createErrorDataWithLogging(500, 'Plan ID missing from the session. Cannot calculate progressions.', { type: 'plan_missing_error' }, 'PLAN_MISSING_ERROR', error);
     }
 
     return null;
@@ -816,7 +819,7 @@ export class SessionRepository {
 
   private async verifySessionOwnership(sessionId: string): Promise<void> {
     const { data, error } = await this.supabase
-      .from('training_sessions')
+      .from('sessions')
       .select('id')
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
@@ -827,7 +830,7 @@ export class SessionRepository {
     }
 
     if (!data) {
-      throw new Error('Training session not found or user does not have access');
+      throw new Error('Session not found or user does not have access');
     }
   }
 }

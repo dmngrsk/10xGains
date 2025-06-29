@@ -1,10 +1,10 @@
 import type { SupabaseClient } from 'supabase';
-import type { Database } from '../models/database-types.ts';
+import type { Database } from '../models/database.types.ts';
 import type {
   ExerciseDto,
   CreateExerciseCommand,
   UpdateExerciseCommand
-} from '../models/api-types.ts';
+} from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData } from "../utils/api-helpers.ts";
 
 export interface ExerciseQueryOptions {

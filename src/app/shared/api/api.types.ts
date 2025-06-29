@@ -12,23 +12,23 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-06-28T23:32:37.307Z
+ * Last updated: 2025-06-29T14:35:42.240Z
  */
 
 /*
   DTO and Command Model Definitions for API
-  Based on database models from supabase/functions/shared/models/database-types.ts and API plan (api-plan.md)
+  Based on database models from supabase/functions/shared/models/database.types.ts and API plan (api-plan.md)
 
   Each interface directly or indirectly corresponds to a database table:
-  - User Profiles           -> Tables<"public", "user_profiles">
-  - Training Plans          -> Tables<"public", "training_plans">
-  - Training Plan Days      -> Tables<"public", "training_plan_days">
-  - Exercises               -> Tables<"public", "exercises">
-  - Training Plan Exercises -> Tables<"public", "training_plan_exercises">
-  - Training Plan Exercise Sets -> Tables<"public", "training_plan_exercise_sets">
-  - Training Plan Exercise Progressions -> Tables<"public", "training_plan_exercise_progressions">
-  - Training Sessions       -> Tables<"public", "training_sessions">
-  - Session Sets            -> Tables<"public", "session_sets">
+  - Profiles                      -> Tables<"public", "profiles">
+  - Exercises                     -> Tables<"public", "exercises">
+  - Plans                         -> Tables<"public", "plans">
+  - Plan Days                     -> Tables<"public", "plan_days">
+  - Plan Exercises                -> Tables<"public", "plan_exercises">
+  - Plan Exercise Sets            -> Tables<"public", "plan_exercise_sets">
+  - Plan Exercise Progressions    -> Tables<"public", "plan_exercise_progressions">
+  - Sessions                      -> Tables<"public", "sessions">
+  - Session Sets                  -> Tables<"public", "session_sets">
 
   The command models represent the payloads for create/update operations as per API plan.
 
@@ -37,147 +37,147 @@
 
 import type { Database } from '../db/database.types';
 
-// 1. User Profile DTO and Command
-export type UserProfileDto = Database["public"]["Tables"]["user_profiles"]["Row"];
+// 1. Profile DTO and Command
+export type ProfileDto = Database["public"]["Tables"]["profiles"]["Row"];
 
-export type UpsertUserProfileCommand = Partial<Pick<UserProfileDto, "first_name" | "active_training_plan_id">>;
+export type UpsertProfileCommand = Partial<Pick<ProfileDto, "first_name" | "active_plan_id">>;
 
-// 2. Training Plan DTO and Commands
-export type TrainingPlanDto = Database["public"]["Tables"]["training_plans"]["Row"] & {
-  days?: TrainingPlanDayDto[]; // nested training plan days
-  progressions?: TrainingPlanExerciseProgressionDto[]; // nested exercise progression rules
-};
-
-export type CreateTrainingPlanCommand = Pick<Database["public"]["Tables"]["training_plans"]["Insert"], "name" | "description">;
-
-export type UpdateTrainingPlanCommand = Pick<Database["public"]["Tables"]["training_plans"]["Update"], "name" | "description">;
-
-// Command for POST /training-plans/{planId}/suggest
-export interface AiSuggestTrainingPlanQueryCommand {
-  query: string;
-}
-
-// DTOs for AI-suggested training plan (POST /training-plans/{planId}/suggest response)
-// These types extend base DTOs with an optional 'is_ai_modified' flag
-export interface AiSuggestedTrainingPlanResponseDto {
-  ai_message: string;
-  ai_plan_modified: boolean;
-  suggested_training_plan?: AiSuggestedTrainingPlanDto; // Can be null if AI only answers a question
-}
-
-export type AiSuggestedTrainingPlanDto = Omit<TrainingPlanDto, 'days'> & {
-  days?: AiSuggestedTrainingPlanDayDto[];
-  is_ai_modified?: boolean;
-};
-
-export type AiSuggestedTrainingPlanDayDto = Omit<TrainingPlanDayDto, 'exercises'> & {
-  exercises?: AiSuggestedTrainingPlanExerciseDto[];
-  is_ai_modified?: boolean;
-};
-
-export type AiSuggestedTrainingPlanExerciseDto = Omit<TrainingPlanExerciseDto, 'sets'> & {
-  sets?: AiSuggestedTrainingPlanExerciseSetDto[];
-  is_ai_modified?: boolean;
-};
-
-export type AiSuggestedTrainingPlanExerciseSetDto = TrainingPlanExerciseSetDto & {
-  is_ai_modified?: boolean;
-};
-
-// Command and constituent data types for POST /training-plans/{planId}/composite
-// For composite updates, 'id' is optional for new items.
-// Days, exercises, sets not included in payload but existing in DB will be DELETED.
-// Order is determined by array position.
-export type CompositeTrainingPlanUpdateCommand =
-  Pick<Database["public"]["Tables"]["training_plans"]["Update"], "name" | "description">
-  & { id?: string; days: CompositeTrainingPlanDayData[]; }; // id of the training plan is via URL parameter {planId}
-
-export type CompositeTrainingPlanDayData =
-  Pick<Database["public"]["Tables"]["training_plan_days"]["Insert"], "name" | "description">
-  & { id?: string; exercises?: CompositeTrainingPlanExerciseData[]; }; // id is optional for new, present for existing
-
-export type CompositeTrainingPlanExerciseData =
-  Pick<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "exercise_id">
-  & { id?: string; sets?: CompositeTrainingPlanExerciseSetData[]; }; // id is optional for new, present for existing
-
-export type CompositeTrainingPlanExerciseSetData =
-  Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight">
-  & { id?: string; }; // id is optional for new, present for existing
-
-// 3. Training Plan Day DTO and Commands
-export type TrainingPlanDayDto = Database["public"]["Tables"]["training_plan_days"]["Row"] & {
-  exercises?: TrainingPlanExerciseDto[]; // nested exercises
-};
-
-// For creation, omit fields that come from URL (training_plan_id) or are auto-generated (id). order_index is optional.
-export type CreateTrainingPlanDayCommand = Pick<Database["public"]["Tables"]["training_plan_days"]["Insert"], "name" | "description"> & { order_index?: number; };
-
-export type UpdateTrainingPlanDayCommand = Pick<Database["public"]["Tables"]["training_plan_days"]["Update"], "name" | "description" | "order_index">;
-
-// Reorder command is covered by UpdateTrainingPlanDayCommand by sending only order_index.
-
-// 4. Exercise DTO and Commands (Global Resource)
+// 2. Exercise DTO and Commands (Global Resource)
 export type ExerciseDto = Database["public"]["Tables"]["exercises"]["Row"];
 
 export type CreateExerciseCommand = Pick<Database["public"]["Tables"]["exercises"]["Insert"], "name" | "description">;
 
 export type UpdateExerciseCommand = Pick<Database["public"]["Tables"]["exercises"]["Update"], "name" | "description">;
 
-// 5. Training Plan Exercise DTO and Commands
-export type TrainingPlanExerciseDto = Database["public"]["Tables"]["training_plan_exercises"]["Row"] & {
-  sets?: TrainingPlanExerciseSetDto[]; // nested sets
+// 3. Plan DTO and Commands
+export type PlanDto = Database["public"]["Tables"]["plans"]["Row"] & {
+  days?: PlanDayDto[]; // nested plan days
+  progressions?: PlanExerciseProgressionDto[]; // nested exercise progression rules
 };
 
-// For creation, omit fields from URL (training_plan_day_id) or auto-generated (id). order_index is optional.
-export type CreateTrainingPlanExerciseCommand = Pick<Database["public"]["Tables"]["training_plan_exercises"]["Insert"], "exercise_id"> & { order_index?: number; };
+export type CreatePlanCommand = Pick<Database["public"]["Tables"]["plans"]["Insert"], "name" | "description">;
+
+export type UpdatePlanCommand = Pick<Database["public"]["Tables"]["plans"]["Update"], "name" | "description">;
+
+// Command for POST /plans/{planId}/suggest
+export interface AiSuggestPlanQueryCommand {
+  query: string;
+}
+
+// DTOs for AI-suggested plan (POST /plans/{planId}/suggest response)
+// These types extend base DTOs with an optional 'is_ai_modified' flag
+export interface AiSuggestedPlanResponseDto {
+  ai_message: string;
+  ai_plan_modified: boolean;
+  suggested_plan?: AiSuggestedPlanDto; // Can be null if AI only answers a question
+}
+
+export type AiSuggestedPlanDto = Omit<PlanDto, 'days'> & {
+  days?: AiSuggestedPlanDayDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedPlanDayDto = Omit<PlanDayDto, 'exercises'> & {
+  exercises?: AiSuggestedPlanExerciseDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedPlanExerciseDto = Omit<PlanExerciseDto, 'sets'> & {
+  sets?: AiSuggestedPlanExerciseSetDto[];
+  is_ai_modified?: boolean;
+};
+
+export type AiSuggestedPlanExerciseSetDto = PlanExerciseSetDto & {
+  is_ai_modified?: boolean;
+};
+
+// Command and constituent data types for POST /plans/{planId}/composite
+// For composite updates, 'id' is optional for new items.
+// Days, exercises, sets not included in payload but existing in DB will be DELETED.
+// Order is determined by array position.
+export type CompositePlanUpdateCommand =
+  Pick<Database["public"]["Tables"]["plans"]["Update"], "name" | "description">
+  & { id?: string; days: CompositePlanDayData[]; }; // id of the plan is via URL parameter {planId}
+
+export type CompositePlanDayData =
+  Pick<Database["public"]["Tables"]["plan_days"]["Insert"], "name" | "description">
+  & { id?: string; exercises?: CompositePlanExerciseData[]; }; // id is optional for new, present for existing
+
+export type CompositePlanExerciseData =
+  Pick<Database["public"]["Tables"]["plan_exercises"]["Insert"], "exercise_id">
+  & { id?: string; sets?: CompositePlanExerciseSetData[]; }; // id is optional for new, present for existing
+
+export type CompositePlanExerciseSetData =
+  Pick<Database["public"]["Tables"]["plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight">
+  & { id?: string; }; // id is optional for new, present for existing
+
+// 4. Plan Day DTO and Commands
+export type PlanDayDto = Database["public"]["Tables"]["plan_days"]["Row"] & {
+  exercises?: PlanExerciseDto[]; // nested exercises
+};
+
+// For creation, omit fields that come from URL (plan_id) or are auto-generated (id). order_index is optional.
+export type CreatePlanDayCommand = Pick<Database["public"]["Tables"]["plan_days"]["Insert"], "name" | "description"> & { order_index?: number; };
+
+export type UpdatePlanDayCommand = Pick<Database["public"]["Tables"]["plan_days"]["Update"], "name" | "description" | "order_index">;
+
+// Reorder command is covered by UpdatePlanDayCommand by sending only order_index.
+
+// 5. Plan Exercise DTO and Commands
+export type PlanExerciseDto = Database["public"]["Tables"]["plan_exercises"]["Row"] & {
+  sets?: PlanExerciseSetDto[]; // nested sets
+};
+
+// For creation, omit fields from URL (plan_day_id) or auto-generated (id). order_index is optional.
+export type CreatePlanExerciseCommand = Pick<Database["public"]["Tables"]["plan_exercises"]["Insert"], "exercise_id"> & { order_index?: number; };
 
 // For updating, only order_index is typically changed directly for this linking entity.
-export type UpdateTrainingPlanExerciseCommand = Required<Pick<Database["public"]["Tables"]["training_plan_exercises"]["Update"], "order_index">>;
+export type UpdatePlanExerciseCommand = Required<Pick<Database["public"]["Tables"]["plan_exercises"]["Update"], "order_index">>;
 
-// Reorder command is covered by UpdateTrainingPlanExerciseCommand.
+// Reorder command is covered by UpdatePlanExerciseCommand.
 
-// 6. Training Plan Exercise Set DTO and Commands
-export type TrainingPlanExerciseSetDto = Database["public"]["Tables"]["training_plan_exercise_sets"]["Row"];
+// 6. Plan Exercise Set DTO and Commands
+export type PlanExerciseSetDto = Database["public"]["Tables"]["plan_exercise_sets"]["Row"];
 
-// For creation, omit fields from URL (training_plan_exercise_id) or auto-generated (id). set_index is optional.
-export type CreateTrainingPlanExerciseSetCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight"> & { set_index?: number; };
+// For creation, omit fields from URL (plan_exercise_id) or auto-generated (id). set_index is optional.
+export type CreatePlanExerciseSetCommand = Pick<Database["public"]["Tables"]["plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight"> & { set_index?: number; };
 
-export type UpdateTrainingPlanExerciseSetCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_sets"]["Update"], "set_index" | "expected_reps" | "expected_weight">;
+export type UpdatePlanExerciseSetCommand = Pick<Database["public"]["Tables"]["plan_exercise_sets"]["Update"], "set_index" | "expected_reps" | "expected_weight">;
 
-// 7. Training Plan Exercise Progression DTO and Command
-export type TrainingPlanExerciseProgressionDto = Database["public"]["Tables"]["training_plan_exercise_progressions"]["Row"];
+// 7. Plan Exercise Progression DTO and Command
+export type PlanExerciseProgressionDto = Database["public"]["Tables"]["plan_exercise_progressions"]["Row"];
 
 // Command to update (or create if not exists) progression rules. Fields like consecutive_failures might be updated by system or user.
-export type UpsertTrainingPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["training_plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "deload_percentage" | "deload_strategy" | "consecutive_failures" | "reference_set_index">;
+export type UpsertPlanExerciseProgressionCommand = Pick<Database["public"]["Tables"]["plan_exercise_progressions"]["Update"], "weight_increment" | "failure_count_for_deload" | "deload_percentage" | "deload_strategy" | "consecutive_failures" | "reference_set_index">;
 
-// 8. Training Session DTO and Commands
-export type TrainingSessionDto = Database["public"]["Tables"]["training_sessions"]["Row"] & {
+// 8. Session DTO and Commands
+export type SessionDto = Database["public"]["Tables"]["sessions"]["Row"] & {
   sets?: SessionSetDto[]; // nested sets
 };
 
-export type CreateTrainingSessionCommand = Pick<Database["public"]["Tables"]["training_sessions"]["Insert"], "training_plan_id" | "training_plan_day_id">;
+export type CreateSessionCommand = Pick<Database["public"]["Tables"]["sessions"]["Insert"], "plan_id" | "plan_day_id">;
 
-export type UpdateTrainingSessionCommand = Required<Pick<Database["public"]["Tables"]["training_sessions"]["Update"], "status">>;
+export type UpdateSessionCommand = Required<Pick<Database["public"]["Tables"]["sessions"]["Update"], "status">>;
 
-// For PATCH /training-sessions/{sessionId}/complete
+// For PATCH /sessions/{sessionId}/complete
 // Request body is empty.
-export type CompleteTrainingSessionCommand = Record<string, never>; // Represents an empty request body
+export type CompleteSessionCommand = Record<string, never>; // Represents an empty request body
 
 // 9. Session Set DTO and Commands
 export type SessionSetDto = Database["public"]["Tables"]["session_sets"]["Row"];
 
-export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "training_session_id" | "training_plan_exercise_id" | "set_index" | "actual_weight" | "actual_reps" | "expected_reps" | "status" | "completed_at">;
+export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "session_id" | "plan_exercise_id" | "set_index" | "actual_weight" | "actual_reps" | "expected_reps" | "status" | "completed_at">;
 
 export type UpdateSessionSetCommand = Partial<Pick<Database["public"]["Tables"]["session_sets"]["Update"], "set_index" | "actual_reps" | "actual_weight" | "expected_reps" | "status" | "completed_at">>;
 
-// For PATCH /training-sessions/{sessionId}/sets/{setId}/complete
+// For PATCH /sessions/{sessionId}/sets/{setId}/complete
 // Request body is empty.
 export type CompleteSessionSetCommand = Record<string, never>; // Represents an empty request body
 
-// For PATCH /training-sessions/{sessionId}/sets/{setId}/fail
+// For PATCH /sessions/{sessionId}/sets/{setId}/fail
 // Request uses query parameter `reps`, body is empty.
 export type FailSessionSetCommand = Record<string, never>; // Represents an empty request body
 
-// For PATCH /training-sessions/{sessionId}/sets/{setId}/reset
+// For PATCH /sessions/{sessionId}/sets/{setId}/reset
 // Request body is empty.
 export type ResetSessionSetCommand = Record<string, never>; // Represents an empty request body

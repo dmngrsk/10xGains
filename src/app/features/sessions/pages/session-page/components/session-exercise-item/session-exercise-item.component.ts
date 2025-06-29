@@ -48,11 +48,11 @@ export class SessionExerciseItemComponent {
   }
 
   onSetClicked(setFromList: SessionSetViewModel): void {
-    this.setClicked.emit({ set: setFromList, exerciseId: this.exercise.trainingPlanExerciseId });
+    this.setClicked.emit({ set: setFromList, exerciseId: this.exercise.planExerciseId });
   }
 
   onSetLongPressed(setFromList: SessionSetViewModel): void {
-    this.setLongPressed.emit({ set: setFromList, exerciseId: this.exercise.trainingPlanExerciseId });
+    this.setLongPressed.emit({ set: setFromList, exerciseId: this.exercise.planExerciseId });
   }
 
   onSetAdded(exerciseId: string): void {

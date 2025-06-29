@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers.ts';
-import type { CreateExerciseCommand, ExerciseDto } from '../../models/api-types.ts';
+import type { CreateExerciseCommand, ExerciseDto } from '../../models/api.types.ts';
 import type { AppContext } from '../../context.ts';
 import { validateCommandBody } from "../../utils/validation.ts";
 

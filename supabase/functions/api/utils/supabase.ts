@@ -1,5 +1,5 @@
 import type { SupabaseClient } from 'supabase';
-import type { Database, Json } from '../models/database-types.ts';
+import type { Database, Json } from '../models/database.types.ts';
 import { insertAndNormalizeOrder } from '../services/index-order/index-order.ts';
 
 /**
@@ -21,11 +21,12 @@ import { insertAndNormalizeOrder } from '../services/index-order/index-order.ts'
  *
  * @example
  * ```typescript
- * const updatedDays = await createEntityInCollection<TrainingPlanDayDto>(
+ * const updatedDays = await createEntityInCollection<PlanDayDto>(
  *   supabaseClient,
- *   'training_plan_days',
- *   'training_plan_id',
+ *   'plan_days',
+ *   'plan_id',
  *   planId,
+ *   'order_index',
  *   newDayData,
  *   (d) => d.id,
  *   (d) => d.order_index,
@@ -38,6 +39,7 @@ export async function createEntityInCollection<T>(
   tableName: string,
   parentColumn: string,
   parentId: string,
+  orderColumn: string,
   newEntity: T,
   getId: (entity: T) => string,
   getOrder: (entity: T) => number | undefined | null,
@@ -65,6 +67,7 @@ export async function createEntityInCollection<T>(
     p_table_name: tableName,
     p_parent_column: parentColumn,
     p_parent_id: parentId,
+    p_order_column: orderColumn,
     p_records: normalizedEntities as Json
   });
 
@@ -94,11 +97,12 @@ export async function createEntityInCollection<T>(
  *
  * @example
  * ```typescript
- * const updatedDays = await updateEntityInCollection<TrainingPlanDayDto>(
+ * const updatedDays = await updateEntityInCollection<PlanDayDto>(
  *   supabaseClient,
- *   'training_plan_days',
- *   'training_plan_id',
+ *   'plan_days',
+ *   'plan_id',
  *   planId,
+ *   'order_index',
  *   updatedDayData,
  *   (d) => d.id,
  *   (d) => d.order_index,
@@ -111,6 +115,7 @@ export async function updateEntityInCollection<T>(
   tableName: string,
   parentColumn: string,
   parentId: string,
+  orderColumn: string,
   updatedEntity: T,
   getId: (entity: T) => string,
   getOrder: (entity: T) => number | undefined | null,
@@ -126,22 +131,21 @@ export async function updateEntityInCollection<T>(
   }
 
   const typedExistingEntities = existingEntities as unknown as T[];
-  const updatedEntities = (typedExistingEntities || []).map(entity =>
-    getId(entity) === getId(updatedEntity) ? updatedEntity : entity
-  );
-
   const normalizedEntities = insertAndNormalizeOrder(
-    updatedEntities,
-    null,
+    typedExistingEntities || [],
+    updatedEntity,
     getId,
     getOrder,
     setOrder
   );
 
+  console.log(normalizedEntities);
+
   const { data: result, error } = await supabase.rpc('replace_collection', {
     p_table_name: tableName,
     p_parent_column: parentColumn,
     p_parent_id: parentId,
+    p_order_column: orderColumn,
     p_records: normalizedEntities as Json
   });
 
@@ -171,11 +175,12 @@ export async function updateEntityInCollection<T>(
  *
  * @example
  * ```typescript
- * const updatedDays = await deleteEntityFromCollection<TrainingPlanDayDto>(
+ * const updatedDays = await deleteEntityFromCollection<PlanDayDto>(
  *   supabaseClient,
- *   'training_plan_days',
- *   'training_plan_id',
+ *   'plan_days',
+ *   'plan_id',
  *   planId,
+ *   'order_index',
  *   dayId,
  *   (d) => d.id,
  *   (d) => d.order_index,
@@ -188,6 +193,7 @@ export async function deleteEntityFromCollection<T>(
   tableName: string,
   parentColumn: string,
   parentId: string,
+  orderColumn: string,
   entityId: string,
   getId: (entity: T) => string,
   getOrder: (entity: T) => number | undefined | null,
@@ -217,6 +223,7 @@ export async function deleteEntityFromCollection<T>(
     p_table_name: tableName,
     p_parent_column: parentColumn,
     p_parent_id: parentId,
+    p_order_column: orderColumn,
     p_records: normalizedEntities as Json
   });
 

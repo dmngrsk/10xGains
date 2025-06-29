@@ -1,5 +1,7 @@
 import { config } from 'dotenv';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { generateTestEmail, generateTestPassword } from './test-data/auth';
+import { scaffoldTestUserData } from './test-data/scaffold';
 
 config();
 
@@ -17,23 +19,24 @@ export const tasks = {
   async 'users:createEphemeral'({ prefix }: { prefix: string }): Promise<{ userId: string; email: string; password: string }> {
     const email = generateTestEmail(prefix);
     const password = generateTestPassword();
-
+    
     const { data: createData, error: createError } = await supabase!.auth.admin.createUser({ email, password, email_confirm: true });
     const { error: signInError } = await supabase!.auth.signInWithPassword({ email, password });
-
+    
     if (createError || signInError) {
       console.error('Error creating ephemeral user:', createError);
       throw new Error((createError ?? signInError)?.message);
     }
-
-    const { error: rpcError } = await supabase!.rpc('test_scaffold_user_data');
-
+    
+    const userId = createData!.user!.id;
+    const { error: rpcError } = await scaffoldTestUserData(supabase!, userId);
+ 
     if (rpcError) {
-      console.error('Error seeding user data:', rpcError);
+      console.error('Error scaffolding user data:', rpcError);
       throw new Error(rpcError.message);
     }
 
-    return { userId: createData!.user!.id, email, password };
+    return { userId, email, password };
   },
 
   async 'users:deleteEphemeral'({ userId }: { userId: string }): Promise<null> {
@@ -47,14 +50,14 @@ export const tasks = {
     return null;
   },
 
-  async 'plans:resetActiveTrainingPlan'({ userId }: { userId: string }): Promise<null> {
-    const { data: userProfile, error: userProfileError } = await supabase!.from('user_profiles').select('active_training_plan_id').eq('id', userId).single();
-    const { error: updateError } = await supabase!.from('user_profiles').update({ active_training_plan_id: null }).eq('id', userId);
-    const { error: deleteError } = await supabase!.from('training_sessions').delete().eq('training_plan_id', userProfile?.active_training_plan_id);
+  async 'plans:resetActivePlan'({ userId }: { userId: string }): Promise<null> {
+    const { data: profile, error: profileError } = await supabase!.from('profiles').select('active_plan_id').eq('id', userId).single();
+    const { error: updateError } = await supabase!.from('profiles').update({ active_plan_id: null }).eq('id', userId);
+    const { error: deleteError } = await supabase!.from('sessions').delete().eq('plan_id', profile?.active_plan_id);
 
-    if (userProfileError || updateError || deleteError) {
-      console.error('Error removing active plan:', userProfileError ?? updateError ?? deleteError);
-      throw new Error((userProfileError ?? updateError ?? deleteError)?.message);
+    if (profileError || updateError || deleteError) {
+      console.error('Error removing active plan:', profileError ?? updateError ?? deleteError);
+      throw new Error((profileError ?? updateError ?? deleteError)?.message);
     }
 
     return null;
@@ -72,22 +75,3 @@ export const tasks = {
     return null;
   }
 };
-
-function generateTestEmail(prefix: string): string {
-  const timestamp = new Date();
-  const pad = (n: number, length: number = 2) => n.toString().padStart(length, '0');
-
-  const formattedDate = timestamp.getFullYear().toString() +
-    pad(timestamp.getMonth() + 1) +
-    pad(timestamp.getDate()) +
-    pad(timestamp.getHours()) +
-    pad(timestamp.getMinutes()) +
-    pad(timestamp.getSeconds()) +
-    pad(timestamp.getMilliseconds(), 3);
-
-  return `${prefix}-${formattedDate}@10xgains.com`;
-}
-
-function generateTestPassword(): string {
-  return Math.random().toString(36).substring(2, 15) + 'Aa1!';
-}

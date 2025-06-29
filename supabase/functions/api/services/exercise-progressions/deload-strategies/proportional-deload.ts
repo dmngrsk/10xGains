@@ -1,18 +1,18 @@
-import type { TrainingPlanExerciseProgressionDto, TrainingPlanExerciseSetDto } from '../../../models/api-types.ts';
+import type { PlanExerciseProgressionDto, PlanExerciseSetDto } from '../../../models/api.types.ts';
 
 /**
  * Handles the proportional deload strategy for an exercise set.
  * It calculates the new expected_weight by applying a deload_percentage from the progression rule,
  * then rounds the result down to the nearest multiple of weight_increment.
  *
- * @param set - The training plan exercise set to be deloaded.
+ * @param set - The plan exercise set to be deloaded.
  * @param progression - The current exercise progression rule, containing deload_percentage and weight_increment.
- * @returns A new TrainingPlanExerciseSetDto with the updated expected_weight.
+ * @returns A new PlanExerciseSetDto with the updated expected_weight.
  */
 export function handleProportionalDeload(
-  set: TrainingPlanExerciseSetDto,
-  progression: TrainingPlanExerciseProgressionDto
-): TrainingPlanExerciseSetDto {
+  set: PlanExerciseSetDto,
+  progression: PlanExerciseProgressionDto
+): PlanExerciseSetDto {
   if (progression.deload_percentage === null || progression.deload_percentage === undefined || progression.weight_increment === null || progression.weight_increment === undefined) {
     console.warn('Proportional deload cannot be applied: deload_percentage or weight_increment is missing in progression.');
     return { ...set }; // Return original set if params are missing

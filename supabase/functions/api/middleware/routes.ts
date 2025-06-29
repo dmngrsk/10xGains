@@ -5,45 +5,45 @@ import { handleCreateExercise } from '../handlers/exercises/post.ts';
 import { handleGetExerciseById } from '../handlers/exercises/get-id.ts';
 import { handlePutExerciseById } from '../handlers/exercises/put-id.ts';
 import { handleDeleteExerciseById } from '../handlers/exercises/delete-id.ts';
-import { handleGetUserProfile } from '../handlers/user-profiles/get-id.ts';
-import { handleUpsertUserProfile } from '../handlers/user-profiles/put-id.ts';
-import { handleGetTrainingPlans } from '../handlers/training-plans/get.ts';
-import { handleCreateTrainingPlan } from '../handlers/training-plans/post.ts';
-import { handleGetTrainingPlanById } from '../handlers/training-plans/get-id.ts';
-import { handlePutTrainingPlanById } from '../handlers/training-plans/put-id.ts';
-import { handleDeleteTrainingPlanById } from '../handlers/training-plans/delete-id.ts';
-import { handleGetTrainingSessions } from '../handlers/training-sessions/get.ts';
-import { handleCreateTrainingSession } from '../handlers/training-sessions/post.ts';
-import { handleGetTrainingSessionById } from '../handlers/training-sessions/get-id.ts';
-import { handlePutTrainingSessionById } from '../handlers/training-sessions/put-id.ts';
-import { handleDeleteTrainingSessionById } from '../handlers/training-sessions/delete-id.ts';
-import { handleCompleteTrainingSession } from '../handlers/training-sessions/post-complete.ts';
-import { handleGetTrainingPlanDays } from '../handlers/training-plan-days/get.ts';
-import { handleCreateTrainingPlanDay } from '../handlers/training-plan-days/post.ts';
-import { handleGetTrainingPlanDayById } from '../handlers/training-plan-days/get-id.ts';
-import { handlePutTrainingPlanDayById } from '../handlers/training-plan-days/put-id.ts';
-import { handleDeleteTrainingPlanDayById } from '../handlers/training-plan-days/delete-id.ts';
-import { handleGetTrainingPlanExercises } from '../handlers/training-plan-exercises/get.ts';
-import { handleCreateTrainingPlanExercise } from '../handlers/training-plan-exercises/post.ts';
-import { handleGetTrainingPlanExerciseById } from '../handlers/training-plan-exercises/get-id.ts';
-import { handlePutTrainingPlanExerciseById } from '../handlers/training-plan-exercises/put-id.ts';
-import { handleDeleteTrainingPlanExerciseById } from '../handlers/training-plan-exercises/delete-id.ts';
-import { handleGetTrainingPlanExerciseSets } from '../handlers/training-plan-exercise-sets/get.ts';
-import { handleCreateTrainingPlanExerciseSet } from '../handlers/training-plan-exercise-sets/post.ts';
-import { handleGetTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/get-id.ts';
-import { handlePutTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/put-id.ts';
-import { handleDeleteTrainingPlanExerciseSetById } from '../handlers/training-plan-exercise-sets/delete-id.ts';
-import { handleGetTrainingPlanExerciseProgressions } from '../handlers/training-plan-exercise-progressions/get.ts';
-import { handleGetTrainingPlanExerciseProgressionById } from '../handlers/training-plan-exercise-progressions/get-id.ts';
-import { handlePutTrainingPlanExerciseProgressionById } from '../handlers/training-plan-exercise-progressions/put-id.ts';
-import { handleGetTrainingSessionSets } from '../handlers/training-session-sets/get.ts';
-import { handleCreateTrainingSessionSet } from '../handlers/training-session-sets/post.ts';
-import { handleGetTrainingSessionSetById } from '../handlers/training-session-sets/get-id.ts';
-import { handleUpdateTrainingSessionSetById } from '../handlers/training-session-sets/put-id.ts';
-import { handleDeleteTrainingSessionSetById } from '../handlers/training-session-sets/delete-id.ts';
-import { handleCompleteTrainingSessionSet } from '../handlers/training-session-sets/patch-complete.ts';
-import { handleFailTrainingSessionSet } from '../handlers/training-session-sets/patch-fail.ts';
-import { handleResetTrainingSessionSet } from '../handlers/training-session-sets/patch-reset.ts';
+import { handleGetProfile } from '../handlers/profiles/get-id.ts';
+import { handleUpsertProfile } from '../handlers/profiles/put-id.ts';
+import { handleGetPlans } from '../handlers/plans/get.ts';
+import { handleCreatePlan } from '../handlers/plans/post.ts';
+import { handleGetPlanById } from '../handlers/plans/get-id.ts';
+import { handlePutPlanById } from '../handlers/plans/put-id.ts';
+import { handleDeletePlanById } from '../handlers/plans/delete-id.ts';
+import { handleGetSessions } from '../handlers/sessions/get.ts';
+import { handleCreateSession } from '../handlers/sessions/post.ts';
+import { handleGetSessionById } from '../handlers/sessions/get-id.ts';
+import { handlePutSessionById } from '../handlers/sessions/put-id.ts';
+import { handleDeleteSessionById } from '../handlers/sessions/delete-id.ts';
+import { handleCompleteSession } from '../handlers/sessions/post-complete.ts';
+import { handleGetPlanDays } from '../handlers/plan-days/get.ts';
+import { handleCreatePlanDay } from '../handlers/plan-days/post.ts';
+import { handleGetPlanDayById } from '../handlers/plan-days/get-id.ts';
+import { handlePutPlanDayById } from '../handlers/plan-days/put-id.ts';
+import { handleDeletePlanDayById } from '../handlers/plan-days/delete-id.ts';
+import { handleGetPlanExercises } from '../handlers/plan-exercises/get.ts';
+import { handleCreatePlanExercise } from '../handlers/plan-exercises/post.ts';
+import { handleGetPlanExerciseById } from '../handlers/plan-exercises/get-id.ts';
+import { handlePutPlanExerciseById } from '../handlers/plan-exercises/put-id.ts';
+import { handleDeletePlanExerciseById } from '../handlers/plan-exercises/delete-id.ts';
+import { handleGetPlanExerciseSets } from '../handlers/plan-exercise-sets/get.ts';
+import { handleCreatePlanExerciseSet } from '../handlers/plan-exercise-sets/post.ts';
+import { handleGetPlanExerciseSetById } from '../handlers/plan-exercise-sets/get-id.ts';
+import { handlePutPlanExerciseSetById } from '../handlers/plan-exercise-sets/put-id.ts';
+import { handleDeletePlanExerciseSetById } from '../handlers/plan-exercise-sets/delete-id.ts';
+import { handleGetPlanExerciseProgressions } from '../handlers/plan-exercise-progressions/get.ts';
+import { handleGetPlanExerciseProgressionById } from '../handlers/plan-exercise-progressions/get-id.ts';
+import { handlePutPlanExerciseProgressionById } from '../handlers/plan-exercise-progressions/put-id.ts';
+import { handleGetSessionSets } from '../handlers/session-sets/get.ts';
+import { handleCreateSessionSet } from '../handlers/session-sets/post.ts';
+import { handleGetSessionSetById } from '../handlers/session-sets/get-id.ts';
+import { handleUpdateSessionSetById } from '../handlers/session-sets/put-id.ts';
+import { handleDeleteSessionSetById } from '../handlers/session-sets/delete-id.ts';
+import { handleCompleteSessionSet } from '../handlers/session-sets/patch-complete.ts';
+import { handleFailSessionSet } from '../handlers/session-sets/patch-fail.ts';
+import { handleResetSessionSet } from '../handlers/session-sets/patch-reset.ts';
 import type { AppContext } from '../context.ts';
 import { createErrorDataWithLogging } from "../utils/api-helpers.ts";
 
@@ -57,88 +57,88 @@ function createExerciseRoutes(): Hono<AppContext> {
     .delete('/:exerciseId', requiredAuthMiddleware, handleDeleteExerciseById);
 }
 
-// /api/user-profiles
-function createUserProfileRoutes(): Hono<AppContext> {
+// /api/profiles
+function createProfileRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/:userId', requiredAuthMiddleware, handleGetUserProfile)
-    .put('/:userId', requiredAuthMiddleware, handleUpsertUserProfile);
+    .get('/:userId', requiredAuthMiddleware, handleGetProfile)
+    .put('/:userId', requiredAuthMiddleware, handleUpsertProfile);
 }
 
-// /api/training-plans
-function createTrainingPlanRoutes(): Hono<AppContext> {
+// /api/plans
+function createPlanRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingPlans)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingPlan)
-    .get('/:planId', requiredAuthMiddleware, handleGetTrainingPlanById)
-    .put('/:planId', requiredAuthMiddleware, handlePutTrainingPlanById)
-    .delete('/:planId', requiredAuthMiddleware, handleDeleteTrainingPlanById)
-    .route('/:planId/days', createTrainingPlanDayRoutes())
-    .route('/:planId/progressions', createTrainingPlanExerciseProgressionRoutes());
+    .get('/', requiredAuthMiddleware, handleGetPlans)
+    .post('/', requiredAuthMiddleware, handleCreatePlan)
+    .get('/:planId', requiredAuthMiddleware, handleGetPlanById)
+    .put('/:planId', requiredAuthMiddleware, handlePutPlanById)
+    .delete('/:planId', requiredAuthMiddleware, handleDeletePlanById)
+    .route('/:planId/days', createPlanDayRoutes())
+    .route('/:planId/progressions', createPlanExerciseProgressionRoutes());
 }
 
-// /api/training-plans/:planId/days
-function createTrainingPlanDayRoutes(): Hono<AppContext> {
+// /api/plans/:planId/days
+function createPlanDayRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingPlanDays)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingPlanDay)
-    .get('/:dayId', requiredAuthMiddleware, handleGetTrainingPlanDayById)
-    .put('/:dayId', requiredAuthMiddleware, handlePutTrainingPlanDayById)
-    .delete('/:dayId', requiredAuthMiddleware, handleDeleteTrainingPlanDayById)
-    .route('/:dayId/exercises', createTrainingPlanExerciseRoutes());
+    .get('/', requiredAuthMiddleware, handleGetPlanDays)
+    .post('/', requiredAuthMiddleware, handleCreatePlanDay)
+    .get('/:dayId', requiredAuthMiddleware, handleGetPlanDayById)
+    .put('/:dayId', requiredAuthMiddleware, handlePutPlanDayById)
+    .delete('/:dayId', requiredAuthMiddleware, handleDeletePlanDayById)
+    .route('/:dayId/exercises', createPlanExerciseRoutes());
 }
 
-// /api/training-plans/:planId/exercises
-function createTrainingPlanExerciseRoutes(): Hono<AppContext> {
+// /api/plans/:planId/days/:dayId/exercises
+function createPlanExerciseRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingPlanExercises)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingPlanExercise)
-    .get('/:exerciseId', requiredAuthMiddleware, handleGetTrainingPlanExerciseById)
-    .put('/:exerciseId', requiredAuthMiddleware, handlePutTrainingPlanExerciseById)
-    .delete('/:exerciseId', requiredAuthMiddleware, handleDeleteTrainingPlanExerciseById)
-    .route('/:exerciseId/sets', createTrainingPlanExerciseSetRoutes());
+    .get('/', requiredAuthMiddleware, handleGetPlanExercises)
+    .post('/', requiredAuthMiddleware, handleCreatePlanExercise)
+    .get('/:exerciseId', requiredAuthMiddleware, handleGetPlanExerciseById)
+    .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseById)
+    .delete('/:exerciseId', requiredAuthMiddleware, handleDeletePlanExerciseById)
+    .route('/:exerciseId/sets', createPlanExerciseSetRoutes());
 }
 
-// /api/training-plans/:planId/exercises/:exerciseId/sets
-function createTrainingPlanExerciseSetRoutes(): Hono<AppContext> {
+// /api/plans/:planId/days/:dayId/exercises/:exerciseId/sets
+function createPlanExerciseSetRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingPlanExerciseSets)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingPlanExerciseSet)
-    .get('/:setId', requiredAuthMiddleware, handleGetTrainingPlanExerciseSetById)
-    .put('/:setId', requiredAuthMiddleware, handlePutTrainingPlanExerciseSetById)
-    .delete('/:setId', requiredAuthMiddleware, handleDeleteTrainingPlanExerciseSetById);
+    .get('/', requiredAuthMiddleware, handleGetPlanExerciseSets)
+    .post('/', requiredAuthMiddleware, handleCreatePlanExerciseSet)
+    .get('/:setId', requiredAuthMiddleware, handleGetPlanExerciseSetById)
+    .put('/:setId', requiredAuthMiddleware, handlePutPlanExerciseSetById)
+    .delete('/:setId', requiredAuthMiddleware, handleDeletePlanExerciseSetById);
 }
 
-// /api/training-plans/:planId/progressions
-function createTrainingPlanExerciseProgressionRoutes(): Hono<AppContext> {
+// /api/plans/:planId/progressions
+function createPlanExerciseProgressionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingPlanExerciseProgressions)
-    .get('/:exerciseId', requiredAuthMiddleware, handleGetTrainingPlanExerciseProgressionById)
-    .put('/:exerciseId', requiredAuthMiddleware, handlePutTrainingPlanExerciseProgressionById);
+    .get('/', requiredAuthMiddleware, handleGetPlanExerciseProgressions)
+    .get('/:exerciseId', requiredAuthMiddleware, handleGetPlanExerciseProgressionById)
+    .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseProgressionById);
 }
 
-// /api/training-sessions
-function createTrainingSessionRoutes(): Hono<AppContext> {
+// /api/sessions
+function createSessionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingSessions)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingSession)
-    .get('/:sessionId', requiredAuthMiddleware, handleGetTrainingSessionById)
-    .put('/:sessionId', requiredAuthMiddleware, handlePutTrainingSessionById)
-    .delete('/:sessionId', requiredAuthMiddleware, handleDeleteTrainingSessionById)
-    .post('/:sessionId/complete', requiredAuthMiddleware, handleCompleteTrainingSession)
-    .route('/:sessionId/sets', createTrainingSessionSetRoutes());
+    .get('/', requiredAuthMiddleware, handleGetSessions)
+    .post('/', requiredAuthMiddleware, handleCreateSession)
+    .get('/:sessionId', requiredAuthMiddleware, handleGetSessionById)
+    .put('/:sessionId', requiredAuthMiddleware, handlePutSessionById)
+    .delete('/:sessionId', requiredAuthMiddleware, handleDeleteSessionById)
+    .post('/:sessionId/complete', requiredAuthMiddleware, handleCompleteSession)
+    .route('/:sessionId/sets', createSessionSetRoutes());
 }
 
-// /api/training-sessions/:sessionId/sets
-function createTrainingSessionSetRoutes(): Hono<AppContext> {
+// /api/sessions/:sessionId/sets
+function createSessionSetRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', requiredAuthMiddleware, handleGetTrainingSessionSets)
-    .post('/', requiredAuthMiddleware, handleCreateTrainingSessionSet)
-    .get('/:setId', requiredAuthMiddleware, handleGetTrainingSessionSetById)
-    .put('/:setId', requiredAuthMiddleware, handleUpdateTrainingSessionSetById)
-    .delete('/:setId', requiredAuthMiddleware, handleDeleteTrainingSessionSetById)
-    .patch('/:setId/complete', requiredAuthMiddleware, handleCompleteTrainingSessionSet)
-    .patch('/:setId/fail', requiredAuthMiddleware, handleFailTrainingSessionSet)
-    .patch('/:setId/reset', requiredAuthMiddleware, handleResetTrainingSessionSet);
+    .get('/', requiredAuthMiddleware, handleGetSessionSets)
+    .post('/', requiredAuthMiddleware, handleCreateSessionSet)
+    .get('/:setId', requiredAuthMiddleware, handleGetSessionSetById)
+    .put('/:setId', requiredAuthMiddleware, handleUpdateSessionSetById)
+    .delete('/:setId', requiredAuthMiddleware, handleDeleteSessionSetById)
+    .patch('/:setId/complete', requiredAuthMiddleware, handleCompleteSessionSet)
+    .patch('/:setId/fail', requiredAuthMiddleware, handleFailSessionSet)
+    .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);
 }
 
 // Handles health check endpoint
@@ -162,9 +162,9 @@ function handleOnError(err: Error, c: Context) {
 const routes = new Hono<AppContext>();
 
 routes.route('/exercises', createExerciseRoutes());
-routes.route('/user-profiles', createUserProfileRoutes());
-routes.route('/training-plans', createTrainingPlanRoutes());
-routes.route('/training-sessions', createTrainingSessionRoutes());
+routes.route('/profiles', createProfileRoutes());
+routes.route('/plans', createPlanRoutes());
+routes.route('/sessions', createSessionRoutes());
 routes.get('/health', handleHealthEndpoint);
 routes.notFound(handleNotFound);
 routes.onError(handleOnError);

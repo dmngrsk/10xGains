@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { TrainingPlanExerciseSetViewModel, TrainingPlanViewModel } from '../../../../models/training-plan.viewmodel';
+import { PlanExerciseSetViewModel, PlanViewModel } from '../../../../models/plan.viewmodel';
 
 @Component({
   selector: 'txg-plan-card',
@@ -12,10 +12,10 @@ import { TrainingPlanExerciseSetViewModel, TrainingPlanViewModel } from '../../.
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanCardComponent {
-  @Input({ required: true }) plan!: TrainingPlanViewModel;
+  @Input({ required: true }) plan!: PlanViewModel;
   @Output() planClicked = new EventEmitter<string>();
 
-  getExerciseSummaryText(sets: TrainingPlanExerciseSetViewModel[]): string {
+  getExerciseSummaryText(sets: PlanExerciseSetViewModel[]): string {
     if (!sets || sets.length === 0) {
       return 'No sets defined';
     }

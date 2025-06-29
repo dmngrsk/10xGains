@@ -14,8 +14,8 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.navigateTo('plans');
     });
 
-    it('allows a user to create a new training plan', { tags: ['PLAN-01'] }, () => {
-      createTrainingPlan();
+    it('allows a user to create a new plan', { tags: ['PLAN-01'] }, () => {
+      createPlan();
 
       cy.navigateBack();
       cy.getBySel(dataCy.plans.planList.planCard).should('contain.text', 'Test Training Plan');
@@ -34,12 +34,12 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
   describe('when viewing the plan editor page with a freshly created plan', () => {
     beforeEach(() => {
       cy.navigateTo('plans');
-      createTrainingPlan();
+      createPlan();
     });
 
     it('allows a user to add, edit and delete a new training day', { tags: ['PLAN-03'] }, () => {
       // Add a day
-      createTrainingPlanDay();
+      createPlanDay();
 
       // Edit a day
       cy.getBySel(dataCy.plans.planEdit.days.editButton).click();
@@ -60,8 +60,8 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
 
     it('allows a user to add an exercise to a day, edit its progression, and delete it', { tags: ['PLAN-04'] }, () => {
       // Add an exercise
-      createTrainingPlanDay();
-      createTrainingPlanExercise({ name: 'Test Training Exercise' });
+      createPlanDay();
+      createPlanExercise({ name: 'Test Training Exercise' });
 
       // Edit exercise progression
       cy.getBySel(dataCy.plans.planEdit.exercises.editProgressionButton).click();
@@ -83,16 +83,16 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
     it('allows a user to create a global exercise and add this exercise to a training day in a plan', { tags: ['PLAN-05'] }, () => {
       cy.wrap(`New Exercise ${Date.now()}`).as('newExerciseName').then((name) => {
         // Create a global exercise and add it to a training day
-        createTrainingPlanDay();
-        createTrainingPlanExercise({ name, createGlobal: true });
+        createPlanDay();
+        createPlanExercise({ name, createGlobal: true });
       });
     });
 
     it('allows a user to add, edit, and delete a set for an exercise', { tags: ['PLAN-06'] }, () => {
       // Add a set
-      createTrainingPlanDay();
-      createTrainingPlanExercise({ name: 'Test Training Exercise' });
-      createTrainingPlanExerciseSet();
+      createPlanDay();
+      createPlanExercise({ name: 'Test Training Exercise' });
+      createPlanExerciseSet();
 
       // Edit a set
       cy.getBySel(dataCy.plans.planEdit.sets.editButton).click();
@@ -117,7 +117,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
   describe('when viewing the plan editor page with an existing, inactive plan', () => {
     beforeEach(() => {
       cy.get('@ephemeralUserId').then((userId) => {
-        cy.task('plans:resetActiveTrainingPlan', { userId });
+        cy.task('plans:resetActivePlan', { userId });
         cy.navigateTo('plans');
         cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
       });
@@ -168,7 +168,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.getBySel(dataCy.plans.planEdit.sets.deleteButton).should('not.exist');
     });
 
-    it('allows a user to delete a training plan that has not been used', { tags: ['PLAN-10'] }, () => {
+    it('allows a user to delete a plan that has not been used', { tags: ['PLAN-10'] }, () => {
       cy.getBySel(dataCy.plans.planEdit.editButton).click();
       cy.getBySel(dataCy.plans.dialogs.plans.deleteButton).click();
       cy.getBySel(dataCy.shared.dialogs.confirmation.confirmButton).click();
@@ -179,7 +179,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
   });
 });
 
-function createTrainingPlan() {
+function createPlan() {
   cy.getBySel(dataCy.plans.planList.createButton).click();
   cy.getBySel(dataCy.plans.dialogs.plans.title).should('contain.text', 'Create New Plan');
   cy.getBySel(dataCy.plans.dialogs.plans.content).should('be.visible');
@@ -190,7 +190,7 @@ function createTrainingPlan() {
   cy.getBySel(dataCy.plans.planEdit.metadata).should('contain.text', 'Test Training Plan');
 }
 
-function createTrainingPlanDay() {
+function createPlanDay() {
   cy.getBySel(dataCy.plans.planEdit.addDayButton).click();
   cy.getBySel(dataCy.plans.dialogs.days.title).should('contain.text', 'Add New Day');
   cy.getBySel(dataCy.plans.dialogs.days.content).should('be.visible');
@@ -202,7 +202,7 @@ function createTrainingPlanDay() {
   cy.getBySel(dataCy.plans.planEdit.days.item).click();
 }
 
-function createTrainingPlanExercise({ name, createGlobal }: { name?: string; createGlobal?: boolean } = {}) {
+function createPlanExercise({ name, createGlobal }: { name?: string; createGlobal?: boolean } = {}) {
   cy.getBySel(dataCy.plans.planEdit.days.addExerciseButton).click();
   cy.getBySel(dataCy.plans.dialogs.exercises.title).should('contain.text', 'Add New Exercise');
   cy.getBySel(dataCy.plans.dialogs.exercises.content).should('be.visible');
@@ -226,7 +226,7 @@ function createTrainingPlanExercise({ name, createGlobal }: { name?: string; cre
   cy.getBySel(dataCy.plans.planEdit.exercises.item).click();
 }
 
-function createTrainingPlanExerciseSet() {
+function createPlanExerciseSet() {
   cy.getBySel(dataCy.plans.planEdit.exercises.addSetButton).click();
   cy.getBySel(dataCy.plans.dialogs.sets.title).should('contain.text', 'Add Set');
   cy.getBySel(dataCy.plans.dialogs.sets.content).should('be.visible');

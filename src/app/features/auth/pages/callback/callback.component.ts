@@ -28,7 +28,7 @@ export class CallbackComponent implements OnInit {
       .subscribe(({ auth, params }) => {
         const type = params['type'];
         if (type === 'register') {
-          this.profileService.createDefaultUserProfile(auth.userId!).subscribe(() => {
+          this.profileService.createDefaultProfile(auth.userId!).subscribe(() => {
             this.snackBar.open('Verification successful! Welcome to 10xGains.', 'Close', { duration: 5000 });
             this.router.navigate(['/auth/login']);
           });

@@ -61,6 +61,7 @@ jobs:
         run: |
           supabase link --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
           supabase db push
+          supabase db test
 
   backend:
     name: Deploy Supabase Edge Functions

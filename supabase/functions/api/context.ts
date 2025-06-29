@@ -1,5 +1,5 @@
 import type { SupabaseClient, User } from 'supabase';
-import type { Database } from './models/database-types.ts';
+import type { Database } from './models/database.types.ts';
 import type { PlanRepository } from './repositories/plan.repository.ts';
 import type { ExerciseRepository } from './repositories/exercise.repository.ts';
 import type { ProfileRepository } from './repositories/profile.repository.ts';

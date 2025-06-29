@@ -12,13 +12,13 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { filter, Observable, of, switchMap, map, EMPTY } from 'rxjs';
 import {
-  UpdateTrainingPlanDayCommand,
-  CreateTrainingPlanExerciseSetCommand,
-  UpdateTrainingPlanExerciseSetCommand,
-  UpdateTrainingPlanExerciseCommand,
-  CreateTrainingPlanDayCommand,
-  UpdateTrainingPlanCommand,
-  CreateTrainingPlanExerciseCommand,
+  UpdatePlanDayCommand,
+  CreatePlanExerciseSetCommand,
+  UpdatePlanExerciseSetCommand,
+  UpdatePlanExerciseCommand,
+  CreatePlanDayCommand,
+  UpdatePlanCommand,
+  CreatePlanExerciseCommand,
   CreateExerciseCommand,
 } from '@shared/api/api.types';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
@@ -34,7 +34,7 @@ import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogClo
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult } from '../../components/dialogs/add-edit-set/add-edit-set-dialog.component';
 import { AddExerciseDialogComponent, AddExerciseDialogCloseResult } from '../../components/dialogs/add-exercise/add-exercise-dialog.component';
 import { EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogData, EditExerciseProgressionDialogCloseResult } from '../../components/dialogs/edit-exercise-progression/edit-exercise-progression-dialog.component';
-import { TrainingPlanDayViewModel, TrainingPlanExerciseViewModel, TrainingPlanExerciseSetViewModel, TrainingPlanExerciseProgressionViewModel } from '../../models/training-plan.viewmodel';
+import { PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, PlanExerciseProgressionViewModel } from '../../models/plan.viewmodel';
 
 @Component({
   selector: 'txg-plan-edit-page',
@@ -107,7 +107,7 @@ export class PlanEditPageComponent implements OnInit {
         filter(result => this.isUpdatePlanDialogResult(result) || this.isDeletePlanDialogResult(result)),
         switchMap(result => {
           if (this.isUpdatePlanDialogResult(result)) {
-            const command: UpdateTrainingPlanCommand = result.value;
+            const command: UpdatePlanCommand = result.value;
             return this.facade.updatePlan(command).pipe(
               tapIf(success => !!success, () => this.snackBar.open('Plan details updated.', 'Close', { duration: 3000 })),
               tapIf(success => !success && viewModel.error, (response) => {
@@ -179,7 +179,7 @@ export class PlanEditPageComponent implements OnInit {
         filter(result => this.isCreateDayDialogResult(result)),
         switchMap(result => {
           const resultValue = result.value as AddEditDayDialogValue;
-          const command: CreateTrainingPlanDayCommand = {
+          const command: CreatePlanDayCommand = {
             name: resultValue.name,
             description: resultValue.description ?? '',
             order_index: ((this.viewModel().plan?.days ?? []).length + 1)
@@ -194,7 +194,7 @@ export class PlanEditPageComponent implements OnInit {
 
   onDayEdited(eventData: {dayId: string}): void {
     const { dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
 
     if (!day) {
       this.snackBar.open('Day to edit not found.', 'Close', { duration: 3000 });
@@ -215,7 +215,7 @@ export class PlanEditPageComponent implements OnInit {
         filter(result => this.isUpdateDayDialogResult(result) || this.isDeleteDayDialogResult(result)),
         switchMap(result => {
           if (this.isUpdateDayDialogResult(result)) {
-            const command: UpdateTrainingPlanDayCommand = result.value;
+            const command: UpdatePlanDayCommand = result.value;
             return this.facade.updatePlanDay(dayId, command).pipe(
               tapIf(success => !!success, () => this.snackBar.open('Day updated.', 'Close', { duration: 2000 })),
               tapIf(success => !success, (response) => {
@@ -235,7 +235,7 @@ export class PlanEditPageComponent implements OnInit {
 
   onDayDeleted(eventData: {dayId: string}): void {
     const { dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
 
     if (!day) {
       this.snackBar.open('Day to delete not found.', 'Close', { duration: 3000 });
@@ -253,14 +253,14 @@ export class PlanEditPageComponent implements OnInit {
 
   onDayReordered(eventData: {dayId: string, newIndex: number}): void {
     const { dayId, newIndex } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
 
     if (!day) {
       this.snackBar.open('Day to reorder not found.', 'Close', { duration: 3000 });
       return;
     }
 
-    const command: UpdateTrainingPlanDayCommand = {
+    const command: UpdatePlanDayCommand = {
       name: day.name,
       description: day.description,
       order_index: newIndex
@@ -277,7 +277,7 @@ export class PlanEditPageComponent implements OnInit {
 
   onExerciseAdded(eventData: {dayId: string}): void {
     const { dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
 
     if (!day) {
       this.snackBar.open('Day to add exercise not found.', 'Close', { duration: 3000 });
@@ -286,7 +286,7 @@ export class PlanEditPageComponent implements OnInit {
 
     const exercises = this.facade.getAvailableExercises();
 
-    let planCommand: CreateTrainingPlanExerciseCommand = {
+    let planCommand: CreatePlanExerciseCommand = {
       exercise_id: '', // Will be set after exercise is selected or created
       order_index: (this.viewModel().plan?.days?.find(d => d.id === dayId)?.exercises?.length ?? 0) + 1
     };
@@ -323,8 +323,8 @@ export class PlanEditPageComponent implements OnInit {
 
   onExerciseDeleted(eventData: {exerciseId: string, exerciseName: string, dayId: string}): void {
     const { exerciseId, exerciseName, dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
 
     if (!exercise) {
       this.snackBar.open('Exercise to delete not found.', 'Close', { duration: 3000 });
@@ -353,15 +353,15 @@ export class PlanEditPageComponent implements OnInit {
 
   onExerciseReordered(eventData: {exerciseId: string, dayId: string, newIndex: number}): void {
     const { exerciseId, dayId, newIndex } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
 
     if (!exercise) {
       this.snackBar.open('Exercise to reorder not found.', 'Close', { duration: 3000 });
       return;
     }
 
-    const command: UpdateTrainingPlanExerciseCommand = { order_index: newIndex };
+    const command: UpdatePlanExerciseCommand = { order_index: newIndex };
     this.facade.updatePlanExercise(dayId, exerciseId, command)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -373,7 +373,7 @@ export class PlanEditPageComponent implements OnInit {
 
   onProgressionEdited(eventData: {exerciseId: string}): void {
     const { exerciseId } = eventData;
-    const progression = this.viewModel().plan?.progressions?.find((p: TrainingPlanExerciseProgressionViewModel) => p.exerciseId === exerciseId);
+    const progression = this.viewModel().plan?.progressions?.find((p: PlanExerciseProgressionViewModel) => p.exerciseId === exerciseId);
 
     const dialogData: EditExerciseProgressionDialogData = {
       weight_increment: progression?.weightIncrement ?? undefined,
@@ -398,8 +398,8 @@ export class PlanEditPageComponent implements OnInit {
 
   onSetAdded(eventData: {exerciseId: string, dayId: string}): void {
     const { exerciseId, dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
 
     if (!exercise) {
       this.snackBar.open('Exercise to add set not found.', 'Close', { duration: 3000 });
@@ -425,7 +425,7 @@ export class PlanEditPageComponent implements OnInit {
     setValue$.pipe(
       takeUntilDestroyed(this.destroyRef),
       filter(values => !!values),
-      map(values => <CreateTrainingPlanExerciseSetCommand> {
+      map(values => <CreatePlanExerciseSetCommand> {
         expected_reps: values!.expected_reps,
         expected_weight: values!.expected_weight,
         set_index: newSetIndex
@@ -439,9 +439,9 @@ export class PlanEditPageComponent implements OnInit {
 
   onSetEdited(eventData: {setId: string, exerciseId: string, dayId: string}): void {
     const { setId, exerciseId, dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
-    const set = exercise?.sets?.find((s: TrainingPlanExerciseSetViewModel) => s.id === setId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
+    const set = exercise?.sets?.find((s: PlanExerciseSetViewModel) => s.id === setId);
 
     if (!set) {
       this.snackBar.open('Set to edit not found.', 'Close', { duration: 3000 });
@@ -462,7 +462,7 @@ export class PlanEditPageComponent implements OnInit {
         filter(result => this.isSaveSetDialogResult(result) || this.isDeleteSetDialogResult(result)),
         switchMap(result => {
           if (this.isSaveSetDialogResult(result)) {
-            const command: UpdateTrainingPlanExerciseSetCommand = {
+            const command: UpdatePlanExerciseSetCommand = {
               expected_reps: result!.value!.expected_reps,
               expected_weight: result!.value!.expected_weight,
               set_index: set.setIndex
@@ -484,9 +484,9 @@ export class PlanEditPageComponent implements OnInit {
 
   onSetDeleted(eventData: {setId: string, exerciseId: string, dayId: string}): void {
     const { setId, exerciseId, dayId } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
-    const set = exercise?.sets?.find((s: TrainingPlanExerciseSetViewModel) => s.id === setId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
+    const set = exercise?.sets?.find((s: PlanExerciseSetViewModel) => s.id === setId);
 
     if (!set) {
       this.snackBar.open('Set to edit not found.', 'Close', { duration: 3000 });
@@ -504,16 +504,16 @@ export class PlanEditPageComponent implements OnInit {
 
   onSetReordered(eventData: {setId: string, exerciseId: string, dayId: string, newIndex: number}): void {
     const { setId, exerciseId, dayId, newIndex } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: TrainingPlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: TrainingPlanExerciseViewModel) => e.id === exerciseId);
-    const set = exercise?.sets?.find((s: TrainingPlanExerciseSetViewModel) => s.id === setId);
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
+    const set = exercise?.sets?.find((s: PlanExerciseSetViewModel) => s.id === setId);
 
     if (!set) {
       this.snackBar.open('Set to edit not found.', 'Close', { duration: 3000 });
       return;
     }
 
-    const command: UpdateTrainingPlanExerciseSetCommand = { set_index: newIndex };
+    const command: UpdatePlanExerciseSetCommand = { set_index: newIndex };
     this.facade.updatePlanExerciseSet(dayId, exerciseId, setId, command)
       .pipe(
         takeUntilDestroyed(this.destroyRef),

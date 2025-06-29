@@ -6,7 +6,7 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { GetSessionsParams, SessionService } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
-import { TrainingSessionDto, TrainingPlanDto, ExerciseDto, UserProfileDto } from '@shared/api/api.types';
+import { SessionDto, PlanDto, ExerciseDto, ProfileDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
@@ -14,10 +14,10 @@ import { AuthService } from '@shared/services/auth.service';
 const initialHistoryPageViewModel: HistoryPageViewModel = {
   sessions: [],
   filters: {
-    selectedTrainingPlanId: '',
+    selectedPlanId: '',
     dateFrom: null,
     dateTo: null,
-    availableTrainingPlans: [],
+    availablePlans: [],
     pageSize: 10,
     pageSizeOptions: [5, 10, 25, 100],
   },
@@ -38,7 +38,7 @@ export class HistoryPageFacade {
   private readonly authService = inject(AuthService);
 
   readonly viewModel = signal<HistoryPageViewModel>(initialHistoryPageViewModel);
-  private readonly internalPlans = signal<TrainingPlanDto[]>([]);
+  private readonly internalPlans = signal<PlanDto[]>([]);
   private readonly internalExercises = signal<ExerciseDto[]>([]);
   private readonly currentUser = computed(() => this.authService.currentUser());
 
@@ -47,23 +47,23 @@ export class HistoryPageFacade {
     const user = this.currentUser();
 
     forkJoin({
-      plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as TrainingPlanDto[]))),
+      plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as PlanDto[]))),
       exercises: this.exerciseService.getExercises().pipe(map(res => res.data ?? []), catchError(() => of([] as ExerciseDto[]))),
-      profile: this.profileService.getUserProfile(user!.id).pipe(map(res => res.data), catchError(() => of(null as UserProfileDto | null)))
+      profile: this.profileService.getProfile(user!.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
     }).pipe(
       tap(({ plans, exercises, profile }) => {
         this.internalPlans.set(plans);
         this.internalExercises.set(exercises);
 
         const availablePlansForFilter = plans.map(p => ({ id: p.id, name: p.name }));
-        const activePlanId = profile?.active_training_plan_id;
+        const activePlanId = profile?.active_plan_id;
 
         this.viewModel.update(vm => ({
           ...vm,
           filters: {
             ...vm.filters,
-            availableTrainingPlans: availablePlansForFilter,
-            selectedTrainingPlanId: activePlanId || (availablePlansForFilter.length > 0 ? availablePlansForFilter[0].id : ''),
+            availablePlans: availablePlansForFilter,
+            selectedPlanId: activePlanId || (availablePlansForFilter.length > 0 ? availablePlansForFilter[0].id : ''),
           }
         }));
 
@@ -96,7 +96,7 @@ export class HistoryPageFacade {
       status: ['COMPLETED'],
       date_from: filters.dateFrom ?? undefined,
       date_to: filters.dateTo ?? undefined,
-      plan_id: filters.selectedTrainingPlanId ?? undefined,
+      plan_id: filters.selectedPlanId ?? undefined,
     };
 
     const plansMap = new Map(this.internalPlans().map(p => [p.id, p]));
@@ -107,8 +107,8 @@ export class HistoryPageFacade {
         if (!response.data) {
           return { sessions: [], totalCount: 0 };
         }
-        const mappedSessions = response.data.map((dto: TrainingSessionDto) => {
-          const plan = plansMap.get(dto.training_plan_id);
+        const mappedSessions = response.data.map((dto: SessionDto) => {
+          const plan = plansMap.get(dto.plan_id);
           return mapToSessionCardViewModel(dto, plan!, exercises);
         });
         return { sessions: mappedSessions, totalCount: response.totalCount || 0 };
@@ -118,7 +118,7 @@ export class HistoryPageFacade {
         this.viewModel.update(vm => ({
           ...vm,
           isLoading: false,
-          error: 'Failed to load training sessions. Please try again later.',
+          error: 'Failed to load sessions. Please try again later.',
           sessions: [],
           totalSessions: 0
         }));

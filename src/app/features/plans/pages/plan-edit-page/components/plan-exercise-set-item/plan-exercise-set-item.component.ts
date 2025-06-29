@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { TrainingPlanExerciseSetViewModel } from '@features/plans/models/training-plan.viewmodel';
+import { PlanExerciseSetViewModel } from '@features/plans/models/plan.viewmodel';
 
 @Component({
   selector: 'txg-plan-exercise-set-item',
@@ -24,7 +24,7 @@ export class PlanExerciseSetItemComponent {
   @Input({ required: true }) planId!: string;
   @Input({ required: true }) dayId!: string;
   @Input({ required: true }) exerciseId!: string;
-  @Input({ required: true }) set!: TrainingPlanExerciseSetViewModel;
+  @Input({ required: true }) set!: PlanExerciseSetViewModel;
   @Input({ required: true }) isReadOnly!: boolean;
 
   @Output() setEdited = new EventEmitter<{setId: string, exerciseId: string, dayId: string}>();

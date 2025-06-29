@@ -1,21 +1,21 @@
-import { ExerciseDto, TrainingPlanDto, TrainingPlanExerciseSetDto, TrainingSessionDto, SessionSetDto } from "@shared/api/api.types";
+import { ExerciseDto, PlanDto, PlanExerciseSetDto, SessionDto, SessionSetDto } from "@shared/api/api.types";
 import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from "./session-card.viewmodel";
 import { SessionPageViewModel, SessionExerciseViewModel, SessionSetViewModel } from "./session-page.viewmodel";
 import { SessionStatus, SessionSetStatus } from "./session.types";
 
 export function mapToSessionCardViewModel(
-  session: TrainingSessionDto,
-  plan: TrainingPlanDto,
+  session: SessionDto,
+  plan: PlanDto,
   allExercises: ExerciseDto[],
 ): SessionCardViewModel {
-  const planDay = plan.days?.find(d => d.id === session.training_plan_day_id);
+  const planDay = plan.days?.find(d => d.id === session.plan_day_id);
 
   const sessionExercises: SessionCardExerciseViewModel[] = [];
   if (planDay?.exercises && allExercises) {
     for (const planExercise of planDay.exercises) {
       const exerciseDetail = allExercises.find(e => e.id === planExercise.exercise_id);
       if (exerciseDetail) {
-        const relevantSetsDto = session.sets?.filter(s => s.training_plan_exercise_id === planExercise.id) || [];
+        const relevantSetsDto = session.sets?.filter(s => s.plan_exercise_id === planExercise.id) || [];
         const setsViewModel: SessionCardSetViewModel[] = relevantSetsDto.map(dto => ({
           expectedReps: dto.expected_reps,
           actualReps: dto.actual_reps,
@@ -41,8 +41,8 @@ export function mapToSessionCardViewModel(
 }
 
 export function mapToSessionPageViewModel(
-  currentSession: TrainingSessionDto,
-  plan: TrainingPlanDto | undefined | null,
+  currentSession: SessionDto,
+  plan: PlanDto | undefined | null,
   exerciseDetailsMap: Map<string, Pick<ExerciseDto, 'name'>>
 ): SessionPageViewModel | null {
   if (!plan) {
@@ -50,7 +50,7 @@ export function mapToSessionPageViewModel(
     return null;
   }
 
-  const planDay = plan.days?.find(d => d.id == currentSession.training_plan_day_id) ?? null;
+  const planDay = plan.days?.find(d => d.id == currentSession.plan_day_id) ?? null;
 
   if (!planDay || !planDay.exercises) {
     console.warn('[mapTrainingDataToSessionViewModels] Plan day data or planned exercises are missing. Cannot map to SessionExerciseViewModel structure.');
@@ -62,9 +62,9 @@ export function mapToSessionPageViewModel(
   const sessionSetsByTpeId = new Map<string, SessionSetDto[]>();
   if (currentSession.sets) {
     for (const set of currentSession.sets) {
-      const setsForExercise = sessionSetsByTpeId.get(set.training_plan_exercise_id) || [];
+      const setsForExercise = sessionSetsByTpeId.get(set.plan_exercise_id) || [];
       setsForExercise.push(set);
-      sessionSetsByTpeId.set(set.training_plan_exercise_id, setsForExercise);
+      sessionSetsByTpeId.set(set.plan_exercise_id, setsForExercise);
     }
   }
 
@@ -79,14 +79,14 @@ export function mapToSessionPageViewModel(
 
     const sessionSetViewModels: SessionSetViewModel[] = actualSetsForThisExercise
       .map(actualSet => {
-        let correspondingPlannedSet: TrainingPlanExerciseSetDto | undefined;
+        let correspondingPlannedSet: PlanExerciseSetDto | undefined;
         if (plannedExercise.sets) {
           correspondingPlannedSet = plannedExercise.sets.find(ps => ps.set_index === actualSet.set_index);
         }
 
         const viewModelSet: SessionSetViewModel = {
           id: actualSet.id,
-          trainingPlanExerciseId: actualSet.training_plan_exercise_id,
+          planExerciseId: actualSet.plan_exercise_id,
           order: actualSet.set_index,
           status: actualSet.status as SessionSetStatus,
           expectedReps: correspondingPlannedSet?.expected_reps ?? actualSet.expected_reps ?? 0,
@@ -98,7 +98,7 @@ export function mapToSessionPageViewModel(
       .sort((a, b) => a.order - b.order);
 
     sessionExercisesViewModel.push({
-      trainingPlanExerciseId: plannedExercise.id,
+      planExerciseId: plannedExercise.id,
       exerciseName: exerciseName,
       order: plannedExercise.order_index ?? 0,
       sets: sessionSetViewModels,
@@ -111,7 +111,7 @@ export function mapToSessionPageViewModel(
   return {
     id: currentSession.id,
     metadata: {
-      trainingPlanId: currentSession.training_plan_id ?? undefined,
+      planId: currentSession.plan_id ?? undefined,
       dayName: planDay.name,
       planName: plan.name,
       date: currentSession.session_date ? new Date(ensureUtc(currentSession.session_date)) : undefined,
@@ -131,7 +131,7 @@ export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpected
     expectedReps: originalExpectedReps ?? setDto.expected_reps ?? 0,
     actualReps: setDto.actual_reps,
     weight: setDto.actual_weight,
-    trainingPlanExerciseId: setDto.training_plan_exercise_id,
+    planExerciseId: setDto.plan_exercise_id,
   };
 }
 

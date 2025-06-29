@@ -96,13 +96,13 @@ export class AuthService {
    * Registers a new user with their email and password.
    * @param command The registration command containing email and password.
    * @returns An `Observable<RegisterResponse>` that emits an object indicating success, whether the email is verified after registration, or failure.
-   * As a side effect, a user profile is created for the freshly registered user in the `public.user_profiles` table if the email is verified.
+   * As a side effect, a user profile is created for the freshly registered user in the `public.profiles` table if the email is verified.
    */
   register(command: RegisterCommand): Observable<RegisterResponse> {
     const options = { emailRedirectTo: `${window.location.origin}/auth/callback?type=register` };
     return from(this.supabase.auth.signUp({ ...command, options })).pipe(
       this.toRegisterResponse(),
-      tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.createDefaultUserProfile(r.userId!))
+      tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.createDefaultProfile(r.userId!))
     );
   }
 

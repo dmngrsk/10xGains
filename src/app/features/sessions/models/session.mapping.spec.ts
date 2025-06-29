@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { TrainingPlanDayDto, TrainingPlanDto, TrainingPlanExerciseDto, TrainingPlanExerciseSetDto, TrainingSessionDto, ExerciseDto, SessionSetDto } from '@shared/api/api.types';
+import { PlanDayDto, PlanDto, PlanExerciseDto, PlanExerciseSetDto, SessionDto, ExerciseDto, SessionSetDto } from '@shared/api/api.types';
 import { mapToSessionCardViewModel, mapToSessionPageViewModel, mapToSessionSetViewModel } from './session.mapping';
 import { SessionSetStatus, SessionStatus } from './session.types';
 
 const mockSetDto: SessionSetDto = {
   id: 'set1',
-  training_plan_exercise_id: 'tpe1',
-  training_session_id: 's1',
+  plan_exercise_id: 'tpe1',
+  session_id: 's1',
   set_index: 0,
   status: 'PENDING' as SessionSetStatus,
   expected_reps: 10,
@@ -22,45 +22,45 @@ const mockExerciseDto: ExerciseDto = {
 };
 const mockAllExercises: ExerciseDto[] = [mockExerciseDto];
 
-const mockTrainingPlanExerciseSetDto: TrainingPlanExerciseSetDto = {
+const mockPlanExerciseSetDto: PlanExerciseSetDto = {
   id: 'tpes1',
-  training_plan_exercise_id: 'tpe1',
+  plan_exercise_id: 'tpe1',
   set_index: 0,
   expected_reps: 12,
   expected_weight: 50,
 };
 
-const mockTrainingPlanExerciseDto: TrainingPlanExerciseDto = {
+const mockPlanExerciseDto: PlanExerciseDto = {
   id: 'tpe1',
-  training_plan_day_id: 'day1',
+  plan_day_id: 'day1',
   exercise_id: 'ex1',
   order_index: 0,
-  sets: [mockTrainingPlanExerciseSetDto],
+  sets: [mockPlanExerciseSetDto],
 };
 
-const mockTrainingPlanDay: TrainingPlanDayDto = {
+const mockPlanDay: PlanDayDto = {
   id: 'day1',
-  training_plan_id: 'plan1',
+  plan_id: 'plan1',
   name: 'Chest Day',
   order_index: 0,
   description: null,
-  exercises: [mockTrainingPlanExerciseDto],
+  exercises: [mockPlanExerciseDto],
 };
 
-const mockTrainingPlanDto: TrainingPlanDto = {
+const mockPlanDto: PlanDto = {
   id: 'plan1',
   user_id: 'user1',
   name: 'My Strength Plan',
   description: 'A plan for strength',
   created_at: '2023-01-01T00:00:00Z',
-  days: [mockTrainingPlanDay],
+  days: [mockPlanDay],
 };
 
-const mockTrainingSessionDto: TrainingSessionDto = {
+const mockSessionDto: SessionDto = {
   id: 's1',
   user_id: 'user1',
-  training_plan_id: 'plan1',
-  training_plan_day_id: 'day1',
+  plan_id: 'plan1',
+  plan_day_id: 'day1',
   session_date: '2023-01-10T10:00:00Z',
   status: 'PENDING' as SessionStatus,
   sets: [mockSetDto],
@@ -83,7 +83,7 @@ describe('Session Mapping Functions', () => {
   describe('mapToSessionSetViewModel', () => {
     it('should map SessionSetDto to SessionSetViewModel correctly', () => {
       const localMockSetDto: SessionSetDto = {
-        id: 'set1', training_plan_exercise_id: 'tpe1', training_session_id: 's1', set_index: 0,
+        id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
@@ -95,12 +95,12 @@ describe('Session Mapping Functions', () => {
       expect(result.expectedReps).toBe(12);
       expect(result.actualReps).toBeNull();
       expect(result.weight).toBe(0);
-      expect(result.trainingPlanExerciseId).toBe('tpe1');
+      expect(result.planExerciseId).toBe('tpe1');
     });
 
     it('should use dto.expected_reps if originalExpectedReps is null', () => {
       const localMockSetDto: SessionSetDto = {
-        id: 'set1', training_plan_exercise_id: 'tpe1', training_session_id: 's1', set_index: 0,
+        id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
@@ -111,7 +111,7 @@ describe('Session Mapping Functions', () => {
 
     it('should use dto.expected_reps if originalExpectedReps is undefined', () => {
        const localMockSetDto: SessionSetDto = {
-        id: 'set1', training_plan_exercise_id: 'tpe1', training_session_id: 's1', set_index: 0,
+        id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
@@ -122,7 +122,7 @@ describe('Session Mapping Functions', () => {
 
     it('should default expectedReps to 0 if dto.expected_reps is null (which it should not be based on type, but testing defensively) and original is null', () => {
       const dtoWithNullExpectedReps: SessionSetDto = {
-        id: 'set1', training_plan_exercise_id: 'tpe1', training_session_id: 's1', set_index: 0,
+        id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus,
         expected_reps: 0,
         actual_reps: null, actual_weight: 0, completed_at: null,
@@ -132,7 +132,7 @@ describe('Session Mapping Functions', () => {
       expect(result.expectedReps).toBe(0);
 
       const dtoWithNonNullExpectedReps: SessionSetDto = {
-        id: 'set1', training_plan_exercise_id: 'tpe1', training_session_id: 's1', set_index: 0,
+        id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus,
         expected_reps: 5,
         actual_reps: null, actual_weight: 0, completed_at: null,
@@ -144,8 +144,8 @@ describe('Session Mapping Functions', () => {
   });
 
   describe('mapToSessionCardViewModel', () => {
-    it('should map TrainingSessionDto to SessionCardViewModel correctly', () => {
-      const result = mapToSessionCardViewModel(mockTrainingSessionDto, mockTrainingPlanDto, mockAllExercises);
+    it('should map SessionDto to SessionCardViewModel correctly', () => {
+      const result = mapToSessionCardViewModel(mockSessionDto, mockPlanDto, mockAllExercises);
       expect(result.id).toBe('s1');
       expect(result.title).toBe('Chest Day');
       expect(result.sessionDate).toEqual(new Date('2023-01-10T10:00:00Z'));
@@ -159,58 +159,58 @@ describe('Session Mapping Functions', () => {
     });
 
     it('should handle missing planDay gracefully', () => {
-      const sessionWithNoMatchingDay = { ...mockTrainingSessionDto, training_plan_day_id: 'nonexistentday' };
-      const result = mapToSessionCardViewModel(sessionWithNoMatchingDay, mockTrainingPlanDto, mockAllExercises);
+      const sessionWithNoMatchingDay = { ...mockSessionDto, plan_day_id: 'nonexistentday' };
+      const result = mapToSessionCardViewModel(sessionWithNoMatchingDay, mockPlanDto, mockAllExercises);
       expect(result.title).toBe('N/A');
       expect(result.exercises).toHaveLength(0);
     });
 
     it('should handle session.sets being undefined by creating exercise entries with empty sets', () => {
-      const sessionWithoutSets = { ...mockTrainingSessionDto, sets: undefined };
-      const result = mapToSessionCardViewModel(sessionWithoutSets, mockTrainingPlanDto, mockAllExercises);
+      const sessionWithoutSets = { ...mockSessionDto, sets: undefined };
+      const result = mapToSessionCardViewModel(sessionWithoutSets, mockPlanDto, mockAllExercises);
       expect(result.exercises).toHaveLength(1);
       expect(result.exercises[0].sets).toHaveLength(0);
     });
 
     it('should handle planDay.exercises being undefined', () => {
-      const planWithoutExercisesInDay: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{ ...mockTrainingPlanDay, exercises: undefined }],
+      const planWithoutExercisesInDay: PlanDto = {
+        ...mockPlanDto,
+        days: [{ ...mockPlanDay, exercises: undefined }],
       };
-      const result = mapToSessionCardViewModel(mockTrainingSessionDto, planWithoutExercisesInDay, mockAllExercises);
+      const result = mapToSessionCardViewModel(mockSessionDto, planWithoutExercisesInDay, mockAllExercises);
       expect(result.exercises).toHaveLength(0);
     });
 
     it('should handle planDay.exercises being an empty array', () => {
-      const planWithEmptyExercisesInDay: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{ ...mockTrainingPlanDay, exercises: [] }],
+      const planWithEmptyExercisesInDay: PlanDto = {
+        ...mockPlanDto,
+        days: [{ ...mockPlanDay, exercises: [] }],
       };
-      const result = mapToSessionCardViewModel(mockTrainingSessionDto, planWithEmptyExercisesInDay, mockAllExercises);
+      const result = mapToSessionCardViewModel(mockSessionDto, planWithEmptyExercisesInDay, mockAllExercises);
       expect(result.exercises).toHaveLength(0);
     });
 
     it('should use current date for sessionDate if session_date is null', () => {
-      const sessionWithoutDate = { ...mockTrainingSessionDto, session_date: null };
-      const result = mapToSessionCardViewModel(sessionWithoutDate, mockTrainingPlanDto, mockAllExercises);
+      const sessionWithoutDate = { ...mockSessionDto, session_date: null };
+      const result = mapToSessionCardViewModel(sessionWithoutDate, mockPlanDto, mockAllExercises);
       const now = new Date();
       const diff = now.getTime() - (result.sessionDate?.getTime() || 0);
       expect(diff).toBeLessThan(5000);
     });
 
     it('should handle exercises in planDay not found in allExercises gracefully', () => {
-      const planWithUnknownExercise: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
+      const planWithUnknownExercise: PlanDto = {
+        ...mockPlanDto,
         days: [
           {
-            ...mockTrainingPlanDay,
+            ...mockPlanDay,
             exercises: [
-              { ...mockTrainingPlanExerciseDto, exercise_id: 'unknownEx' },
+              { ...mockPlanExerciseDto, exercise_id: 'unknownEx' },
             ],
           },
         ],
       };
-      const result = mapToSessionCardViewModel(mockTrainingSessionDto, planWithUnknownExercise, mockAllExercises);
+      const result = mapToSessionCardViewModel(mockSessionDto, planWithUnknownExercise, mockAllExercises);
       expect(result.exercises).toHaveLength(0);
     });
   });
@@ -219,8 +219,8 @@ describe('Session Mapping Functions', () => {
     const exerciseMap = new Map<string, Pick<ExerciseDto, 'name'>>();
     exerciseMap.set(mockExerciseDto.id, { name: mockExerciseDto.name });
 
-    it('should map TrainingSessionDto to SessionPageViewModel correctly', () => {
-      const result = mapToSessionPageViewModel(mockTrainingSessionDto, mockTrainingPlanDto, exerciseMap);
+    it('should map SessionDto to SessionPageViewModel correctly', () => {
+      const result = mapToSessionPageViewModel(mockSessionDto, mockPlanDto, exerciseMap);
       expect(result).not.toBeNull();
       if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
 
@@ -232,7 +232,7 @@ describe('Session Mapping Functions', () => {
       expect(result.metadata.status).toBe('PENDING');
       expect(result.exercises).toHaveLength(1);
       expect(result.exercises[0].exerciseName).toBe('Bench Press');
-      expect(result.exercises[0].trainingPlanExerciseId).toBe('tpe1');
+      expect(result.exercises[0].planExerciseId).toBe('tpe1');
       expect(result.exercises[0].sets).toHaveLength(1);
       expect(result.exercises[0].sets[0].id).toBe('set1');
       expect(result.exercises[0].sets[0].expectedReps).toBe(12);
@@ -240,33 +240,33 @@ describe('Session Mapping Functions', () => {
     });
 
     it('should return null if plan is null or undefined', () => {
-      expect(mapToSessionPageViewModel(mockTrainingSessionDto, null, exerciseMap)).toBeNull();
-      expect(mapToSessionPageViewModel(mockTrainingSessionDto, undefined, exerciseMap)).toBeNull();
+      expect(mapToSessionPageViewModel(mockSessionDto, null, exerciseMap)).toBeNull();
+      expect(mapToSessionPageViewModel(mockSessionDto, undefined, exerciseMap)).toBeNull();
     });
 
     it('should return null if planDay is not found in plan', () => {
-      const planWithoutMatchingDay: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{...mockTrainingPlanDay, id: 'anotherDayId'}]
+      const planWithoutMatchingDay: PlanDto = {
+        ...mockPlanDto,
+        days: [{...mockPlanDay, id: 'anotherDayId'}]
       };
-      expect(mapToSessionPageViewModel(mockTrainingSessionDto, planWithoutMatchingDay, exerciseMap)).toBeNull();
+      expect(mapToSessionPageViewModel(mockSessionDto, planWithoutMatchingDay, exerciseMap)).toBeNull();
     });
 
     it('should return null if planDay.exercises are missing (undefined or null)', () => {
-      const planWithoutDayExercisesUndefined: TrainingPlanDto = { ...mockTrainingPlanDto, days: [{ ...mockTrainingPlanDay, exercises: undefined }] };
-      expect(mapToSessionPageViewModel(mockTrainingSessionDto, planWithoutDayExercisesUndefined, exerciseMap)).toBeNull();
+      const planWithoutDayExercisesUndefined: PlanDto = { ...mockPlanDto, days: [{ ...mockPlanDay, exercises: undefined }] };
+      expect(mapToSessionPageViewModel(mockSessionDto, planWithoutDayExercisesUndefined, exerciseMap)).toBeNull();
 
-      const mockTrainingPlanDayWithNullExercises: TrainingPlanDayDto = {
-        ...mockTrainingPlanDay,
-        exercises: null as unknown as TrainingPlanExerciseDto[]
+      const mockPlanDayWithNullExercises: PlanDayDto = {
+        ...mockPlanDay,
+        exercises: null as unknown as PlanExerciseDto[]
       };
-      const planWithoutDayExercisesNull: TrainingPlanDto = { ...mockTrainingPlanDto, days: [mockTrainingPlanDayWithNullExercises] };
-      expect(mapToSessionPageViewModel(mockTrainingSessionDto, planWithoutDayExercisesNull, exerciseMap)).toBeNull();
+      const planWithoutDayExercisesNull: PlanDto = { ...mockPlanDto, days: [mockPlanDayWithNullExercises] };
+      expect(mapToSessionPageViewModel(mockSessionDto, planWithoutDayExercisesNull, exerciseMap)).toBeNull();
     });
 
     it('should handle currentSession.sets being undefined, resulting in empty set view models for planned exercises', () => {
-      const sessionWithoutSets = { ...mockTrainingSessionDto, sets: undefined };
-      const result = mapToSessionPageViewModel(sessionWithoutSets, mockTrainingPlanDto, exerciseMap);
+      const sessionWithoutSets = { ...mockSessionDto, sets: undefined };
+      const result = mapToSessionPageViewModel(sessionWithoutSets, mockPlanDto, exerciseMap);
       expect(result).not.toBeNull();
       if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
       expect(result.exercises).toHaveLength(1);
@@ -275,33 +275,33 @@ describe('Session Mapping Functions', () => {
 
     it('should correctly map expectedReps from planned set if available, otherwise from actual set DTO', () => {
       const setDtoWithExpectedReps8: SessionSetDto = { ...mockSetDto, expected_reps: 8, actual_weight: 10 };
-      const plannedExerciseWithSpecificSet: TrainingPlanExerciseDto = {
-        ...mockTrainingPlanExerciseDto,
-        sets: [{ ...mockTrainingPlanExerciseSetDto, set_index: 0, expected_reps: 15, expected_weight: 70 }],
+      const plannedExerciseWithSpecificSet: PlanExerciseDto = {
+        ...mockPlanExerciseDto,
+        sets: [{ ...mockPlanExerciseSetDto, set_index: 0, expected_reps: 15, expected_weight: 70 }],
       };
-      const planWithSpecificSet: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{ ...mockTrainingPlanDay, exercises: [plannedExerciseWithSpecificSet] }],
+      const planWithSpecificSet: PlanDto = {
+        ...mockPlanDto,
+        days: [{ ...mockPlanDay, exercises: [plannedExerciseWithSpecificSet] }],
       };
-      const sessionWithSpecificSet = { ...mockTrainingSessionDto, sets: [setDtoWithExpectedReps8] };
+      const sessionWithSpecificSet = { ...mockSessionDto, sets: [setDtoWithExpectedReps8] };
 
       const result = mapToSessionPageViewModel(sessionWithSpecificSet, planWithSpecificSet, exerciseMap);
       expect(result).not.toBeNull();
       if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
       expect(result.exercises[0].sets[0].expectedReps).toBe(15);
 
-      const plannedSetWithNullExpectedReps: TrainingPlanExerciseSetDto = {
-        ...mockTrainingPlanExerciseSetDto,
+      const plannedSetWithNullExpectedReps: PlanExerciseSetDto = {
+        ...mockPlanExerciseSetDto,
         set_index: 0,
         expected_reps: 0,
       };
-       const plannedExerciseWithZeroExpectedRepsInSet: TrainingPlanExerciseDto = {
-        ...mockTrainingPlanExerciseDto,
+       const plannedExerciseWithZeroExpectedRepsInSet: PlanExerciseDto = {
+        ...mockPlanExerciseDto,
         sets: [plannedSetWithNullExpectedReps],
       };
-      const planWithZeroExpectedRepsInSet: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{ ...mockTrainingPlanDay, exercises: [plannedExerciseWithZeroExpectedRepsInSet] }],
+      const planWithZeroExpectedRepsInSet: PlanDto = {
+        ...mockPlanDto,
+        days: [{ ...mockPlanDay, exercises: [plannedExerciseWithZeroExpectedRepsInSet] }],
       };
       const result2 = mapToSessionPageViewModel(sessionWithSpecificSet, planWithZeroExpectedRepsInSet, exerciseMap);
       expect(result2).not.toBeNull();
@@ -312,20 +312,20 @@ describe('Session Mapping Functions', () => {
 
      it('should default to 0 expectedReps if not in planned set (e.g. 0) and not in actual set DTO (e.g. 0)', () => {
       const setDtoNoExpected: SessionSetDto = { ...mockSetDto, expected_reps: 0, actual_weight: 10 };
-      const plannedSetNoExpected: TrainingPlanExerciseSetDto = {
-        ...mockTrainingPlanExerciseSetDto,
+      const plannedSetNoExpected: PlanExerciseSetDto = {
+        ...mockPlanExerciseSetDto,
         set_index: 0,
         expected_reps: 0,
       };
-       const plannedExerciseNoExpected: TrainingPlanExerciseDto = {
-        ...mockTrainingPlanExerciseDto,
+       const plannedExerciseNoExpected: PlanExerciseDto = {
+        ...mockPlanExerciseDto,
         sets: [plannedSetNoExpected],
       };
-      const planNoExpected: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
-        days: [{ ...mockTrainingPlanDay, exercises: [plannedExerciseNoExpected] }],
+      const planNoExpected: PlanDto = {
+        ...mockPlanDto,
+        days: [{ ...mockPlanDay, exercises: [plannedExerciseNoExpected] }],
       };
-      const sessionNoExpected = { ...mockTrainingSessionDto, sets: [setDtoNoExpected] };
+      const sessionNoExpected = { ...mockSessionDto, sets: [setDtoNoExpected] };
 
       const result = mapToSessionPageViewModel(sessionNoExpected, planNoExpected, exerciseMap);
       expect(result).not.toBeNull();
@@ -334,18 +334,18 @@ describe('Session Mapping Functions', () => {
     });
 
     it('should map exercise name to Unknown Exercise if not in exerciseDetailsMap', () => {
-      const planWithUnknownExerciseId: TrainingPlanDto = {
-        ...mockTrainingPlanDto,
+      const planWithUnknownExerciseId: PlanDto = {
+        ...mockPlanDto,
         days: [
           {
-            ...mockTrainingPlanDay,
+            ...mockPlanDay,
             exercises: [
-              { ...mockTrainingPlanExerciseDto, exercise_id: 'unknownExId' },
+              { ...mockPlanExerciseDto, exercise_id: 'unknownExId' },
             ],
           },
         ],
       };
-      const result = mapToSessionPageViewModel(mockTrainingSessionDto, planWithUnknownExerciseId, exerciseMap);
+      const result = mapToSessionPageViewModel(mockSessionDto, planWithUnknownExerciseId, exerciseMap);
       expect(result).not.toBeNull();
       if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
       expect(result.exercises[0].exerciseName).toBe('Unknown Exercise');

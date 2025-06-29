@@ -1,5 +1,5 @@
 import { createClient } from "supabase";
-import type { Database } from "../models/database-types.ts";
+import type { Database } from "../models/database.types.ts";
 import type { Context, Next } from 'hono';
 import type { AppContext } from '../context.ts';
 

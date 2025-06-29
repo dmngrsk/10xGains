@@ -6,7 +6,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { filter, take, switchMap } from 'rxjs';
-import { UpsertUserProfileCommand } from '@shared/api/api.types';
+import { UpsertProfileCommand } from '@shared/api/api.types';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
@@ -51,7 +51,7 @@ export class SettingsPageComponent implements OnInit {
     }
   }
 
-  onProfileSaved(command: UpsertUserProfileCommand | null): void {
+  onProfileSaved(command: UpsertProfileCommand | null): void {
     this.facade.saveProfile(command!).pipe(
       take(1),
       tapIf(success => success, () => this.snackBar.open('Profile updated successfully.', 'Close', { duration: 3000 })),

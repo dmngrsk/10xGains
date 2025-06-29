@@ -4,8 +4,8 @@
   <form [formGroup]="filterForm" class="space-y-4 p-1">
     <mat-form-field appearance="outline" class="w-full">
       <mat-label>Training plan</mat-label>
-      <mat-select formControlName="selectedTrainingPlanId">
-        @for (plan of availableTrainingPlans; track plan.id) {
+      <mat-select formControlName="selectedPlanId">
+        @for (plan of availablePlans; track plan.id) {
           <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
         }
       </mat-select>

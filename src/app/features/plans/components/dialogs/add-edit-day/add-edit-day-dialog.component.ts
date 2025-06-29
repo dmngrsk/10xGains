@@ -6,11 +6,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef , MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { TrainingPlanDayDto } from '@shared/api/api.types';
+import { PlanDayDto } from '@shared/api/api.types';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
-export type AddEditDayDialogValue = Pick<TrainingPlanDayDto, 'name' | 'description'>;
+export type AddEditDayDialogValue = Pick<PlanDayDto, 'name' | 'description'>;
 export type AddEditDayDialogData = Partial<AddEditDayDialogValue> & { isEditMode?: boolean; }
 export type AddEditDayDialogCloseResult =
   | { save: true; value: AddEditDayDialogValue }

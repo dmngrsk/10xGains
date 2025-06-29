@@ -13,14 +13,14 @@ This directory contains a unified Supabase Edge Function that serves as the main
   - [Local Development](#local-development)
   - [Deployment](#deployment)
 - [API Documentation](#api-documentation)
-  - [User Profiles API](#user-profiles-api)
+  - [Profiles API](#profiles-api)
   - [Exercises API](#exercises-api)
-  - [Training Plans API](#training-plans-api)
-  - [Training Plan Days API](#training-plan-days-api)
-  - [Training Plan Exercises API](#training-plan-exercises-api)
-  - [Training Plan Exercise Sets API](#training-plan-exercise-sets-api)
-  - [Training Plan Exercise Progression API](#training-plan-exercise-progression-api)
-  - [Training Sessions API](#training-sessions-api)
+  - [Plans API](#plans-api)
+  - [Plan Days API](#plan-days-api)
+  - [Plan Exercises API](#plan-exercises-api)
+  - [Plan Exercise Sets API](#plan-exercise-sets-api)
+  - [Plan Exercise Progression API](#plan-exercise-progression-api)
+  - [Sessions API](#sessions-api)
   - [Session Sets API](#session-sets-api)
   - [Health Check API](#health-check-api)
 
@@ -33,10 +33,10 @@ The API Edge Function is organized into the following structure, using Hono for 
   - `context.ts` - Defines the TypeScript types for the application context used by Hono. This context holds variables that are passed through the middleware and to the handlers, such as the Supabase client, the authenticated user, and telemetry data.
   - `deno.json` - Deno configuration, including import maps for dependency management.
   - `middleware/` - Contains Hono middleware.
-    - `routes.ts` - This is the heart of the routing. It defines all API endpoints (e.g., `/api/exercises`, `/api/training-plans`) and maps them to their respective handler functions. It uses Hono's `route` method to create a modular routing structure.
+    - `routes.ts` - This is the heart of the routing. It defines all API endpoints (e.g., `/api/exercises`, `/api/plans`) and maps them to their respective handler functions. It uses Hono's `route` method to create a modular routing structure.
     - `auth.ts`, `supabase.ts`, `telemetry.ts` - Middleware for handling authentication, initializing the Supabase client, and telemetry.
   - `handlers/` - Contains the business logic for each API endpoint.
-    - `[resource]/[method]-[modifier].ts` - Each file implements the logic for a specific action on a resource (e.g., `exercises/get.ts`, `training-plans/get-id.ts`). These handlers receive a context object with the request, response, and middleware data.
+    - `[resource]/[method]-[modifier].ts` - Each file implements the logic for a specific action on a resource (e.g., `exercises/get.ts`, `plans/get-id.ts`). These handlers receive a context object with the request, response, and middleware data.
   - `repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`).
   - `services/` - Contains business logic that can be shared across different handlers.
   - `models/` - Contains type definitions for the API and database.
@@ -58,9 +58,9 @@ The request lifecycle is as follows:
 To maintain a single source of truth for types, we automatically copy types from the Supabase Edge Function to the Angular frontend before deployment:
 
 1.  The sources of truth are:
-    *   `supabase/functions/api/models/api-types.ts` - API DTOs and command models
-    *   `supabase/functions/api/models/database-types.ts` - Database schema definitions
-2.  The `copy-api-types.js` script copies these to:
+    *   `supabase/functions/api/models/api.types.ts` - API DTOs and command models
+    *   `supabase/functions/api/models/database.types.ts` - Database schema definitions
+2.  The `copy-api.types.js` script copies these to:
     *   `src/app/shared/api/api.types.ts`
     *   `src/app/shared/db/database.types.ts`
 
@@ -119,7 +119,7 @@ If you're seeing linting errors in VS Code for Deno imports or types, you can:
 To develop and test the API function locally:
 
 1.  Install the Supabase CLI
-2.  Copy the latest API types with `yarn copy-api-types`
+2.  Copy the latest API types with `yarn copy-api.types`
 3.  Run `supabase functions serve api` to start the local development server for the API function.
 4.  Use tools like Postman or curl to test the API endpoints.
 
@@ -134,24 +134,24 @@ supabase functions deploy api
 
 ## API Documentation
 
-### User Profiles API
+### Profiles API
 
 Allows authenticated users to manage their own profile information.
 
-#### GET /api/user-profiles/{userId}
+#### GET /api/profiles/{userId}
 
 Retrieves the profile information for the authenticated user.
 
 -   **Authorization**: Bearer token required. The `{userId}` in the path MUST match the authenticated user's ID.
 -   **URL Path Parameter**:
-    -   `userId` (UUID): The ID of the user profile to retrieve.
--   **Response (200 OK)**: The `UserProfileDto` object.
+    -   `userId` (UUID): The ID of the profile to retrieve.
+-   **Response (200 OK)**: The `ProfileDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
         "first_name": "John",
-        "active_training_plan_id": "uuid | null",
+        "active_plan_id": "uuid | null",
         "ai_suggestions_remaining": 0,
         "created_at": "timestamp",
         "updated_at": "timestamp"
@@ -163,27 +163,27 @@ Retrieves the profile information for the authenticated user.
     -   `403 Forbidden`: If the requested `{userId}` does not match the authenticated user's ID.
     -   `404 Not Found`: If the user's profile is not found.
 
-#### PUT /api/user-profiles/{userId}
+#### PUT /api/profiles/{userId}
 
 Creates or updates the profile information for the authenticated user (upsert behavior).
 
 -   **Authorization**: Bearer token required. The `{userId}` in the path MUST match the authenticated user's ID.
 -   **URL Path Parameter**:
-    -   `userId` (UUID): The ID of the user profile to update or create.
--   **Request Body**: `UpsertUserProfileCommand` (at least one of `first_name` or `active_training_plan_id` must be provided)
+    -   `userId` (UUID): The ID of the profile to update or create.
+-   **Request Body**: `UpsertProfileCommand` (at least one of `first_name` or `active_plan_id` must be provided)
     ```json
     {
       "first_name": "string (optional)",
-      "active_training_plan_id": "uuid | null (optional)"
+      "active_plan_id": "uuid | null (optional)"
     }
     ```
--   **Response (200 OK/201 Created)**: The created or updated `UserProfileDto` object.
+-   **Response (200 OK/201 Created)**: The created or updated `ProfileDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
         "first_name": "John",
-        "active_training_plan_id": "uuid | null",
+        "active_plan_id": "uuid | null",
         "ai_suggestions_remaining": 0,
         "created_at": "timestamp",
         "updated_at": "timestamp" // updated
@@ -313,20 +313,20 @@ Deletes a specific exercise by its ID. Requires administrator privileges.
 -   **Response (403 Forbidden)**: If the authenticated user is not an administrator.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs during the delete operation (e.g., database error, not for a non-existent record which still returns 204).
 
-### Training Plans API
+### Plans API
 
-Manages training plans within the scope of an authenticated user.
+Manages plans within the scope of an authenticated user.
 
-#### GET /api/training-plans
+#### GET /api/plans
 
-Lists all training plans for the authenticated user. Supports pagination and sorting.
+Lists all plans for the authenticated user. Supports pagination and sorting.
 
 -   **Authorization**: Bearer token required.
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of plans to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
     -   `sort` (optional, string, default: `created_at.desc`): Sort criteria (e.g., `name.asc`, `created_at.desc`).
--   **Response (200 OK)**: An array of `TrainingPlanDto` objects.
+-   **Response (200 OK)**: An array of `PlanDto` objects.
     ```json
     {
       "data": [
@@ -368,19 +368,19 @@ Lists all training plans for the authenticated user. Supports pagination and sor
     }
     ```
 
-#### POST /api/training-plans
+#### POST /api/plans
 
-Creates a new training plan for the authenticated user.
+Creates a new plan for the authenticated user.
 
 -   **Authorization**: Bearer token required.
--   **Request Body**: `CreateTrainingPlanCommand`
+-   **Request Body**: `CreatePlanCommand`
     ```json
     {
       "name": "string (required, max 255)",
       "description": "string (optional)"
     }
     ```
--   **Response (201 Created)**: The newly created `TrainingPlanDto` object.
+-   **Response (201 Created)**: The newly created `PlanDto` object.
     ```json
     {
       "data": {
@@ -393,13 +393,13 @@ Creates a new training plan for the authenticated user.
     }
     ```
 
-#### GET /api/training-plans/{planId}
+#### GET /api/plans/{planId}
 
-Retrieves a specific training plan by its ID, if it belongs to the authenticated user. Includes associated training days exercise progressions.
+Retrieves a specific plan by its ID, if it belongs to the authenticated user. Includes associated training days exercise progressions.
 
 -   **Authorization**: Bearer token required.
--   **URL Path Parameter**: `planId` (UUID) - The ID of the training plan to retrieve.
--   **Response (200 OK)**: The `TrainingPlanDto` object.
+-   **URL Path Parameter**: `planId` (UUID) - The ID of the plan to retrieve.
+-   **Response (200 OK)**: The `PlanDto` object.
     ```json
     {
       "data": {
@@ -439,20 +439,20 @@ Retrieves a specific training plan by its ID, if it belongs to the authenticated
     ```
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user.
 
-#### PUT /api/training-plans/{planId}
+#### PUT /api/plans/{planId}
 
-Updates an existing training plan by its ID, if it belongs to the authenticated user.
+Updates an existing plan by its ID, if it belongs to the authenticated user.
 
 -   **Authorization**: Bearer token required.
--   **URL Path Parameter**: `planId` (UUID) - The ID of the training plan to update.
--   **Request Body**: `UpdateTrainingPlanCommand` (at least one field must be present)
+-   **URL Path Parameter**: `planId` (UUID) - The ID of the plan to update.
+-   **Request Body**: `UpdatePlanCommand` (at least one field must be present)
     ```json
     {
       "name": "string (optional, max 255)",
       "description": "string (optional)"
     }
     ```
--   **Response (200 OK)**: The updated `TrainingPlanDto` object.
+-   **Response (200 OK)**: The updated `PlanDto` object.
     ```json
     {
       "data": {
@@ -466,30 +466,30 @@ Updates an existing training plan by its ID, if it belongs to the authenticated 
     ```
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user for an update.
 
-#### DELETE /api/training-plans/{planId}
+#### DELETE /api/plans/{planId}
 
-Deletes a specific training plan by its ID, if it belongs to the authenticated user.
+Deletes a specific plan by its ID, if it belongs to the authenticated user.
 
 -   **Authorization**: Bearer token required.
--   **URL Path Parameter**: `planId` (UUID) - The ID of the training plan to delete.
+-   **URL Path Parameter**: `planId` (UUID) - The ID of the plan to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (404 Not Found)**: If the plan is not found or not accessible to the user for deletion.
 
-### Training Plan Days API
+### Plan Days API
 
-Manages days within a specific training plan.
+Manages days within a specific plan.
 
-#### GET /api/training-plans/{planId}/days
+#### GET /api/plans/{planId}/days
 
-Retrieves a list of all training days for a specified training plan. Includes nested exercise and set data.
+Retrieves a list of all training days for a specified plan. Includes nested exercise and set data.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**:
-    -   `planId` (UUID, required): The ID of the training plan.
+    -   `planId` (UUID, required): The ID of the plan.
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of days to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
--   **Response (200 OK)**: An array of `TrainingPlanDayDto` objects.
+-   **Response (200 OK)**: An array of `PlanDayDto` objects.
     ```json
     {
       "data": [
@@ -498,17 +498,17 @@ Retrieves a list of all training days for a specified training plan. Includes ne
           "name": "Day 1: Push",
           "description": "Chest, Shoulders, Triceps",
           "order_index": 1,
-          "training_plan_id": "uuid",
+          "plan_id": "uuid",
           "exercises": [
             {
               "id": "uuid",
               "exercise_id": "uuid",
-              "training_plan_day_id": "uuid",
+              "plan_day_id": "uuid",
               "order_index": 1,
               "sets": [
                 {
                   "id": "uuid",
-                  "training_plan_exercise_id": "uuid",
+                  "plan_exercise_id": "uuid",
                   "set_index": 1,
                   "expected_reps": 10,
                   "expected_weight": 52.5
@@ -522,17 +522,17 @@ Retrieves a list of all training days for a specified training plan. Includes ne
     ```
 -   **Response (400 Bad Request)**: If `planId` format is invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan with `planId` is not found or not accessible to the user.
+-   **Response (404 Not Found)**: If the plan with `planId` is not found or not accessible to the user.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### POST /api/training-plans/{planId}/days
+#### POST /api/plans/{planId}/days
 
-Creates a new training day within a specified training plan. `order_index` is managed by the backend.
+Creates a new training day within a specified plan. `order_index` is managed by the backend.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**:
-    -   `planId` (UUID, required): The ID of the training plan.
--   **Request Body**: `CreateTrainingPlanDayCommand`
+    -   `planId` (UUID, required): The ID of the plan.
+-   **Request Body**: `CreatePlanDayCommand`
     ```json
     {
       "name": "string (required)",
@@ -540,7 +540,7 @@ Creates a new training day within a specified training plan. `order_index` is ma
       "order_index": "integer (optional, positive)"
     }
     ```
--   **Response (201 Created)**: The newly created `TrainingPlanDayDto` object (without nested exercises).
+-   **Response (201 Created)**: The newly created `PlanDayDto` object (without nested exercises).
     ```json
     {
       "data": {
@@ -548,7 +548,7 @@ Creates a new training day within a specified training plan. `order_index` is ma
         "name": "Day 2: Pull",
         "description": "Back, Biceps",
         "order_index": 2,
-        "training_plan_id": "uuid",
+        "plan_id": "uuid",
         "created_at": "timestamp",
         "updated_at": "timestamp"
       }
@@ -556,18 +556,18 @@ Creates a new training day within a specified training plan. `order_index` is ma
     ```
 -   **Response (400 Bad Request)**: If `planId` format is invalid or the request body is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan with `planId` is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan with `planId` is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### GET /api/training-plans/{planId}/days/{dayId}
+#### GET /api/plans/{planId}/days/{dayId}
 
 Retrieves details for a specific training day, including nested exercise and set data.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
--   **Response (200 OK)**: The `TrainingPlanDayDto` object, including `exercises` and their `sets`.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+-   **Response (200 OK)**: The `PlanDayDto` object, including `exercises` and their `sets`.
     ```json
     {
       "data": {
@@ -575,27 +575,27 @@ Retrieves details for a specific training day, including nested exercise and set
         "name": "Day 1: Push",
         "description": "Chest, Shoulders, Triceps",
         "order_index": 1,
-        "training_plan_id": "uuid",
+        "plan_id": "uuid",
         "created_at": "timestamp",
         "updated_at": "timestamp",
-        "exercises": [ /* ... as in GET /api/training-plans/{planId}/days ... */ ]
+        "exercises": [ /* ... as in GET /api/plans/{planId}/days ... */ ]
       }
     }
     ```
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### PUT /api/training-plans/{planId}/days/{dayId}
+#### PUT /api/plans/{planId}/days/{dayId}
 
 Updates an existing training day. If `order_index` is changed, reordering of other days occurs.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day to update.
--   **Request Body**: `UpdateTrainingPlanDayCommand` (at least one field must be present)
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day to update.
+-   **Request Body**: `UpdatePlanDayCommand` (at least one field must be present)
     ```json
     {
       "name": "string (optional)",
@@ -603,7 +603,7 @@ Updates an existing training day. If `order_index` is changed, reordering of oth
       "order_index": "integer (optional, positive)"
     }
     ```
--   **Response (200 OK)**: The updated `TrainingPlanDayDto` object (without nested exercises).
+-   **Response (200 OK)**: The updated `PlanDayDto` object (without nested exercises).
     ```json
     {
       "data": {
@@ -611,7 +611,7 @@ Updates an existing training day. If `order_index` is changed, reordering of oth
         "name": "Day 1: Upper Body Push",
         "description": "Focus on compound movements",
         "order_index": 1,
-        "training_plan_id": "uuid",
+        "plan_id": "uuid",
         "created_at": "timestamp", 
         "updated_at": "timestamp"
       }
@@ -619,109 +619,109 @@ Updates an existing training day. If `order_index` is changed, reordering of oth
     ```
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid, or the request body is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### DELETE /api/training-plans/{planId}/days/{dayId}
+#### DELETE /api/plans/{planId}/days/{dayId}
 
 Deletes a specific training day. Reordering of subsequent days occurs automatically.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day to delete.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-### Training Plan Exercises API
+### Plan Exercises API
 
-Manages exercises within a specific training plan day.
+Manages exercises within a specific plan day.
 
-#### GET /api/training-plans/{planId}/days/{dayId}/exercises
+#### GET /api/plans/{planId}/days/{dayId}/exercises
 
 Retrieves a list of all exercises for a specified training day.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of exercises to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
--   **Response (200 OK)**: An array of `TrainingPlanExerciseDto` objects.
+-   **Response (200 OK)**: An array of `PlanExerciseDto` objects.
     ```json
     {
       "data": [
         {
           "id": "uuid",
           "exercise_id": "uuid", // References the global exercises table
-          "training_plan_day_id": "uuid",
+          "plan_day_id": "uuid",
           "order_index": 1,
-          "sets": [ /* Array of TrainingPlanExerciseSetDto */ ]
+          "sets": [ /* Array of PlanExerciseSetDto */ ]
         }
       ]
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan or day is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### POST /api/training-plans/{planId}/days/{dayId}/exercises
+#### POST /api/plans/{planId}/days/{dayId}/exercises
 
 Adds a new exercise to a specified training day. `order_index` is managed by the backend.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
--   **Request Body**: `CreateTrainingPlanExerciseCommand`
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+-   **Request Body**: `CreatePlanExerciseCommand`
     ```json
     {
       "exercise_id": "uuid (required)", // ID of the exercise from the global exercises table
       "order_index": "integer (optional, positive)" // If omitted, appends to the end
     }
     ```
--   **Response (201 Created)**: The newly created `TrainingPlanExerciseDto` object (without nested sets usually, unless explicitly designed to return them).
+-   **Response (201 Created)**: The newly created `PlanExerciseDto` object (without nested sets usually, unless explicitly designed to return them).
     ```json
     {
       "data": {
         "id": "uuid",
         "exercise_id": "uuid",
-        "training_plan_day_id": "uuid",
+        "plan_day_id": "uuid",
         "order_index": 1
       }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, or the referenced global exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, or the referenced global exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### GET /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}
+#### GET /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}
 
 Retrieves a specific exercise within a training day by its ID. Includes associated sets.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise entry (`training_plan_exercises.id`) to retrieve.
--   **Response (200 OK)**: The `TrainingPlanExerciseDto` object, including `sets`.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`) to retrieve.
+-   **Response (200 OK)**: The `PlanExerciseDto` object, including `sets`.
     ```json
     {
       "data": {
         "id": "uuid",
         "exercise_id": "uuid", // References the global exercises table
-        "training_plan_day_id": "uuid",
+        "plan_day_id": "uuid",
         "order_index": 1,
         "sets": [
           {
             "id": "uuid",
-            "training_plan_exercise_id": "uuid",
+            "plan_exercise_id": "uuid",
             "set_index": 1,
             "expected_reps": 10,
             "expected_weight": 52.5
@@ -733,80 +733,80 @@ Retrieves a specific exercise within a training day by its ID. Includes associat
 -   **Responses (Error)**:
     -   `400 Bad Request`: If any path parameter format is invalid.
     -   `401 Unauthorized`: If the authentication token is missing or invalid.
-    -   `404 Not Found`: If the training plan, day, or specific plan exercise is not found or not accessible.
+    -   `404 Not Found`: If the plan, day, or specific plan exercise is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### PUT /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}
+#### PUT /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}
 
 Updates an existing exercise within a training day, primarily for reordering.
-This endpoint corresponds to the `update_training_plan_exercise_order` RPC.
-If other fields of `training_plan_exercises` need to be updated, a separate endpoint or an extension to this one might be required.
+This endpoint corresponds to the `update_plan_exercise_order` RPC.
+If other fields of `plan_exercises` need to be updated, a separate endpoint or an extension to this one might be required.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise entry (`training_plan_exercises.id`) to update.
--   **Request Body**: `UpdateTrainingPlanExerciseOrderCommand`
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`) to update.
+-   **Request Body**: `UpdatePlanExerciseOrderCommand`
     ```json
     {
       "order_index": "integer (required, positive)"
     }
     ```
--   **Response (200 OK)**: The updated `TrainingPlanExerciseDto` object.
+-   **Response (200 OK)**: The updated `PlanExerciseDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
         "exercise_id": "uuid",
-        "training_plan_day_id": "uuid",
+        "plan_day_id": "uuid",
         "order_index": 2 // Updated order_index
       }
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid (e.g., missing `order_index`).
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, or specific plan exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, or specific plan exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs during the update or reordering.
 
-#### DELETE /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}
+#### DELETE /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}
 
 Deletes a specific exercise from a training day. Reordering of subsequent exercises occurs automatically.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise entry (`training_plan_exercises.id`) to delete.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`) to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, or specific plan exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, or specific plan exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-### Training Plan Exercise Sets API
+### Plan Exercise Sets API
 
-Manages sets for a specific exercise within a training plan day.
+Manages sets for a specific exercise within a plan day.
 
-#### GET /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets
+#### GET /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets
 
 Retrieves a list of all sets for a specified exercise within a training day.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise (`training_plan_exercises.id`).
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise (`plan_exercises.id`).
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of sets to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
--   **Response (200 OK)**: An array of `TrainingPlanExerciseSetDto` objects.
+-   **Response (200 OK)**: An array of `PlanExerciseSetDto` objects.
     ```json
     {
       "data": [
         {
           "id": "uuid",
-          "training_plan_exercise_id": "uuid",
+          "plan_exercise_id": "uuid",
           "set_index": 1,
           "expected_reps": 5,
           "expected_weight": 52.5
@@ -816,19 +816,19 @@ Retrieves a list of all sets for a specified exercise within a training day.
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, or exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, or exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### POST /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets
+#### POST /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets
 
 Creates a new set for a specified exercise within a training day. `set_index` is typically managed by the backend or can be optionally provided.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise (`training_plan_exercises.id`).
--   **Request Body**: `CreateTrainingPlanExerciseSetCommand`
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise (`plan_exercises.id`).
+-   **Request Body**: `CreatePlanExerciseSetCommand`
     ```json
     {
       "set_index": "integer (optional, positive)",
@@ -836,12 +836,12 @@ Creates a new set for a specified exercise within a training day. `set_index` is
       "expected_weight": "number (required, positive)"
     }
     ```
--   **Response (201 Created)**: The newly created `TrainingPlanExerciseSetDto` object.
+-   **Response (201 Created)**: The newly created `PlanExerciseSetDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "expected_weight": 52.5
@@ -850,25 +850,25 @@ Creates a new set for a specified exercise within a training day. `set_index` is
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, or exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, or exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### GET /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
+#### GET /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
 
 Retrieves details for a specific set.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise (`training_plan_exercises.id`).
-    -   `setId` (UUID, required): The ID of the training plan exercise set.
--   **Response (200 OK)**: The `TrainingPlanExerciseSetDto` object.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise (`plan_exercises.id`).
+    -   `setId` (UUID, required): The ID of the plan exercise set.
+-   **Response (200 OK)**: The `PlanExerciseSetDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "expected_weight": 52.5
@@ -877,20 +877,20 @@ Retrieves details for a specific set.
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, exercise, or set is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, exercise, or set is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### PUT /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
+#### PUT /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
 
 Updates an existing set.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise (`training_plan_exercises.id`).
-    -   `setId` (UUID, required): The ID of the training plan exercise set to update.
--   **Request Body**: `UpdateTrainingPlanExerciseSetCommand` (at least one field must be present)
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise (`plan_exercises.id`).
+    -   `setId` (UUID, required): The ID of the plan exercise set to update.
+-   **Request Body**: `UpdatePlanExerciseSetCommand` (at least one field must be present)
     ```json
     {
       "set_index": "integer (optional, positive)",
@@ -898,12 +898,12 @@ Updates an existing set.
       "expected_weight": "number (optional, positive)"
     }
     ```
--   **Response (200 OK)**: The updated `TrainingPlanExerciseSetDto` object.
+-   **Response (200 OK)**: The updated `PlanExerciseSetDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "expected_weight": 55.0
@@ -912,43 +912,43 @@ Updates an existing set.
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or the request body is invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, exercise, or set is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, exercise, or set is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### DELETE /api/training-plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
+#### DELETE /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/sets/{setId}
 
 Deletes a specific set. Reordering of subsequent sets (if `set_index` is managed) occurs automatically.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `dayId` (UUID, required): The ID of the training plan day.
-    -   `exerciseId` (UUID, required): The ID of the training plan exercise (`training_plan_exercises.id`).
-    -   `setId` (UUID, required): The ID of the training plan exercise set to delete.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise (`plan_exercises.id`).
+    -   `setId` (UUID, required): The ID of the plan exercise set to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, day, exercise, or set is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, day, exercise, or set is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-### Training Plan Exercise Progression API
+### Plan Exercise Progression API
 
-Manages progression rules for a specific exercise within a training plan.
+Manages progression rules for a specific exercise within a plan.
 
-#### GET /api/training-plans/{planId}/progressions
+#### GET /api/plans/{planId}/progressions
 
-Retrieves the progression rules for all exercises within a training plan.
+Retrieves the progression rules for all exercises within a plan.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
--   **Response (200 OK)**: An array of `TrainingPlanExerciseProgressionDto` objects.
+    -   `planId` (UUID, required): The ID of the plan.
+-   **Response (200 OK)**: An array of `PlanExerciseProgressionDto` objects.
     ```json
     {
       "data": [
         {
           "id": "uuid",
-          "training_plan_id": "uuid",
+          "plan_id": "uuid",
           "exercise_id": "uuid",
           "weight_increment": 2.5,
           "failure_count_for_deload": 3,
@@ -963,23 +963,23 @@ Retrieves the progression rules for all exercises within a training plan.
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, exercise, or the specific progression rule is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, exercise, or the specific progression rule is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### GET /api/training-plans/{planId}/progressions/{exerciseId}
+#### GET /api/plans/{planId}/progressions/{exerciseId}
 
-Retrieves the progression rule for a specific exercise within a training plan.
+Retrieves the progression rule for a specific exercise within a plan.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
-    -   `exerciseId` (UUID, required): The ID of the exercise (from the global `exercises` table) for which progression is being fetched. This corresponds to the `exercise_id` in the `training_plan_exercise_progressions` table.
--   **Response (200 OK)**: The `TrainingPlanExerciseProgressionDto` object.
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `exerciseId` (UUID, required): The ID of the exercise (from the global `exercises` table) for which progression is being fetched. This corresponds to the `exercise_id` in the `plan_exercise_progressions` table.
+-   **Response (200 OK)**: The `PlanExerciseProgressionDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_id": "uuid",
+        "plan_id": "uuid",
         "exercise_id": "uuid",
         "weight_increment": 2.5,
         "failure_count_for_deload": 3,
@@ -993,18 +993,18 @@ Retrieves the progression rule for a specific exercise within a training plan.
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan, exercise, or the specific progression rule is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan, exercise, or the specific progression rule is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-#### PUT /api/training-plans/{planId}/progressions/{exerciseId}
+#### PUT /api/plans/{planId}/progressions/{exerciseId}
 
-Creates or updates (upserts) the progression rule for a specific exercise within a training plan.
+Creates or updates (upserts) the progression rule for a specific exercise within a plan.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
-    -   `planId` (UUID, required): The ID of the training plan.
+    -   `planId` (UUID, required): The ID of the plan.
     -   `exerciseId` (UUID, required): The ID of the exercise (from the global `exercises` table).
--   **Request Body**: `UpdateTrainingPlanExerciseProgressionCommand` (at least one field must be present for an update; `weight_increment`, `failure_count_for_deload` are required if creating a new progression rule for an exercise that doesn't have one).
+-   **Request Body**: `UpdatePlanExerciseProgressionCommand` (at least one field must be present for an update; `weight_increment`, `failure_count_for_deload` are required if creating a new progression rule for an exercise that doesn't have one).
     ```json
     {
       "weight_increment": 2.5,                // Optional (Required for create), NUMERIC(7,3) > 0
@@ -1015,12 +1015,12 @@ Creates or updates (upserts) the progression rule for a specific exercise within
       "reference_set_index": null             // Optional, SMALLINT >= 0 or null
     }
     ```
--   **Response (200 OK/201 Created)**: Returns the newly created or updated `TrainingPlanExerciseProgressionDto`.
+-   **Response (200 OK/201 Created)**: Returns the newly created or updated `PlanExerciseProgressionDto`.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_id": "uuid",
+        "plan_id": "uuid",
         "exercise_id": "uuid",
         "weight_increment": 2.5,
         "failure_count_for_deload": 3,
@@ -1034,14 +1034,14 @@ Creates or updates (upserts) the progression rule for a specific exercise within
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid, the request body is invalid (e.g., missing required fields for creation, invalid values), or no fields provided for update.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
--   **Response (404 Not Found)**: If the training plan or exercise is not found or not accessible.
+-   **Response (404 Not Found)**: If the plan or exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
-### Training Sessions API
+### Sessions API
 
 Manages user training sessions, allowing for creation, listing, retrieval, updates (e.g., cancellation), and marking sessions as complete, which triggers exercise progression logic.
 
-#### GET /api/training-sessions
+#### GET /api/sessions
 
 Lists all training sessions for the authenticated user. Supports pagination, sorting, and filtering.
 
@@ -1053,23 +1053,23 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
     -   `status` (optional, string): Filter by session status (e.g., `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
     -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
-    -   `plan_id` (optional, string UUID): Filter sessions associated with a training plan with a given `training_plan_id`.
--   **Response (200 OK)**: An array of `TrainingSessionDto` objects.
+    -   `plan_id` (optional, string UUID): Filter sessions associated with a plan with a given `plan_id`.
+-   **Response (200 OK)**: An array of `SessionDto` objects.
     ```json
     {
       "data": [
         {
           "id": "uuid",
-          "training_plan_id": "uuid",
-          "training_plan_day_id": "uuid",
+          "plan_id": "uuid",
+          "plan_day_id": "uuid",
           "user_id": "uuid",
           "session_date": "2023-01-01T00:00:00Z",
           "status": "IN_PROGRESS",
           "sets": [
             {
               "id": "uuid",
-              "training_session_id": "uuid", // Matches parent session ID
-              "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+              "session_id": "uuid", // Matches parent session ID
+              "plan_exercise_id": "uuid", // ID of the exercise from plan_exercises
               "set_index": 1,
               "expected_reps": 10,
               "actual_reps": null,
@@ -1089,37 +1089,37 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: For unexpected server issues.
 
-#### POST /api/training-sessions
+#### POST /api/sessions
 
 Creates a new training session for the authenticated user.
-If `training_plan_day_id` is not provided, the system determines it:
-- If historical completed sessions exist for the `training_plan_id`, the next `training_plan_day_id` in sequence is chosen.
-- Otherwise, the first `training_plan_day_id` of the `training_plan_id` is chosen.
-Once the `training_plan_day_id` is determined (either provided or automatically selected), new `session_sets` are automatically created for the session. These sets are based on the `training_plan_exercise_sets` defined for the determined day. `actual_reps` and `actual_weight` for these new sets are initialized from the `expected_reps` and `expected_weight` of the plan, and their `status` is set to `PENDING`.
+If `plan_day_id` is not provided, the system determines it:
+- If historical completed sessions exist for the `plan_id`, the next `plan_day_id` in sequence is chosen.
+- Otherwise, the first `plan_day_id` of the `plan_id` is chosen.
+Once the `plan_day_id` is determined (either provided or automatically selected), new `session_sets` are automatically created for the session. These sets are based on the `plan_exercise_sets` defined for the determined day. `actual_reps` and `actual_weight` for these new sets are initialized from the `expected_reps` and `expected_weight` of the plan, and their `status` is set to `PENDING`.
 
 -   **Authorization**: Bearer token required.
--   **Request Body**: `CreateTrainingSessionCommand`
+-   **Request Body**: `CreateSessionCommand`
     ```json
     {
-      "training_plan_id": "uuid", // Required
-      "training_plan_day_id": "uuid" // Optional. If not provided, it's determined automatically.
+      "plan_id": "uuid", // Required
+      "plan_day_id": "uuid" // Optional. If not provided, it's determined automatically.
     }
     ```
--   **Response (201 Created)**: The newly created `TrainingSessionDto` object, including auto-generated `session_sets`.
+-   **Response (201 Created)**: The newly created `SessionDto` object, including auto-generated `session_sets`.
     ```json
     {
       "data": {
         "id": "uuid", // ID of the new session
-        "training_plan_id": "uuid", // As provided
-        "training_plan_day_id": "uuid", // Provided or determined
+        "plan_id": "uuid", // As provided
+        "plan_day_id": "uuid", // Provided or determined
         "user_id": "uuid", // ID of the authenticated user
         "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
         "status": "PENDING", // Default status
         "sets": [ // Auto-created session sets
           {
             "id": "uuid", // ID of the new session set
-            "training_session_id": "uuid", // Matches parent session ID
-            "training_plan_exercise_id": "uuid", // From the plan day's exercise
+            "session_id": "uuid", // Matches parent session ID
+            "plan_exercise_id": "uuid", // From the plan day's exercise
             "set_index": 1,
             "expected_reps": 10,     // Initialized from plan's expected_reps
             "actual_reps": null,     // Initially null
@@ -1133,31 +1133,31 @@ Once the `training_plan_day_id` is determined (either provided or automatically 
     }
     ```
 -   **Responses (Error)**:
-    -   `400 Bad Request`: If the request body is invalid, or if the referenced `training_plan_id` or `training_plan_day_id` is not found or not accessible to the user.
+    -   `400 Bad Request`: If the request body is invalid, or if the referenced `plan_id` or `plan_day_id` is not found or not accessible to the user.
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: For unexpected server issues.
 
-#### GET /api/training-sessions/{sessionId}
+#### GET /api/sessions/{sessionId}
 
 Retrieves a specific training session by its ID, if it belongs to the authenticated user.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session.
--   **Response (200 OK)**: The `TrainingSessionDto` object.
+-   **Response (200 OK)**: The `SessionDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_id": "uuid",
-        "training_plan_day_id": "uuid",
+        "plan_id": "uuid",
+        "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
         "status": "IN_PROGRESS",
         "sets": [
           {
             "id": "uuid",
-            "training_session_id": "uuid", // Matches parent session ID
-            "training_plan_exercise_id": "uuid", // ID of the exercise from training_plan_exercises
+            "session_id": "uuid", // Matches parent session ID
+            "plan_exercise_id": "uuid", // ID of the exercise from plan_exercises
             "set_index": 1,
             "expected_reps": 10,
             "actual_reps": null,
@@ -1176,33 +1176,33 @@ Retrieves a specific training session by its ID, if it belongs to the authentica
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
-#### PUT /api/training-sessions/{sessionId}
+#### PUT /api/sessions/{sessionId}
 
 Updates the status of an existing training session (e.g., to cancel it).
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session.
--   **Request Body**: `UpdateTrainingSessionCommand`
+-   **Request Body**: `UpdateSessionCommand`
     ```json
     {
       "status": "CANCELLED" // e.g., 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
     }
     ```
--   **Response (200 OK)**: The full, updated `TrainingSessionDto` object, including any nested sets.
+-   **Response (200 OK)**: The full, updated `SessionDto` object, including any nested sets.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_id": "uuid",
-        "training_plan_day_id": "uuid",
+        "plan_id": "uuid",
+        "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
         "status": "CANCELLED", // Updated status
         "sets": [
           {
             "id": "uuid",
-            "training_session_id": "uuid",
-            "training_plan_exercise_id": "uuid",
+            "session_id": "uuid",
+            "plan_exercise_id": "uuid",
             "set_index": 1,
             "expected_reps": 10,
             "actual_reps": null,
@@ -1221,7 +1221,7 @@ Updates the status of an existing training session (e.g., to cancel it).
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
-#### DELETE /api/training-sessions/{sessionId}
+#### DELETE /api/sessions/{sessionId}
 
 Deletes a specific training session by its ID, if it belongs to the authenticated user. Associated session sets are deleted via cascading delete in the database.
 
@@ -1234,28 +1234,28 @@ Deletes a specific training session by its ID, if it belongs to the authenticate
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues.
 
-#### POST /api/training-sessions/{sessionId}/complete
+#### POST /api/sessions/{sessionId}/complete
 
 Marks a training session as completed and triggers exercise progression logic.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session to complete.
--   **Request Body**: Empty (`CompleteTrainingSessionCommand` is `Record<string, never>`).
--   **Response (200 OK)**: The full, updated `TrainingSessionDto` object (including nested fields like `sets`) with status set to `COMPLETED`.
+-   **Request Body**: Empty (`CompleteSessionCommand` is `Record<string, never>`).
+-   **Response (200 OK)**: The full, updated `SessionDto` object (including nested fields like `sets`) with status set to `COMPLETED`.
     ```json
     {
       "data": {
         "id": "uuid",
-        "training_plan_id": "uuid",
-        "training_plan_day_id": "uuid",
+        "plan_id": "uuid",
+        "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
         "status": "COMPLETED",
         "sets": [
           {
             "id": "uuid",
-            "training_session_id": "uuid", 
-            "training_plan_exercise_id": "uuid",
+            "session_id": "uuid", 
+            "plan_exercise_id": "uuid",
             "set_index": 1,
             "expected_reps": 10,
             "actual_reps": 10,
@@ -1278,7 +1278,7 @@ Marks a training session as completed and triggers exercise progression logic.
 
 Manages sets within a specific training session.
 
-#### GET /api/training-sessions/{sessionId}/sets
+#### GET /api/sessions/{sessionId}/sets
 
 Retrieves a list of all sets for a specified training session.
 
@@ -1291,8 +1291,8 @@ Retrieves a list of all sets for a specified training session.
       "data": [
         {
           "id": "uuid",
-          "training_session_id": "uuid",
-          "training_plan_exercise_id": "uuid",
+          "session_id": "uuid",
+          "plan_exercise_id": "uuid",
           "set_index": 1,
           "expected_reps": 5,
           "actual_reps": 5,
@@ -1309,7 +1309,7 @@ Retrieves a list of all sets for a specified training session.
     -   `404 Not Found`: If the training session is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### POST /api/training-sessions/{sessionId}/sets
+#### POST /api/sessions/{sessionId}/sets
 
 Creates a new set for a specified training session.
 
@@ -1319,7 +1319,7 @@ Creates a new set for a specified training session.
 -   **Request Body**: `CreateSessionSetCommand`
     ```json
     {
-      "training_plan_exercise_id": "uuid", // Required, ID from training_plan_exercises
+      "plan_exercise_id": "uuid", // Required, ID from plan_exercises
       "set_index": 1, // Optional, SMALLINT >= 1. If provided, inserts at this position and shifts others. If omitted, appends to the end.
       "expected_reps": 5, // Required, SMALLINT >= 0
       "actual_reps": 5, // Optional, SMALLINT >= 0, nullabe
@@ -1333,8 +1333,8 @@ Creates a new set for a specified training session.
     {
       "data": {
         "id": "uuid",
-        "training_session_id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "session_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1, // or assigned index
         "expected_reps": 5,
         "actual_reps": 5,
@@ -1347,10 +1347,10 @@ Creates a new set for a specified training session.
 -   **Responses (Error)**:
     -   `400 Bad Request`: If `sessionId` format is invalid, or the request body is invalid (e.g., missing required fields, invalid `set_index`).
     -   `401 Unauthorized`: If the authentication token is missing or invalid.
-    -   `404 Not Found`: If the training session or referenced `training_plan_exercise_id` is not found or not accessible.
+    -   `404 Not Found`: If the training session or referenced `plan_exercise_id` is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### GET /api/training-sessions/{sessionId}/sets/{setId}
+#### GET /api/sessions/{sessionId}/sets/{setId}
 
 Retrieves details for a specific set within a training session.
 
@@ -1363,8 +1363,8 @@ Retrieves details for a specific set within a training session.
     {
       "data": {
         "id": "uuid", // ID of the session set
-        "training_session_id": "uuid", // Parent session ID
-        "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+        "session_id": "uuid", // Parent session ID
+        "plan_exercise_id": "uuid", // Corresponding exercise in the plan
         "set_index": 1,
         "expected_reps": 5,
         "actual_weight": 55.0,
@@ -1380,7 +1380,7 @@ Retrieves details for a specific set within a training session.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### PUT /api/training-sessions/{sessionId}/sets/{setId}
+#### PUT /api/sessions/{sessionId}/sets/{setId}
 
 Updates an existing set within a training session.
 
@@ -1404,8 +1404,8 @@ Updates an existing set within a training session.
     {
       "data": {
         "id": "uuid", // ID of the session set (matches setId)
-        "training_session_id": "uuid", // Parent session ID
-        "training_plan_exercise_id": "uuid", // Corresponding exercise in the plan
+        "session_id": "uuid", // Parent session ID
+        "plan_exercise_id": "uuid", // Corresponding exercise in the plan
         "set_index": 1, // Updated value
         "expected_reps": 5, // Updated value
         "actual_reps": 5, // Updated value
@@ -1421,7 +1421,7 @@ Updates an existing set within a training session.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### DELETE /api/training-sessions/{sessionId}/sets/{setId}
+#### DELETE /api/sessions/{sessionId}/sets/{setId}
 
 Deletes a specific set from a training session. Reordering of subsequent sets occurs automatically.
 
@@ -1436,7 +1436,7 @@ Deletes a specific set from a training session. Reordering of subsequent sets oc
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### PATCH /api/training-sessions/{sessionId}/sets/{setId}/complete
+#### PATCH /api/sessions/{sessionId}/sets/{setId}/complete
 
 Marks a specific set as completed.
 
@@ -1449,8 +1449,8 @@ Marks a specific set as completed.
     {
       "data": {
         "id": "uuid",
-        "training_session_id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "session_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "actual_reps": 5, // Updated to the current value of 'expected_reps'
@@ -1466,7 +1466,7 @@ Marks a specific set as completed.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### PATCH /api/training-sessions/{sessionId}/sets/{setId}/fail
+#### PATCH /api/sessions/{sessionId}/sets/{setId}/fail
 
 Marks a specific set as failed.
 
@@ -1481,8 +1481,8 @@ Marks a specific set as failed.
     {
       "data": {
         "id": "uuid",
-        "training_session_id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "session_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "actual_reps": 3,  // Updated from 'reps' query param or 0
@@ -1498,7 +1498,7 @@ Marks a specific set as failed.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
-#### PATCH /api/training-sessions/{sessionId}/sets/{setId}/reset
+#### PATCH /api/sessions/{sessionId}/sets/{setId}/reset
 
 Marks a specific set as pending.
 
@@ -1511,8 +1511,8 @@ Marks a specific set as pending.
     {
       "data": {
         "id": "uuid",
-        "training_session_id": "uuid",
-        "training_plan_exercise_id": "uuid",
+        "session_id": "uuid",
+        "plan_exercise_id": "uuid",
         "set_index": 1,
         "expected_reps": 5,
         "actual_reps": null, // Updated to null

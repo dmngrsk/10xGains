@@ -21,8 +21,8 @@ const fs = require("fs");
 const path = require("path");
 
 // Paths
-const API_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/api-types.ts");
-const DB_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/database-types.ts");
+const API_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/api.types.ts");
+const DB_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/database.types.ts");
 const API_TARGET_FILE = path.join(__dirname, "../src/app/shared/api/api.types.ts");
 const DB_TARGET_FILE = path.join(__dirname, "../src/app/shared/db/database.types.ts");
 
@@ -69,7 +69,7 @@ copyTypeFile(DB_SOURCE_FILE, DB_TARGET_FILE, "Database");
 copyTypeFile(API_SOURCE_FILE, API_TARGET_FILE, "API", (content) => {
   // Update the import path to point to the correct database types file
   return content.replace(
-    `import type { Database } from './database-types.ts';`,
+    `import type { Database } from './database.types.ts';`,
     `import type { Database } from '../db/database.types';`,
   );
 });
