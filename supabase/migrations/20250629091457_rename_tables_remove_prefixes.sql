@@ -177,7 +177,6 @@ alter table sessions drop constraint if exists training_sessions_training_plan_i
 alter table sessions add constraint sessions_plan_id_fkey 
     foreign key (plan_id) references plans(id) on delete cascade;
 
-alter table sessions drop constraint if exists training_sessions_user_id_fkey;
 alter table sessions add constraint sessions_user_id_fkey 
     foreign key (user_id) references auth.users(id) on delete cascade;
 
