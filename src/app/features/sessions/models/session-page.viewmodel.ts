@@ -9,7 +9,7 @@ export interface SessionPageViewModel {
 }
 
 export interface SessionMetadataViewModel {
-  trainingPlanId?: string;
+  planId?: string;
   dayName?: string;
   planName?: string;
   date?: Date;
@@ -17,7 +17,7 @@ export interface SessionMetadataViewModel {
 }
 
 export interface SessionExerciseViewModel {
-  trainingPlanExerciseId: string;
+  planExerciseId: string;
   exerciseName: string;
   order: number;
   sets: SessionSetViewModel[];
@@ -26,7 +26,7 @@ export interface SessionExerciseViewModel {
 
 export interface SessionSetViewModel {
   id: string;
-  trainingPlanExerciseId: string;
+  planExerciseId: string;
   order: number;
   status: SessionSetStatus;
   expectedReps: number;

@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { ApiService, ApiServiceResponse } from './api.service';
-import { UserProfileDto, UpsertUserProfileCommand } from './api.types';
+import { ProfileDto, UpsertProfileCommand } from './api.types';
 
 export type ProfileServiceResponse<T> = ApiServiceResponse<T>;
 
@@ -17,45 +17,45 @@ export class ProfileService {
   /**
    * Retrieves the user profile for a given user ID.
    * @param userId The unique identifier of the user whose profile is to be fetched.
-   * @returns An Observable emitting a `ProfileServiceResponse` containing the `UserProfileDto`.
+   * @returns An Observable emitting a `ProfileServiceResponse` containing the `ProfileDto`.
    * Throws an error if the userId is not provided.
    */
-  getUserProfile(userId: string): Observable<ProfileServiceResponse<UserProfileDto>> {
+  getProfile(userId: string): Observable<ProfileServiceResponse<ProfileDto>> {
     if (!userId) {
       return throwError(() => new Error('User ID is required to get user profile.'));
     }
 
-    const url = `user-profiles/${userId}`;
-    return this.apiService.get<UserProfileDto>(url)
+    const url = `/profiles/${userId}`;
+    return this.apiService.get<ProfileDto>(url)
   }
 
   /**
    * Creates a default, empty user profile for a given user ID.
    * @param userId The unique identifier of the user whose profile is to be created.
-   * @returns An Observable emitting a `ProfileServiceResponse` containing the created `UserProfileDto`.
+   * @returns An Observable emitting a `ProfileServiceResponse` containing the created `ProfileDto`.
    * Throws an error if the userId is not provided.
    */
-  createDefaultUserProfile(userId: string): Observable<ProfileServiceResponse<UserProfileDto>> {
+  createDefaultProfile(userId: string): Observable<ProfileServiceResponse<ProfileDto>> {
     if (!userId) {
       return throwError(() => new Error('User ID is required to create default user profile.'));
     }
 
-    return this.upsertUserProfile(userId, { first_name: '' });
+    return this.upsertProfile(userId, { first_name: '' });
   }
 
   /**
    * Creates or updates the user profile for a given user ID.
    * @param userId The unique identifier of the user whose profile is to be updated.
    * @param command The command object containing the profile data to update.
-   * @returns An Observable emitting a `ProfileServiceResponse` containing the updated `UserProfileDto`.
+   * @returns An Observable emitting a `ProfileServiceResponse` containing the updated `ProfileDto`.
    * Throws an error if the userId or command is not provided.
    */
-  upsertUserProfile(userId: string, command: UpsertUserProfileCommand): Observable<ProfileServiceResponse<UserProfileDto>> {
+  upsertProfile(userId: string, command: UpsertProfileCommand): Observable<ProfileServiceResponse<ProfileDto>> {
     if (!userId) {
       return throwError(() => new Error('User ID is required to update user profile.'));
     }
 
-    const url = `user-profiles/${userId}`;
-    return this.apiService.put<UpsertUserProfileCommand, UserProfileDto>(url, command);
+    const url = `/profiles/${userId}`;
+    return this.apiService.put<UpsertProfileCommand, ProfileDto>(url, command);
   }
 }

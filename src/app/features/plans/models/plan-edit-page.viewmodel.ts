@@ -1,7 +1,7 @@
-import { TrainingPlanViewModel } from './training-plan.viewmodel';
+import { PlanViewModel } from './plan.viewmodel';
 
 export interface PlanEditPageViewModel {
-  plan: TrainingPlanViewModel | null;
+  plan: PlanViewModel | null;
   isPreview: boolean;
   sessionCount: number;
   isLoading: boolean;

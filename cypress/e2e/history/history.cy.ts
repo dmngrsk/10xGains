@@ -47,21 +47,21 @@ describe('Session History', { tags: ['@history'] }, () => {
 
   describe('when the history page has no completed sessions or encounters errors', () => {
     it('shows the empty state notice when no sessions match the filter', { tags: ['HIST-05'] }, () => {
-      cy.intercept('GET', '/functions/v1/training-sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
+      cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
       cy.navigateTo('history');
 
       cy.getBySel(dataCy.history.emptyNotice).should('exist');
     });
 
     it('displays an error notice if the session history fails to load', { tags: ['HIST-06'] }, () => {
-      cy.intercept('GET', '/functions/v1/training-sessions*', { statusCode: 500, fixture: 'shared/common-error.json' });
+      cy.intercept('GET', '**/api/sessions*', { statusCode: 500, fixture: 'shared/common-error.json' });
       cy.navigateTo('history');
 
       cy.getBySel(dataCy.history.errorNotice).should('exist');
     });
 
     it('reloads the session history list when the user clicks the retry button', { tags: ['HIST-07'] }, () => {
-      cy.intercept({ method: 'GET', url: '/functions/v1/training-sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
+      cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
       cy.navigateTo('history');
 
       cy.getBySel(dataCy.history.errorNotice).should('exist');

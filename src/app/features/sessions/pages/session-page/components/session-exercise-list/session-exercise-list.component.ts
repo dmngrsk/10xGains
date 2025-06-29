@@ -29,7 +29,7 @@ export class SessionExerciseListComponent {
     this.setLongPressed.emit(event);
   }
 
-  onSetAdded(trainingPlanExerciseId: string): void {
-    this.setAdded.emit(trainingPlanExerciseId);
+  onSetAdded(planExerciseId: string): void {
+    this.setAdded.emit(planExerciseId);
   }
 }

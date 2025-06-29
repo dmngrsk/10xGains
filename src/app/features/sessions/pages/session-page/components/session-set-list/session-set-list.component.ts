@@ -36,6 +36,6 @@ export class SessionSetListComponent {
   }
 
   onSetAdded(): void {
-    this.setAdded.emit(this.exercise.trainingPlanExerciseId);
+    this.setAdded.emit(this.exercise.planExerciseId);
   }
 }

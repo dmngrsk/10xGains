@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { TrainingPlanDto } from '@shared/api/api.types';
+import { PlanDto } from '@shared/api/api.types';
 
 @Component({
   selector: 'txg-plan-metadata',
@@ -12,6 +12,6 @@ import { TrainingPlanDto } from '@shared/api/api.types';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanMetadataComponent {
-  @Input() plan: Pick<TrainingPlanDto, 'name' | 'description'> | null = null;
+  @Input() plan: Pick<PlanDto, 'name' | 'description'> | null = null;
   @Input() sessionCount: number = 0;
 }

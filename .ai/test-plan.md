@@ -34,14 +34,14 @@ The following features and components are within the scope of testing:
     *   User Login
     *   Session Management (including token handling via `auth.interceptor.ts`)
     *   Route Protection (`auth.guard.ts`, `no-auth.guard.ts`)
-*   **Training Plan Management (Full CRUD):**
-    *   Listing, creating, updating, and deleting training plans.
-    *   Managing training days within a plan (CRUD).
+*   **Plan Management (Full CRUD):**
+    *   Listing, creating, updating, and deleting plans.
+    *   Managing days within a plan (CRUD).
     *   Managing exercises within a day (CRUD).
     *   Managing sets for each exercise (CRUD).
     *   Drag-and-drop reordering for days, exercises, and sets.
     *   Configuration and updates of exercise progression rules.
-    *   Activation of a training plan.
+    *   Activation of a plan.
 *   **Session Tracking:**
     *   Creation of a new session from an active plan.
     *   Real-time tracking of set completion (complete, fail, reset).
@@ -50,7 +50,7 @@ The following features and components are within the scope of testing:
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
     *   Viewing a paginated list of completed sessions.
-    *   Filtering session history by training plan and date range.
+    *   Filtering session history by plan and date range.
 *   **Home & Settings:**
     *   Dashboard view displaying the current active session or prompts.
     *   User profile management (updating name).
@@ -61,7 +61,7 @@ The following features and components are within the scope of testing:
     *   `KeyedDebouncerService` for API call optimization in the session page.
     *   UI layouts, dialogs, and notice components.
 *   **Backend (Supabase Edge Functions):**
-    *   All API handlers for `exercises`, `training-plans`, `training-sessions`, and `user-profiles`.
+    *   All API handlers for `exercises`, `plans`, `sessions`, and `profiles`.
     *   Business logic, including Zod schema validation and `resolveExerciseProgressions`.
     *   Database interactions, including RPC calls for reordering logic.
 *   **Static Code Analysis & Tooling:**
@@ -124,16 +124,16 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | AUTH-10 | An authenticated user can sign out. | High | No |
 | | AUTH-11 | A user cannot access another user's data (RLS check). | Critical | No |
 | | AUTH-12 | A user is redirected to the login page when the session expires. | Critical | No
-| **Plan Management**| PLAN-01 | An authenticated user can create a new training plan. | Critical | No |
+| **Plan Management**| PLAN-01 | An authenticated user can create a new plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
-| | PLAN-03 | In the plan editor, a user can add, edit and delete a new training day. | High | No |
+| | PLAN-03 | In the plan editor, a user can add, edit and delete a new day. | High | No |
 | | PLAN-04 | In the plan editor, a user can add an exercise to a day, edit its progression, and delete it from a day. | High | No |
-| | PLAN-05 | In the plan editor, a user can create a global exercise and add this exercise to a training day in a plan. | Medium | No |
+| | PLAN-05 | In the plan editor, a user can create a global exercise and add this exercise to a day in a plan. | Medium | No |
 | | PLAN-06 | In the plan editor, a user can add, edit, and delete a set for an exercise. | High | No |
 | | PLAN-07 | In the plan editor, a user can reorder days, exercises, and sets using drag-and-drop and verify the order is saved. | Medium | No |
 | | PLAN-08 | A user can activate a plan, which then correctly appears as the active plan on the home page. | High | No |
 | | PLAN-09 | A plan that has been used in a session becomes read-only and all edit/delete/add controls are hidden or disabled. | High | No |
-| | PLAN-10 | A user can delete a training plan that has not been used in any sessions. | Medium | No |
+| | PLAN-10 | A user can delete a plan that has not been used in any sessions. | Medium | No |
 | **Session Tracking**| SESS-01 | A user can start a new session from an active plan on the home page. | Critical | **Yes** |
 | | SESS-02 | A user can tap a set bubble to cycle through its states (Pending -> Completed -> Failed -> Pending). | Critical | No |
 | | SESS-03 | A user can long-press a set bubble to open the edit dialog and successfully update its details. | High | No |

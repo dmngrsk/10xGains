@@ -19,7 +19,7 @@ export class ExerciseService {
    * @returns An Observable emitting a `ExerciseServiceResponse` containing an array of `ExerciseDto`.
    */
   public getExercises(): Observable<ExerciseServiceResponse<ExerciseDto[]>> {
-    const url = 'exercises';
+    const url = '/exercises';
     return this.apiService.get<ExerciseDto[]>(url);
   }
 
@@ -29,7 +29,7 @@ export class ExerciseService {
    * @returns Observable with the created exercise data and potential error.
    */
   createExercise(command: CreateExerciseCommand): Observable<ExerciseServiceResponse<ExerciseDto>> {
-    const url = 'exercises';
+    const url = '/exercises';
     return this.apiService.post<CreateExerciseCommand, ExerciseDto>(url, command);
   }
 }

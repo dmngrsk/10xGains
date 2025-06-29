@@ -228,10 +228,10 @@ ALTER DATABASE postgres SET app.environment = 'production';
 ```
 
 The `test_scaffold_user_data()` function will create:
-- A training plan with two workouts
+- A plan with two workouts
 - Exercise definitions (Squat, Bench Press, Deadlift)
 - Progression rules
-- 14 historical training sessions
+- 14 historical sessions
 - A pending session
 
 ### Verifying the Setup
@@ -240,14 +240,14 @@ After creating the canary user and scaffolding the data:
 
 1. **Verify User Profile**
    ```sql
-   select * from user_profiles where id = (
+   select * from profiles where id = (
      select id from auth.users where email = 'your-canary-email@example.com'
    );
    ```
 
-2. **Verify Training Data**
+2. **Verify Session Data**
    ```sql
-   select count(*) from training_sessions where user_id = (
+   select count(*) from sessions where user_id = (
      select id from auth.users where email = 'your-canary-email@example.com'
    );
    -- Should return 15 (14 historical + 1 pending)

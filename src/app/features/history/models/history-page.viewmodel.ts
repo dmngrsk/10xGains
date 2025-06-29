@@ -10,15 +10,15 @@ export interface HistoryPageViewModel {
 }
 
 export interface HistoryFiltersViewModel {
-  selectedTrainingPlanId: string;
+  selectedPlanId: string;
   dateFrom: string | null;
   dateTo: string | null;
   pageSize: number;
-  availableTrainingPlans: HistoryFilterTrainingPlan[] | null;
+  availablePlans: HistoryFilterPlan[] | null;
   pageSizeOptions: number[];
 }
 
-export interface HistoryFilterTrainingPlan {
+export interface HistoryFilterPlan {
   id: string;
   name: string;
 }

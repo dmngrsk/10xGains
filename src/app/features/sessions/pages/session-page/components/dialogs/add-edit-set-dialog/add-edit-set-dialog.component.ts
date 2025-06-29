@@ -14,8 +14,8 @@ import { SessionSetViewModel } from '../../../../../models/session-page.viewmode
 
 export interface AddEditSetDialogData {
   mode: 'add' | 'edit';
-  trainingSessionId?: string;
-  trainingPlanExerciseId?: string;
+  sessionId?: string;
+  planExerciseId?: string;
   setIndexForNewSet?: number;
   setToEditDetails?: SessionSetViewModel;
   lastSetForPreFill?: SessionSetViewModel;
@@ -120,13 +120,13 @@ export class AddEditSetDialogComponent {
       this.dialogRef.close(command);
     } else if (
       this.data.mode === 'add' &&
-      this.data.trainingSessionId &&
-      this.data.trainingPlanExerciseId &&
+      this.data.sessionId &&
+      this.data.planExerciseId &&
       this.data.setIndexForNewSet !== undefined
     ) {
       const command: CreateSessionSetCommand = {
-        training_session_id: this.data.trainingSessionId,
-        training_plan_exercise_id: this.data.trainingPlanExerciseId,
+        session_id: this.data.sessionId,
+        plan_exercise_id: this.data.planExerciseId,
         set_index: this.data.setIndexForNewSet,
         expected_reps: Number(formValue.reps),
         actual_reps: null,

@@ -90,7 +90,7 @@ export class SessionPageComponent implements OnDestroy {
     const exerciseId = event.exerciseId;
     const setToUpdateTo = { ...event.set };
 
-    const exercise = session.exercises.find(ex => ex.trainingPlanExerciseId === exerciseId)!;
+    const exercise = session.exercises.find(ex => ex.planExerciseId === exerciseId)!;
     const setInSignal = exercise.sets.find(s => s.id === setToUpdateTo.id)!;
     const originalSetStateForRevert = { ...setInSignal };
 
@@ -105,13 +105,13 @@ export class SessionPageComponent implements OnDestroy {
     const exerciseId = event.exerciseId;
     const setToEdit = event.set;
 
-    const exercise = session.exercises.find(ex => ex.trainingPlanExerciseId === exerciseId)!;
+    const exercise = session.exercises.find(ex => ex.planExerciseId === exerciseId)!;
     const maxPlannedSetIndex = exercise.plannedSetsCount > 0 ? exercise.plannedSetsCount : -1;
 
     const dialogData: AddEditSetDialogData = {
       mode: 'edit',
       setToEditDetails: setToEdit,
-      trainingPlanExerciseId: exerciseId,
+      planExerciseId: exerciseId,
       maxPlannedSetIndex: maxPlannedSetIndex
     };
 
@@ -141,18 +141,18 @@ export class SessionPageComponent implements OnDestroy {
       .subscribe();
   }
 
-  onSetAdded(trainingPlanExerciseId: string): void {
+  onSetAdded(planExerciseId: string): void {
     if (this.isReadOnly()) return;
 
     const session = this.viewModel()!;
-    const exercise = session.exercises.find(ex => ex.trainingPlanExerciseId === trainingPlanExerciseId)!;
+    const exercise = session.exercises.find(ex => ex.planExerciseId === planExerciseId)!;
     const setIndexForNewSet = exercise.sets.length + 1;
     const lastSetForPreFill = exercise.sets.length > 0 ? exercise.sets[exercise.sets.length - 1] : undefined;
 
     const dialogData: AddEditSetDialogData = {
       mode: 'add',
-      trainingSessionId: session.id!,
-      trainingPlanExerciseId: trainingPlanExerciseId,
+      sessionId: session.id!,
+      planExerciseId: planExerciseId,
       setIndexForNewSet: setIndexForNewSet,
       lastSetForPreFill: lastSetForPreFill,
     };
@@ -164,7 +164,7 @@ export class SessionPageComponent implements OnDestroy {
         takeUntilDestroyed(this.destroyRef),
         filter((result): result is CreateSessionSetCommand => this.isCreateCommand(result)),
         switchMap(command => {
-          return this.facade.addSet(command, trainingPlanExerciseId).pipe(
+          return this.facade.addSet(command, planExerciseId).pipe(
             tapIf(success => !!success, () => this.showSnackbar('Set added successfully.', 2000)),
             tapIf(success => !success && !session.error, () => this.showSnackbar('Failed to add set. Please try again.'))
           );
@@ -182,7 +182,7 @@ export class SessionPageComponent implements OnDestroy {
     } else {
       const dialogData: ConfirmationDialogData = {
         title: 'Complete Session',
-        message: 'Not all sets have been marked as completed or failed. Are you sure you want to complete this training session now?',
+        message: 'Not all sets have been marked as completed or failed. Are you sure you want to complete this session now?',
         confirmButtonText: 'Complete',
         cancelButtonText: 'Cancel'
       };
@@ -216,11 +216,11 @@ export class SessionPageComponent implements OnDestroy {
   }
 
   private isCreateCommand(result: AddEditSetDialogCloseResult | undefined): result is CreateSessionSetCommand {
-    return !!result && typeof result === 'object' && 'training_session_id' in result;
+    return !!result && typeof result === 'object' && 'session_id' in result;
   }
 
   private isUpdateCommand(result: AddEditSetDialogCloseResult | undefined): result is UpdateSessionSetCommand {
-    return !!result && typeof result === 'object' && !('training_session_id' in result) && !('action' in result && (result as DeleteSetResult).action === 'delete');
+    return !!result && typeof result === 'object' && !('session_id' in result) && !('action' in result && (result as DeleteSetResult).action === 'delete');
   }
 
   private isDeleteSetResult(result: AddEditSetDialogCloseResult | undefined): result is DeleteSetResult {

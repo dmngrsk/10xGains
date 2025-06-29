@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, EMPTY } from 'rxjs';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
-import { ExerciseDto, TrainingPlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
+import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
@@ -63,9 +63,9 @@ export class SessionPageFacade {
           session: of(
             res.data
           ),
-          plan: this.planService.getPlan(res.data.training_plan_id).pipe(
+          plan: this.planService.getPlan(res.data.plan_id).pipe(
             map(res => res.data),
-            catchError(() => of(null as TrainingPlanDto | null))
+            catchError(() => of(null as PlanDto | null))
           ),
           exercises: this.exerciseService.getExercises().pipe(
             map(res => res.data ?? [] as ExerciseDto[]),
@@ -98,8 +98,6 @@ export class SessionPageFacade {
   enqueueSetPatch(setPayload: SessionSetViewModel, exerciseId: string, originalSetSnapshotForRevert: SessionSetViewModel): void {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
-
-    this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, date: s.metadata?.date ?? new Date(), status: 'IN_PROGRESS' as SessionStatus } }));
 
     const setId = setPayload.id;
     let apiCallProvider: () => Observable<SessionSetDto | null>;
@@ -155,11 +153,11 @@ export class SessionPageFacade {
     });
   }
 
-  addSet(command: CreateSessionSetCommand, trainingPlanExerciseId: string): Observable<SessionSetDto | null> {
+  addSet(command: CreateSessionSetCommand, planExerciseId: string): Observable<SessionSetDto | null> {
     const operation$ = this.sessionService.createSet(command).pipe(
       map(response => response?.data ?? null),
       tapIf(setDto => !!setDto, (newSetDto) =>
-        this.updateSessionViewModelWithUpsertedSet(mapToSessionSetViewModel(newSetDto!), trainingPlanExerciseId)
+        this.updateSessionViewModelWithUpsertedSet(mapToSessionSetViewModel(newSetDto!), planExerciseId)
       )
     );
 
@@ -204,12 +202,12 @@ export class SessionPageFacade {
 
         return this.sessionService.completeSession(sessionId).pipe(
           switchMap(() => {
-            const trainingPlanId = currentSessionData.metadata?.trainingPlanId;
-            if (trainingPlanId) {
-              return this.sessionService.createSession(trainingPlanId).pipe(
+            const planId = currentSessionData.metadata?.planId;
+            if (planId) {
+              return this.sessionService.createSession(planId).pipe(
                 map(() => true),
                 catchError(err => {
-                  console.error(`Failed to create next session from plan ${trainingPlanId}:`, err);
+                  console.error(`Failed to create next session from plan ${planId}:`, err);
                   this.viewModel.update(s => ({ ...s, error: 'Session completed, but failed to schedule the next one automatically.' }));
                   return of(true);
                 })
@@ -284,8 +282,12 @@ export class SessionPageFacade {
 
   private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
     this.viewModel.update(session => {
+      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
+      const updatedSessionDate = session.metadata?.date ?? new Date();
+      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
+
       const updatedExercises = session.exercises.map(ex => {
-        if (ex.trainingPlanExerciseId === exerciseId) {
+        if (ex.planExerciseId === exerciseId) {
           const setIndex = ex.sets.findIndex(s => s.id === set.id);
           let updatedSets;
           if (setIndex > -1) {
@@ -298,14 +300,15 @@ export class SessionPageFacade {
         }
         return ex;
       });
-      return { ...session, exercises: updatedExercises, error: null };
+
+      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
     });
   }
 
-  private updateSessionViewModelWithDeletedSet(setId: string, trainingPlanExerciseId: string): void {
+  private updateSessionViewModelWithDeletedSet(setId: string, planExerciseId: string): void {
     this.viewModel.update(session => {
       const updatedExercises = session.exercises.map(ex => {
-        if (ex.trainingPlanExerciseId === trainingPlanExerciseId) {
+        if (ex.planExerciseId === planExerciseId) {
           const filteredSets = ex.sets.filter(s_ => s_.id !== setId);
           const reorderedSets = filteredSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
           return { ...ex, sets: reorderedSets };

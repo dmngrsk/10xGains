@@ -1,8 +1,8 @@
-import { TrainingPlanViewModel } from './training-plan.viewmodel';
+import { PlanViewModel } from './plan.viewmodel';
 
 export interface PlanListPageViewModel {
-  activePlan: TrainingPlanViewModel | null;
-  plans: TrainingPlanViewModel[];
+  activePlan: PlanViewModel | null;
+  plans: PlanViewModel[];
   totalPlans: number;
   isLoading: boolean;
   error: string | null;

@@ -9,7 +9,7 @@
       <txg-notice
         iconName="assignment"
         titleText="No Training Plans Found"
-        descriptionText="You don't have any training plans yet. Create your first plan to get started!"
+        descriptionText="You don't have any plans yet. Create your first plan to get started!"
         buttonText="Create New Plan"
         (buttonClicked)="onCreatePlanButtonClicked()"
         data-cy="plan-list-no-plans-notice">
@@ -43,7 +43,7 @@
         }
 
         @if ((viewModel.activePlan || viewModel.plans.length > 0) && !viewModel.isLoading) {
-          <button mat-fab color="primary" matTooltip="Create a new training plan" class="!fixed bottom-[5.5rem] right-6 z-50" data-cy="plan-list-create-button"
+          <button mat-fab color="primary" matTooltip="Create a new plan" class="!fixed bottom-[5.5rem] right-6 z-50" data-cy="plan-list-create-button"
             (click)="onCreatePlanButtonClicked()">
             <mat-icon>add</mat-icon>
           </button>

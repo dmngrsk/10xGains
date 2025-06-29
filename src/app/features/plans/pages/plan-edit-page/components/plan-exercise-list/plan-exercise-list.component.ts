@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, signal
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
-import { TrainingPlanExerciseProgressionViewModel, TrainingPlanExerciseViewModel } from '../../../../models/training-plan.viewmodel';
+import { PlanExerciseProgressionViewModel, PlanExerciseViewModel } from '../../../../models/plan.viewmodel';
 import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-item.component';
 
 @Component({
@@ -24,8 +24,8 @@ import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-i
 export class PlanExerciseListComponent implements OnChanges {
   @Input({ required: true }) planId!: string;
   @Input({ required: true }) dayId!: string;
-  @Input({ required: true }) exercises!: TrainingPlanExerciseViewModel[];
-  @Input({ required: true }) progressions!: TrainingPlanExerciseProgressionViewModel[];
+  @Input({ required: true }) exercises!: PlanExerciseViewModel[];
+  @Input({ required: true }) progressions!: PlanExerciseProgressionViewModel[];
   @Input({ required: true }) isReadOnly!: boolean;
 
   @Output() exerciseDeleted = new EventEmitter<{exerciseId: string, exerciseName: string, dayId: string}>();
@@ -37,7 +37,7 @@ export class PlanExerciseListComponent implements OnChanges {
   @Output() setReordered = new EventEmitter<{setId: string, exerciseId: string, dayId: string, newIndex: number}>();
 
   onExerciseDeleted = (eventData: {exerciseId: string, exerciseName: string, dayId: string}): void => this.exerciseDeleted.emit(eventData);
-  onExerciseReordered = (event: CdkDragDrop<TrainingPlanExerciseViewModel[]>): void => this.onExerciseItemDropped(event);
+  onExerciseReordered = (event: CdkDragDrop<PlanExerciseViewModel[]>): void => this.onExerciseItemDropped(event);
   onProgressionEdited = (eventData: {exerciseId: string}): void => this.progressionEdited.emit(eventData);
   onSetAdded = (eventData: {exerciseId: string, dayId: string}): void => this.setAdded.emit(eventData);
   onSetEdited = (eventData: {setId: string, exerciseId: string, dayId: string}): void => this.setEdited.emit(eventData);
@@ -55,11 +55,11 @@ export class PlanExerciseListComponent implements OnChanges {
     }
   }
 
-  getProgression(exerciseId: string): TrainingPlanExerciseProgressionViewModel | null {
+  getProgression(exerciseId: string): PlanExerciseProgressionViewModel | null {
     return this.progressions?.find(p => p.exerciseId === exerciseId) ?? null;
   }
 
-  onExerciseItemDropped(event: CdkDragDrop<TrainingPlanExerciseViewModel[]>): void {
+  onExerciseItemDropped(event: CdkDragDrop<PlanExerciseViewModel[]>): void {
     if (event.previousContainer === event.container && event.previousIndex !== event.currentIndex) {
       const movedExercise = this.exercises[event.previousIndex];
       this.exercises.splice(event.previousIndex, 1);

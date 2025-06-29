@@ -6,7 +6,7 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
-import { TrainingSessionDto, ExerciseDto, TrainingPlanDto } from '@shared/api/api.types';
+import { SessionDto, ExerciseDto, PlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
@@ -16,7 +16,7 @@ const initialState: HomePageViewModel = {
   isLoading: true,
   error: null,
   name: null,
-  activeTrainingPlanId: null,
+  activePlanId: null,
   sessions: [],
 };
 
@@ -42,11 +42,11 @@ export class HomePageFacade {
       return;
     }
 
-    this.profileService.getUserProfile(user.id).pipe(
+    this.profileService.getProfile(user.id).pipe(
       takeUntilDestroyed(this.destroyRef),
       switchMap(profileResponse => {
         if (!profileResponse.error && !profileResponse.data) {
-          this.viewModel.update(state => ({ ...state, isLoading: false, activeTrainingPlanId: null, sessions: [] }));
+          this.viewModel.update(state => ({ ...state, isLoading: false, activePlanId: null, sessions: [] }));
           return EMPTY; // 404, the user profile was not found
         } else if (profileResponse.error) {
           this.viewModel.update(state => ({ ...state, isLoading: false, error: profileResponse.error || 'User profile data not found.', sessions: [] }));
@@ -54,27 +54,27 @@ export class HomePageFacade {
         }
 
         const profile = profileResponse.data!;
-        this.viewModel.update(state => ({ ...state, name: profile.first_name, activeTrainingPlanId: profile.active_training_plan_id }));
-        if (!profile.active_training_plan_id) {
+        this.viewModel.update(state => ({ ...state, name: profile.first_name, activePlanId: profile.active_plan_id }));
+        if (!profile.active_plan_id) {
           this.viewModel.update(state => ({ ...state, isLoading: false, sessions: [] }));
           return of({ sessions: [], plan: null, exercises: [] });
         }
 
         const sessionsParams: GetSessionsParams = {
-          order: 'session_date.desc',
+          sort: 'session_date.desc',
           limit: 1,
           status: ['PENDING', 'IN_PROGRESS'],
-          plan_id: profile.active_training_plan_id,
+          plan_id: profile.active_plan_id,
         };
 
         return forkJoin({
           sessions: this.sessionService.getSessions(sessionsParams).pipe(
-            map(res => res.data ?? [] as TrainingSessionDto[]),
-            catchError(() => of([] as TrainingSessionDto[]))
+            map(res => res.data ?? [] as SessionDto[]),
+            catchError(() => of([] as SessionDto[]))
           ),
-          plan: this.planService.getPlan(profile.active_training_plan_id).pipe(
+          plan: this.planService.getPlan(profile.active_plan_id).pipe(
             map(res => res.data),
-            catchError(() => of(null as TrainingPlanDto | null))
+            catchError(() => of(null as PlanDto | null))
           ),
           exercises: this.exerciseService.getExercises().pipe(
             map(res => res.data ?? [] as ExerciseDto[]),
@@ -83,7 +83,7 @@ export class HomePageFacade {
         });
       }),
       map(({ sessions, plan, exercises }) => {
-        const currentProfileActivePlanId = this.viewModel().activeTrainingPlanId;
+        const currentProfileActivePlanId = this.viewModel().activePlanId;
 
         if (!sessions || !plan || !exercises) {
           if (!currentProfileActivePlanId) {
@@ -117,15 +117,15 @@ export class HomePageFacade {
 
   createSession(): void {
     const currentViewModel = this.viewModel();
-    if (!currentViewModel.activeTrainingPlanId) {
-      console.error('Cannot create session without an active training plan.');
-      this.viewModel.update(state => ({ ...state, error: 'Active training plan is required to create a session.', isLoading: false }));
+    if (!currentViewModel.activePlanId) {
+      console.error('Cannot create session without an active plan.');
+      this.viewModel.update(state => ({ ...state, error: 'Active plan is required to create a session.', isLoading: false }));
       return;
     }
 
     this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
 
-    this.sessionService.createSession(currentViewModel.activeTrainingPlanId).pipe(
+    this.sessionService.createSession(currentViewModel.activePlanId).pipe(
       takeUntilDestroyed(this.destroyRef),
       tap(() => this.loadHomePageData()),
       catchError((error: Error) => {
@@ -137,9 +137,9 @@ export class HomePageFacade {
 
   abandonSession(sessionId: string) {
     const currentViewModel = this.viewModel();
-    if (!currentViewModel.activeTrainingPlanId) {
-      console.error('Cannot create session without an active training plan.');
-      this.viewModel.update(state => ({ ...state, error: 'Active training plan is required to create a session.', isLoading: false }));
+    if (!currentViewModel.activePlanId) {
+      console.error('Cannot create session without an active plan.');
+      this.viewModel.update(state => ({ ...state, error: 'Active plan is required to create a session.', isLoading: false }));
       return;
     }
 

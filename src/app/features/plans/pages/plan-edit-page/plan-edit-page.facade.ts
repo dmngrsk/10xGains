@@ -5,21 +5,21 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { SessionService } from '@features/sessions/api/session.service';
 import {
   CreateExerciseCommand,
-  CreateTrainingPlanDayCommand,
-  CreateTrainingPlanExerciseCommand,
-  CreateTrainingPlanExerciseSetCommand,
+  CreatePlanDayCommand,
+  CreatePlanExerciseCommand,
+  CreatePlanExerciseSetCommand,
   ExerciseDto,
-  TrainingPlanDayDto,
-  TrainingPlanDto,
-  TrainingPlanExerciseDto,
-  TrainingPlanExerciseProgressionDto,
-  TrainingPlanExerciseSetDto,
-  UpdateTrainingPlanCommand,
-  UpdateTrainingPlanDayCommand,
-  UpdateTrainingPlanExerciseCommand,
-  UpdateTrainingPlanExerciseSetCommand,
-  UpsertTrainingPlanExerciseProgressionCommand,
-  UserProfileDto,
+  PlanDayDto,
+  PlanDto,
+  PlanExerciseDto,
+  PlanExerciseProgressionDto,
+  PlanExerciseSetDto,
+  UpdatePlanCommand,
+  UpdatePlanDayCommand,
+  UpdatePlanExerciseCommand,
+  UpdatePlanExerciseSetCommand,
+  UpsertPlanExerciseProgressionCommand,
+  ProfileDto,
 } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
@@ -27,7 +27,7 @@ import { AuthService } from '@shared/services/auth.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { PlanService, PlanServiceResponse } from '../../api/plan.service';
 import { PlanEditPageViewModel, initialPlanEditPageViewModel } from '../../models/plan-edit-page.viewmodel';
-import { mapToTrainingPlanViewModel } from '../../models/training-plan.mapping';
+import { mapToPlanViewModel } from '../../models/plan.mapping';
 
 @Injectable({
   providedIn: 'root',
@@ -44,7 +44,7 @@ export class PlanEditPageFacade {
   readonly viewModel = this.viewModelSignal.asReadonly();
 
   private internalPlanId: string | null = null;
-  private internalUserProfile: UserProfileDto | null = null;
+  private internalProfile: ProfileDto | null = null;
   private internalExercises: ExerciseDto[] = [];
   private internalSessionCount: number | null = null;
 
@@ -57,19 +57,19 @@ export class PlanEditPageFacade {
 
     if (this.internalPlanId !== planId) {
       this.internalPlanId = planId;
-      this.internalUserProfile = null;
+      this.internalProfile = null;
       this.internalExercises = [];
       this.internalSessionCount = null;
     }
 
     this.viewModelSignal.update(s => ({ ...s, isLoading: true, error: null, plan: s.plan?.id === planId ? s.plan : null }));
 
-    const profile$ = this.internalUserProfile
-      ? of(this.internalUserProfile)
-      : this.profileService.getUserProfile(this.authService.currentUser()!.id).pipe(
+    const profile$ = this.internalProfile
+      ? of(this.internalProfile)
+      : this.profileService.getProfile(this.authService.currentUser()!.id).pipe(
           map(response => response.data!),
-          tapIf(profile => !!profile, profile => this.internalUserProfile = profile),
-          catchError(err => this.handleError<UserProfileDto>(err))
+          tapIf(profile => !!profile, profile => this.internalProfile = profile),
+          catchError(err => this.handleError<ProfileDto>(err))
         );
 
     const exercises$ = this.internalExercises.length > 0
@@ -89,7 +89,7 @@ export class PlanEditPageFacade {
         );
 
     const plan$ = this.planService.getPlan(planId).pipe(
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanDto>>(err))
     );
 
     forkJoin({ profile$, exercises$, sessionCount$, plan$ }).pipe(
@@ -109,7 +109,7 @@ export class PlanEditPageFacade {
         }
 
         if (plan && plan.data) {
-          const mappedPlan = mapToTrainingPlanViewModel(plan.data, exercises ?? [], profile);
+          const mappedPlan = mapToPlanViewModel(plan.data, exercises ?? [], profile);
           this.viewModelSignal.update(s => ({ ...s, plan: mappedPlan, isLoading: false, sessionCount: sessionCount, error: null }));
         } else {
           const error = plan?.error || this.viewModel().error || 'Failed to load plan details.';
@@ -120,9 +120,9 @@ export class PlanEditPageFacade {
     ).subscribe();
   }
 
-  updatePlan(command: UpdateTrainingPlanCommand): Observable<PlanServiceResponse<TrainingPlanDto>> {
+  updatePlan(command: UpdatePlanCommand): Observable<PlanServiceResponse<PlanDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -131,7 +131,7 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error && !!this.internalPlanId, () => this.loadPlanData(this.internalPlanId)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanDto>>(err))
     );
   }
 
@@ -166,8 +166,8 @@ export class PlanEditPageFacade {
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
 
     const session$ = this.sessionService.createSession(planId);
-    const user$ = this.profileService.upsertUserProfile(this.authService.currentUser()!.id, { active_training_plan_id: planId }).pipe(
-      tapIf(response => !!response?.data, response => this.internalUserProfile = response.data!),
+    const user$ = this.profileService.upsertProfile(this.authService.currentUser()!.id, { active_plan_id: planId }).pipe(
+      tapIf(response => !!response?.data, response => this.internalProfile = response.data!),
       catchError(err => this.handleError<PlanServiceResponse<null>>(err))
     );
 
@@ -180,9 +180,9 @@ export class PlanEditPageFacade {
     );
   }
 
-  createPlanDay(command: CreateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
+  createPlanDay(command: CreatePlanDayCommand): Observable<PlanServiceResponse<PlanDayDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanDayDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDayDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -191,13 +191,13 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanDayDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanDayDto>>(err))
     );
   }
 
-  updatePlanDay(dayId: string, command: UpdateTrainingPlanDayCommand): Observable<PlanServiceResponse<TrainingPlanDayDto>> {
+  updatePlanDay(dayId: string, command: UpdatePlanDayCommand): Observable<PlanServiceResponse<PlanDayDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanDayDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDayDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -206,7 +206,7 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanDayDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanDayDto>>(err))
     );
   }
 
@@ -225,9 +225,9 @@ export class PlanEditPageFacade {
     );
   }
 
-  createPlanExercise(dayId: string, command: CreateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
+  createPlanExercise(dayId: string, command: CreatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -236,13 +236,13 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseDto>>(err))
     );
   }
 
-  createGlobalExerciseAndPlanExercise(dayId: string, exerciseCommand: CreateExerciseCommand, planCommand: CreateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
+  createGlobalExerciseAndPlanExercise(dayId: string, exerciseCommand: CreateExerciseCommand, planCommand: CreatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -252,7 +252,7 @@ export class PlanEditPageFacade {
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
       switchMap(response => {
         if (response.error) {
-          return of({ error: response.error } as PlanServiceResponse<TrainingPlanExerciseDto>);
+          return of({ error: response.error } as PlanServiceResponse<PlanExerciseDto>);
         }
 
         const create$ = this.createPlanExercise(dayId, { ...planCommand, exercise_id: response.data!.id });
@@ -263,15 +263,15 @@ export class PlanEditPageFacade {
 
         return forkJoin({ create$, exercises$ }).pipe(
           map(({ create$, exercises$: _ }) => create$),
-          catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseDto>>(err))
+          catchError(err => this.handleError<PlanServiceResponse<PlanExerciseDto>>(err))
         );
       }),
     );
   }
 
-  updatePlanExercise(dayId: string, exerciseId: string, command: UpdateTrainingPlanExerciseCommand): Observable<PlanServiceResponse<TrainingPlanExerciseDto>> {
+  updatePlanExercise(dayId: string, exerciseId: string, command: UpdatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -280,7 +280,7 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseDto>>(err))
     );
   }
 
@@ -299,9 +299,9 @@ export class PlanEditPageFacade {
     );
   }
 
-  upsertExerciseProgression(exerciseId: string, command: UpsertTrainingPlanExerciseProgressionCommand): Observable<PlanServiceResponse<TrainingPlanExerciseProgressionDto>> {
+  upsertExerciseProgression(exerciseId: string, command: UpsertPlanExerciseProgressionCommand): Observable<PlanServiceResponse<PlanExerciseProgressionDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseProgressionDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseProgressionDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -310,13 +310,13 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseProgressionDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseProgressionDto>>(err))
     );
   }
 
-  addPlanExerciseSet(dayId: string, exerciseId: string, command: CreateTrainingPlanExerciseSetCommand): Observable<PlanServiceResponse<TrainingPlanExerciseSetDto>> {
+  addPlanExerciseSet(dayId: string, exerciseId: string, command: CreatePlanExerciseSetCommand): Observable<PlanServiceResponse<PlanExerciseSetDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseSetDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseSetDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -325,13 +325,13 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseSetDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseSetDto>>(err))
     );
   }
 
-  updatePlanExerciseSet(dayId: string, exerciseId: string, setId: string, command: UpdateTrainingPlanExerciseSetCommand): Observable<PlanServiceResponse<TrainingPlanExerciseSetDto>> {
+  updatePlanExerciseSet(dayId: string, exerciseId: string, setId: string, command: UpdatePlanExerciseSetCommand): Observable<PlanServiceResponse<PlanExerciseSetDto>> {
     if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<TrainingPlanExerciseSetDto>);
+      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseSetDto>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -340,7 +340,7 @@ export class PlanEditPageFacade {
       takeUntilDestroyed(this.destroyRef),
       tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<TrainingPlanExerciseSetDto>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseSetDto>>(err))
     );
   }
 

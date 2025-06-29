@@ -23,7 +23,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.auth.register.signUpButton).click();
 
       cy.url().should('include', '/home');
-      cy.getBySel(dataCy.home.noActiveTrainingPlanNotice).should('be.visible');
+      cy.getBySel(dataCy.home.noActivePlanNotice).should('be.visible');
 
       cy.wait('@signup').then((interception) => {
         cy.task('users:deleteEphemeral', { userId: interception.response!.body.user.id });

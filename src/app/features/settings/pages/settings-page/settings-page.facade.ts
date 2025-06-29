@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, finalize, map, switchMap, tap, first, of, from } from 'rxjs';
-import { UpsertUserProfileCommand } from '@shared/api/api.types';
+import { UpsertProfileCommand } from '@shared/api/api.types';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { SettingsPageViewModel } from '../../models/settings-page.viewmodel';
@@ -35,7 +35,7 @@ export class SettingsPageFacade {
           return EMPTY;
         }
 
-        return this.profileService.getUserProfile(user.id).pipe(
+        return this.profileService.getProfile(user.id).pipe(
           map(response => response.data),
           tap(profile => {
             if (profile) {
@@ -65,11 +65,11 @@ export class SettingsPageFacade {
     ).subscribe();
   }
 
-  saveProfile(command: UpsertUserProfileCommand): Observable<boolean> {
+  saveProfile(command: UpsertProfileCommand): Observable<boolean> {
     const currentUser = this.authService.currentUser();
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
 
-    return this.profileService.upsertUserProfile(currentUser!.id, command).pipe(
+    return this.profileService.upsertProfile(currentUser!.id, command).pipe(
       tap(response => {
         this.viewModel.update(vm => ({
           ...vm,

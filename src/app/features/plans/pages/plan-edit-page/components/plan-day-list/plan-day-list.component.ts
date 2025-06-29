@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component, Input, signal, Output, EventEmitter
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
-import { TrainingPlanDayViewModel, TrainingPlanExerciseProgressionViewModel } from '../../../../models/training-plan.viewmodel';
+import { PlanDayViewModel, PlanExerciseProgressionViewModel } from '../../../../models/plan.viewmodel';
 import { PlanDayItemComponent } from '../plan-day-item/plan-day-item.component';
 
 @Component({
@@ -23,8 +23,8 @@ import { PlanDayItemComponent } from '../plan-day-item/plan-day-item.component';
 })
 export class PlanDayListComponent implements OnChanges {
   @Input({ required: true }) planId!: string;
-  @Input({ required: true }) days!: TrainingPlanDayViewModel[];
-  @Input({ required: true }) progressions!: TrainingPlanExerciseProgressionViewModel[];
+  @Input({ required: true }) days!: PlanDayViewModel[];
+  @Input({ required: true }) progressions!: PlanExerciseProgressionViewModel[];
   @Input({ required: true }) isReadOnly!: boolean;
 
   @Output() dayAdded = new EventEmitter<void>();
@@ -41,7 +41,7 @@ export class PlanDayListComponent implements OnChanges {
 
   onDayAdded = () => this.dayAdded.emit();
   onDayEdited = (eventData: {dayId: string}) => this.dayEdited.emit(eventData);
-  onDayReordered = (event: CdkDragDrop<TrainingPlanDayViewModel[]>) => this.onDayItemDropped(event);
+  onDayReordered = (event: CdkDragDrop<PlanDayViewModel[]>) => this.onDayItemDropped(event);
   onExerciseAdded = (eventData: {dayId: string}) => this.exerciseAdded.emit(eventData);
   onExerciseDeleted = (eventData: {exerciseId: string, exerciseName: string, dayId: string}) => this.exerciseDeleted.emit(eventData);
   onExerciseReordered = (eventData: {exerciseId: string, dayId: string, newIndex: number}) => this.exerciseReordered.emit(eventData);
@@ -62,7 +62,7 @@ export class PlanDayListComponent implements OnChanges {
     }
   }
 
-  onDayItemDropped(event: CdkDragDrop<TrainingPlanDayViewModel[]>) {
+  onDayItemDropped(event: CdkDragDrop<PlanDayViewModel[]>) {
     if (event.previousContainer === event.container && event.previousIndex !== event.currentIndex) {
       const [moved] = this.days.splice(event.previousIndex, 1);
       this.days.splice(event.currentIndex, 0, moved);

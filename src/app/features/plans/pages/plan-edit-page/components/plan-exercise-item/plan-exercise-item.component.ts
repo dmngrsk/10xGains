@@ -4,7 +4,7 @@ import { Component, Input, ChangeDetectionStrategy, Output, EventEmitter } from 
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
-import { TrainingPlanExerciseProgressionViewModel, TrainingPlanExerciseViewModel } from '../../../../models/training-plan.viewmodel';
+import { PlanExerciseProgressionViewModel, PlanExerciseViewModel } from '../../../../models/plan.viewmodel';
 import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exercise-set-list.component';
 
 @Component({
@@ -25,8 +25,8 @@ import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exe
 export class PlanExerciseItemComponent {
   @Input({ required: true }) planId!: string;
   @Input({ required: true }) dayId!: string;
-  @Input({ required: true }) exercise!: TrainingPlanExerciseViewModel;
-  @Input({ required: true }) progression!: TrainingPlanExerciseProgressionViewModel | null;
+  @Input({ required: true }) exercise!: PlanExerciseViewModel;
+  @Input({ required: true }) progression!: PlanExerciseProgressionViewModel | null;
   @Input({ required: true }) isReadOnly!: boolean;
   @Input({ required: true }) expanded!: boolean;
 
