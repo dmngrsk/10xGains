@@ -99,6 +99,7 @@ select lives_ok(
         'test_plan_days',
         'plan_id', 
         '550e8400-e29b-41d4-a716-446655440001'::uuid,
+        null,
         '[
             {"id": "550e8400-e29b-41d4-a716-446655440021", "plan_id": "550e8400-e29b-41d4-a716-446655440001", "name": "New Day 1", "description": "Updated upper", "order_index": 1},
             {"id": "550e8400-e29b-41d4-a716-446655440022", "plan_id": "550e8400-e29b-41d4-a716-446655440001", "name": "New Day 3", "description": "Cardio day", "order_index": 3}
@@ -137,6 +138,7 @@ select lives_ok(
         'test_plan_days',
         'plan_id',
         '550e8400-e29b-41d4-a716-446655440001'::uuid,
+        null,
         '[]'::jsonb
     )
     $$,
@@ -158,6 +160,7 @@ select lives_ok(
     $$
     select replace_collection(
         'test_plans',
+        null,
         null,
         null,
         '[
@@ -261,6 +264,7 @@ select throws_ok(
         'nonexistent_table',
         'plan_id',
         '550e8400-e29b-41d4-a716-446655440001'::uuid,
+        null,
         '[]'::jsonb
     )
     $$,
@@ -315,6 +319,7 @@ select throws_ok(
         'test_plan_days',
         'plan_id',
         '550e8400-e29b-41d4-a716-446655440999'::uuid,
+        null,
         '[
             {"id": "550e8400-e29b-41d4-a716-446655440041", "plan_id": "550e8400-e29b-41d4-a716-446655440999", "name": "Invalid Day", "order_index": 1}
         ]'::jsonb
@@ -332,6 +337,7 @@ select throws_ok(
         'test_plan_days',
         'plan_id',
         '550e8400-e29b-41d4-a716-446655440002'::uuid,
+        null,
         '[
             {"id": "550e8400-e29b-41d4-a716-446655440051", "plan_id": "550e8400-e29b-41d4-a716-446655440002", "name": "Day 1", "order_index": 1},
             {"id": "550e8400-e29b-41d4-a716-446655440052", "plan_id": "550e8400-e29b-41d4-a716-446655440002", "name": "Day 2", "order_index": 1}

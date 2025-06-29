@@ -26,8 +26,7 @@
       "hono/middleware": ["./node_modules/hono/middleware.ts"],
       "hono/utils/http-status": ["./node_modules/hono/utils/http-status.ts"],
       "supabase": ["./node_modules/@supabase/supabase-js"],
-      "zod": ["./node_modules/zod"],
-      "@shared": ["./shared"],
+      "zod": ["./node_modules/zod"]
     },
     "lib": ["ES2020", "DOM"]
   },
