@@ -371,7 +371,7 @@ export interface Database {
         Returns: Json
       }
       replace_collections_batch: {
-        Args: { 
+        Args: {
           p_operations: Json
         }
         Returns: undefined

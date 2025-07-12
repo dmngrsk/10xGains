@@ -18,7 +18,7 @@
   Note: Additional properties such as timestamps (created_at, updated_at) are included in DTOs when available.
 */
 
-import type { Database } from '../db/database.types';
+import type { Database } from './database.types.ts';
 
 // 1. Profile DTO and Command
 export type ProfileDto = Database["public"]["Tables"]["profiles"]["Row"];
