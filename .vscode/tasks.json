@@ -3,6 +3,12 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Reload Deno Dependencies",
+      "type": "shell",
+      "command": "deno cache --reload --config=supabase/functions/api/deno.json supabase/functions/api/index.ts",
+      "problemMatcher": []
+    },
+    {
       "type": "npm",
       "script": "start",
       "isBackground": true,
