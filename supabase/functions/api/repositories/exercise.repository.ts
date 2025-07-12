@@ -3,20 +3,16 @@ import type { Database } from '../models/database.types.ts';
 import type {
   ExerciseDto,
   CreateExerciseCommand,
-  UpdateExerciseCommand
+  UpdateExerciseCommand,
+  ApiResult,
+  PagingQueryOptions,
+  SortingQueryOptions
 } from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData } from "../utils/api-helpers.ts";
 
-export interface ExerciseQueryOptions {
-  limit: number;
-  offset: number;
-  sort: string;
-}
+export interface ExerciseQueryOptions extends PagingQueryOptions, SortingQueryOptions {}
 
-export interface ExerciseListResult {
-  data: ExerciseDto[];
-  totalCount: number;
-}
+export interface ExerciseListResult extends ApiResult<ExerciseDto[]> {}
 
 export class ExerciseRepository {
   constructor(private supabase: SupabaseClient<Database>) {}

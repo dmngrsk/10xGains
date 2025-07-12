@@ -219,7 +219,8 @@ Lists all available exercises. Supports pagination and sorting.
           "description": "A lower-body exercise."
         }
         // ... other exercises
-      ]
+      ],
+      "totalCount": 15 // Total row count, used in pagination scenarios
     }
     ```
 -   **Response (400 Bad Request)**: If pagination or sort parameters are invalid.
@@ -517,7 +518,8 @@ Retrieves a list of all training days for a specified plan. Includes nested exer
             }
           ]
         }
-      ]
+      ],
+      "totalCount": 3 // Total row count, used in pagination scenarios
     }
     ```
 -   **Response (400 Bad Request)**: If `planId` format is invalid or pagination parameters are incorrect.
@@ -662,7 +664,8 @@ Retrieves a list of all exercises for a specified training day.
           "order_index": 1,
           "sets": [ /* Array of PlanExerciseSetDto */ ]
         }
-      ]
+      ],
+      "totalCount": 3 // Total row count, used in pagination scenarios
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.
@@ -811,7 +814,8 @@ Retrieves a list of all sets for a specified exercise within a training day.
           "expected_reps": 5,
           "expected_weight": 52.5
         }
-      ]
+      ],
+      "totalCount": 5 // Total row count, used in pagination scenarios
     }
     ```
 -   **Response (400 Bad Request)**: If path parameter formats are invalid or pagination parameters are incorrect.

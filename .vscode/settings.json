@@ -5,5 +5,8 @@
   "deno.lint": true,
   "[deno-ts]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
+  },
+  "files.associations": {
+    ".env.*": "ini"
   }
 }

@@ -8,26 +8,23 @@ import type {
   CreateSessionSetCommand,
   UpdateSessionSetCommand,
   PlanExerciseDto,
-  PlanExerciseProgressionDto
+  PlanExerciseProgressionDto,
+  ApiResult,
+  PagingQueryOptions,
+  SortingQueryOptions
 } from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData, createErrorDataWithLogging } from "../utils/api-helpers.ts";
 import { resolveExerciseProgressions } from '../services/exercise-progressions/exercise-progressions.ts';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase.ts';
 
-export interface SessionQueryOptions {
-  limit: number;
-  offset: number;
-  sort: string;
+export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
   status?: SessionDto['status'][];
   date_from?: string;
   date_to?: string;
   plan_id?: string;
 }
 
-export interface SessionListResult {
-  data: SessionDto[];
-  totalCount: number;
-}
+export interface SessionListResult extends ApiResult<SessionDto[]> {}
 
 export class SessionRepository {
   constructor(

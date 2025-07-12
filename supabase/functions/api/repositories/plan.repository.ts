@@ -14,7 +14,10 @@ import type {
   CreatePlanExerciseSetCommand,
   UpdatePlanExerciseSetCommand,
   PlanExerciseProgressionDto,
-  UpsertPlanExerciseProgressionCommand
+  UpsertPlanExerciseProgressionCommand,
+  ApiResult,
+  PagingQueryOptions,
+  SortingQueryOptions
 } from '../models/api.types.ts';
 import { ApiErrorResponse, createErrorData } from "../utils/api-helpers.ts";
 import {
@@ -23,21 +26,21 @@ import {
   deleteEntityFromCollection
 } from '../utils/supabase.ts';
 
-export interface PlanQueryOptions {
-  limit: number;
-  offset: number;
-  sort: string;
-}
+export interface PlanQueryOptions extends PagingQueryOptions, SortingQueryOptions {}
 
-export interface PlanListResult {
-  data: PlanDto[];
-  totalCount: number;
-}
+export interface PlanListResult extends ApiResult<PlanDto[]> {}
 
-export interface PlanDayQueryOptions {
-  limit: number;
-  offset: number;
-}
+export interface PlanDayQueryOptions extends PagingQueryOptions {}
+
+export interface PlanDayListResult extends ApiResult<PlanDayDto[]> {}
+
+export interface PlanExerciseQueryOptions extends PagingQueryOptions {}
+
+export interface PlanExerciseListResult extends ApiResult<PlanExerciseDto[]> {}
+
+export interface PlanExerciseSetQueryOptions extends PagingQueryOptions {}
+
+export interface PlanExerciseSetListResult extends ApiResult<PlanExerciseSetDto[]> {}
 
 export class PlanRepository {
   constructor(
@@ -220,12 +223,12 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the plan.
    * @param {PlanDayQueryOptions} options - Options for pagination.
-   * @returns {Promise<PlanDayDto[]>} A promise that resolves to a list of training days.
+   * @returns {Promise<PlanDayListResult>} A promise that resolves to a list of training days and total count.
    */
-  async findDaysByPlanId(planId: string, options: PlanDayQueryOptions): Promise<PlanDayDto[]> {
+  async findDaysByPlanId(planId: string, options: PlanDayQueryOptions): Promise<PlanDayListResult> {
     await this.verifyPlanOwnership(planId);
 
-    const { data, error } = await this.supabase
+    const { data, count, error } = await this.supabase
       .from('plan_days')
       .select(`
         *,
@@ -235,7 +238,7 @@ export class PlanRepository {
             *
           )
         )
-      `)
+      `, { count: 'exact' })
       .eq('plan_id', planId)
       .order('order_index', { ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
@@ -253,7 +256,10 @@ export class PlanRepository {
       }))
     })) || [];
 
-    return sortedData as PlanDayDto[];
+    return {
+      data: sortedData as PlanDayDto[],
+      totalCount: count ?? 0
+    };
   }
 
   /**
@@ -401,16 +407,18 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
-   * @returns {Promise<PlanExerciseDto[]>} A promise that resolves to a list of exercises.
+   * @param {PlanExerciseQueryOptions} options - Options for pagination.
+   * @returns {Promise<PlanExerciseListResult>} A promise that resolves to a list of exercises and total count.
    */
-  async findExercisesByDayId(planId: string, dayId: string): Promise<PlanExerciseDto[]> {
+  async findExercisesByDayId(planId: string, dayId: string, options: PlanExerciseQueryOptions): Promise<PlanExerciseListResult> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const { data, error } = await this.supabase
+    const { data, count, error } = await this.supabase
       .from('plan_exercises')
-      .select('*, sets:plan_exercise_sets(*)')
+      .select('*, sets:plan_exercise_sets(*)', { count: 'exact' })
       .eq('plan_day_id', dayId)
-      .order('order_index', { ascending: true });
+      .order('order_index', { ascending: true })
+      .range(options.offset, options.offset + options.limit - 1);
 
     if (error) {
       throw error;
@@ -422,7 +430,10 @@ export class PlanRepository {
       sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
     })) || [];
 
-    return sortedData as PlanExerciseDto[];
+    return {
+      data: sortedData as PlanExerciseDto[],
+      totalCount: count ?? 0
+    };
   }
 
   /**
@@ -564,22 +575,27 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
-   * @returns {Promise<PlanExerciseSetDto[]>} A promise that resolves to a list of sets.
+   * @param {PlanExerciseSetQueryOptions} options - Options for pagination.
+   * @returns {Promise<PlanExerciseSetListResult>} A promise that resolves to a list of sets and total count.
    */
-  async findSetsByExerciseId(planId: string, dayId: string, exerciseId: string): Promise<PlanExerciseSetDto[]> {
+  async findSetsByExerciseId(planId: string, dayId: string, exerciseId: string, options: PlanExerciseSetQueryOptions): Promise<PlanExerciseSetListResult> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    const { data, error } = await this.supabase
+    const { data, count, error } = await this.supabase
       .from('plan_exercise_sets')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('plan_exercise_id', exerciseId)
-      .order('set_index', { ascending: true });
+      .order('set_index', { ascending: true })
+      .range(options.offset, options.offset + options.limit - 1);
 
     if (error) {
       throw error;
     }
 
-    return data as PlanExerciseSetDto[];
+    return {
+      data: data as PlanExerciseSetDto[],
+      totalCount: count ?? 0
+    };
   }
 
   /**
