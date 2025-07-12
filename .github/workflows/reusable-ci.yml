@@ -30,7 +30,7 @@ jobs:
       - name: Set up Yarn
         run: |
           corepack enable
-          corepack prepare yarn@4.5.3 --activate
+          corepack prepare yarn@* --activate
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -57,7 +57,7 @@ jobs:
       - name: Set up Yarn
         run: |
           corepack enable
-          corepack prepare yarn@4.5.3 --activate
+          corepack prepare yarn@* --activate
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -93,7 +93,7 @@ jobs:
       - name: Set up Yarn
         run: |
           corepack enable
-          corepack prepare yarn@4.5.3 --activate
+          corepack prepare yarn@* --activate
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

@@ -24,7 +24,7 @@
 
 ### Prerequisites
 - **Node.js**: Version specified in `.nvmrc` (e.g., `22.14.0`)
-- **Yarn**: This project uses `yarn` for package management
+- **Yarn**: This project uses `yarn` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
 
@@ -41,7 +41,7 @@
 
     This command uses Docker to start the local Supabase stack (database, auth, storage, etc.).
     ```bash
-    supabase start
+    npx supabase start
     ```
     Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **anon key**. You will need these for the next step.
 
@@ -69,32 +69,24 @@
 
     This command resets your local database and applies all schema changes from the `supabase/migrations` folder.
     ```bash
-    supabase db reset
+    npx supabase db reset
     ```
 
-6.  **Deploy Edge Functions:**
-
-    This deploys all Edge Functions from the `supabase/functions` directory to your local Supabase instance.
-    ```bash
-    supabase functions deploy
-    ```
-    *Tip: When testing functions locally, you might want to bypass JWT verification. You can do this by passing the `--no-verify-jwt` flag.*
-
-7.  **Install frontend dependencies:**
+6.  **Install frontend dependencies:**
 
     Now that the backend is fully configured, install the necessary npm packages.
     ```bash
     yarn install
     ```
 
-8.  **Start the development server:**
+7.  **Start the development server:**
 
     To run the app using your new `development` configuration, use this command:
     ```bash
     yarn start:development
     ```
 
-9.  **Open your browser and navigate to `http://localhost:4200`**
+8.  **Open your browser and navigate to `http://localhost:4200`**
 
 ## Available Scripts
 

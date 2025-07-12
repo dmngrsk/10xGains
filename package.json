@@ -69,6 +69,7 @@
     "husky": "^9.1.7",
     "jsdom": "^22.0.0",
     "lint-staged": "^15.5.1",
+    "supabase": "2.30.4",
     "typescript": "~5.7.2",
     "typescript-eslint": "8.27.0",
     "vite": "^6.3.5",
@@ -82,5 +83,6 @@
     "supabase/functions/**/*.ts": [
       "deno lint --fix"
     ]
-  }
+  },
+  "packageManager": "yarn@4.9.2"
 }
