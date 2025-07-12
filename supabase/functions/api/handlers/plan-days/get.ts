@@ -34,9 +34,10 @@ export async function handleGetPlanDays(c: Context<AppContext>) {
   const planRepository = c.get('planRepository');
 
   try {
-    const days = await planRepository.findDaysByPlanId(path!.planId, { limit: query!.limit, offset: query!.offset });
+    const queryOptions = { limit: query!.limit, offset: query!.offset };
+    const result = await planRepository.findDaysByPlanId(path!.planId, queryOptions);
 
-    const successData = createSuccessData<PlanDayDto[]>(days);
+    const successData = createSuccessData<PlanDayDto[]>(result.data, { totalCount: result.totalCount });
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to get plan days';

@@ -1,5 +1,5 @@
 # 10xGains
-<img src="src/assets//images/logo-auth.png" alt="10xGains Logotype" width="512" weight="512">
+<img src="src/assets/images/logo-auth.png" alt="10xGains Logotype" width="512" weight="512">
 
 ## Table of Contents
 - [Project Description](#project-description)

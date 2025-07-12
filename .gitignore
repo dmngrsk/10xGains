@@ -11,6 +11,9 @@
 npm-debug.log
 yarn-error.log
 
+# Deno
+supabase/functions/api/deno.lock
+
 # Yarn
 .yarn/*
 !.yarn/cache

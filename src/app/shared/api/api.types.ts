@@ -12,7 +12,7 @@
  * definitions that can be imported by both Angular and Deno environments.
  * This would ensure type consistency and eliminate manual syncing.
  *
- * Last updated: 2025-06-29T14:35:42.240Z
+ * Last updated: 2025-07-12T14:23:35.676Z
  */
 
 /*
@@ -36,6 +36,21 @@
 */
 
 import type { Database } from '../db/database.types';
+
+// 0. Generic API Response and Query Types
+export interface ApiResult<T> {
+  data: T;
+  totalCount?: number;
+}
+
+export interface PagingQueryOptions {
+  limit: number;
+  offset: number;
+}
+
+export interface SortingQueryOptions {
+  sort: string;
+}
 
 // 1. Profile DTO and Command
 export type ProfileDto = Database["public"]["Tables"]["profiles"]["Row"];

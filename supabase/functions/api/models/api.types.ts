@@ -18,7 +18,22 @@
   Note: Additional properties such as timestamps (created_at, updated_at) are included in DTOs when available.
 */
 
-import type { Database } from '../db/database.types';
+import type { Database } from './database.types.ts';
+
+// 0. Generic API Response and Query Types
+export interface ApiResult<T> {
+  data: T;
+  totalCount?: number;
+}
+
+export interface PagingQueryOptions {
+  limit: number;
+  offset: number;
+}
+
+export interface SortingQueryOptions {
+  sort: string;
+}
 
 // 1. Profile DTO and Command
 export type ProfileDto = Database["public"]["Tables"]["profiles"]["Row"];
