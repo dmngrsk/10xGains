@@ -17,7 +17,7 @@ export default defineConfig({
   test: {
     name: {
       label: 'web',
-      color: 'white'
+      color: 'red'
     },
     globals: true,
     environment: 'jsdom',

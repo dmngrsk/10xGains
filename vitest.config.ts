@@ -7,7 +7,7 @@ export default defineConfig({
   test: {
     name: {
       label: 'api',
-      color: 'green'
+      color: 'cyan'
     },
     globals: true,
     environment: 'node', // Use Node.js as runtime instead of Deno for test

@@ -11,5 +11,8 @@
   "scripts": {
     "lint": "tsc --noEmit",
     "test": "echo \"No tests in @txg/shared (types only)\""
+  },
+  "devDependencies": {
+    "typescript": "~5.7.2"
   }
 }
