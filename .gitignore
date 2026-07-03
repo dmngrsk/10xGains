@@ -1,13 +1,13 @@
 # See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
 
 # Compiled output
-/dist
+dist/
 /tmp
-/out-tsc
+out-tsc/
 /bazel-out
 
 # Node
-/node_modules
+node_modules/
 npm-debug.log
 
 # Deno
@@ -20,8 +20,8 @@ supabase/functions/api/deno.lock
 /cypress/fixtures/example.json
 
 # Vitest
-/coverage
-/.vitest-cache
+coverage/
+.vitest-cache/
 
 # IDEs and editors
 .idea/
@@ -42,7 +42,7 @@ supabase/functions/api/deno.lock
 .history/*
 
 # Miscellaneous
-/.angular/cache
+.angular/
 .sass-cache/
 /connect.lock
 /coverage
@@ -53,7 +53,7 @@ testem.log
 # Environment files
 .env
 .env.*
-src/environments/environment.*.ts
+apps/web/src/environments/environment.*.ts
 
 # System files
 .DS_Store

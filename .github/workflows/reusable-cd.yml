@@ -111,14 +111,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-${{ inputs.environment }}
-          path: dist/
+          path: apps/web/dist/
 
       - name: Deploy Azure Static Web App using Azure SWA CLI
         # The specified 'production' environment is in the context of the Azure SWA resource.
         # Note: The standard Azure SWA deploy action requires the trigger 'on: push' to execute.
         # This is why we're deploying directly to the resource via the CLI instead of using the standard action.
         run: |
-          swa deploy ./dist/10xGains/browser \
+          swa deploy ./apps/web/dist/browser \
             --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
             --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --env production \
