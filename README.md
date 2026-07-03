@@ -24,7 +24,7 @@
 
 ### Prerequisites
 - **Node.js**: Version specified in `.nvmrc` (e.g., `22.14.0`)
-- **Yarn**: This project uses `yarn` for package management (managed via Corepack)
+- **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
 
@@ -76,14 +76,14 @@
 
     Now that the backend is fully configured, install the necessary npm packages.
     ```bash
-    yarn install
+    pnpm install
     ```
 
 7.  **Start the development server:**
 
     To run the app using your new `development` configuration, use this command:
     ```bash
-    yarn start:development
+    pnpm start:development
     ```
 
 8.  **Open your browser and navigate to `http://localhost:4200`**
@@ -94,33 +94,33 @@ Below are the most important scripts defined in `package.json`.
 
 ### Development Server
 
-- `yarn start:development` - Runs the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
-- `yarn start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
+- `pnpm start:development` - Runs the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
+- `pnpm start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
 
 ### Building the Application
 
-- `yarn build` - Builds the application for production. The output is placed in the `dist/10xGains` directory.
-- `yarn build:[development|staging]` - Builds the application using the `development` or `staging` configuration.
+- `pnpm build` - Builds the application for production. The output is placed in the `dist/10xGains` directory.
+- `pnpm build:[development|staging]` - Builds the application using the `development` or `staging` configuration.
 
 ### Linting and Formatting
 
-- `yarn lint` - Runs ESLint on the Angular frontend code (`/src`, `/cypress`). Then, runs Deno Lint on the Supabase Edge Functions code (`/supabase/functions`).
-- `yarn lint:fix` - Runs the same linters but attempts to automatically fix any detected issues.
+- `pnpm lint` - Runs ESLint on the Angular frontend code (`/src`, `/cypress`). Then, runs Deno Lint on the Supabase Edge Functions code (`/supabase/functions`).
+- `pnpm lint:fix` - Runs the same linters but attempts to automatically fix any detected issues.
 - *Note: A pre-commit hook is configured with Husky and `lint-staged` to automatically format your code before every commit.*
 
 ### Running Tests
 
 #### Unit Tests (Vitest)
 
-- `yarn test` - Runs the complete unit test suite once.
-- `yarn test:watch` - Runs the unit tests in an interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
-- `yarn test:coverage` -Runs the unit tests and generates a code coverage report in the `/coverage` directory.
+- `pnpm test` - Runs the complete unit test suite once.
+- `pnpm test:watch` - Runs the unit tests in an interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
+- `pnpm test:coverage` -Runs the unit tests and generates a code coverage report in the `/coverage` directory.
 
 #### End-to-End Tests (Cypress)
 
-- `yarn e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
-- `yarn e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
-- `yarn e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
+- `pnpm e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
+- `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
+- `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 
 ## Project Scope
 The current MVP scope includes:

@@ -119,7 +119,7 @@ If you're seeing linting errors in VS Code for Deno imports or types, you can:
 To develop and test the API function locally:
 
 1.  Install the Supabase CLI
-2.  Copy the latest API types with `yarn copy-api.types`
+2.  Copy the latest API types with `node scripts/copy-api-types.js`
 3.  Run `supabase functions serve api` to start the local development server for the API function.
 4.  Use tools like Postman or curl to test the API endpoints.
 

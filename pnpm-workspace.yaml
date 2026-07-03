@@ -1,0 +1,13 @@
+# Workspace globs (apps/*, packages/*) will be added during the monorepo restructure.
+# Postinstall build scripts are blocked by default since pnpm 10; the packages below
+# are explicitly trusted (native binaries and CLI downloads required by the toolchain).
+allowBuilds:
+  '@parcel/watcher': true
+  cypress: true
+  deno: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  nx: true
+  supabase: true
+  unrs-resolver: true
