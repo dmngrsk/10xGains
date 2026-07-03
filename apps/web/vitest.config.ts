@@ -11,12 +11,13 @@ export default defineConfig({
     alias: {
       '@features': path.resolve(__dirname, 'src/app/features'),
       '@shared': path.resolve(__dirname, 'src/app/shared'),
+      '@txg/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   test: {
     name: {
-      label: 'angular',
-      color: 'white'
+      label: 'web',
+      color: 'red'
     },
     globals: true,
     environment: 'jsdom',

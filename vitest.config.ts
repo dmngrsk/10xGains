@@ -6,8 +6,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     name: {
-      label: 'supabase',
-      color: 'green'
+      label: 'api',
+      color: 'cyan'
     },
     globals: true,
     environment: 'node', // Use Node.js as runtime instead of Deno for test
