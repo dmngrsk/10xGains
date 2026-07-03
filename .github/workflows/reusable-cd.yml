@@ -129,20 +129,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Yarn
-        run: |
-          corepack enable
-          corepack prepare yarn@* --activate
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
-          cache: 'yarn'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: |
-          yarn install --immutable --immutable-cache
+          pnpm install --frozen-lockfile
 
       - name: Run smoke E2E tests
         if: inputs.e2e_scope == 'smoke'
@@ -153,7 +151,7 @@ jobs:
           CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
           CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          yarn e2e:smoke
+          pnpm e2e:smoke
 
       - name: Run full E2E tests
         if: inputs.e2e_scope == 'full'
@@ -166,7 +164,7 @@ jobs:
           SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          yarn e2e:run
+          pnpm e2e:run
 
       - name: Upload test results
         if: always()

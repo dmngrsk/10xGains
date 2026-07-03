@@ -155,12 +155,12 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | Category | Tool / Environment | Configuration / Notes |
 | :--- | :--- | :--- |
 | **Node.js Version** | Node.js | `22.14.0` (as per `.nvmrc`) |
-| **Package Manager**| Yarn | As per `.yarnrc.yml` |
+| **Package Manager**| pnpm | As per the `packageManager` field in `package.json` |
 | **Unit/Component Testing** | Vitest | Configured in `vitest.config.ts`. Runs in a `jsdom` environment. |
 | **API/Edge Function Testing**| Vitest | Configured in `vitest.config.ts`. Runs in a `node` environment against a local Supabase instance. |
 | **E2E Testing** | Cypress | Runs against deployed Staging and Production environments. |
 | **E2E Test Filtering**| `@cypress/grep`| Used to selectively run tests tagged with `@smoke`. |
-| **Code Coverage** | `@vitest/coverage-v8` | `yarn test:coverage` script generates reports. |
+| **Code Coverage** | `@vitest/coverage-v8` | `pnpm test:coverage` script generates reports. |
 | **Linting** | ESLint, `lint-staged`, Husky | Enforced on pre-commit. |
 | **CI/CD** | GitHub Actions (*Assumed*) | Pipelines will be configured to run linting and all tests. |
 | **Bug Tracking** | Jira / GitHub Issues (*Recommended*)| A dedicated project for tracking defects. |
@@ -183,7 +183,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 Testing will be an ongoing activity integrated into the development lifecycle and CI/CD pipeline.
 
-*   **Unit & Component Tests:** Executed by developers during feature development (`yarn test:watch`). Must pass before a pull request can be created.
+*   **Unit & Component Tests:** Executed by developers during feature development (`pnpm test:watch`). Must pass before a pull request can be created.
 *   **E2E Testing on Staging:** After every deployment to the staging environment, the *entire* suite of E2E tests will be executed. The test runner will automatically use the correct user strategy (Canary or ephemeral) for each test based on its tags.
     *   **Trigger:** After each successful staging deployment.
     *   **Command:** `cypress run --env testEnv=staging`

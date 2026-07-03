@@ -9,19 +9,9 @@
 # Node
 /node_modules
 npm-debug.log
-yarn-error.log
 
 # Deno
 supabase/functions/api/deno.lock
-
-# Yarn
-.yarn/*
-!.yarn/cache
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/sdks
-!.yarn/versions
 
 # Cypress
 /cypress/videos/

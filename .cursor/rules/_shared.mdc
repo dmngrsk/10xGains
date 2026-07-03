@@ -66,5 +66,5 @@ For everything else in a given feature folder, use the standard Angular guidelin
 
 ## Additional notes
 
-- Use `yarn` instead of `npm` for all package-related commands.
+- Use `pnpm` instead of `npm` for all package-related commands.
 - When not sure about a solution to a problem, just ask me for feedback! Do not make anything up.

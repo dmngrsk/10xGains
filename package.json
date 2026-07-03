@@ -84,5 +84,5 @@
       "deno lint --fix"
     ]
   },
-  "packageManager": "yarn@4.9.2"
+  "packageManager": "pnpm@11.9.0"
 }

@@ -5,7 +5,7 @@ import { Directive, ElementRef, HostListener, inject, OnInit, Renderer2 } from '
 })
 export class AutoHideScrollbarDirective implements OnInit {
 
-  private scrollTimeout: NodeJS.Timeout | null = null;
+  private scrollTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly className = 'txg-auto-hide-scrollbar';
 
   private el = inject(ElementRef);
