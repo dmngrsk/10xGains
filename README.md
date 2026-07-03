@@ -51,11 +51,11 @@
 
     Create a copy of the development environment file:
     ```bash
-    cp src/environments/environment.ts src/environments/environment.development.ts
+    cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
     ```
     The Angular CLI will use this file during local development.
 
-    Open `src/environments/environment.development.ts` and replace the placeholder values with the credentials from the `supabase start` output:
+    Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from the `supabase start` output:
     ```typescript
     export const environment = {
       production: false,
@@ -99,7 +99,7 @@ Below are the most important scripts defined in `package.json`.
 
 ### Building the Application
 
-- `pnpm build` - Builds the application for production. The output is placed in the `dist/10xGains` directory.
+- `pnpm build` - Builds the application for production. The output is placed in the `apps/web/dist` directory.
 - `pnpm build:[development|staging]` - Builds the application using the `development` or `staging` configuration.
 
 ### Linting and Formatting

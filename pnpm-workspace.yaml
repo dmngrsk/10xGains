@@ -1,4 +1,7 @@
-# Workspace globs (apps/*, packages/*) will be added during the monorepo restructure.
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
 # Postinstall build scripts are blocked by default since pnpm 10; the packages below
 # are explicitly trusted (native binaries and CLI downloads required by the toolchain).
 allowBuilds:

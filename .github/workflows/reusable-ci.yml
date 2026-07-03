@@ -74,7 +74,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-coverage
-          path: coverage/
+          path: |
+            apps/web/coverage/
+            coverage/
           retention-days: 7
 
   build:
@@ -101,8 +103,8 @@ jobs:
 
       - name: Generate environment file
         run: |
-          TEMPLATE_FILE="src/environments/environment.ts"
-          OUTPUT_FILE="src/environments/environment.${{ inputs.environment }}.ts"
+          TEMPLATE_FILE="apps/web/src/environments/environment.ts"
+          OUTPUT_FILE="apps/web/src/environments/environment.${{ inputs.environment }}.ts"
 
           cp "$TEMPLATE_FILE" "$OUTPUT_FILE"
 
@@ -126,7 +128,7 @@ jobs:
 
       - name: Generate webmanifest file
         run: |
-          WEBMANIFEST_FILE="src/manifest.webmanifest"
+          WEBMANIFEST_FILE="apps/web/src/manifest.webmanifest"
 
           jq \
             --arg name "${{ vars.APP_WEBMANIFEST_NAME }}" \
@@ -152,7 +154,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-staging
-          path: dist/
+          path: apps/web/dist/
           retention-days: 7
 
       - name: Upload build artifacts for production
@@ -160,5 +162,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-production
-          path: dist/
+          path: apps/web/dist/
           retention-days: 30

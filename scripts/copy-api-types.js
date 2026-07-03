@@ -23,8 +23,8 @@ const path = require("path");
 // Paths
 const API_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/api.types.ts");
 const DB_SOURCE_FILE = path.join(__dirname, "../supabase/functions/api/models/database.types.ts");
-const API_TARGET_FILE = path.join(__dirname, "../src/app/shared/api/api.types.ts");
-const DB_TARGET_FILE = path.join(__dirname, "../src/app/shared/db/database.types.ts");
+const API_TARGET_FILE = path.join(__dirname, "../apps/web/src/app/shared/api/api.types.ts");
+const DB_TARGET_FILE = path.join(__dirname, "../apps/web/src/app/shared/db/database.types.ts");
 
 // Function to copy and transform a file
 function copyTypeFile(sourceFile, targetFile, type, transformContent = null) {
