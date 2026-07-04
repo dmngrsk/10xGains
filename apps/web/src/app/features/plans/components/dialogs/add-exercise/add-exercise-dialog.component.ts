@@ -51,7 +51,7 @@ export type AddExerciseDialogCloseResult =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddExerciseDialogComponent implements OnInit {
-  private fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
   dialogRef = inject<MatDialogRef<AddExerciseDialogComponent, AddExerciseDialogCloseResult>>(MatDialogRef);
   data = inject<AddExerciseDialogData>(MAT_DIALOG_DATA);
 

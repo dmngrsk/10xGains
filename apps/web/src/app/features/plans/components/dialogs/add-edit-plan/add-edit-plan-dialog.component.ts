@@ -32,7 +32,7 @@ export type AddEditPlanDialogCloseResult =
   ],
 })
 export class AddEditPlanDialogComponent {
-  private fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
   dialogRef = inject<MatDialogRef<AddEditPlanDialogComponent, AddEditPlanDialogCloseResult>>(MatDialogRef);
   data = inject<AddEditPlanDialogData>(MAT_DIALOG_DATA);
 
@@ -42,11 +42,9 @@ export class AddEditPlanDialogComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    const data = this.data;
-
     this.planForm = this.fb.group({
-      name: [data?.name || '', Validators.required],
-      description: [data?.description || ''],
+      name: [this.data?.name || '', Validators.required],
+      description: [this.data?.description || ''],
     });
   }
 

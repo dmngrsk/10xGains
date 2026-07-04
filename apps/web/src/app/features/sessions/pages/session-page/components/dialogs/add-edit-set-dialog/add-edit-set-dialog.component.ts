@@ -46,7 +46,7 @@ export type AddEditSetDialogCloseResult = CreateSessionSetCommand | UpdateSessio
 })
 export class AddEditSetDialogComponent {
   dialogRef = inject<MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>>(MatDialogRef);
-  fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
   data = inject<AddEditSetDialogData>(MAT_DIALOG_DATA);
 
   setForm: FormGroup;

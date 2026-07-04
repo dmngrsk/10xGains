@@ -33,7 +33,7 @@ export type AddEditSetDialogCloseResult =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddEditSetDialogComponent {
-  private fb = inject(FormBuilder);
+  private readonly fb = inject(FormBuilder);
   dialogRef = inject<MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>>(MatDialogRef);
   data = inject<AddEditSetDialogData>(MAT_DIALOG_DATA);
 
@@ -43,15 +43,13 @@ export class AddEditSetDialogComponent {
   }
 
   constructor() {
-    const data = this.data;
-
     this.setForm = this.fb.group({
-      reps: [data?.expected_reps ?? null, [
+      reps: [this.data?.expected_reps ?? null, [
         Validators.required,
         Validators.min(1),
         integerValidator()
       ]],
-      weight: [data?.expected_weight ?? null, [
+      weight: [this.data?.expected_weight ?? null, [
         Validators.required,
         Validators.min(0),
         numericValidator()
