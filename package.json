@@ -11,8 +11,8 @@
     "build:development": "pnpm --filter @txg/web build:development",
     "build:staging": "pnpm --filter @txg/web build:staging",
     "build:production": "pnpm --filter @txg/web build:production",
-    "lint": "pnpm -r --if-present lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\"",
-    "lint:fix": "pnpm -r --if-present lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\"",
+    "lint": "pnpm -r --if-present lint",
+    "lint:fix": "pnpm -r --if-present lint:fix",
     "test": "pnpm -r --if-present test",
     "test:coverage": "pnpm -r --if-present test:coverage",
     "e2e": "cypress open",
@@ -25,17 +25,10 @@
     "@types/node": "^22.14.0",
     "cypress": "^14.4.1",
     "dotenv": "^16.5.0",
-    "eslint": "8",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",
     "supabase": "2.30.4",
-    "typescript": "~5.7.2",
-    "typescript-eslint": "8.27.0"
-  },
-  "lint-staged": {
-    "cypress/**/*.ts": [
-      "eslint --fix"
-    ]
+    "typescript": "~5.7.2"
   },
   "packageManager": "pnpm@11.9.0"
 }

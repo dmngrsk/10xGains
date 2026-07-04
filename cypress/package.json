@@ -1,0 +1,20 @@
+{
+  "name": "@txg/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "10xGains system-level end-to-end tests (Cypress).",
+  "scripts": {
+    "lint": "eslint \"**/*.ts\"",
+    "lint:fix": "eslint --fix \"**/*.ts\""
+  },
+  "devDependencies": {
+    "eslint": "8",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "8.27.0"
+  },
+  "lint-staged": {
+    "**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}
