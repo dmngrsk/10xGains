@@ -1,11 +1,5 @@
 {
   "css.customData": [".vscode/tailwind.json"],
-  "deno.enable": true,
-  "deno.enablePaths": ["supabase/functions"],
-  "deno.lint": true,
-  "[deno-ts]": {
-    "editor.defaultFormatter": "denoland.vscode-deno"
-  },
   "files.associations": {
     ".env.*": "ini"
   }

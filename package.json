@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "start": "pnpm --filter @txg/web start",
-    "start:dev": "pnpm --filter @txg/web start:dev",
     "start:development": "pnpm --filter @txg/web start:development",
     "start:staging": "pnpm --filter @txg/web start:staging",
     "start:production": "pnpm --filter @txg/web start:production",
@@ -12,10 +11,10 @@
     "build:development": "pnpm --filter @txg/web build:development",
     "build:staging": "pnpm --filter @txg/web build:staging",
     "build:production": "pnpm --filter @txg/web build:production",
-    "lint": "pnpm -r lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\" && echo \"Running deno lint...\" && deno lint supabase/functions/**/*.ts",
-    "lint:fix": "pnpm -r lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\" && echo \"Running deno lint --fix...\" && deno lint --fix supabase/functions/**/*.ts",
-    "test": "pnpm -r test",
-    "test:coverage": "pnpm -r test:coverage",
+    "lint": "pnpm -r --if-present lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\"",
+    "lint:fix": "pnpm -r --if-present lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\"",
+    "test": "pnpm -r --if-present test",
+    "test:coverage": "pnpm -r --if-present test:coverage",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
     "e2e:smoke": "cypress run --env grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
@@ -23,10 +22,8 @@
   "devDependencies": {
     "@cypress/grep": "^4.1.0",
     "@supabase/supabase-js": "^2.49.4",
-    "@types/deno": "^2",
     "@types/node": "^22.14.0",
     "cypress": "^14.4.1",
-    "deno": "^2.3.5",
     "dotenv": "^16.5.0",
     "eslint": "8",
     "husky": "^9.1.7",
@@ -38,9 +35,6 @@
   "lint-staged": {
     "cypress/**/*.ts": [
       "eslint --fix"
-    ],
-    "supabase/functions/**/*.ts": [
-      "deno lint --fix"
     ]
   },
   "packageManager": "pnpm@11.9.0"

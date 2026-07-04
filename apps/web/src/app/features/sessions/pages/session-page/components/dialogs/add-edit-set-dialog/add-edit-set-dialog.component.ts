@@ -6,7 +6,7 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@shared/api/api.types';
+import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 import { integerValidator } from '@shared/utils/forms/validators/integer.validator';
 import { numericValidator } from '@shared/utils/forms/validators/numeric.validator';

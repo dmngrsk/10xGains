@@ -141,7 +141,7 @@ Triggered by:
 Process:
 1. **Deployment Approval** (via `staging-cd` environment)
 2. **Database Migration** (Supabase)
-3. **Backend Deployment** (Supabase Edge Functions)
+3. **Backend Deployment** (Azure Functions)
 4. **Frontend Deployment** (Azure Static Web App)
 5. **E2E Testing**
    - Full test suite
@@ -155,7 +155,7 @@ Process:
 1. **Staging Deployment** (must succeed first)
 2. **Deployment Approval** (via `production-cd` environment)
 3. **Database Migration** (Supabase)
-4. **Backend Deployment** (Supabase Edge Functions)
+4. **Backend Deployment** (Azure Functions)
 5. **Frontend Deployment** (Azure Static Web App)
 6. **Smoke Testing**
    - Critical path testing only
@@ -166,11 +166,11 @@ Process:
 
 ### Frontend Hosting
 - Azure Static Web App
-- Configuration in `src/staticwebapp.config.json`
+- Configuration in `apps/web/src/staticwebapp.config.json`
 
 ### Backend Services
+- Azure Functions (API, `apps/api`)
 - Supabase Database
-- Supabase Edge Functions
 - Supabase Authentication
 
 ## Best Practices

@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 import { CompleteSessionSetCommand,
   CreateSessionSetCommand,
   CreateSessionCommand,
@@ -9,7 +8,8 @@ import { CompleteSessionSetCommand,
   SessionSetDto,
   SessionDto,
   UpdateSessionSetCommand
-} from '@shared/api/api.types';
+} from '@txg/shared';
+import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 
 export interface GetSessionsParams {
   limit?: number;

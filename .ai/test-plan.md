@@ -10,7 +10,7 @@ This document outlines the comprehensive testing strategy for the **10xGains** p
 
 **1.1. Project Overview**
 
-10xGains is a modern, single-page web application designed for fitness enthusiasts to create, manage, and track their training plans and workout sessions. The application is built with Angular and leverages Supabase for backend services, including authentication, database, and Deno-based Edge Functions.
+10xGains is a modern, single-page web application designed for fitness enthusiasts to create, manage, and track their training plans and workout sessions. The application is built with Angular; the backend API is a Hono application hosted on Azure Functions (`apps/api`), with Supabase providing authentication and the database.
 
 **1.2. Test Objectives**
 
@@ -60,7 +60,7 @@ The following features and components are within the scope of testing:
     *   Custom form validators and directives.
     *   `KeyedDebouncerService` for API call optimization in the session page.
     *   UI layouts, dialogs, and notice components.
-*   **Backend (Supabase Edge Functions):**
+*   **Backend (Azure Functions API, `apps/api`):**
     *   All API handlers for `exercises`, `plans`, `sessions`, and `profiles`.
     *   Business logic, including Zod schema validation and `resolveExerciseProgressions`.
     *   Database interactions, including RPC calls for reordering logic.
@@ -74,7 +74,7 @@ The following features and components are within the scope of testing:
 *   **"Progress" Feature:** The navigation link is present but disabled.
 *   **Underlying Frameworks/Libraries:** Testing of Angular, Vitest, Supabase, or other third-party libraries themselves. We will only test our implementation and integration with them.
 *   **Exhaustive Performance/Load Testing:** While basic performance benchmarks will be monitored, large-scale load and stress testing is not in the initial scope.
-*   **Backend Infrastructure Testing:** Testing the Supabase infrastructure (e.g., database server uptime) is the responsibility of the cloud provider. We will test the Edge Functions we build on top of it.
+*   **Backend Infrastructure Testing:** Testing the Supabase and Azure infrastructure (e.g., database server uptime) is the responsibility of the cloud providers. We will test the API we build on top of them.
 
 ---
 
@@ -157,7 +157,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | **Node.js Version** | Node.js | `22.14.0` (as per `.nvmrc`) |
 | **Package Manager**| pnpm | As per the `packageManager` field in `package.json` |
 | **Unit/Component Testing** | Vitest | Configured in `vitest.config.ts`. Runs in a `jsdom` environment. |
-| **API/Edge Function Testing**| Vitest | Configured in `vitest.config.ts`. Runs in a `node` environment against a local Supabase instance. |
+| **API Testing**| Vitest | Configured in `apps/api/vitest.config.ts`. Runs in a `node` environment. |
 | **E2E Testing** | Cypress | Runs against deployed Staging and Production environments. |
 | **E2E Test Filtering**| `@cypress/grep`| Used to selectively run tests tagged with `@smoke`. |
 | **Code Coverage** | `@vitest/coverage-v8` | `pnpm test:coverage` script generates reports. |

@@ -20,7 +20,7 @@ import {
   UpdatePlanCommand,
   CreatePlanExerciseCommand,
   CreateExerciseCommand,
-} from '@shared/api/api.types';
+} from '@txg/shared';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';

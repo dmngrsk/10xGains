@@ -1,8 +1,6 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { SessionService } from '@features/sessions/api/session.service';
 import {
   CreateExerciseCommand,
   CreatePlanDayCommand,
@@ -20,7 +18,9 @@ import {
   UpdatePlanExerciseSetCommand,
   UpsertPlanExerciseProgressionCommand,
   ProfileDto,
-} from '@shared/api/api.types';
+} from '@txg/shared';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { SessionService } from '@features/sessions/api/session.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';

@@ -1,4 +1,4 @@
-import { PlanDto, PlanDayDto, PlanExerciseDto, PlanExerciseSetDto, ExerciseDto, ProfileDto, PlanExerciseProgressionDto } from '@shared/api/api.types';
+import { PlanDto, PlanDayDto, PlanExerciseDto, PlanExerciseSetDto, ExerciseDto, ProfileDto, PlanExerciseProgressionDto } from '@txg/shared';
 import { PlanViewModel, PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, PlanExerciseProgressionViewModel } from './plan.viewmodel';
 
 export function mapToPlanViewModel(

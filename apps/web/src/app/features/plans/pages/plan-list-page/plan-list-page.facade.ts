@@ -1,9 +1,9 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, switchMap, forkJoin } from 'rxjs';
+import { CreatePlanCommand, PlanDto, ExerciseDto, ProfileDto } from '@txg/shared';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { PlanViewModel } from '@features/plans/models/plan.viewmodel';
-import { CreatePlanCommand, PlanDto, ExerciseDto, ProfileDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';

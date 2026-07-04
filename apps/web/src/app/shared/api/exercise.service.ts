@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+import { ExerciseDto, CreateExerciseCommand } from '@txg/shared';
 import { ApiService, ApiServiceResponse } from './api.service';
-import { ExerciseDto, CreateExerciseCommand } from './api.types';
 
 export type ExerciseServiceResponse<T> = ApiServiceResponse<T>;
 

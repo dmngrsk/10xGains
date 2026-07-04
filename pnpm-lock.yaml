@@ -14,18 +14,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.49.4
         version: 2.110.0
-      '@types/deno':
-        specifier: ^2
-        version: 2.7.0
       '@types/node':
         specifier: ^22.14.0
         version: 22.20.0
       cypress:
         specifier: ^14.4.1
         version: 14.5.4
-      deno:
-        specifier: ^2.3.5
-        version: 2.9.1
       dotenv:
         specifier: ^16.5.0
         version: 16.6.1
@@ -74,10 +68,10 @@ importers:
         version: 22.20.0
       '@vitest/coverage-v8':
         specifier: ^3.2.2
-        version: 3.2.6(vitest@3.2.6)
+        version: 3.2.6(supports-color@8.1.1)(vitest@3.2.6)
       azure-functions-core-tools:
         specifier: ^4
-        version: 4.12.1
+        version: 4.12.1(supports-color@8.1.1)
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
@@ -92,7 +86,7 @@ importers:
         version: 8.27.0(eslint@8.57.1)(typescript@5.7.3)
       vitest:
         specifier: ^3.2.2
-        version: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
+        version: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0)
 
   apps/web:
     dependencies:
@@ -1166,38 +1160,6 @@ packages:
 
   '@cypress/xvfb@1.2.4':
     resolution: {integrity: sha512-skbBzPggOVYCbnGgV+0dmBdW/s77ZkAOXIC1knS8NagwDjBrNC1LuXtQJeiN6l+m7lzmHtaoUw/ctJKdqkG57Q==}
-
-  '@deno/darwin-arm64@2.9.1':
-    resolution: {integrity: sha512-aIRpWGuy8CDFKsxVqq//77ftRGnkxvvah0qqAgTVTFV0L5f7PQEzspBmvuxPZzHJS86tcwiCXqRLlt+BY8SqtQ==}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@deno/darwin-x64@2.9.1':
-    resolution: {integrity: sha512-a3OiVR+uKnJRy9U+ByAHgqQQG1WSXe3udl76/ZMTuQM32GT8qiJLKQPx5QjpGDVFqaxWU64JNtpGv383/wVoRQ==}
-    cpu: [x64]
-    os: [darwin]
-
-  '@deno/linux-arm64-glibc@2.9.1':
-    resolution: {integrity: sha512-D/ye7zmd3uzl2eB/k25+gEepqJEOl6/xrmKA06pgyfyOSjePUfPHYDs/kvIZ0P97Fu/M/HdH3+OzC8ZQiiVDww==}
-    cpu: [arm64]
-    os: [linux]
-    libc: [glibc]
-
-  '@deno/linux-x64-glibc@2.9.1':
-    resolution: {integrity: sha512-6lYd+mnFXPguzTQiPkFgxQIUijIQtRH5oYhsT4aKIET3tuJh/8YlaSoqCtSK8DQIpyJPrLwdUlSpOaSHdsEr8w==}
-    cpu: [x64]
-    os: [linux]
-    libc: [glibc]
-
-  '@deno/win32-arm64@2.9.1':
-    resolution: {integrity: sha512-lEqIMBHzrcXjmNIEhte5wKyM07BgJqqytae0q/9cgwXVvtm7JPGQOzVx6VYLWJ8H4XazqVWGViB6mDi/r0yWQQ==}
-    cpu: [arm64]
-    os: [win32]
-
-  '@deno/win32-x64@2.9.1':
-    resolution: {integrity: sha512-U0LZnDMUObQ6oVgDk1yAc3IcckFL33801EEoK5r/JLNEY/fxZIH5ib5edXj3E5oVNxa+b3z8sF/89qnSp/n+Yg==}
-    cpu: [x64]
-    os: [win32]
 
   '@discoveryjs/json-ext@0.6.3':
     resolution: {integrity: sha512-4B4OijXeVNOPZlYA2oEwWOTkzyltLao+xbotHQeqN++Rv27Y6s818+n2Qkp8q+Fxhn0t/5lA5X1Mxktud8eayQ==}
@@ -3406,9 +3368,6 @@ packages:
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
-  '@types/deno@2.7.0':
-    resolution: {integrity: sha512-Y6fWcV8KpYeO3Lik/RiYnUxtr/LWqoeACciU0CA+dr1U/45tGgaX3HWQQAPCNN53raN4Rr4Fht4y6qsUH57fDA==}
-
   '@types/eslint-scope@3.7.7':
     resolution: {integrity: sha512-MzMFlSLBqNF2gcHWO0G1vP/YQyfvrxZ0bF+u7mzUdZ1/xK4A4sru+nraZz5i3iEIk1l1uyicaDVTB4QbbEkAYg==}
 
@@ -4952,10 +4911,6 @@ packages:
 
   delegates@1.0.0:
     resolution: {integrity: sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ==}
-
-  deno@2.9.1:
-    resolution: {integrity: sha512-2nzFWNVGtg4W4BmCpYJE9bTRPHcqdpfV+NJ5+xe6nqtaiSMtzr2NwFkhMtWjyLboNh6FsEEESk5TYNyBkHJ96g==}
-    hasBin: true
 
   denque@2.1.0:
     resolution: {integrity: sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==}
@@ -11682,24 +11637,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@deno/darwin-arm64@2.9.1':
-    optional: true
-
-  '@deno/darwin-x64@2.9.1':
-    optional: true
-
-  '@deno/linux-arm64-glibc@2.9.1':
-    optional: true
-
-  '@deno/linux-x64-glibc@2.9.1':
-    optional: true
-
-  '@deno/win32-arm64@2.9.1':
-    optional: true
-
-  '@deno/win32-x64@2.9.1':
-    optional: true
-
   '@discoveryjs/json-ext@0.6.3': {}
 
   '@emnapi/core@1.10.0':
@@ -13995,8 +13932,6 @@ snapshots:
 
   '@types/deep-eql@4.0.2': {}
 
-  '@types/deno@2.7.0': {}
-
   '@types/eslint-scope@3.7.7':
     dependencies:
       '@types/eslint': 9.6.1
@@ -14410,6 +14345,25 @@ snapshots:
     dependencies:
       vite: 6.4.3(@types/node@26.1.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
 
+  '@vitest/coverage-v8@3.2.6(supports-color@8.1.1)(vitest@3.2.6)':
+    dependencies:
+      '@ampproject/remapping': 2.3.0
+      '@bcoe/v8-coverage': 1.0.2
+      ast-v8-to-istanbul: 0.3.12
+      debug: 4.4.3(supports-color@8.1.1)
+      istanbul-lib-coverage: 3.2.2
+      istanbul-lib-report: 3.0.1
+      istanbul-lib-source-maps: 5.0.6(supports-color@8.1.1)
+      istanbul-reports: 3.2.0
+      magic-string: 0.30.21
+      magicast: 0.3.5
+      std-env: 3.10.0
+      test-exclude: 7.0.2
+      tinyrainbow: 2.0.0
+      vitest: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0)
+    transitivePeerDependencies:
+      - supports-color
+
   '@vitest/coverage-v8@3.2.6(vitest@3.2.6)':
     dependencies:
       '@ampproject/remapping': 2.3.0
@@ -14418,14 +14372,14 @@ snapshots:
       debug: 4.4.3(supports-color@8.1.1)
       istanbul-lib-coverage: 3.2.2
       istanbul-lib-report: 3.0.1
-      istanbul-lib-source-maps: 5.0.6
+      istanbul-lib-source-maps: 5.0.6(supports-color@8.1.1)
       istanbul-reports: 3.2.0
       magic-string: 0.30.21
       magicast: 0.3.5
       std-env: 3.10.0
       test-exclude: 7.0.2
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
+      vitest: 3.2.6(@types/node@26.1.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -14482,7 +14436,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.17
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
+      vitest: 3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0)
 
   '@vitest/utils@3.2.6':
     dependencies:
@@ -14884,11 +14838,11 @@ snapshots:
 
   axobject-query@4.1.0: {}
 
-  azure-functions-core-tools@4.12.1:
+  azure-functions-core-tools@4.12.1(supports-color@8.1.1):
     dependencies:
       chalk: 4.1.2
       extract-zip: 2.0.1(supports-color@8.1.1)
-      https-proxy-agent: 9.0.0
+      https-proxy-agent: 9.0.0(supports-color@8.1.1)
       progress: 2.0.3
       rimraf: 6.1.3
     transitivePeerDependencies:
@@ -15793,15 +15747,6 @@ snapshots:
   delayed-stream@1.0.0: {}
 
   delegates@1.0.0: {}
-
-  deno@2.9.1:
-    optionalDependencies:
-      '@deno/darwin-arm64': 2.9.1
-      '@deno/darwin-x64': 2.9.1
-      '@deno/linux-arm64-glibc': 2.9.1
-      '@deno/linux-x64-glibc': 2.9.1
-      '@deno/win32-arm64': 2.9.1
-      '@deno/win32-x64': 2.9.1
 
   denque@2.1.0: {}
 
@@ -17084,7 +17029,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@9.0.0:
+  https-proxy-agent@9.0.0(supports-color@8.1.1):
     dependencies:
       agent-base: 9.0.0
       debug: 4.4.3(supports-color@8.1.1)
@@ -17411,7 +17356,7 @@ snapshots:
       make-dir: 4.0.0
       supports-color: 7.2.0
 
-  istanbul-lib-source-maps@5.0.6:
+  istanbul-lib-source-maps@5.0.6(supports-color@8.1.1):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
       debug: 4.4.3(supports-color@8.1.1)
@@ -20722,7 +20667,7 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vite-node@3.2.4(@types/node@22.20.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0):
+  vite-node@3.2.4(@types/node@22.20.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3(supports-color@8.1.1)
@@ -20859,7 +20804,7 @@ snapshots:
     optionalDependencies:
       vite: 6.4.3(@types/node@26.1.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
 
-  vitest@3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0):
+  vitest@3.2.6(@types/node@22.20.0)(@vitest/ui@3.2.6)(jiti@2.7.0)(jsdom@22.1.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -20882,7 +20827,7 @@ snapshots:
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
       vite: 6.4.3(@types/node@22.20.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
-      vite-node: 3.2.4(@types/node@22.20.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(terser@5.48.0)(yaml@2.9.0)
+      vite-node: 3.2.4(@types/node@22.20.0)(jiti@2.7.0)(less@4.2.2)(lightningcss@1.32.0)(sass-embedded@1.100.0)(sass@1.101.0)(stylus@0.64.0)(supports-color@8.1.1)(terser@5.48.0)(yaml@2.9.0)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/node': 22.20.0

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { PlanDto } from '@shared/api/api.types';
+import { PlanDto } from '@txg/shared';
 
 @Component({
   selector: 'txg-plan-metadata',

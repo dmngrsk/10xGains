@@ -1,12 +1,12 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { of, forkJoin } from 'rxjs';
+import { SessionDto, PlanDto, ExerciseDto, ProfileDto } from '@txg/shared';
 import { catchError, map, tap } from 'rxjs/operators';
 import { HistoryPageViewModel, HistoryFiltersViewModel } from '@features/history/models/history-page.viewmodel';
 import { PlanService } from '@features/plans/api/plan.service';
 import { GetSessionsParams, SessionService } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
-import { SessionDto, PlanDto, ExerciseDto, ProfileDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
