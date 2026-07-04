@@ -2,6 +2,7 @@
 
 # Compiled output
 dist/
+apps/api/deploy/
 /tmp
 out-tsc/
 /bazel-out
