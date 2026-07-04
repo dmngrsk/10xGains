@@ -54,7 +54,10 @@ export function resolveExerciseProgressions(
         for (const expectedSet of expectedScopedPlanSets) {
           const actualSet = actualPerformedSets.find(as => as.set_index === expectedSet.set_index);
           if (!actualSet) {
-            throw new Error(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}).`);
+            // Session sets are snapshotted when the session is created, so the plan may have gained sets mid-session.
+            console.warn(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}). Treating the set as failed.`);
+            exerciseSetsSuccessful = false;
+            break;
           }
           if (actualSet.status !== 'COMPLETED' || (actualSet.actual_reps ?? 0) < (expectedSet.expected_reps ?? 0) || (actualSet.actual_weight ?? 0) < (expectedSet.expected_weight ?? 0)) {
             exerciseSetsSuccessful = false;
