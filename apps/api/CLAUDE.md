@@ -24,7 +24,7 @@ See `README.md` in this directory for the full architecture and endpoint documen
 - Use `requiredAuthMiddleware` for protected endpoints.
 - Always include user ownership validation in database queries: use the `.eq('user_id', getUserId())` pattern in repository methods.
 - Return 404 for resources that don't exist or don't belong to the user.
-- Unit tests use vitest; each test file lives next to the tested file as `{tested-file}.test.ts`.
+- Unit tests use vitest; each test file lives next to the tested file as `{tested-file}.spec.ts`.
 
 ## Build and Local Development
 

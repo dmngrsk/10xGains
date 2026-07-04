@@ -36,7 +36,7 @@ The API is organized into the following structure, using Hono for routing:
   - `src/handlers/` - Contains the business logic for each API endpoint.
     - `[resource]/[method]-[modifier].ts` - Each file implements the logic for a specific action on a resource (e.g., `exercises/get.ts`, `plans/get-id.ts`). These handlers receive a context object with the request, response, and middleware data.
   - `src/repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`).
-  - `src/services/` - Contains business logic that can be shared across different handlers. Unit tests live next to the tested file as `{tested-file}.test.ts`.
+  - `src/services/` - Contains business logic that can be shared across different handlers. Unit tests live next to the tested file as `{tested-file}.spec.ts`.
   - `src/utils/` - Shared utility functions.
   - `host.json` - Azure Functions host configuration.
   - `local.settings.json` - Local-only runtime settings (gitignored; see `local.settings.json.example`). The deployed apps read the same variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`) from their Azure app settings.
