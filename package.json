@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "start": "pnpm --filter @txg/web start",
-    "start:dev": "pnpm --filter @txg/web start:dev",
     "start:development": "pnpm --filter @txg/web start:development",
     "start:staging": "pnpm --filter @txg/web start:staging",
     "start:production": "pnpm --filter @txg/web start:production",
@@ -12,10 +11,10 @@
     "build:development": "pnpm --filter @txg/web build:development",
     "build:staging": "pnpm --filter @txg/web build:staging",
     "build:production": "pnpm --filter @txg/web build:production",
-    "lint": "pnpm -r lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\"",
-    "lint:fix": "pnpm -r lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\"",
-    "test": "pnpm -r test",
-    "test:coverage": "pnpm -r test:coverage",
+    "lint": "pnpm -r --if-present lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\"",
+    "lint:fix": "pnpm -r --if-present lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\"",
+    "test": "pnpm -r --if-present test",
+    "test:coverage": "pnpm -r --if-present test:coverage",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
     "e2e:smoke": "cypress run --env grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
