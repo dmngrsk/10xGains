@@ -4,6 +4,7 @@
 ## Table of Contents
 - [Project Description](#project-description)
 - [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
 - [Getting Started Locally](#getting-started-locally)
 - [Available Scripts](#available-scripts)
 - [Project Scope](#project-scope)
@@ -15,10 +16,20 @@
 
 ## Tech Stack
 - **Frontend**: Angular 19, Angular Material Design 3, Tailwind CSS 4
-- **Backend**: Supabase (for PostgreSQL, serverless API via Supabase Edge Functions and authentication)
+- **Backend**: Hono on Azure Functions (Node.js 22) for the API; Supabase for PostgreSQL and authentication
 - **AI Integration**: OpenRouter API for AI-driven training plan suggestions
 - **Test Suite**: Vitest (unit), Cypress (e2e)
-- **CI/CD and Hosting**: GitHub Actions, Azure Static Web Apps
+- **CI/CD and Hosting**: GitHub Actions, Azure Static Web Apps (frontend), Azure Functions (API)
+
+## Project Structure
+
+This is a pnpm workspace monorepo:
+
+- `apps/web` - The Angular frontend application (`@txg/web`).
+- `apps/api` - The backend API: a Hono app hosted on Azure Functions (`@txg/api`). See [apps/api/README.md](apps/api/README.md) for architecture and endpoint documentation.
+- `packages/shared` - Shared TypeScript types (`@txg/shared`): API DTOs, command models, and generated database types consumed by both apps.
+- `supabase` - Database migrations, tests, and local stack configuration.
+- `cypress` - System-level end-to-end tests run against a deployed (or locally running) application.
 
 ## Getting Started Locally
 
@@ -75,21 +86,32 @@
     npx supabase db reset
     ```
 
-6.  **Install frontend dependencies:**
+6.  **Install dependencies:**
 
-    Now that the backend is fully configured, install the necessary npm packages.
+    Now that the database is fully configured, install the necessary npm packages for all workspace packages.
     ```bash
     pnpm install
     ```
 
-7.  **Start the development server:**
+7.  **Configure and start the API:**
 
-    To run the app using your new `development` configuration, use this command:
+    The API runs on a local Azure Functions host. Create its local settings file from the provided example:
+    ```bash
+    cp apps/api/local.settings.json.example apps/api/local.settings.json
+    ```
+    Open `apps/api/local.settings.json` and fill in your local Supabase URL and anon key (the same values as in step 4). Then start the API host on port 7071:
+    ```bash
+    pnpm --filter @txg/api start
+    ```
+
+8.  **Start the development server:**
+
+    In a separate terminal, run the app using your new `development` configuration:
     ```bash
     pnpm start:development
     ```
 
-8.  **Open your browser and navigate to `http://localhost:4200`**
+9.  **Open your browser and navigate to `http://localhost:4200`**
 
 ## Available Scripts
 
@@ -99,6 +121,7 @@ Below are the most important scripts defined in `package.json`.
 
 - `pnpm start:development` - Runs the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
 - `pnpm start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
+- `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`.
 
 ### Building the Application
 
@@ -107,7 +130,7 @@ Below are the most important scripts defined in `package.json`.
 
 ### Linting and Formatting
 
-- `pnpm lint` - Runs ESLint on the Angular frontend code (`/src`, `/cypress`). Then, runs Deno Lint on the Supabase Edge Functions code (`/supabase/functions`).
+- `pnpm lint` - Runs ESLint across all workspace packages (`apps/web`, `apps/api`, `packages/shared`) and the Cypress test code.
 - `pnpm lint:fix` - Runs the same linters but attempts to automatically fix any detected issues.
 - *Note: A pre-commit hook is configured with Husky and `lint-staged` to automatically format your code before every commit.*
 

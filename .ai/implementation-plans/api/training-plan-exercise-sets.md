@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Training Plan Exercise Sets
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Punkty końcowe te zarządzają seriami ćwiczeń (sets) w ramach konkretnego ćwiczenia (exercise) przypisanego do dnia treningowego (training plan day) w planie treningowym (training plan) użytkownika. Umożliwiają operacje CRUD (Create, Read, Update, Delete) na seriach, w tym automatyczne zarządzanie kolejnością (`set_index`). Wymagane jest uwierzytelnienie użytkownika dla wszystkich operacji.
 

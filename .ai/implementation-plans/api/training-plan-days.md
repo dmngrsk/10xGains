@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Training Plan Days
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Punkty końcowe API do zarządzania dniami w ramach określonego planu treningowego (`training_plans`). Obejmują one tworzenie, odczytywanie, aktualizowanie i usuwanie dni treningowych (`training_plan_days`). System automatycznie zarządza kolejnością dni (`order_index`) oraz zapewnia, że wszystkie operacje są wykonywane w kontekście uwierzytelnionego użytkownika i jego zasobów. Odpowiedzi dla zapytań o listę dni lub pojedynczy dzień zawierają zagnieżdżone dane dotyczące ćwiczeń (`training_plan_exercises`) i ich serii (`training_plan_exercise_sets`).
 

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
+import { Database } from '@txg/shared';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Database } from './database.types';
 import { EnvironmentService } from '../services/environment.service';
 
 /**

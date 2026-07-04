@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { PlanDto, ProfileDto, ExerciseDto, PlanExerciseProgressionDto } from '@shared/api/api.types';
 import { mapToPlanViewModel, mapToPlanDto, mapToPlanDayDto, mapToPlanExerciseDto, mapToPlanExerciseSetDto, mapToPlanExerciseProgressionDto } from './plan.mapping';
 import type { PlanViewModel, PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, PlanExerciseProgressionViewModel } from './plan.viewmodel';
+import type { PlanDto, ProfileDto, ExerciseDto, PlanExerciseProgressionDto } from '@txg/shared';
 
 describe('Plan Mapping Functions', () => {
   describe('mapToPlanDto', () => {

@@ -11,9 +11,6 @@ out-tsc/
 node_modules/
 npm-debug.log
 
-# Deno
-supabase/functions/api/deno.lock
-
 # Cypress
 /cypress/videos/
 /cypress/screenshots/

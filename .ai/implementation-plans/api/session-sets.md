@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Session Sets
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Ten punkt końcowy zarządza seriami ćwiczeń (`session_sets`) w ramach określonej sesji treningowej (`training_sessions`) użytkownika. Umożliwia listowanie, tworzenie, pobieranie szczegółów, aktualizowanie oraz oznaczanie serii jako ukończone lub nieudane. Wszystkie operacje są częścią Supabase Edge Function `training-sessions`.
 

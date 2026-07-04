@@ -1,5 +1,5 @@
+import { PlanDayDto, PlanDto, PlanExerciseDto, PlanExerciseSetDto, SessionDto, ExerciseDto, SessionSetDto } from '@txg/shared';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { PlanDayDto, PlanDto, PlanExerciseDto, PlanExerciseSetDto, SessionDto, ExerciseDto, SessionSetDto } from '@shared/api/api.types';
 import { mapToSessionCardViewModel, mapToSessionPageViewModel, mapToSessionSetViewModel } from './session.mapping';
 import { SessionSetStatus, SessionStatus } from './session.types';
 

@@ -11,8 +11,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { Observable, of } from 'rxjs';
+import { ExerciseDto } from '@txg/shared';
 import { startWith, map, debounceTime, switchMap } from 'rxjs/operators';
-import { ExerciseDto } from '@shared/api/api.types';
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 interface AddExerciseDialogAutocompleteOption {

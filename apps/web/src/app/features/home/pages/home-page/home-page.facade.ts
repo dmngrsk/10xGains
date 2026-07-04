@@ -1,12 +1,12 @@
 import { inject, signal, computed, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, forkJoin, of } from 'rxjs';
+import { SessionDto, ExerciseDto, PlanDto } from '@txg/shared';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { mapToSessionCardViewModel } from '@features/sessions/models/session.mapping';
-import { SessionDto, ExerciseDto, PlanDto } from '@shared/api/api.types';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';

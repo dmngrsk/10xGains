@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
+import { ProfileDto, UpsertProfileCommand } from '@txg/shared';
 import { ApiService, ApiServiceResponse } from './api.service';
-import { ProfileDto, UpsertProfileCommand } from './api.types';
 
 export type ProfileServiceResponse<T> = ApiServiceResponse<T>;
 

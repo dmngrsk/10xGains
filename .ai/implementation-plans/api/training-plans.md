@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Training Plans Resource
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Ten dokument opisuje plan wdrożenia dla punktów końcowych REST API zarządzających zasobem `training-plans`. Obejmuje on tworzenie, odczytywanie, aktualizowanie i usuwanie planów treningowych dla uwierzytelnionych użytkowników. Wszystkie operacje są ograniczone do danych należących do aktualnie zalogowanego użytkownika i są obsługiwane przez **pojedynczą funkcję Supabase Edge Function** zlokalizowaną w `supabase/functions/training-plans/`.
 

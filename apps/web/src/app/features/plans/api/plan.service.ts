@@ -1,6 +1,5 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 import {
   PlanDto,
   UpdatePlanCommand,
@@ -16,7 +15,8 @@ import {
   CreatePlanCommand,
   PlanExerciseProgressionDto,
   UpsertPlanExerciseProgressionCommand
-} from '@shared/api/api.types';
+} from '@txg/shared';
+import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 
 export type PlanServiceResponse<T> = ApiServiceResponse<T>;
 

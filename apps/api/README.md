@@ -1,16 +1,14 @@
-# Supabase API Edge Function
+# 10xGains API (Azure Functions)
 
-This directory contains a unified Supabase Edge Function that serves as the main API for the 10xGains application. It is built using Deno, with routing handled by the Hono web framework.
+This workspace package (`@txg/api`) contains the main API for the 10xGains application. It is a [Hono](https://hono.dev/) application hosted on Azure Functions (Node.js 22, Flex Consumption plan): Azure Functions is only the transport layer, and all routing, middleware, and business logic live in the Hono app.
 
 ## Table of Contents
 
 - [Architecture](#architecture)
-- [Type Synchronization](#type-synchronization)
+- [Shared Types](#shared-types)
 - [Development Notes](#development-notes)
-  - [Dependency Management](#dependency-management)
-  - [TypeScript Support](#typescript-support)
-  - [Handling Linting Errors in VS Code](#handling-linting-errors-in-vs-code)
   - [Local Development](#local-development)
+  - [Testing](#testing)
   - [Deployment](#deployment)
 - [API Documentation](#api-documentation)
   - [Profiles API](#profiles-api)
@@ -26,25 +24,28 @@ This directory contains a unified Supabase Edge Function that serves as the main
 
 ## Architecture
 
-The API Edge Function is organized into the following structure, using Hono for routing:
+The API is organized into the following structure, using Hono for routing:
 
-- `supabase/functions/api/` - The root directory for the unified API Edge Function.
-  - `index.ts` - The main entry point for the function. It initializes the Hono app and applies root-level middleware (CORS, Supabase client).
-  - `context.ts` - Defines the TypeScript types for the application context used by Hono. This context holds variables that are passed through the middleware and to the handlers, such as the Supabase client, the authenticated user, and telemetry data.
-  - `deno.json` - Deno configuration, including import maps for dependency management.
-  - `middleware/` - Contains Hono middleware.
+- `apps/api/` - The root directory of the API workspace package.
+  - `src/main.ts` - The Azure Functions entry point. It registers a single catch-all HTTP function (`route: '{*path}'`, all methods, anonymous auth level) and bridges it to the Hono app via `@marplex/hono-azurefunc-adapter`. Combined with `host.json`'s default route prefix (`api`), incoming URLs keep the `/api/...` shape the Hono app mounts at.
+  - `src/app.ts` - Initializes the Hono app, applies root-level middleware (CORS, Supabase client, telemetry), and mounts the main router from `middleware/routes.ts` at `/api`.
+  - `src/context.ts` - Defines the TypeScript types for the application context used by Hono. This context holds variables that are passed through the middleware and to the handlers, such as the Supabase client, the authenticated user, and telemetry data.
+  - `src/middleware/` - Contains Hono middleware.
     - `routes.ts` - This is the heart of the routing. It defines all API endpoints (e.g., `/api/exercises`, `/api/plans`) and maps them to their respective handler functions. It uses Hono's `route` method to create a modular routing structure.
     - `auth.ts`, `supabase.ts`, `telemetry.ts` - Middleware for handling authentication, initializing the Supabase client, and telemetry.
-  - `handlers/` - Contains the business logic for each API endpoint.
+  - `src/handlers/` - Contains the business logic for each API endpoint.
     - `[resource]/[method]-[modifier].ts` - Each file implements the logic for a specific action on a resource (e.g., `exercises/get.ts`, `plans/get-id.ts`). These handlers receive a context object with the request, response, and middleware data.
-  - `repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`).
-  - `services/` - Contains business logic that can be shared across different handlers.
-  - `models/` - Contains type definitions for the API and database.
-  - `utils/` - Shared utility functions.
+  - `src/repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`).
+  - `src/services/` - Contains business logic that can be shared across different handlers. Unit tests live next to the tested file as `{tested-file}.test.ts`.
+  - `src/utils/` - Shared utility functions.
+  - `host.json` - Azure Functions host configuration.
+  - `local.settings.json` - Local-only runtime settings (gitignored; see `local.settings.json.example`). The deployed apps read the same variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`) from their Azure app settings.
+  - `esbuild.mjs` - Bundles `src/` into a single `dist/main.js` file (`@azure/functions` stays external as it must resolve to the worker's shared instance).
+  - `pack.mjs` - Assembles the deployment package in `deploy/` (see [Deployment](#deployment)).
 
 The request lifecycle is as follows:
-1. A request hits the `Deno.serve` entrypoint in `index.ts`.
-2. Root-level middleware for CORS, Supabase, and telemetry are applied.
+1. A request hits the Azure Functions host, which invokes the catch-all function registered in `src/main.ts`.
+2. The adapter translates the request, and root-level middleware for CORS, Supabase, and telemetry are applied.
 3. The request is passed to the main router defined in `middleware/routes.ts`.
 4. Hono matches the request path (e.g., `GET /api/exercises/:exerciseId`) to a registered route.
 5. Authentication middleware (`requiredAuthMiddleware` or `optionalAuthMiddleware`) is executed.
@@ -53,83 +54,39 @@ The request lifecycle is as follows:
 8. The handler calls one or more functions from a repository in the `repositories/` directory to fetch or persist data.
 9. The handler formats the final response and responds to the initial request.
 
-## Type Synchronization
+## Shared Types
 
-To maintain a single source of truth for types, we automatically copy types from the Supabase Edge Function to the Angular frontend before deployment:
+API DTOs, command models, and generated database types live in the `@txg/shared` workspace package (`packages/shared`), which is the single source of truth consumed by both this API and the Angular frontend:
 
-1.  The sources of truth are:
-    *   `supabase/functions/api/models/api.types.ts` - API DTOs and command models
-    *   `supabase/functions/api/models/database.types.ts` - Database schema definitions
-2.  The `copy-api.types.js` script copies these to:
-    *   `src/app/shared/api/api.types.ts`
-    *   `src/app/shared/db/database.types.ts`
+- `packages/shared/src/api.types.ts` - API DTOs and command models
+- `packages/shared/src/database.types.ts` - Database schema definitions (target of `supabase gen types typescript`)
 
-Never edit the Edge Function types directly. Always modify the source files in the Angular project.
+Import them via the package entry point: `import { PlanDto } from '@txg/shared';`.
 
 ## Development Notes
 
-### Dependency Management
-
-The API function has a `deno.json` file that manages dependencies and Deno-specific configurations. This follows the recommended Supabase practice to isolate dependencies per function:
-
-```json
-{
-  "imports": {
-    "hono": "https://deno.land/x/hono@v4.2.7/mod.ts",
-    "hono/middleware": "https://deno.land/x/hono@v4.2.7/middleware.ts",
-    "hono/utils/http-status": "https://deno.land/x/hono@v4.2.7/utils/http-status.ts",
-    "supabase": "https://esm.sh/@supabase/supabase-js@2",
-    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
-  }
-}
-```
-
-### TypeScript Support
-
-This function uses Deno as the runtime environment, which is different from Node.js. This means that:
-
-1.  Import paths are managed through the `imports` section in `deno.json`
-2.  Dependencies are imported via URLs (e.g., `https://deno.land/...`) or npm packages with the new `npm:` prefix
-3.  The Deno global is available for environment variables and other runtime features
-
-The IDE may show TypeScript errors for Deno-specific features because the regular TypeScript compiler doesn't recognize them. These errors can be ignored as they don't affect the function's execution in the Supabase environment.
-
-### Handling Linting Errors in VS Code
-
-If you're seeing linting errors in VS Code for Deno imports or types, you can:
-
-1.  **Use Deno for VS Code Extension**: Install the official Deno extension and enable it for this workspace
-2.  **Configure TypeScript Plugin**: Add a `.vscode/settings.json` file with:
-    ```json
-    {
-      "deno.enable": true,
-      "deno.lint": true,
-      "deno.unstable": false
-    }
-    ```
-3.  **Disable TypeScript Validation**: If you prefer to disable TypeScript validation for these files:
-    ```json
-    {
-      "typescript.validate.enable": false
-    }
-    ```
-
 ### Local Development
 
-To develop and test the API function locally:
+To develop and test the API locally:
 
-1.  Install the Supabase CLI
-2.  Copy the latest API types with `node scripts/copy-api-types.js`
-3.  Run `supabase functions serve api` to start the local development server for the API function.
-4.  Use tools like Postman or curl to test the API endpoints.
+1.  Start the local Supabase stack (database + auth): `supabase start`
+2.  Create `local.settings.json` from `local.settings.json.example` (local Supabase URL and anon key, `APP_URL=http://localhost:4200`).
+3.  Run `pnpm --filter @txg/api start` to build and start the local Azure Functions host on port 7071.
+4.  Use tools like Postman or curl to test the API endpoints (e.g., `curl http://localhost:7071/api/health`).
+
+### Testing
+
+- `pnpm --filter @txg/api test` - Runs the vitest unit tests.
+- `pnpm --filter @txg/api typecheck` - Typechecks without emitting.
+- `pnpm --filter @txg/api lint` - Runs eslint.
 
 ### Deployment
 
-To deploy the API Edge Function:
+Deployment happens in CI/CD (the `backend-api` job in `.github/workflows/reusable-cd.yml`): the workflow builds the deployment package and publishes it with `Azure/functions-action` (OIDC login, remote build, Flex Consumption SKU). To build the same package locally:
 
 ```bash
-# Deploy the 'api' function
-supabase functions deploy api
+# Bundle and assemble deploy/ (host.json + dist/ + minimal package.json)
+pnpm --filter @txg/api build:deploy
 ```
 
 ## API Documentation

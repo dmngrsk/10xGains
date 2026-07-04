@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, finalize, map, switchMap, tap, first, of, from } from 'rxjs';
-import { UpsertProfileCommand } from '@shared/api/api.types';
+import { UpsertProfileCommand } from '@txg/shared';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { SettingsPageViewModel } from '../../models/settings-page.viewmodel';

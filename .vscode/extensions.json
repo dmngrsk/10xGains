@@ -2,7 +2,6 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=827846
   "recommendations": [
     "angular.ng-template",
-    "denoland.vscode-deno",
     "github.vscode-github-actions",
     "ms-ossdata.vscode-postgresql"
   ]

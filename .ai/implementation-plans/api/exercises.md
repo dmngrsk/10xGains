@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Exercises Resource
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Punkty końcowe zasobu `Exercises` umożliwiają zarządzanie globalną listą dostępnych ćwiczeń w systemie. Obejmują operacje odczytu (listy i pojedynczego ćwiczenia), tworzenia, aktualizacji oraz usuwania ćwiczeń. Operacje modyfikujące (tworzenie, aktualizacja, usuwanie) wymagają odpowiednich uprawnień administratora.
 

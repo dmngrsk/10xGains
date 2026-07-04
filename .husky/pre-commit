@@ -1,11 +1,4 @@
 #!/bin/sh
 
-# Regenerate the Deno copies of the shared types when @txg/shared changes
-if git diff --cached --name-only | grep -q "^packages/shared/src/"; then
-  echo "Shared types changed, running copy-api-types.js..."
-  node scripts/copy-api-types.js
-  git add supabase/functions/api/models/api.types.ts supabase/functions/api/models/database.types.ts
-fi
-
 # Run lint-staged for code formatting/linting
 pnpm exec lint-staged

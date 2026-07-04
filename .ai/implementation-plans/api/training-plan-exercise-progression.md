@@ -1,5 +1,7 @@
 # API Endpoint Implementation Plan: Training Plan Exercise Progression
 
+> **Historical document.** This plan describes the original implementation on Supabase Edge Functions (Deno). The API has since been migrated to a Hono application on Azure Functions in `apps/api`, with shared types in `packages/shared` (`@txg/shared`). References to `supabase/functions/...` paths, `deno.json`, and the Deno runtime no longer apply; see `apps/api/README.md` for the current architecture and endpoint documentation.
+
 ## 1. Przegląd punktu końcowego
 Ten punkt końcowy zarządza regułami progresji dla poszczególnych ćwiczeń w ramach planu treningowego użytkownika. Pozwala na pobieranie istniejących reguł progresji oraz ich tworzenie lub aktualizację (upsert).
 
