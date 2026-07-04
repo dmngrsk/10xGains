@@ -217,8 +217,12 @@ export class SessionRepository {
       session_date: null
     });
 
-    const newSessionSets = plan.days
-      .find(d => d.id === currentDayId)!.exercises
+    const currentDay = plan.days.find(d => d.id === currentDayId);
+    if (!currentDay) {
+      throw new Error('Plan day not found in the specified plan.');
+    }
+
+    const newSessionSets = currentDay.exercises
       .flatMap(e => (e.sets))
       .map((tpes) => ({
         id: crypto.randomUUID(),
@@ -783,6 +787,19 @@ export class SessionRepository {
   handlePlanNotFoundError(error: Error): ApiErrorResponse | null {
     if (error.message.includes('Plan not found')) {
       return createErrorData(400, 'Plan not found.', { type: 'plan_not_found_error' }, 'PLAN_NOT_FOUND_ERROR');
+    }
+
+    return null;
+  }
+
+  /**
+   * Handles errors when a plan day is not found in the plan, returning a formatted API error response.
+   * @param {Error} error - The error to handle.
+   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
+   */
+  handlePlanDayNotFoundError(error: Error): ApiErrorResponse | null {
+    if (error.message.includes('Plan day not found')) {
+      return createErrorData(400, 'Plan day not found in the specified plan.', { type: 'plan_day_not_found_error' }, 'PLAN_DAY_NOT_FOUND_ERROR');
     }
 
     return null;
