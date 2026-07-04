@@ -1,0 +1,40 @@
+{
+  "name": "@txg/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "10xGains backend API: Hono app hosted on Azure Functions (Node 22).",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "typecheck": "tsc --noEmit",
+    "start": "pnpm build && func start",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint --fix \"src/**/*.ts\"",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0",
+    "@marplex/hono-azurefunc-adapter": "^1.0.1",
+    "@supabase/supabase-js": "^2.49.4",
+    "@txg/shared": "workspace:*",
+    "hono": "^4.7.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitest/coverage-v8": "^3.2.2",
+    "azure-functions-core-tools": "^4",
+    "esbuild": "^0.25.0",
+    "eslint": "8",
+    "typescript": "~5.7.2",
+    "typescript-eslint": "8.27.0",
+    "vitest": "^3.2.2"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix"
+    ]
+  }
+}

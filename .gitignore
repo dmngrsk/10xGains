@@ -53,6 +53,7 @@ testem.log
 # Environment files
 .env
 .env.*
+local.settings.json
 apps/web/src/environments/environment.*.ts
 
 # System files

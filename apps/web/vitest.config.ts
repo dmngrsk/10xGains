@@ -4,7 +4,6 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   plugins: [
-    // @ts-expect-error Plugin import type mismatch (¯\_(ツ)_/¯)
     angular(),
   ],
   resolve: {
@@ -17,12 +16,12 @@ export default defineConfig({
   test: {
     name: {
       label: 'web',
-      color: 'red'
+      color: 'magenta'
     },
     globals: true,
     environment: 'jsdom',
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.spec.ts'],
+    reporters: ['default'],
   },
-  reporters: ['default'],
 });
