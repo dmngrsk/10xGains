@@ -16,6 +16,10 @@ export class EnvironmentService {
     return this.env.production;
   }
 
+  get apiUrl(): string {
+    return this.env.api.url;
+  }
+
   get supabaseUrl(): string {
     return this.env.supabase.url;
   }

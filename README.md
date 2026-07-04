@@ -59,6 +59,9 @@
     ```typescript
     export const environment = {
       production: false,
+      api: {
+        url: 'http://localhost:7071', // The local Azure Functions host (pnpm --filter @txg/api start)
+      },
       supabase: {
         url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
         key: 'YOUR_LOCAL_SUPABASE_ANON_KEY', // The long JWT string

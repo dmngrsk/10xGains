@@ -6,6 +6,9 @@ export const environment = {
     sha: '__BUILD_SHA__',
     tag: '__BUILD_TAG__',
   },
+  api: {
+    url: '__API_URL__',
+  },
   supabase: {
     url: '__SUPABASE_URL__',
     key: '__SUPABASE_ANON_KEY__',
