@@ -113,7 +113,7 @@ Below are the most important scripts defined in `package.json`.
 #### Unit Tests (Vitest)
 
 - `pnpm test` - Runs the complete unit test suite once.
-- `pnpm test:watch` - Runs the unit tests in an interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
+- `pnpm --filter <@txg/web|@txg/api> test:watch` - Runs a package's unit tests in an interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
 - `pnpm test:coverage` -Runs the unit tests and generates a code coverage report in the `/coverage` directory.
 
 #### End-to-End Tests (Cypress)

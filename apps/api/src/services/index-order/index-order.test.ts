@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { insertAndNormalizeOrder } from './index-order.ts';
+import { insertAndNormalizeOrder } from './index-order';
 
 interface TestEntity {
   id: string;

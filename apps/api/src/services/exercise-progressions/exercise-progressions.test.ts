@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resolveExerciseProgressions } from './exercise-progressions.ts';
-import * as DeloadStrategies from './deload-strategies/proportional-deload.ts';
-import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanExerciseSetDto } from '../../models/api.types.ts';
+import { describe, it, expect, vi, beforeEach, afterEach, type MockInstance } from 'vitest';
+import { resolveExerciseProgressions } from './exercise-progressions';
+import * as DeloadStrategies from './deload-strategies/proportional-deload';
+import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanExerciseSetDto } from '@txg/shared';
 
 const mockPlanExerciseSet = (id: string, tpeId: string, index: number, weight: number, reps: number): PlanExerciseSetDto => ({
   id,
@@ -58,8 +58,8 @@ const handleTestDeloadStrategy = (set: PlanExerciseSetDto, _progression: PlanExe
 };
 
 describe('resolveExerciseProgressions', () => {
-  let proportionalDeloadSpy: ReturnType<typeof vi.spyOn>;
-  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+  let proportionalDeloadSpy: MockInstance<typeof DeloadStrategies.handleProportionalDeload>;
+  let consoleWarnSpy: MockInstance<typeof console.warn>;
 
   beforeEach(() => {
     proportionalDeloadSpy = vi.spyOn(DeloadStrategies, 'handleProportionalDeload');

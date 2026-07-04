@@ -6,6 +6,7 @@ packages:
 # are explicitly trusted (native binaries and CLI downloads required by the toolchain).
 allowBuilds:
   '@parcel/watcher': true
+  azure-functions-core-tools: true
   cypress: true
   deno: true
   esbuild: true

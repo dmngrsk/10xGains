@@ -14,9 +14,8 @@
     "build:production": "pnpm --filter @txg/web build:production",
     "lint": "pnpm -r lint && echo \"Running eslint (cypress)...\" && eslint \"cypress/**/*.ts\" && echo \"Running deno lint...\" && deno lint supabase/functions/**/*.ts",
     "lint:fix": "pnpm -r lint:fix && echo \"Running eslint --fix (cypress)...\" && eslint --fix \"cypress/**/*.ts\" && echo \"Running deno lint --fix...\" && deno lint --fix supabase/functions/**/*.ts",
-    "test": "pnpm -r test && vitest run",
-    "test:coverage": "pnpm -r test:coverage && vitest run --coverage",
-    "test:watch": "vitest",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
     "e2e:smoke": "cypress run --env grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
@@ -26,7 +25,6 @@
     "@supabase/supabase-js": "^2.49.4",
     "@types/deno": "^2",
     "@types/node": "^22.14.0",
-    "@vitest/coverage-v8": "^3.2.2",
     "cypress": "^14.4.1",
     "deno": "^2.3.5",
     "dotenv": "^16.5.0",
@@ -35,8 +33,7 @@
     "lint-staged": "^15.5.1",
     "supabase": "2.30.4",
     "typescript": "~5.7.2",
-    "typescript-eslint": "8.27.0",
-    "vitest": "^3.2.2"
+    "typescript-eslint": "8.27.0"
   },
   "lint-staged": {
     "cypress/**/*.ts": [

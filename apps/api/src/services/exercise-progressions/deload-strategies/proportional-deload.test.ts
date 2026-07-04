@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { handleProportionalDeload } from './proportional-deload.ts';
-import type { PlanExerciseProgressionDto, PlanExerciseSetDto } from '../../../models/api.types.ts';
+import { handleProportionalDeload } from './proportional-deload';
+import type { PlanExerciseProgressionDto, PlanExerciseSetDto } from '@txg/shared';
 
 describe('handleProportionalDeload', () => {
   const baseSet: PlanExerciseSetDto = {

@@ -76,7 +76,7 @@ jobs:
           name: unit-coverage
           path: |
             apps/web/coverage/
-            coverage/
+            apps/api/coverage/
           retention-days: 7
 
   build:
@@ -145,9 +145,14 @@ jobs:
           echo ""
           cat "${WEBMANIFEST_FILE}"
 
-      - name: Build application
+      - name: Build web application
         run: |
           pnpm build:${{ inputs.environment }}
+
+      - name: Typecheck and build API
+        run: |
+          pnpm --filter @txg/api typecheck
+          pnpm --filter @txg/api build
 
       - name: Upload build artifacts for staging
         if: inputs.environment == 'staging'

@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "",
+    "APP_URL": "http://localhost:4200",
+    "SUPABASE_URL": "http://127.0.0.1:54321",
+    "SUPABASE_ANON_KEY": "<local supabase anon key from `supabase start`>"
+  }
+}
