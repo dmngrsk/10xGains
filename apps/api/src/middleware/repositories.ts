@@ -16,7 +16,13 @@ import { SessionRepository } from '../repositories/session.repository';
  */
 export async function repositoriesMiddleware(c: Context<AppContext>, next: Next) {
   const supabase = c.get('supabase');
-  const getUserId = () => c.get('user')!.id;
+  const getUserId = () => {
+    const user = c.get('user');
+    if (!user) {
+      throw new Error('User is not authenticated.');
+    }
+    return user.id;
+  };
 
   c.set('planRepository', new PlanRepository(supabase, getUserId));
   c.set('exerciseRepository', new ExerciseRepository(supabase));
