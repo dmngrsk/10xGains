@@ -14,7 +14,7 @@ export default defineConfig({
     },
     globals: true,
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.spec.ts'],
     reporters: ['default'],
   },
 });

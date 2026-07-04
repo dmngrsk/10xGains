@@ -156,7 +156,7 @@ export class ExerciseRepository {
       'Forbidden: You cannot delete this exercise'
     ];
 
-    if (errorMessages.some(msg => error.message.includes(msg))) {
+    if (errorMessages.some(msg => error?.message?.includes(msg))) {
       return createErrorData(
         403,
         error.message,

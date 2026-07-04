@@ -48,7 +48,8 @@ export async function createEntityInCollection<T>(
   const { data: existingEntities, error: fetchError } = await supabase
     .from(tableName)
     .select('*')
-    .eq(parentColumn, parentId);
+    .eq(parentColumn, parentId)
+    .order(orderColumn, { ascending: true });
 
   if (fetchError) {
     throw fetchError;
@@ -124,7 +125,8 @@ export async function updateEntityInCollection<T>(
   const { data: existingEntities, error: fetchError } = await supabase
     .from(tableName)
     .select('*')
-    .eq(parentColumn, parentId);
+    .eq(parentColumn, parentId)
+    .order(orderColumn, { ascending: true });
 
   if (fetchError) {
     throw fetchError;
@@ -138,8 +140,6 @@ export async function updateEntityInCollection<T>(
     getOrder,
     setOrder
   );
-
-  console.log(normalizedEntities);
 
   const { data: result, error } = await supabase.rpc('replace_collection', {
     p_table_name: tableName,
@@ -202,7 +202,8 @@ export async function deleteEntityFromCollection<T>(
   const { data: existingEntities, error: fetchError } = await supabase
     .from(tableName)
     .select('*')
-    .eq(parentColumn, parentId);
+    .eq(parentColumn, parentId)
+    .order(orderColumn, { ascending: true });
 
   if (fetchError) {
     throw fetchError;

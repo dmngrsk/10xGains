@@ -95,8 +95,8 @@ export class ProfileRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handleProfileError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Forbidden: You can only access your own profile') ||
-        error.message.includes('Forbidden: You can only update your own profile')) {
+    if (error?.message?.includes('Forbidden: You can only access your own profile') ||
+        error?.message?.includes('Forbidden: You can only update your own profile')) {
       return createErrorData(
         403,
         error.message,

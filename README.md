@@ -38,6 +38,7 @@ This is a pnpm workspace monorepo:
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
+- **Azure Functions Core Tools**: Hosts the API locally on port 7071; installed automatically with the workspace dependencies (`azure-functions-core-tools`), no manual setup needed
 
 ### Installation
 1.  **Clone the repository:**

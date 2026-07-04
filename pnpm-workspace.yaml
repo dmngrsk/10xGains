@@ -1,6 +1,7 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  - 'cypress'
 
 # Postinstall build scripts are blocked by default since pnpm 10; the packages below
 # are explicitly trusted (native binaries and CLI downloads required by the toolchain).

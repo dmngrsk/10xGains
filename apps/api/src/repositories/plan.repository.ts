@@ -847,7 +847,7 @@ export class PlanRepository {
       'Plan exercise set not found or user does not have access'
     ];
 
-    if (ownershipErrorMessages.some(msg => error.message.includes(msg))) {
+    if (ownershipErrorMessages.some(msg => error?.message?.includes(msg))) {
       return createErrorData(400, error.message, { type: 'ownership_verification_error' }, 'PLAN_OWNERSHIP_ERROR');
     }
 
@@ -860,7 +860,7 @@ export class PlanRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handleExerciseNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Exercise not found')) {
+    if (error?.message?.includes('Exercise not found')) {
       const errorData = createErrorData(400, error.message, { type: 'exercise_not_found_error' }, 'EXERCISE_NOT_FOUND_ERROR');
       return errorData;
     }

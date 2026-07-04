@@ -263,7 +263,7 @@ describe('resolveExerciseProgressions', () => {
     }).toThrow('No exercise progression found for exercise_id: ex1.');
   });
 
-   it('should throw error if an expected set is missing from actual performed sets', () => {
+   it('should warn and treat exercise as failed if an expected set is missing from actual performed sets', () => {
     const planExercise1Sets = [
       mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5),
       mockPlanExerciseSet('set1-2', 'tpe1', 1, 100, 5),
@@ -274,8 +274,14 @@ describe('resolveExerciseProgressions', () => {
     ];
     const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 0, 2)];
 
-    expect(() => {
-      resolveExerciseProgressions(sessionSets, planExercises, progressions);
-    }).toThrow('No actual set found for expected set with index 1 of exercise ex1 (plan exercise ID: tpe1).');
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('No actual set found for expected set with index 1 of exercise ex1 (plan exercise ID: tpe1). Treating the set as failed.');
+    expect(result.exerciseProgressionsToUpdate.length).toBe(1);
+    expect(result.exerciseProgressionsToUpdate[0].consecutive_failures).toBe(1);
+    expect(result.exerciseSetsToUpdate.length).toBe(2);
+    result.exerciseSetsToUpdate.forEach((set: PlanExerciseSetDto) => {
+      expect(set.expected_weight).toBe(100);
+    });
   });
 });

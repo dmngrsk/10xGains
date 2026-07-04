@@ -217,9 +217,13 @@ export class SessionRepository {
       session_date: null
     });
 
-    const newSessionSets = plan.days
-      .find(d => d.id === currentDayId)!.exercises
-      .flatMap(e => (e.sets))
+    const currentDay = plan.days.find(d => d.id === currentDayId);
+    if (!currentDay) {
+      throw new Error('Plan day not found in the specified plan.');
+    }
+
+    const newSessionSets = (currentDay.exercises ?? [])
+      .flatMap(e => e.sets ?? [])
       .map((tpes) => ({
         id: crypto.randomUUID(),
         session_id: newSessionId,
@@ -755,7 +759,7 @@ export class SessionRepository {
       'Session set not found or user does not have access'
     ];
 
-    if (ownershipErrorMessages.some(msg => error.message.includes(msg))) {
+    if (ownershipErrorMessages.some(msg => error?.message?.includes(msg))) {
       return createErrorData(400, error.message, { type: 'ownership_verification_error' }, 'SESSION_OWNERSHIP_ERROR');
     }
 
@@ -768,7 +772,7 @@ export class SessionRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handleSessionNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Session not found') || error.message.includes('Session set not found')) {
+    if (error?.message?.includes('Session not found') || error?.message?.includes('Session set not found')) {
       return createErrorData(404, error.message, { type: 'session_not_found_error' }, 'SESSION_NOT_FOUND_ERROR');
     }
 
@@ -781,8 +785,21 @@ export class SessionRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handlePlanNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Plan not found')) {
+    if (error?.message?.includes('Plan not found')) {
       return createErrorData(400, 'Plan not found.', { type: 'plan_not_found_error' }, 'PLAN_NOT_FOUND_ERROR');
+    }
+
+    return null;
+  }
+
+  /**
+   * Handles errors when a plan day is not found in the plan, returning a formatted API error response.
+   * @param {Error} error - The error to handle.
+   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
+   */
+  handlePlanDayNotFoundError(error: Error): ApiErrorResponse | null {
+    if (error?.message?.includes('Plan day not found')) {
+      return createErrorData(400, 'Plan day not found in the specified plan.', { type: 'plan_day_not_found_error' }, 'PLAN_DAY_NOT_FOUND_ERROR');
     }
 
     return null;
@@ -794,7 +811,7 @@ export class SessionRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handleSessionCompletionError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Session cannot be completed')) {
+    if (error?.message?.includes('Session cannot be completed')) {
       return createErrorDataWithLogging(400, error.message, { type: 'session_completion_error' }, 'SESSION_COMPLETION_ERROR', error);
     }
 
@@ -807,7 +824,7 @@ export class SessionRepository {
    * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
    */
   handlePlanMissingError(error: Error): ApiErrorResponse | null {
-    if (error.message.includes('Plan ID missing')) {
+    if (error?.message?.includes('Plan ID missing')) {
       return createErrorDataWithLogging(500, 'Plan ID missing from the session. Cannot calculate progressions.', { type: 'plan_missing_error' }, 'PLAN_MISSING_ERROR', error);
     }
 
