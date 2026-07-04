@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
-import { handleNotFoundHttpError, SupabaseService } from '../db/supabase.service';
+import { SupabaseService } from '../db/supabase.service';
+import { EnvironmentService } from '../services/environment.service';
 
 export interface ApiServiceResponse<T> {
   data: T | null;
@@ -8,7 +9,6 @@ export interface ApiServiceResponse<T> {
   error: string | null;
 }
 
-type ApiInternalResponse<T> = ApiInternalSuccessResponse<T> | ApiInternalErrorResponse;
 interface ApiInternalSuccessResponse<T> { data: T; totalCount?: number; message?: string; }
 interface ApiInternalErrorResponse { error: string; details?: Record<string, unknown>; code?: string; }
 
@@ -17,42 +17,63 @@ interface ApiInternalErrorResponse { error: string; details?: Record<string, unk
 })
 export class ApiService {
   private supabaseService = inject(SupabaseService);
+  private environmentService = inject(EnvironmentService);
 
   public get<T>(url: string): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'GET' });
-    return from(promise.then(this.handleFunctionResponse));
+    return from(this.request<T>('GET', url));
   }
 
   public post<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'POST', body: body });
-    return from(promise.then(this.handleFunctionResponse));
+    return from(this.request<T>('POST', url, body));
   }
 
   public put<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'PUT', body: body });
-    return from(promise.then(this.handleFunctionResponse));
+    return from(this.request<T>('PUT', url, body));
   }
 
   public delete(url: string): Observable<ApiServiceResponse<null>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<null>>(this.formatApiUrl(url), { method: 'DELETE' });
-    return from(promise.then(this.handleFunctionResponse));
+    return from(this.request<null>('DELETE', url));
   }
 
   public patch<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
-    const promise = this.supabaseService.client.functions.invoke<ApiInternalResponse<T>>(this.formatApiUrl(url), { method: 'PATCH', body: body });
-    return from(promise.then(this.handleFunctionResponse));
+    return from(this.request<T>('PATCH', url, body));
+  }
+
+  private async request<T>(method: string, url: string, body?: Record<string, unknown>): Promise<ApiServiceResponse<T>> {
+    const headers: Record<string, string> = {};
+
+    // getSession() refreshes an expired access token before returning it.
+    const { data: { session } } = await this.supabaseService.client.auth.getSession();
+    if (session) {
+      headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    if (body !== undefined) {
+      headers['Content-Type'] = 'application/json';
+    }
+
+    // No `credentials` option: the API authenticates via the Authorization
+    // header, and its platform CORS is configured without credential support.
+    const response = await fetch(this.formatApiUrl(url), {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+    if (response.status === 404 || response.status === 204) {
+      return { data: null, error: null };
+    }
+
+    if (!response.ok) {
+      const errorResponse = await response.json().catch(() => null) as ApiInternalErrorResponse | null;
+      throw new Error(errorResponse?.error ?? `Request failed with status ${response.status}`);
+    }
+
+    const successResponse = await response.json() as ApiInternalSuccessResponse<T>;
+    return { data: successResponse.data ?? null, totalCount: successResponse.totalCount, error: null };
   }
 
   private formatApiUrl(url: string): string {
-    return 'api/' + url.replace(/^\/+|\/+$/g, "");
-  }
-
-  private async handleFunctionResponse<T>(response: { data: ApiInternalResponse<T> | null; error: Error | null }): Promise<ApiServiceResponse<T>> {
-    if (!response.error) {
-      const successResponse = response.data as ApiInternalSuccessResponse<T>;
-      return { data: successResponse.data, totalCount: successResponse.totalCount, error: null };
-    } else {
-      return { data: handleNotFoundHttpError(response.error), error: null };
-    }
+    const baseUrl = this.environmentService.apiUrl.replace(/\/+$/, '');
+    return `${baseUrl}/api/` + url.replace(/^\/+|\/+$/g, '');
   }
 }
