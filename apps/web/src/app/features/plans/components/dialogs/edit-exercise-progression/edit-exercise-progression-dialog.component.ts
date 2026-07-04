@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -40,6 +40,10 @@ export const DELOAD_STRATEGIES = [
   ],
 })
 export class EditExerciseProgressionDialogComponent implements OnInit, OnDestroy {
+  private readonly fb = inject(FormBuilder);
+  private readonly dialogRef = inject<MatDialogRef<EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogCloseResult>>(MatDialogRef);
+  readonly data = inject<EditExerciseProgressionDialogData>(MAT_DIALOG_DATA);
+
   progressionForm: FormGroup;
   deloadStrategies = DELOAD_STRATEGIES;
   private destroy$ = new Subject<void>();
@@ -48,11 +52,7 @@ export class EditExerciseProgressionDialogComponent implements OnInit, OnDestroy
     return VALIDATION_MESSAGES;
   }
 
-  constructor(
-    private readonly fb: FormBuilder,
-    private readonly dialogRef: MatDialogRef<EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogCloseResult>,
-    @Inject(MAT_DIALOG_DATA) public readonly data: EditExerciseProgressionDialogData,
-  ) {
+  constructor() {
     this.progressionForm = this.fb.group({
       weightIncrement: [this.data?.weight_increment ?? null, [Validators.required, Validators.min(0), numericValidator()]],
       deloadStrategy: [{ value: this.data?.deload_strategy ?? 'PROPORTIONAL', disabled: true }, [Validators.required]],

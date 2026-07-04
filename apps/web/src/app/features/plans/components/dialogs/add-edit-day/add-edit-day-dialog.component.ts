@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, inject, DestroyRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -32,15 +32,15 @@ export type AddEditDayDialogCloseResult =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddEditDayDialogComponent {
+  dialogRef = inject<MatDialogRef<AddEditDayDialogComponent, AddEditDayDialogCloseResult>>(MatDialogRef);
+  data = inject<AddEditDayDialogData>(MAT_DIALOG_DATA);
+
   protected dayForm: FormGroup;
   private readonly fb = inject(FormBuilder);
   private readonly dialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
-  constructor(
-    public dialogRef: MatDialogRef<AddEditDayDialogComponent, AddEditDayDialogCloseResult>,
-    @Inject(MAT_DIALOG_DATA) public data: AddEditDayDialogData
-  ) {
+  constructor() {
     this.dayForm = this.fb.group({
       name: [this.data?.name || '', Validators.required],
       description: [this.data?.description || '']

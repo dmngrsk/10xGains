@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
@@ -33,16 +33,18 @@ export type AddEditSetDialogCloseResult =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddEditSetDialogComponent {
+  private fb = inject(FormBuilder);
+  dialogRef = inject<MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>>(MatDialogRef);
+  data = inject<AddEditSetDialogData>(MAT_DIALOG_DATA);
+
   setForm: FormGroup;
   get validationMessages() {
     return VALIDATION_MESSAGES;
   }
 
-  constructor(
-    private fb: FormBuilder,
-    public dialogRef: MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>,
-    @Inject(MAT_DIALOG_DATA) public data: AddEditSetDialogData
-  ) {
+  constructor() {
+    const data = this.data;
+
     this.setForm = this.fb.group({
       reps: [data?.expected_reps ?? null, [
         Validators.required,

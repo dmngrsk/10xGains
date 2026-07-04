@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -7,11 +7,11 @@ import { LoaderButtonComponent } from './loader-button.component';
 @Component({
   standalone: true,
   imports: [LoaderButtonComponent],
-  template: `<txg-loader-button [isLoading]="isLoading" [disabled]="disabled">Click me</txg-loader-button>`,
+  template: `<txg-loader-button [isLoading]="isLoading()" [disabled]="disabled()">Click me</txg-loader-button>`,
 })
 class TestHostComponent {
-  isLoading = false;
-  disabled = false;
+  isLoading = signal(false);
+  disabled = signal(false);
 }
 
 describe('LoaderButtonComponent', () => {
@@ -54,7 +54,7 @@ describe('LoaderButtonComponent', () => {
 
   describe('when isLoading is true', () => {
     beforeEach(() => {
-      hostComponent.isLoading = true;
+      hostComponent.isLoading.set(true);
       fixture.detectChanges();
       buttonElement = fixture.nativeElement.querySelector('button');
     });
@@ -71,7 +71,7 @@ describe('LoaderButtonComponent', () => {
 
   describe('when disabled is true', () => {
     beforeEach(() => {
-      hostComponent.disabled = true;
+      hostComponent.disabled.set(true);
       fixture.detectChanges();
       buttonElement = fixture.nativeElement.querySelector('button');
     });
@@ -82,8 +82,8 @@ describe('LoaderButtonComponent', () => {
   });
 
   it('button should be disabled if isLoading is true, even if disabled input is false', () => {
-    hostComponent.isLoading = true;
-    hostComponent.disabled = false;
+    hostComponent.isLoading.set(true);
+    hostComponent.disabled.set(false);
     fixture.detectChanges();
     buttonElement = fixture.nativeElement.querySelector('button');
     expect(buttonElement.disabled).toBe(true);

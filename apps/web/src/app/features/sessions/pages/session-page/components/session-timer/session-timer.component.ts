@@ -19,7 +19,7 @@ export class SessionTimerComponent implements OnDestroy {
 
   @Output() readonly sessionCompleted = new EventEmitter<void>();
 
-  @HostBinding('class.pulsing') private isPulsing = false;
+  @HostBinding('class.pulsing') protected isPulsing = false;
 
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);

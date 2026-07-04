@@ -15,8 +15,8 @@
 10xGains is a streamlined platform designed to lower the entry barrier for powerlifting and weightlifting. The application enables users to create, customize, and track personalized training plans with AI-driven suggestions, ensuring safe and effective workout routines. Key features include secure user registration/login, flexible training plan creation, active workout session tracking, and comprehensive workout history.
 
 ## Tech Stack
-- **Frontend**: Angular 19, Angular Material Design 3, Tailwind CSS 4
-- **Backend**: Hono on Azure Functions (Node.js 22) for the API; Supabase for PostgreSQL and authentication
+- **Frontend**: Angular 22, Angular Material Design 3, Tailwind CSS 4
+- **Backend**: Hono on Azure Functions (Node.js 24) for the API; Supabase for PostgreSQL and authentication
 - **AI Integration**: OpenRouter API for AI-driven training plan suggestions
 - **Test Suite**: Vitest (unit), Cypress (e2e)
 - **CI/CD and Hosting**: GitHub Actions, Azure Static Web Apps (frontend), Azure Functions (API)
@@ -34,7 +34,7 @@ This is a pnpm workspace monorepo:
 ## Getting Started Locally
 
 ### Prerequisites
-- **Node.js**: Version specified in `.nvmrc` (e.g., `22.14.0`)
+- **Node.js**: Version specified in `.nvmrc` (e.g., `24.18.0`)
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)

@@ -1,6 +1,6 @@
 # API (@txg/api)
 
-The backend API: a Hono application hosted on Azure Functions (Node.js 22). Azure Functions is only the transport layer — all routing, middleware, and business logic live in the Hono app. Supabase provides PostgreSQL (with RLS) and authentication; the API uses only the anon key + the user's JWT, never the service-role key.
+The backend API: a Hono application hosted on Azure Functions (Node.js 24). Azure Functions is only the transport layer — all routing, middleware, and business logic live in the Hono app. Supabase provides PostgreSQL (with RLS) and authentication; the API uses only the anon key + the user's JWT, never the service-role key.
 
 See `README.md` in this directory for the full architecture and endpoint documentation. Maintain that endpoint documentation after implementing new endpoints.
 

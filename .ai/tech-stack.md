@@ -1,12 +1,12 @@
 # Tech Stack - 10xGains
 
 ## Frontend
-- Angular 19: Main framework for application development.
+- Angular 22: Main framework for application development.
 - Tailwind CSS 4: For flexible styling.
 - Angular Material Design 3: Prebuilt UI component library.
 
 ## Backend
-- Azure Functions (Node.js 22, Flex Consumption): Hosts the custom REST API, a Hono application in `apps/api`.
+- Azure Functions (Node.js 24, Flex Consumption): Hosts the custom REST API, a Hono application in `apps/api`.
 - Supabase: PostgreSQL database and authentication.
 
 ## AI

@@ -1,4 +1,4 @@
-import { Component, DebugElement, NgZone } from '@angular/core';
+import { Component, DebugElement, NgZone, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,9 +27,9 @@ const DEFAULT_MOVEMENT_THRESHOLD = 10;
   template: `
     <div
       txgLongPress
-      [txgLongPressDuration]="duration"
-      [txgLongPressMovementThreshold]="movementThreshold"
-      [txgLongPressDisabled]="disabled"
+      [txgLongPressDuration]="duration()"
+      [txgLongPressMovementThreshold]="movementThreshold()"
+      [txgLongPressDisabled]="disabled()"
       (txgLongPress)="onLongPress($event)"
       (txgClick)="onClick($event)">
       style="width: 100px; height: 100px; background-color: lightgray;"
@@ -39,9 +39,9 @@ const DEFAULT_MOVEMENT_THRESHOLD = 10;
   imports: [LongPressDirective],
 })
 class TestHostComponent {
-  duration: number = DEFAULT_DURATION;
-  movementThreshold: number = DEFAULT_MOVEMENT_THRESHOLD;
-  disabled: boolean = false;
+  duration = signal(DEFAULT_DURATION);
+  movementThreshold = signal(DEFAULT_MOVEMENT_THRESHOLD);
+  disabled = signal(false);
 
   longPressEvent: PointerEvent | null = null;
   clickEvent: PointerEvent | null = null;
@@ -114,8 +114,8 @@ describe('LongPressDirective', () => {
   });
 
   it('should use provided duration and threshold', () => {
-    component.duration = 300;
-    component.movementThreshold = 5;
+    component.duration.set(300);
+    component.movementThreshold.set(5);
     fixture.detectChanges();
     const directive = directiveElement.injector.get(LongPressDirective);
     expect(directive.txgLongPressDuration).toBe(300);
@@ -125,33 +125,33 @@ describe('LongPressDirective', () => {
   describe('Tap (txgClick output)', () => {
     it('should emit txgClick on a short press and release without movement', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration - 100);
+      vi.advanceTimersByTime(component.duration() - 100);
       dispatchPointerUp(directiveElement, 10, 10);
 
       expect(component.clickEvent).not.toBeNull();
       expect(component.clickEvent?.clientX).toBe(10);
       expect(component.longPressEvent).toBeNull();
-      vi.advanceTimersByTime(component.duration);
+      vi.advanceTimersByTime(component.duration());
       expect(component.longPressEvent).toBeNull();
     });
 
     it('should NOT emit txgClick if movement exceeds threshold', () => {
       dispatchPointerDown(directiveElement, 10, 10);
       vi.advanceTimersByTime(100);
-      dispatchPointerMove(directiveElement, 10 + component.movementThreshold + 1, 10);
+      dispatchPointerMove(directiveElement, 10 + component.movementThreshold() + 1, 10);
       vi.advanceTimersByTime(100);
-      dispatchPointerUp(directiveElement, 10 + component.movementThreshold + 1, 10);
+      dispatchPointerUp(directiveElement, 10 + component.movementThreshold() + 1, 10);
 
       expect(component.clickEvent).toBeNull();
       expect(component.longPressEvent).toBeNull();
     });
 
     it('should NOT emit txgClick if txgLongPressDisabled is true', () => {
-      component.disabled = true;
+      component.disabled.set(true);
       fixture.detectChanges();
 
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration - 100);
+      vi.advanceTimersByTime(component.duration() - 100);
       dispatchPointerUp(directiveElement, 10, 10);
 
       expect(component.clickEvent).toBeNull();
@@ -160,7 +160,7 @@ describe('LongPressDirective', () => {
 
     it('should NOT emit txgClick if it was a long press', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration + 50);
+      vi.advanceTimersByTime(component.duration() + 50);
       dispatchPointerUp(directiveElement, 10, 10);
 
       expect(component.longPressEvent).not.toBeNull();
@@ -169,7 +169,7 @@ describe('LongPressDirective', () => {
 
     it('should NOT emit txgClick for non-primary mouse buttons', () => {
       dispatchPointerDown(directiveElement, 10, 10, 1);
-      vi.advanceTimersByTime(component.duration - 100);
+      vi.advanceTimersByTime(component.duration() - 100);
       dispatchPointerUp(directiveElement, 10, 10, 1);
 
       expect(component.clickEvent).toBeNull();
@@ -180,7 +180,7 @@ describe('LongPressDirective', () => {
   describe('Long Press (txgLongPress output)', () => {
     it('should emit txgLongPress after duration if pointer is held down without movement', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration + 50);
+      vi.advanceTimersByTime(component.duration() + 50);
 
       expect(component.longPressEvent).not.toBeNull();
       expect(component.longPressEvent?.clientX).toBe(10);
@@ -192,7 +192,7 @@ describe('LongPressDirective', () => {
 
     it('should NOT emit txgLongPress if pointer is released before duration', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration - 100);
+      vi.advanceTimersByTime(component.duration() - 100);
       dispatchPointerUp(directiveElement, 10, 10);
 
       expect(component.longPressEvent).toBeNull();
@@ -201,23 +201,23 @@ describe('LongPressDirective', () => {
 
     it('should NOT emit txgLongPress if movement exceeds threshold during the press', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration / 2);
-      dispatchPointerMove(directiveElement, 10 + component.movementThreshold + 1, 10);
-      vi.advanceTimersByTime(component.duration);
+      vi.advanceTimersByTime(component.duration() / 2);
+      dispatchPointerMove(directiveElement, 10 + component.movementThreshold() + 1, 10);
+      vi.advanceTimersByTime(component.duration());
 
       expect(component.longPressEvent).toBeNull();
       expect(component.clickEvent).toBeNull();
 
-      dispatchPointerUp(directiveElement, 10 + component.movementThreshold + 1, 10);
+      dispatchPointerUp(directiveElement, 10 + component.movementThreshold() + 1, 10);
       expect(component.clickEvent).toBeNull();
     });
 
     it('should NOT emit txgLongPress if txgLongPressDisabled is true', () => {
-      component.disabled = true;
+      component.disabled.set(true);
       fixture.detectChanges();
 
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration + 50);
+      vi.advanceTimersByTime(component.duration() + 50);
       dispatchPointerUp(directiveElement, 10, 10);
 
       expect(component.longPressEvent).toBeNull();
@@ -226,7 +226,7 @@ describe('LongPressDirective', () => {
 
     it('should NOT emit txgLongPress for non-primary mouse buttons', () => {
       dispatchPointerDown(directiveElement, 10, 10, 1);
-      vi.advanceTimersByTime(component.duration + 50);
+      vi.advanceTimersByTime(component.duration() + 50);
       dispatchPointerUp(directiveElement, 10, 10, 1);
 
       expect(component.longPressEvent).toBeNull();
@@ -237,9 +237,9 @@ describe('LongPressDirective', () => {
   describe('Cancellation by Pointer Leave', () => {
     it('should cancel long press and tap if pointer leaves during press', () => {
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration / 2);
+      vi.advanceTimersByTime(component.duration() / 2);
       dispatchPointerLeave(directiveElement);
-      vi.advanceTimersByTime(component.duration);
+      vi.advanceTimersByTime(component.duration());
 
       expect(component.longPressEvent).toBeNull();
       expect(component.clickEvent).toBeNull();
@@ -258,7 +258,7 @@ describe('LongPressDirective', () => {
       dispatchPointerDown(directiveElement, 10, 10);
       expect(runOutsideAngularSpy).toHaveBeenCalled();
 
-      vi.advanceTimersByTime(component.duration + 50);
+      vi.advanceTimersByTime(component.duration() + 50);
       expect(component.longPressEvent).not.toBeNull();
       expect(runSpy).toHaveBeenCalled();
 
@@ -282,12 +282,12 @@ describe('LongPressDirective', () => {
       const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
 
       dispatchPointerDown(directiveElement, 10, 10);
-      vi.advanceTimersByTime(component.duration / 2);
+      vi.advanceTimersByTime(component.duration() / 2);
 
       fixture.destroy();
 
       expect(clearTimeoutSpy).toHaveBeenCalled();
-      vi.advanceTimersByTime(component.duration);
+      vi.advanceTimersByTime(component.duration());
       expect(component.longPressEvent).toBeNull();
       expect(component.clickEvent).toBeNull();
     });

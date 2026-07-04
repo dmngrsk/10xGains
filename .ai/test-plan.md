@@ -154,7 +154,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Category | Tool / Environment | Configuration / Notes |
 | :--- | :--- | :--- |
-| **Node.js Version** | Node.js | `22.14.0` (as per `.nvmrc`) |
+| **Node.js Version** | Node.js | `24.18.0` (as per `.nvmrc`) |
 | **Package Manager**| pnpm | As per the `packageManager` field in `package.json` |
 | **Unit/Component Testing** | Vitest | Configured in `vitest.config.ts`. Runs in a `jsdom` environment. |
 | **API Testing**| Vitest | Configured in `apps/api/vitest.config.ts`. Runs in a `node` environment. |

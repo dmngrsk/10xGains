@@ -1,6 +1,6 @@
 # 10xGains API (Azure Functions)
 
-This workspace package (`@txg/api`) contains the main API for the 10xGains application. It is a [Hono](https://hono.dev/) application hosted on Azure Functions (Node.js 22, Flex Consumption plan): Azure Functions is only the transport layer, and all routing, middleware, and business logic live in the Hono app.
+This workspace package (`@txg/api`) contains the main API for the 10xGains application. It is a [Hono](https://hono.dev/) application hosted on Azure Functions (Node.js 24, Flex Consumption plan): Azure Functions is only the transport layer, and all routing, middleware, and business logic live in the Hono app.
 
 ## Table of Contents
 

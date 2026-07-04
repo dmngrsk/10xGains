@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -45,6 +45,10 @@ export type AddEditSetDialogCloseResult = CreateSessionSetCommand | UpdateSessio
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddEditSetDialogComponent {
+  dialogRef = inject<MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>>(MatDialogRef);
+  fb = inject(FormBuilder);
+  data = inject<AddEditSetDialogData>(MAT_DIALOG_DATA);
+
   setForm: FormGroup;
 
   get titleText(): string {
@@ -77,11 +81,7 @@ export class AddEditSetDialogComponent {
     return VALIDATION_MESSAGES;
   }
 
-  constructor(
-    public dialogRef: MatDialogRef<AddEditSetDialogComponent, AddEditSetDialogCloseResult>,
-    public fb: FormBuilder,
-    @Inject(MAT_DIALOG_DATA) public data: AddEditSetDialogData
-  ) {
+  constructor() {
     let initialReps: string = '';
     let initialWeight: string = '';
 

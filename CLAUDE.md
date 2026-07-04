@@ -4,8 +4,8 @@
 
 ## Tech Stack
 
-- Angular 19, Angular Material Design 3, Tailwind CSS 4 (frontend)
-- Hono on Azure Functions, Node.js 22 (API)
+- Angular 22, Angular Material Design 3, Tailwind CSS 4 (frontend)
+- Hono on Azure Functions, Node.js 24 (API)
 - Supabase (PostgreSQL with RLS, authentication)
 
 ## Project Structure
