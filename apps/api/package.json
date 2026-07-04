@@ -6,6 +6,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "node esbuild.mjs",
+    "build:deploy": "pnpm build && node pack.mjs",
     "typecheck": "tsc --noEmit",
     "start": "pnpm build && func start",
     "lint": "eslint \"src/**/*.ts\"",
