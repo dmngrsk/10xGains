@@ -75,6 +75,31 @@ describe('ApiService', () => {
     expect(result).toEqual({ data: { id: '2' }, totalCount: undefined, error: null });
   });
 
+  it('should resolve responses without a data property as { data: null }', async () => {
+    fetchMock.mockResolvedValue(mockJsonResponse(200, { message: 'OK' }));
+
+    const result = await firstValueFrom(service.get('/plans'));
+
+    expect(result).toEqual({ data: null, totalCount: undefined, error: null });
+  });
+
+  it('should not duplicate slashes when the API URL has a trailing slash', async () => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        ApiService,
+        { provide: SupabaseService, useValue: { client: { auth: { getSession: getSessionMock } } } },
+        { provide: EnvironmentService, useValue: { apiUrl: `${API_URL}/` } },
+      ]
+    });
+    service = TestBed.inject(ApiService);
+    fetchMock.mockResolvedValue(mockJsonResponse(200, { data: [] }));
+
+    await firstValueFrom(service.get('/plans'));
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/plans`);
+  });
+
   it('should resolve 204 responses as { data: null, error: null } without parsing the body', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 

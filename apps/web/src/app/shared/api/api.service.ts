@@ -69,10 +69,11 @@ export class ApiService {
     }
 
     const successResponse = await response.json() as ApiInternalSuccessResponse<T>;
-    return { data: successResponse.data, totalCount: successResponse.totalCount, error: null };
+    return { data: successResponse.data ?? null, totalCount: successResponse.totalCount, error: null };
   }
 
   private formatApiUrl(url: string): string {
-    return `${this.environmentService.apiUrl}/api/` + url.replace(/^\/+|\/+$/g, "");
+    const baseUrl = this.environmentService.apiUrl.replace(/\/+$/, '');
+    return `${baseUrl}/api/` + url.replace(/^\/+|\/+$/g, '');
   }
 }
