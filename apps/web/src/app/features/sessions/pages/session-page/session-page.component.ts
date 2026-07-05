@@ -4,9 +4,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
 import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { concatMap, filter, map, switchMap } from 'rxjs/operators';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
@@ -48,6 +48,10 @@ export class SessionPageComponent implements OnDestroy {
   // A notification action captured on cold start, applied once the session loads.
   private readonly pendingAction = signal<SessionNotificationAction | null>(null);
 
+  // Serializes async notification updates so a later state always wins over an
+  // earlier one (concatMap waits for each show/clear to finish before the next).
+  private readonly notificationSync$ = new Subject<SessionPageViewModel>();
+
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
 
   readonly isReadOnly = computed(() => {
@@ -88,10 +92,18 @@ export class SessionPageComponent implements OnDestroy {
       }
     });
 
-    // Keep the ongoing OS notification in sync with the current set.
+    // Keep the ongoing OS notification in sync with the current set. The async
+    // updates run through a serialized stream to avoid overlapping show/clear.
+    this.notificationSync$
+      .pipe(
+        concatMap(viewModel => this.syncNotification(viewModel)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
+
     effect(() => {
       const viewModel = this.viewModel();
-      untracked(() => this.syncNotification(viewModel));
+      this.notificationSync$.next(viewModel);
     });
 
     // Quick actions while the app is in the foreground (warm path).
@@ -108,7 +120,7 @@ export class SessionPageComponent implements OnDestroy {
         if (action !== 'complete-set' && action !== 'reset-timer') return;
 
         this.pendingAction.set(action);
-        this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+        this.router.navigate([], { relativeTo: this.route, queryParams: { action: null }, queryParamsHandling: 'merge', replaceUrl: true });
       });
 
     // Apply a captured cold-start action once the session has finished loading.
@@ -257,28 +269,32 @@ export class SessionPageComponent implements OnDestroy {
   private requestNotificationPermission(): void {
     void this.notificationService.requestPermission().then(permission => {
       if (permission === 'granted') {
-        this.syncNotification(this.viewModel());
+        this.notificationSync$.next(this.viewModel());
       }
     });
   }
 
-  private syncNotification(viewModel: SessionPageViewModel): void {
-    const status = viewModel.metadata?.status;
-    const isActive = !!viewModel.id && status !== 'COMPLETED' && status !== 'CANCELLED';
-    const current = isActive ? selectCurrentSet(viewModel) : null;
+  private async syncNotification(viewModel: SessionPageViewModel): Promise<void> {
+    try {
+      const status = viewModel.metadata?.status;
+      const isActive = !!viewModel.id && status !== 'COMPLETED' && status !== 'CANCELLED';
+      const current = isActive ? selectCurrentSet(viewModel) : null;
 
-    if (!current) {
-      void this.notificationService.clear();
-      return;
+      if (!current) {
+        await this.notificationService.clear();
+        return;
+      }
+
+      await this.notificationService.show({
+        sessionId: viewModel.id!,
+        title: viewModel.metadata?.dayName || viewModel.metadata?.planName || 'Active workout',
+        exerciseName: current.exercise.exerciseName,
+        reps: current.set.expectedReps,
+        weight: current.set.weight,
+      });
+    } catch {
+      // Notifications are best-effort; keep the sync stream alive on failure.
     }
-
-    void this.notificationService.show({
-      sessionId: viewModel.id!,
-      title: viewModel.metadata?.dayName || viewModel.metadata?.planName || 'Active workout',
-      exerciseName: current.exercise.exerciseName,
-      reps: current.set.expectedReps,
-      weight: current.set.weight,
-    });
   }
 
   private handleNotificationAction(action: SessionNotificationAction): void {

@@ -91,7 +91,12 @@ export class SessionNotificationService {
     }
 
     this.lastContent = content;
-    this.restartReminder();
+    // Only arm the inactivity reminder once the user has actually granted
+    // permission; otherwise the timer would fire against a notification that
+    // can never be shown.
+    if (Notification.permission === 'granted') {
+      this.restartReminder();
+    }
     await this.render(content, { reAlert: false });
   }
 
