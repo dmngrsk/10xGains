@@ -143,8 +143,10 @@ jobs:
 
       - name: Deploy Azure Static Web App using Azure SWA CLI
         # The specified 'production' environment is in the context of the Azure SWA resource.
-        # Note: The standard Azure SWA deploy action requires the trigger 'on: push' to execute.
-        # This is why we're deploying directly to the resource via the CLI instead of using the standard action.
+        # Note: The standard Azure/static-web-apps-deploy action forces PR-number-based preview
+        # environments on pull_request events, ignoring deployment_environment. Staging deploys
+        # run from PR-triggered pipelines and must target the SWA production environment, so we
+        # deploy directly to the resource via the SWA CLI instead.
         run: |
           swa deploy ./apps/web/dist/browser \
             --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
