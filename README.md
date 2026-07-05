@@ -38,7 +38,6 @@ This is a pnpm workspace monorepo:
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
-- **Azure Functions Core Tools**: Hosts the API locally on port 7071; installed automatically with the workspace dependencies (`azure-functions-core-tools`), no manual setup needed
 
 ### Installation
 1.  **Clone the repository:**
@@ -49,30 +48,49 @@ This is a pnpm workspace monorepo:
     ```bash
     cd 10xGains
     ```
+
 3.  **Start the local Supabase services:**
 
     This command uses Docker to start the local Supabase stack (database, auth, storage, etc.).
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these for the next step.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 6 and 7.
 
-4.  **Configure environment variables for the Angular app:**
+4.  **Apply database migrations and seed data:**
 
-    The frontend needs to know how to connect to your local Supabase instance.
+    This command resets your local database and applies all schema changes from the `supabase/migrations` folder.
+    ```bash
+    npx supabase db reset
+    ```
 
-    Create a copy of the development environment file:
+5.  **Install dependencies:**
+
+    Install the necessary npm packages for all workspace packages.
+    ```bash
+    pnpm install
+    ```
+
+6.  **Configure the API:**
+
+    The API runs on a local Azure Functions host. Create its local settings file from the provided example:
+    ```bash
+    cp apps/api/local.settings.json.example apps/api/local.settings.json
+    ```
+    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 3.
+
+7.  **Configure the Angular app:**
+
+    The frontend needs to know how to connect to your local Supabase instance. Create a copy of the development environment file:
     ```bash
     cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
     ```
-    The Angular CLI will use this file during local development.
-
-    Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from the `supabase start` output:
+    The Angular CLI will use this file during local development. Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from step 3:
     ```typescript
     export const environment = {
       production: false,
       api: {
-        url: 'http://localhost:7071', // The local Azure Functions host (pnpm --filter @txg/api start)
+        url: 'http://localhost:7071', // The local Azure Functions host
       },
       supabase: {
         url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
@@ -80,37 +98,14 @@ This is a pnpm workspace monorepo:
       }
     };
     ```
-5.  **Apply database migrations and seed data:**
 
-    This command resets your local database and applies all schema changes from the `supabase/migrations` folder.
+8.  **Start the apps:**
+
+    Run both the Angular dev server and the API host together with a single command:
     ```bash
-    npx supabase db reset
+    pnpm dev
     ```
-
-6.  **Install dependencies:**
-
-    Now that the database is fully configured, install the necessary npm packages for all workspace packages.
-    ```bash
-    pnpm install
-    ```
-
-7.  **Configure and start the API:**
-
-    The API runs on a local Azure Functions host. Create its local settings file from the provided example:
-    ```bash
-    cp apps/api/local.settings.json.example apps/api/local.settings.json
-    ```
-    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key (the same values as in step 4). Then start the API host on port 7071:
-    ```bash
-    pnpm --filter @txg/api start
-    ```
-
-8.  **Start the development server:**
-
-    In a separate terminal, run the app using your new `development` configuration:
-    ```bash
-    pnpm start:development
-    ```
+    This runs the `dev` script of every workspace package in parallel (equivalent to `pnpm --filter @txg/web start:development` and `pnpm --filter @txg/api start` run side by side), prefixing each line of output with its package name. To run them separately instead (e.g. in two terminals), use those individual commands.
 
 9.  **Open your browser and navigate to `http://localhost:4200`**
 
@@ -120,14 +115,15 @@ Below are the most important scripts defined in `package.json`.
 
 ### Development Server
 
-- `pnpm start:development` - Runs the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
-- `pnpm start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
+- `pnpm dev` - Runs the Angular dev server and the API host together, in parallel, each with output prefixed by package name. This is the recommended way to start local development once [Getting Started Locally](#getting-started-locally) is complete.
 - `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`.
+- `pnpm --filter @txg/web start:development` - Runs only the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
+- `pnpm --filter @txg/web start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
 
-### Building the Application
+### Building the Web Application
 
-- `pnpm build` - Builds the application for production. The output is placed in the `apps/web/dist` directory.
-- `pnpm build:[development|staging]` - Builds the application using the `development` or `staging` configuration.
+- `pnpm build` - Builds the web application for production. The output is placed in the `apps/web/dist` directory.
+- `pnpm build:[development|staging]` - Builds the web application using the `development` or `staging` configuration.
 
 ### Linting and Formatting
 
@@ -140,7 +136,8 @@ Below are the most important scripts defined in `package.json`.
 #### Unit Tests (Vitest)
 
 - `pnpm test` - Runs the complete unit test suite once.
-- `pnpm --filter <@txg/web|@txg/api> test:watch` - Runs a package's unit tests in an interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
+- `pnpm test:watch` - Runs both `apps/web` and `apps/api` unit tests in interactive watch mode, automatically re-running them when you save a file. Ideal for active development.
+- `pnpm --filter <@txg/web|@txg/api> test:watch` - Runs a single package's unit tests in watch mode instead of both.
 - `pnpm test:coverage` -Runs the unit tests and generates a code coverage report in the `/coverage` directory.
 
 #### End-to-End Tests (Cypress)

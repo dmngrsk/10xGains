@@ -5,15 +5,16 @@
   "description": "10xGains backend API: Hono app hosted on Azure Functions (Node 24).",
   "main": "dist/main.js",
   "scripts": {
+    "dev": "pnpm run start",
+    "start": "pnpm build && func start",
     "build": "node esbuild.mjs",
     "build:deploy": "pnpm build && node pack.mjs",
     "typecheck": "tsc --noEmit",
-    "start": "pnpm build && func start",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@azure/functions": "^4.7.0",
