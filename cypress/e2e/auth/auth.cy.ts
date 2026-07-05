@@ -67,11 +67,12 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
 
     it('allows a user to request a password reset', { tags: ['AUTH-06'] }, () => {
-      const email = Cypress.env('CANARY_USER_EMAIL');
       cy.intercept('POST', '/auth/v1/recover*').as('recover');
 
       cy.getBySel(dataCy.auth.login.resetPasswordButton).click();
-      cy.getBySel(dataCy.auth.resetPassword.emailInput).type(email);
+      cy.env<{ CANARY_USER_EMAIL: string }>(['CANARY_USER_EMAIL']).then(({ CANARY_USER_EMAIL }) => {
+        cy.getBySel(dataCy.auth.resetPassword.emailInput).type(CANARY_USER_EMAIL);
+      });
       cy.getBySel(dataCy.auth.resetPassword.requestSignInLinkButton).click();
 
       cy.wait('@recover').then(() => {
