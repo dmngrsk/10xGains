@@ -1,10 +1,12 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["es5", "dom"],
+    "lib": ["ES2022", "dom"],
     "sourceMap": true,
-    "types": ["cypress", "node"]
+    "types": ["cypress", "node"],
+    /* Cypress's webpack preprocessor injects the deprecated downlevelIteration
+       option; silence the TS 6 deprecation error until Cypress stops doing so. */
+    "ignoreDeprecations": "6.0"
   },
   "include": ["**/*.ts"]
 }

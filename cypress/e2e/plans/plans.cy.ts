@@ -23,7 +23,9 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
 
     it('allows a user to view and navigate to a plan', { tags: ['@smoke', 'PLAN-02'] }, () => {
       cy.getBySel(dataCy.plans.planList.activePlanCard).should('be.visible').and('contain.text', 'Test Training Plan');
-      cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
+      cy.getBySel(dataCy.plans.planList.activePlanCard).within(() => {
+        cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
+      });
 
       cy.url().should('match', /\/plans\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
 
