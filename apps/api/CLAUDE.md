@@ -28,6 +28,6 @@ See `README.md` in this directory for the full architecture and endpoint documen
 
 ## Build and Local Development
 
-- `pnpm --filter @txg/api start` - Builds (esbuild single-file bundle) and starts the local Functions host on port 7071. Requires `local.settings.json` (see `local.settings.json.example`) and a running local Supabase stack.
+- `pnpm --filter @txg/api start` - Builds (esbuild single-file bundle) and starts the local Functions host on port 7071. Requires `local.settings.json` (see `local.settings.json.example`), a running local Supabase stack, and the Azurite Docker container (see root `README.md`) for `AzureWebJobsStorage`.
 - `pnpm --filter @txg/api build:deploy` - Assembles the deployment package in `deploy/` (used by CD).
 - `@azure/functions` must stay external in the esbuild bundle — it has to resolve to the worker's shared instance.
