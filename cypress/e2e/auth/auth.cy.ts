@@ -70,7 +70,11 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.intercept('POST', '/auth/v1/recover*').as('recover');
 
       cy.getBySel(dataCy.auth.login.resetPasswordButton).click();
-      cy.env<{ CANARY_USER_EMAIL: string }>(['CANARY_USER_EMAIL']).then(({ CANARY_USER_EMAIL }) => {
+      cy.env<{ CANARY_USER_EMAIL?: string }>(['CANARY_USER_EMAIL']).then(({ CANARY_USER_EMAIL }) => {
+        if (!CANARY_USER_EMAIL) {
+          throw new Error('Canary user email not found in environment variables');
+        }
+
         cy.getBySel(dataCy.auth.resetPassword.emailInput).type(CANARY_USER_EMAIL);
       });
       cy.getBySel(dataCy.auth.resetPassword.requestSignInLinkButton).click();
