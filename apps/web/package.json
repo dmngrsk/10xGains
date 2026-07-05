@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "dev": "pnpm run start:development",
     "ng": "ng",
     "start": "ng serve",
     "start:development": "ng serve --configuration=development --host 0.0.0.0",
@@ -15,8 +16,8 @@
     "lint": "eslint \"src/**/*.{ts,html}\"",
     "lint:fix": "eslint --fix \"src/**/*.{ts,html}\"",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@angular/animations": "^22.0.0",
