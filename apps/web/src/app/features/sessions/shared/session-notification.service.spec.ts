@@ -3,7 +3,7 @@ import { SwPush } from '@angular/service-worker';
 import { Subject, of } from 'rxjs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { PushService } from '@shared/api/push.service';
-import { SessionNotificationContent, SessionNotificationService } from './session-notification.service';
+import { SessionNotificationService } from './session-notification.service';
 
 vi.mock('../../../../environments/environment', () => ({
   environment: { vapidPublicKey: 'TEST_VAPID_KEY' },
@@ -11,30 +11,20 @@ vi.mock('../../../../environments/environment', () => ({
 
 interface NotificationClickEvent { action: string; notification: unknown; }
 
-const content: SessionNotificationContent = {
-  sessionId: 's1',
-  title: 'Push Day',
-  exerciseName: 'Bench Press',
-  reps: 5,
-  weight: 60,
-};
-
 describe('SessionNotificationService', () => {
   let clicks$: Subject<NotificationClickEvent>;
-  let showNotification: ReturnType<typeof vi.fn>;
   let getNotifications: ReturnType<typeof vi.fn>;
   let requestSubscription: ReturnType<typeof vi.fn>;
   let saveSubscription: ReturnType<typeof vi.fn>;
 
   const configure = (swEnabled: boolean, permission: NotificationPermission = 'granted') => {
     clicks$ = new Subject<NotificationClickEvent>();
-    showNotification = vi.fn().mockResolvedValue(undefined);
     getNotifications = vi.fn().mockResolvedValue([]);
     requestSubscription = vi.fn();
     saveSubscription = vi.fn().mockReturnValue(of({ data: null, error: null }));
 
     Object.defineProperty(navigator, 'serviceWorker', {
-      value: { ready: Promise.resolve({ showNotification, getNotifications }) },
+      value: { ready: Promise.resolve({ getNotifications }) },
       configurable: true,
     });
     vi.stubGlobal('Notification', {
@@ -54,7 +44,6 @@ describe('SessionNotificationService', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
-    vi.useRealTimers();
     TestBed.resetTestingModule();
   });
 
@@ -65,40 +54,9 @@ describe('SessionNotificationService', () => {
     it('reports unsupported and no-ops', async () => {
       expect(service.isSupported).toBe(false);
       await expect(service.requestPermission()).resolves.toBe('denied');
-      await expect(service.show(content)).resolves.toBeUndefined();
-      expect(showNotification).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('when supported and permission granted', () => {
-    let service: SessionNotificationService;
-    beforeEach(() => { service = configure(true, 'granted'); });
-    afterEach(async () => { await service.clear(); });
-
-    it('shows an ongoing notification with the current set and quick actions', async () => {
-      await service.show(content);
-
-      expect(showNotification).toHaveBeenCalledTimes(1);
-      const [title, options] = showNotification.mock.calls[0];
-      expect(title).toBe('Push Day');
-      expect(options.body).toBe('Bench Press · 60 kg · 5 reps');
-      expect(options.tag).toBe('session-active');
-      expect(options.requireInteraction).toBe(true);
-      expect(options.actions.map((a: { action: string }) => a.action)).toEqual(['complete-set', 'reset-timer']);
-      expect(options.data.onActionClick['complete-set'].url).toContain('action=complete-set');
-    });
-
-    it('omits weight from the body when absent', async () => {
-      await service.show({ ...content, weight: null });
-      expect(showNotification.mock.calls[0][1].body).toBe('Bench Press · 5 reps');
-    });
-
-    it('closes matching notifications on clear', async () => {
-      const close = vi.fn();
-      getNotifications.mockResolvedValue([{ close }]);
-      await service.clear();
-      expect(getNotifications).toHaveBeenCalledWith({ tag: 'session-active' });
-      expect(close).toHaveBeenCalled();
+      await expect(service.subscribeToPush()).resolves.toBeUndefined();
+      await expect(service.clear()).resolves.toBeUndefined();
+      expect(requestSubscription).not.toHaveBeenCalled();
     });
   });
 
@@ -115,18 +73,30 @@ describe('SessionNotificationService', () => {
 
       expect(requestSubscription).toHaveBeenCalledWith({ serverPublicKey: 'TEST_VAPID_KEY' });
       expect(saveSubscription).toHaveBeenCalledWith({ endpoint: 'https://push/1', keys: { p256dh: 'p', auth: 'a' } });
-      await service.clear();
     });
 
-    it('does nothing when the service worker is unsupported', async () => {
-      const service = configure(false, 'granted');
+    it('does nothing when permission is not granted', async () => {
+      const service = configure(true, 'default');
       await service.subscribeToPush();
       expect(requestSubscription).not.toHaveBeenCalled();
     });
   });
 
+  describe('clear', () => {
+    it('closes matching ongoing notifications', async () => {
+      const service = configure(true, 'granted');
+      const close = vi.fn();
+      getNotifications.mockResolvedValue([{ close }]);
+
+      await service.clear();
+
+      expect(getNotifications).toHaveBeenCalledWith({ tag: 'session-active' });
+      expect(close).toHaveBeenCalled();
+    });
+  });
+
   describe('actions$', () => {
-    it('emits only the two known quick actions', async () => {
+    it('emits only the two known quick actions', () => {
       const service = configure(true);
       const received: string[] = [];
       service.actions$.subscribe(a => received.push(a));
@@ -137,7 +107,6 @@ describe('SessionNotificationService', () => {
       clicks$.next({ action: 'reset-timer', notification: {} });
 
       expect(received).toEqual(['complete-set', 'reset-timer']);
-      await service.clear();
     });
   });
 });

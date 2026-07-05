@@ -20,6 +20,7 @@ This workspace package (`@txg/api`) contains the main API for the 10xGains appli
   - [Plan Exercise Progression API](#plan-exercise-progression-api)
   - [Sessions API](#sessions-api)
   - [Session Sets API](#session-sets-api)
+  - [Push API](#push-api)
   - [Health Check API](#health-check-api)
 
 ## Architecture
@@ -1487,6 +1488,44 @@ Marks a specific set as pending.
     -   `400 Bad Request`: If path parameter formats are invalid.
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+### Push API
+
+The Push API manages a user's Web Push subscriptions. The backend uses these to
+deliver session rest/idle notifications via a background queue-triggered function
+(`sendPush`), scheduled when a set is completed/failed. All endpoints require
+authentication and operate only on the authenticated user's subscriptions.
+
+#### POST /api/push/subscriptions
+
+Registers (or refreshes) a Web Push subscription for the current user, keyed by
+its browser `endpoint`.
+
+-   **Authorization**: Bearer token required.
+-   **Request Body**: The browser `PushSubscription.toJSON()` shape.
+    ```json
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/abc123",
+      "keys": { "p256dh": "<base64>", "auth": "<base64>" }
+    }
+    ```
+-   **Response (201 Created)**: The stored subscription.
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If the body is missing required fields.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### DELETE /api/push/subscriptions
+
+Removes a subscription for the current user (e.g. on unsubscribe).
+
+-   **Authorization**: Bearer token required.
+-   **Query Parameters**: `endpoint` (required) — the push endpoint to remove.
+-   **Response (204 No Content)**: On success.
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `endpoint` is missing or malformed.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
 ### Health Check API

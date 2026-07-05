@@ -7,7 +7,8 @@ export async function patch(
   c: Context<AppContext>,
   sessionId: string,
   setId: string,
-  getUpdateSetData: (set: SessionSetDto) => Partial<SessionSetDto>
+  getUpdateSetData: (set: SessionSetDto) => Partial<SessionSetDto>,
+  afterUpdate?: (updatedSet: SessionSetDto) => Promise<void>
 ): Promise<Response> {
   const sessionRepository = c.get('sessionRepository');
 
@@ -24,6 +25,11 @@ export async function patch(
     if (!updatedSet) {
       const errorData = createErrorDataWithLogging(404, 'Session set not found for update.');
       return c.json(errorData, 404);
+    }
+
+    // Best-effort side effect (e.g. scheduling push alerts); must not throw.
+    if (afterUpdate) {
+      await afterUpdate(updatedSet);
     }
 
     const successData = createSuccessData(updatedSet, { message: 'Session set updated successfully.' });

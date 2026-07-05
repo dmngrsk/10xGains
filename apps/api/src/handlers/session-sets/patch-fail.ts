@@ -4,6 +4,7 @@ import type { SessionSetDto } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { patch } from './helpers/patch-base';
 import { validatePathParams, validateQueryParams } from "../../utils/validation";
+import { REST_OVER_FAIL_SECONDS, scheduleRestAlerts } from '../../services/push/session-alert-scheduler';
 
 const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
@@ -30,5 +31,7 @@ export async function handleFailSessionSet(c: Context<AppContext>) {
     completed_at: new Date().toISOString()
   });
 
-  return await patch(c, path!.sessionId, path!.setId, getUpdateData);
+  return await patch(c, path!.sessionId, path!.setId, getUpdateData, () =>
+    scheduleRestAlerts(c.get('user').id, path!.sessionId, path!.setId, REST_OVER_FAIL_SECONDS)
+  );
 }
