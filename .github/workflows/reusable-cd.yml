@@ -99,6 +99,9 @@ jobs:
     needs: [backend-api]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -118,6 +121,26 @@ jobs:
           name: dist-web-${{ inputs.environment }}
           path: apps/web/dist/
 
+      - name: Log in to Azure via OIDC
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Retrieve deployment token
+        # The SWA CLI cannot authenticate via OIDC federated credentials directly,
+        # so fetch the deployment token at deploy time instead of storing it as a
+        # long-lived GitHub secret.
+        id: swa
+        run: |
+          SWA_TOKEN=$(az staticwebapp secrets list \
+            --name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
+            --query "properties.apiKey" -o tsv)
+          echo "::add-mask::$SWA_TOKEN"
+          echo "token=$SWA_TOKEN" >> "$GITHUB_OUTPUT"
+
       - name: Deploy Azure Static Web App using Azure SWA CLI
         # The specified 'production' environment is in the context of the Azure SWA resource.
         # Note: The standard Azure SWA deploy action requires the trigger 'on: push' to execute.
@@ -127,7 +150,7 @@ jobs:
             --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
             --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --env production \
-            --deployment-token ${{ secrets.AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN }}
+            --deployment-token ${{ steps.swa.outputs.token }}
 
   e2e:
     name: Run E2E Tests
