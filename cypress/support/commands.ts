@@ -57,8 +57,11 @@ function dragBySel(handleSelector: string, itemSelector: string, fromIndex: numb
 
       cy.wrap($handle).trigger('mousedown', { eventConstructor: 'MouseEvent', button: 0, buttons: 1, detail: 1, clientX: startX, clientY: startY, force: true });
 
+      // CDK moves the dragged element (and its handle) to a hidden overlay under <body> once
+      // dragging starts, so subsequent events are dispatched on the document instead of the
+      // handle - that's also where CDK's own move/up listeners are bound.
       for (let step = 1; step <= steps; step++) {
-        cy.wrap($handle).trigger('mousemove', {
+        cy.document().trigger('mousemove', {
           eventConstructor: 'MouseEvent',
           button: 0,
           buttons: 1,
@@ -68,7 +71,7 @@ function dragBySel(handleSelector: string, itemSelector: string, fromIndex: numb
         });
       }
 
-      cy.wrap($handle).trigger('mouseup', { eventConstructor: 'MouseEvent', clientX: targetX, clientY: targetY, force: true });
+      cy.document().trigger('mouseup', { eventConstructor: 'MouseEvent', clientX: targetX, clientY: targetY, force: true });
     });
   });
 }
