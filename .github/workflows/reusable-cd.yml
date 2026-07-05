@@ -65,7 +65,7 @@ jobs:
           supabase db test --linked
 
   backend-api:
-    name: Deploy API to Azure Functions
+    name: Deploy API app to Azure Functions
     needs: [database]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -73,25 +73,11 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
+      - name: Download API app artifact
+        uses: actions/download-artifact@v8
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-
-      - name: Build deployment package
-        run: |
-          pnpm --filter @txg/api build:deploy
+          name: dist-api-${{ inputs.environment }}
+          path: apps/api/deploy/
 
       - name: Log in to Azure via OIDC
         uses: azure/login@v3
@@ -109,7 +95,7 @@ jobs:
           sku: flexconsumption
 
   frontend:
-    name: Deploy Angular application to Azure Static Web App
+    name: Deploy web app to Azure Static Web App
     needs: [backend-api]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
@@ -126,10 +112,10 @@ jobs:
         run: |
           npm install -g @azure/static-web-apps-cli
 
-      - name: Download frontend artifact
+      - name: Download web app artifact
         uses: actions/download-artifact@v8
         with:
-          name: dist-${{ inputs.environment }}
+          name: dist-web-${{ inputs.environment }}
           path: apps/web/dist/
 
       - name: Deploy Azure Static Web App using Azure SWA CLI
