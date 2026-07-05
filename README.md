@@ -67,11 +67,11 @@ This is a pnpm workspace monorepo:
 
 5.  **Start the Azurite storage emulator:**
 
-    The API's local Azure Functions host needs a storage backend (`AzureWebJobsStorage`). Pull and run it by following Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub), publishing ports `10000`-`10002`. Add `-d --name azurite` to your `docker run` command so it runs detached and persists across restarts, the same way the Supabase stack does.
+    The API's local Azure Functions host needs a storage backend (`AzureWebJobsStorage`). Pull and run the container detached with the required ports mapped, the same way the Supabase stack runs in the background (see Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub) for more options):
     ```bash
-    docker start azurite
+    docker run -d --name azurite -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
     ```
-    Once it's running, it will be available for the API Function app to consume.
+    Once it's running, it will be available for the API Function app to consume. For subsequent starts after the container has been created, you can simply run `docker start azurite`.
 
 6.  **Install dependencies:**
 
