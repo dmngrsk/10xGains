@@ -26,8 +26,8 @@ APP_CANARY_USER_PASSWORD: Password of the canary user for E2E tests
 AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
 SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
 SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_ANON_KEY: Anonymous key for Supabase client
-SUPABASE_SERVICE_ROLE_KEY: Service role key for Supabase (used in E2E tests)
+SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
+SUPABASE_SECRET_KEY: Secret key for Supabase (used in E2E tests)
 ```
 
 #### Production Environment
@@ -48,7 +48,7 @@ APP_CANARY_USER_PASSWORD: Password of the canary user for smoke tests
 AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
 SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
 SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_ANON_KEY: Anonymous key for Supabase client
+SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
 ```
 
 ### Technical Environments

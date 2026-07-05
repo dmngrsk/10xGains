@@ -173,9 +173,9 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Concern | Staging Environment Configuration | Production Environment Configuration |
 | :--- | :--- | :--- |
-| **User Management** | - **Canary User:** Manually created once for all smoke tests.<br>- **Ephemeral Users:** Created on-the-fly for all non-`@smoke` tests using the `service_role` key. | - **Canary User:** Manually created once for all smoke tests.<br>- **Ephemeral Users**: Creation is **not permitted**. |
+| **User Management** | - **Canary User:** Manually created once for all smoke tests.<br>- **Ephemeral Users:** Created on-the-fly for all non-`@smoke` tests using the secret (`sb_secret_...`) key. | - **Canary User:** Manually created once for all smoke tests.<br>- **Ephemeral Users**: Creation is **not permitted**. |
 | **Test Data** | - **Canary Data:** Seeded via a version-controlled SQL script against the Canary User's ID.<br>- **Ephemeral Data:** Created dynamically as part of each non-`@smoke` test. | - **Canary Data:** Seeded via a version-controlled SQL script against the Canary User's ID. |
-| **Credential Access** | - **`service_role` key:** For non-`@smoke` tests.<br>- **Staging Canary User Password:** For `@smoke` tests. | - **`service_role` key:** The key **NEVER** used.<br>- **Production Canary User Password:** For `@smoke` tests. |
+| **Credential Access** | - **Secret key:** For non-`@smoke` tests.<br>- **Staging Canary User Password:** For `@smoke` tests. | - **Secret key:** The key **NEVER** used.<br>- **Production Canary User Password:** For `@smoke` tests. |
 
 ---
 

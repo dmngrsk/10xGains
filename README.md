@@ -55,7 +55,7 @@ This is a pnpm workspace monorepo:
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **anon key**. You will need these for the next step.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these for the next step.
 
 4.  **Configure environment variables for the Angular app:**
 
@@ -76,7 +76,7 @@ This is a pnpm workspace monorepo:
       },
       supabase: {
         url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
-        key: 'YOUR_LOCAL_SUPABASE_ANON_KEY', // The long JWT string
+        key: 'YOUR_LOCAL_SUPABASE_PUBLISHABLE_KEY', // sb_publishable_...
       }
     };
     ```
@@ -100,7 +100,7 @@ This is a pnpm workspace monorepo:
     ```bash
     cp apps/api/local.settings.json.example apps/api/local.settings.json
     ```
-    Open `apps/api/local.settings.json` and fill in your local Supabase URL and anon key (the same values as in step 4). Then start the API host on port 7071:
+    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key (the same values as in step 4). Then start the API host on port 7071:
     ```bash
     pnpm --filter @txg/api start
     ```

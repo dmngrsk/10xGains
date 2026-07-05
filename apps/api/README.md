@@ -39,7 +39,7 @@ The API is organized into the following structure, using Hono for routing:
   - `src/services/` - Contains business logic that can be shared across different handlers. Unit tests live next to the tested file as `{tested-file}.spec.ts`.
   - `src/utils/` - Shared utility functions.
   - `host.json` - Azure Functions host configuration.
-  - `local.settings.json` - Local-only runtime settings (gitignored; see `local.settings.json.example`). The deployed apps read the same variables (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `APP_URL`) from their Azure app settings.
+  - `local.settings.json` - Local-only runtime settings (gitignored; see `local.settings.json.example`). The deployed apps read the same variables (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `APP_URL`) from their Azure app settings.
   - `esbuild.mjs` - Bundles `src/` into a single `dist/main.js` file (`@azure/functions` stays external as it must resolve to the worker's shared instance).
   - `pack.mjs` - Assembles the deployment package in `deploy/` (see [Deployment](#deployment)).
 
@@ -70,7 +70,7 @@ Import them via the package entry point: `import { PlanDto } from '@txg/shared';
 To develop and test the API locally:
 
 1.  Start the local Supabase stack (database + auth): `supabase start`
-2.  Create `local.settings.json` from `local.settings.json.example` (local Supabase URL and anon key, `APP_URL=http://localhost:4200`).
+2.  Create `local.settings.json` from `local.settings.json.example` (local Supabase URL and publishable key, `APP_URL=http://localhost:4200`).
 3.  Run `pnpm --filter @txg/api start` to build and start the local Azure Functions host on port 7071.
 4.  Use tools like Postman or curl to test the API endpoints (e.g., `curl http://localhost:7071/api/health`).
 

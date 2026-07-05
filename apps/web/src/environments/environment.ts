@@ -11,6 +11,6 @@ export const environment = {
   },
   supabase: {
     url: '__SUPABASE_URL__',
-    key: '__SUPABASE_ANON_KEY__',
+    key: '__SUPABASE_PUBLISHABLE_KEY__',
   }
 };
