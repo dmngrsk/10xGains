@@ -95,7 +95,7 @@ jobs:
           sku: flexconsumption
 
   frontend:
-    name: Deploy web app to Azure Static Web App
+    name: Deploy web app to Azure Static Web Apps
     needs: [backend-api]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
