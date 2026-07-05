@@ -125,15 +125,59 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       });
     });
 
-    it.skip('TODO: allows a user to reorder training days, exercises and sets', { tags: ['@todo', 'PLAN-07'] }, () => {
-      // Reorder days
-      // ...
+    it('allows a user to reorder training days, exercises and sets', { tags: ['PLAN-07'] }, () => {
+      // Reorder days: Workout A and Workout B swap places
+      cy.getBySel(dataCy.plans.planEdit.days.name).eq(0).should('contain.text', 'Workout A');
+      cy.getBySel(dataCy.plans.planEdit.days.name).eq(1).should('contain.text', 'Workout B');
 
-      // Reorder exercises
-      // ...
+      cy.dragBySel(dataCy.plans.planEdit.days.dragHandle, dataCy.plans.planEdit.days.item, 0, 1);
 
-      // Reorder sets
-      // ...
+      cy.getBySel(dataCy.plans.planEdit.days.name).eq(0).should('contain.text', 'Workout B');
+      cy.getBySel(dataCy.plans.planEdit.days.name).eq(1).should('contain.text', 'Workout A');
+      cy.getMatSnackBar().should('contain.text', 'Day order updated');
+
+      // Reorder exercises: within Workout A (now the second day), Squat and Bench Press swap places.
+      // Scoped with .within(), since a collapsed day/exercise panel's content stays mounted in the
+      // DOM (just hidden), so unscoped selectors would also match the other day's exercises/sets.
+      cy.getBySel(dataCy.plans.planEdit.days.item).eq(1).click();
+      cy.getBySel(dataCy.plans.planEdit.days.item).eq(1).within(() => {
+        cy.getBySel(dataCy.plans.planEdit.exercises.name).eq(0).should('contain.text', 'Squat');
+        cy.getBySel(dataCy.plans.planEdit.exercises.name).eq(1).should('contain.text', 'Bench Press');
+
+        cy.dragBySel(dataCy.plans.planEdit.exercises.dragHandle, dataCy.plans.planEdit.exercises.item, 0, 1);
+
+        cy.getBySel(dataCy.plans.planEdit.exercises.name).eq(0).should('contain.text', 'Bench Press');
+        cy.getBySel(dataCy.plans.planEdit.exercises.name).eq(1).should('contain.text', 'Squat');
+      });
+      cy.getMatSnackBar().should('contain.text', 'Exercise order updated');
+
+      // Reorder sets: within Bench Press (now the first exercise of Workout A), give the second set
+      // a distinct value so reordering can be observed, then move it to the first position
+      cy.getBySel(dataCy.plans.planEdit.days.item).eq(1).within(() => {
+        cy.getBySel(dataCy.plans.planEdit.exercises.item).eq(0).click();
+        cy.getBySel(dataCy.plans.planEdit.exercises.item).eq(0).within(() => {
+          cy.getBySel(dataCy.plans.planEdit.sets.editButton).eq(1).click();
+        });
+      });
+      cy.getBySel(dataCy.plans.dialogs.sets.repsInput).clear().type('8');
+      cy.getBySel(dataCy.plans.dialogs.sets.weightInput).clear().type('75');
+      cy.getBySel(dataCy.plans.dialogs.sets.saveButton).click();
+      cy.getBySel(dataCy.plans.dialogs.sets.content).should('not.exist');
+
+      cy.getBySel(dataCy.plans.planEdit.days.item).eq(1).within(() => {
+        cy.getBySel(dataCy.plans.planEdit.exercises.item).eq(0).within(() => {
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(0).should('contain.text', '5 x 70kg');
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(1).should('contain.text', '8 x 75kg');
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(2).should('contain.text', '5 x 70kg');
+
+          cy.dragBySel(dataCy.plans.planEdit.sets.dragHandle, dataCy.plans.planEdit.sets.item, 1, 0);
+
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(0).should('contain.text', '8 x 75kg');
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(1).should('contain.text', '5 x 70kg');
+          cy.getBySel(dataCy.plans.planEdit.sets.details).eq(2).should('contain.text', '5 x 70kg');
+        });
+      });
+      cy.getMatSnackBar().should('contain.text', 'Set order updated');
     });
 
     it('allows a user to activate a plan', { tags: ['PLAN-08'] }, () => {

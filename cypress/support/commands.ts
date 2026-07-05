@@ -5,6 +5,7 @@ Cypress.Commands.add('teardown', teardown);
 Cypress.Commands.add('navigateTo', navigateTo);
 Cypress.Commands.add('navigateBack', navigateBack);
 Cypress.Commands.add('getBySel', getBySel);
+Cypress.Commands.add('dragBySel', dragBySel);
 Cypress.Commands.add('getMatSnackBar', getMatSnackBar);
 Cypress.Commands.add('longPress', { prevSubject: 'element' }, (s, d) => longPress(s, d as unknown as number));
 
@@ -44,6 +45,32 @@ function navigateBack(): void {
 
 function getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>> {
   return cy.get(`[data-cy=${selector}]`, options);
+}
+
+function dragBySel(handleSelector: string, itemSelector: string, fromIndex: number, toIndex: number): void {
+  getBySel(itemSelector).eq(toIndex).then(($target) => {
+    const { x: targetX, y: targetY } = elementCenter($target[0]);
+
+    getBySel(handleSelector).eq(fromIndex).then(($handle) => {
+      const { x: startX, y: startY } = elementCenter($handle[0]);
+      const steps = 5;
+
+      cy.wrap($handle).trigger('mousedown', { eventConstructor: 'MouseEvent', button: 0, buttons: 1, detail: 1, clientX: startX, clientY: startY, force: true });
+
+      for (let step = 1; step <= steps; step++) {
+        cy.wrap($handle).trigger('mousemove', {
+          eventConstructor: 'MouseEvent',
+          button: 0,
+          buttons: 1,
+          clientX: startX + ((targetX - startX) * step) / steps,
+          clientY: startY + ((targetY - startY) * step) / steps,
+          force: true,
+        });
+      }
+
+      cy.wrap($handle).trigger('mouseup', { eventConstructor: 'MouseEvent', clientX: targetX, clientY: targetY, force: true });
+    });
+  });
 }
 
 function getMatSnackBar(): Cypress.Chainable<JQuery<HTMLElement>> {
@@ -108,4 +135,9 @@ function fillLoginForm(email: string, password: string): void {
 
   cy.url().should('include', '/home');
   cy.getBySel(dataCy.home.sessionCard).should('exist');
+}
+
+function elementCenter(element: HTMLElement): { x: number; y: number } {
+  const rect = element.getBoundingClientRect();
+  return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
 }

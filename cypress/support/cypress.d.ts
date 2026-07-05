@@ -35,6 +35,16 @@ namespace Cypress {
     getBySel(selector: string, options?: Partial<Cypress.Loggable & Cypress.Timeoutable & Cypress.Withinable & Cypress.Shadow>): Cypress.Chainable<JQuery<HTMLElement>>;
 
     /**
+     * Simulate an Angular CDK drag-and-drop gesture (mousedown/mousemove/mouseup),
+     * dragging an item's handle from one position in a list to another item's position.
+     * @param handleSelector The data-cy attribute value of the cdkDragHandle element.
+     * @param itemSelector The data-cy attribute value of the draggable item, used to compute the drop position.
+     * @param fromIndex The index (among matched handle elements) of the item to drag.
+     * @param toIndex The index (among matched item elements) of the item to drop onto.
+     */
+    dragBySel(handleSelector: string, itemSelector: string, fromIndex: number, toIndex: number): void;
+
+    /**
      * Get the Material Snackbar element.
      * @returns A chainable object that can be used to interact with the element.
      */
