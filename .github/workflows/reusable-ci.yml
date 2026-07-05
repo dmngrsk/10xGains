@@ -165,7 +165,7 @@ jobs:
             -e "s|__BUILD_TAG__|${{ inputs.build_tag }}|g" \
             -e "s|__API_URL__|${{ vars.API_URL }}|g" \
             -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
-            -e "s|__SUPABASE_ANON_KEY__|${{ secrets.SUPABASE_ANON_KEY }}|g" \
+            -e "s|__SUPABASE_PUBLISHABLE_KEY__|${{ secrets.SUPABASE_PUBLISHABLE_KEY }}|g" \
             "$OUTPUT_FILE"
 
           echo "Generated ${OUTPUT_FILE}:"
