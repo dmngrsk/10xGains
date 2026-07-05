@@ -33,3 +33,14 @@ export interface SessionSetViewModel {
   actualReps?: number | null;
   weight?: number;
 }
+
+/**
+ * Payload for the rest-timer reset trigger. `timestamp` restarts the timer on
+ * every set interaction; `vibrateAfterSeconds` is the rest threshold at which
+ * the device should buzz (null when the interaction should not schedule a buzz,
+ * e.g. un-marking a set back to PENDING).
+ */
+export interface SessionTimerReset {
+  timestamp: number;
+  vibrateAfterSeconds: number | null;
+}

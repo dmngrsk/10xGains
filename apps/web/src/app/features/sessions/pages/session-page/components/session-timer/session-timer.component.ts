@@ -4,6 +4,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription, Subject, takeUntil, interval } from 'rxjs';
+import { SessionTimerReset } from '../../../../models/session-page.viewmodel';
+
+// Distinct "rest over" haptic pattern (buzz–pause–buzz), in milliseconds.
+const REST_OVER_VIBRATION_PATTERN = [400, 150, 400];
 
 @Component({
   selector: 'txg-session-timer',
@@ -14,7 +18,7 @@ import { Subscription, Subject, takeUntil, interval } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionTimerComponent implements OnDestroy {
-  @Input({ required: true }) resetTrigger!: Signal<number | null | undefined>;
+  @Input({ required: true }) resetTrigger!: Signal<SessionTimerReset | null | undefined>;
   @Input() @HostBinding('class.all-sets-complete-highlight') allExercisesComplete: boolean = false;
 
   @Output() readonly sessionCompleted = new EventEmitter<void>();
@@ -27,6 +31,8 @@ export class SessionTimerComponent implements OnDestroy {
   private pulseTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private secondsElapsed: number = 0;
   private timerSubscription: Subscription | undefined;
+  private vibrateAfterSeconds: number | null = null;
+  private hasVibrated: boolean = false;
 
   get timerText(): string {
     if (this.timerSubscription === undefined || this.allExercisesComplete) {
@@ -48,6 +54,7 @@ export class SessionTimerComponent implements OnDestroy {
       } else {
         untracked(() => {
           this.resetTimer();
+          this.vibrateAfterSeconds = triggerValue.vibrateAfterSeconds;
           this.startTimer();
           this.triggerPulse();
         });
@@ -92,6 +99,7 @@ export class SessionTimerComponent implements OnDestroy {
         .subscribe(() => {
           this.ngZone.run(() => {
             this.secondsElapsed++;
+            this.maybeVibrateRestOver();
             this.cdr.markForCheck();
           });
         });
@@ -105,7 +113,28 @@ export class SessionTimerComponent implements OnDestroy {
 
   private resetTimer(): void {
     this.secondsElapsed = 0;
+    this.vibrateAfterSeconds = null;
+    this.hasVibrated = false;
     this.stopTimer();
     this.cdr.markForCheck();
+  }
+
+  private maybeVibrateRestOver(): void {
+    if (this.hasVibrated || this.vibrateAfterSeconds === null) {
+      return;
+    }
+    if (this.secondsElapsed < this.vibrateAfterSeconds) {
+      return;
+    }
+
+    this.hasVibrated = true;
+    this.vibrate(REST_OVER_VIBRATION_PATTERN);
+    this.triggerPulse();
+  }
+
+  private vibrate(pattern: number[]): void {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(pattern);
+    }
   }
 }

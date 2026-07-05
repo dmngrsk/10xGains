@@ -8,9 +8,9 @@ import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
-import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { SessionPageViewModel, SessionSetViewModel, SessionTimerReset } from '../../models/session-page.viewmodel';
 import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
-import { SessionStatus } from '../../models/session.types';
+import { SessionSetStatus, SessionStatus } from '../../models/session.types';
 
 // Types used by KeyedDebouncerService for session set update operations
 type SessionSetUpdateSuccessDataContext = { exerciseId: string; originalExpectedReps: number | null };
@@ -26,6 +26,13 @@ const initialState: SessionPageViewModel = {
   metadata: {},
 };
 
+// Rest thresholds (seconds) after which the device buzzes, keyed by the
+// resulting set status. Statuses without an entry (PENDING/SKIPPED) do not buzz.
+const REST_VIBRATION_SECONDS: Partial<Record<SessionSetStatus, number>> = {
+  COMPLETED: 120,
+  FAILED: 300,
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -37,7 +44,7 @@ export class SessionPageFacade {
   private readonly debouncerService = inject(KeyedDebouncerService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
-  readonly timerResetTrigger = signal<number | null>(null);
+  readonly timerResetTrigger = signal<SessionTimerReset | null>(null);
 
   loadSessionData(sessionId: string | null): void {
     if (!sessionId) {
@@ -240,8 +247,21 @@ export class SessionPageFacade {
     );
   }
 
-  triggerTimerReset(disable: boolean = false): void {
-    this.timerResetTrigger.set(disable ? null : Date.now());
+  /**
+   * Restarts the rest timer for a set interaction. Passing the resulting set
+   * status schedules a buzz at the matching rest threshold; passing no status
+   * disables the timer (e.g. when leaving the session).
+   */
+  triggerTimerReset(status?: SessionSetStatus): void {
+    if (!status) {
+      this.timerResetTrigger.set(null);
+      return;
+    }
+
+    this.timerResetTrigger.set({
+      timestamp: Date.now(),
+      vibrateAfterSeconds: REST_VIBRATION_SECONDS[status] ?? null,
+    });
   }
 
   flushPendingSetUpdate(): void {

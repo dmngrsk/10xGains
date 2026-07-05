@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnDestroy, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -11,7 +11,9 @@ import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
-import { SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { selectCurrentSet } from '../../models/session-page.selectors';
+import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { SessionNotificationAction, SessionNotificationService } from '../../shared/session-notification.service';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './components/dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
 import { SessionExerciseListComponent } from './components/session-exercise-list/session-exercise-list.component';
 import { SessionHeaderComponent } from './components/session-header/session-header.component';
@@ -38,9 +40,13 @@ export class SessionPageComponent implements OnDestroy {
   private snackBar = inject(MatSnackBar);
   private facade = inject(SessionPageFacade);
   private route = inject(ActivatedRoute);
+  private notificationService = inject(SessionNotificationService);
 
   readonly viewModel = this.facade.viewModel;
   readonly timerResetTrigger = this.facade.timerResetTrigger;
+
+  // A notification action captured on cold start, applied once the session loads.
+  private readonly pendingAction = signal<SessionNotificationAction | null>(null);
 
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
 
@@ -81,6 +87,41 @@ export class SessionPageComponent implements OnDestroy {
         this.snackBar.open(error, 'Close', { duration: 5000 });
       }
     });
+
+    // Keep the ongoing OS notification in sync with the current set.
+    effect(() => {
+      const viewModel = this.viewModel();
+      untracked(() => this.syncNotification(viewModel));
+    });
+
+    // Quick actions while the app is in the foreground (warm path).
+    this.notificationService.actions$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(action => this.handleNotificationAction(action));
+
+    // Quick actions after a cold start: the tapped action arrives as a query
+    // param; capture it and strip it so a refresh cannot replay it.
+    this.route.queryParamMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const action = params.get('action');
+        if (action !== 'complete-set' && action !== 'reset-timer') return;
+
+        this.pendingAction.set(action);
+        this.router.navigate([], { relativeTo: this.route, queryParams: {}, replaceUrl: true });
+      });
+
+    // Apply a captured cold-start action once the session has finished loading.
+    effect(() => {
+      const viewModel = this.viewModel();
+      const action = this.pendingAction();
+      if (!action || viewModel.isLoading || !viewModel.id) return;
+
+      untracked(() => {
+        this.pendingAction.set(null);
+        this.handleNotificationAction(action);
+      });
+    });
   }
 
   onSetClicked(event: { set: SessionSetViewModel; exerciseId: string }): void {
@@ -94,8 +135,9 @@ export class SessionPageComponent implements OnDestroy {
     const setInSignal = exercise.sets.find(s => s.id === setToUpdateTo.id)!;
     const originalSetStateForRevert = { ...setInSignal };
 
-    this.facade.triggerTimerReset();
+    this.facade.triggerTimerReset(setToUpdateTo.status);
     this.facade.enqueueSetPatch(setToUpdateTo, exerciseId, originalSetStateForRevert);
+    this.requestNotificationPermission();
   }
 
   onSetLongPressed(event: { set: SessionSetViewModel; exerciseId: string }): void {
@@ -208,7 +250,56 @@ export class SessionPageComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.flushPendingSetUpdate();
-    this.facade.triggerTimerReset(true);
+    this.facade.triggerTimerReset();
+    void this.notificationService.clear();
+  }
+
+  private requestNotificationPermission(): void {
+    void this.notificationService.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        this.syncNotification(this.viewModel());
+      }
+    });
+  }
+
+  private syncNotification(viewModel: SessionPageViewModel): void {
+    const status = viewModel.metadata?.status;
+    const isActive = !!viewModel.id && status !== 'COMPLETED' && status !== 'CANCELLED';
+    const current = isActive ? selectCurrentSet(viewModel) : null;
+
+    if (!current) {
+      void this.notificationService.clear();
+      return;
+    }
+
+    void this.notificationService.show({
+      sessionId: viewModel.id!,
+      title: viewModel.metadata?.dayName || viewModel.metadata?.planName || 'Active workout',
+      exerciseName: current.exercise.exerciseName,
+      reps: current.set.expectedReps,
+      weight: current.set.weight,
+    });
+  }
+
+  private handleNotificationAction(action: SessionNotificationAction): void {
+    if (this.isReadOnly()) return;
+
+    if (action === 'reset-timer') {
+      this.facade.triggerTimerReset();
+      return;
+    }
+
+    const current = selectCurrentSet(this.viewModel());
+    if (!current) return;
+
+    const completedSet: SessionSetViewModel = {
+      ...current.set,
+      status: 'COMPLETED',
+      actualReps: current.set.expectedReps,
+    };
+
+    this.facade.triggerTimerReset('COMPLETED');
+    this.facade.enqueueSetPatch(completedSet, current.exercise.planExerciseId, { ...current.set });
   }
 
   private showSnackbar(message: string, duration: number = 3000): void {

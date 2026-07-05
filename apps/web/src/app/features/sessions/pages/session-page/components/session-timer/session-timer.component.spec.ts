@@ -2,6 +2,12 @@ import { ChangeDetectorRef, NgZone, WritableSignal, signal, effect } from '@angu
 import { Subject, Subscription } from 'rxjs';
 import { vi, describe, it, expect, beforeEach, afterEach, MockedFunction } from 'vitest';
 import { SessionTimerComponent } from './session-timer.component';
+import { SessionTimerReset } from '../../../../models/session-page.viewmodel';
+
+const makeReset = (vibrateAfterSeconds: number | null = null): SessionTimerReset => ({
+  timestamp: Date.now(),
+  vibrateAfterSeconds,
+});
 
 // Define a type for our augmented effect mock
 interface CustomMockEffect extends MockedFunction<typeof effect> {
@@ -72,7 +78,7 @@ class TestableSessionTimerComponent extends SessionTimerComponent {
 
 describe('SessionTimerComponent', () => {
   let component: TestableSessionTimerComponent;
-  let mockResetTrigger: WritableSignal<number | null>;
+  let mockResetTrigger: WritableSignal<SessionTimerReset | null>;
   let spiedEffect: CustomMockEffect;
 
   beforeEach(() => {
@@ -86,7 +92,7 @@ describe('SessionTimerComponent', () => {
       runOutsideAngular: vi.fn((fn) => fn()),
     } as unknown as NgZone;
 
-    mockResetTrigger = signal<number | null>(null);
+    mockResetTrigger = signal<SessionTimerReset | null>(null);
     component = new TestableSessionTimerComponent();
 
     component.resetTrigger = mockResetTrigger;
@@ -115,9 +121,8 @@ describe('SessionTimerComponent', () => {
   });
 
   describe('resetTrigger Effect', () => {
-    it('should start timer and pulse when resetTrigger emits a number', () => {
-      const resetTime = Date.now();
-      mockResetTrigger.set(resetTime);
+    it('should start timer and pulse when resetTrigger emits a value', () => {
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(0);
 
@@ -133,7 +138,7 @@ describe('SessionTimerComponent', () => {
     });
 
     it('should reset and stop timer when resetTrigger emits null after being a number', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
       expect(component.testSecondsElapsed).toBe(2);
@@ -163,7 +168,7 @@ describe('SessionTimerComponent', () => {
     });
 
     it('should be "--:--" when allExercisesComplete is true, even if timer was running', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(1000);
       expect(component.timerText).toBe('00:01');
@@ -174,35 +179,35 @@ describe('SessionTimerComponent', () => {
     });
 
     it('should format time correctly (0 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(0);
       expect(component.timerText).toBe('00:00');
     });
 
     it('should format time correctly (59 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(59 * 1000);
       expect(component.timerText).toBe('00:59');
     });
 
     it('should format time correctly (1 minute)', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(60 * 1000);
       expect(component.timerText).toBe('01:00');
     });
 
     it('should format time correctly (2 minutes and 5 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(2 * 60 * 1000 + 5 * 1000);
       expect(component.timerText).toBe('02:05');
     });
 
     it('should format time correctly (100 minutes and 10 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(100 * 60 * 1000 + 10 * 1000);
       expect(component.timerText).toBe('100:10');
@@ -212,7 +217,7 @@ describe('SessionTimerComponent', () => {
   describe('allExercisesComplete Input', () => {
     it('should update timerText to "--:--" when true and timer is active', () => {
       (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually(); // Effect runs: resetTimer (MFC#1), startTimer, triggerPulse (MFC#2)
       expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(2);
 
@@ -230,7 +235,7 @@ describe('SessionTimerComponent', () => {
 
     it('should revert timerText when false and timer is active', () => {
       (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually(); // Effect runs: resetTimer (MFC#1), startTimer, triggerPulse (MFC#2)
       expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(2);
 
@@ -301,7 +306,7 @@ describe('SessionTimerComponent', () => {
 
   describe('Timer Mechanics', () => {
     it('startTimer should increment secondsElapsed', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(0);
       expect(component.testSecondsElapsed).toBe(0);
@@ -312,7 +317,7 @@ describe('SessionTimerComponent', () => {
     });
 
     it('stopTimer should stop incrementing secondsElapsed', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
       expect(component.testSecondsElapsed).toBe(2);
@@ -323,7 +328,7 @@ describe('SessionTimerComponent', () => {
     });
 
     it('resetTimer should set secondsElapsed to 0 and stop timer', () => {
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(3000);
       expect(component.testSecondsElapsed).toBe(3);
@@ -333,6 +338,64 @@ describe('SessionTimerComponent', () => {
       expect(component.testTimerSubscription).toBeUndefined();
       vi.advanceTimersByTime(2000);
       expect(component.testSecondsElapsed).toBe(0);
+    });
+  });
+
+  describe('rest-over vibration', () => {
+    let vibrateSpy: MockedFunction<(pattern: number | number[]) => boolean>;
+
+    beforeEach(() => {
+      vibrateSpy = vi.fn(() => true);
+      Object.defineProperty(navigator, 'vibrate', { value: vibrateSpy, configurable: true, writable: true });
+    });
+
+    afterEach(() => {
+      delete (navigator as unknown as { vibrate?: unknown }).vibrate;
+    });
+
+    it('should vibrate once at the COMPLETED threshold (120s)', () => {
+      mockResetTrigger.set(makeReset(120));
+      triggerEffectManually();
+
+      vi.advanceTimersByTime(119 * 1000);
+      expect(vibrateSpy).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1000); // 120s
+      expect(vibrateSpy).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(60 * 1000);
+      expect(vibrateSpy).toHaveBeenCalledTimes(1); // only once per rest period
+    });
+
+    it('should vibrate at the FAILED threshold (300s)', () => {
+      mockResetTrigger.set(makeReset(300));
+      triggerEffectManually();
+
+      vi.advanceTimersByTime(299 * 1000);
+      expect(vibrateSpy).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1000); // 300s
+      expect(vibrateSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not vibrate when vibrateAfterSeconds is null', () => {
+      mockResetTrigger.set(makeReset(null));
+      triggerEffectManually();
+
+      vi.advanceTimersByTime(10 * 60 * 1000);
+      expect(vibrateSpy).not.toHaveBeenCalled();
+    });
+
+    it('should re-arm the buzz on the next reset', () => {
+      mockResetTrigger.set(makeReset(120));
+      triggerEffectManually();
+      vi.advanceTimersByTime(120 * 1000);
+      expect(vibrateSpy).toHaveBeenCalledTimes(1);
+
+      mockResetTrigger.set(makeReset(120));
+      triggerEffectManually();
+      vi.advanceTimersByTime(120 * 1000);
+      expect(vibrateSpy).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -346,7 +409,7 @@ describe('SessionTimerComponent', () => {
     });
 
     it('should effectively stop the timer', () => { // Renamed test for clarity
-      mockResetTrigger.set(Date.now());
+      mockResetTrigger.set(makeReset());
       triggerEffectManually();
       vi.advanceTimersByTime(1000);
       expect(component.testSecondsElapsed).toBe(1);
