@@ -37,6 +37,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        # Only the E2E job in the CD workflow runs Cypress; skip its binary download here.
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
         run: |
           pnpm install --frozen-lockfile
 
@@ -62,6 +65,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        # Only the E2E job in the CD workflow runs Cypress; skip its binary download here.
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
         run: |
           pnpm install --frozen-lockfile
 
@@ -97,6 +103,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        # Only the E2E job in the CD workflow runs Cypress; skip its binary download here.
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
         run: |
           pnpm install --frozen-lockfile
 
@@ -143,6 +152,9 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        # Only the E2E job in the CD workflow runs Cypress; skip its binary download here.
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
         run: |
           pnpm install --frozen-lockfile
 
