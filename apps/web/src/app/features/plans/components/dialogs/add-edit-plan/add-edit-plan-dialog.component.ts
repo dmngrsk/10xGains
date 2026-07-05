@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject, inject, DestroyRef } from '@angular/core';
+import { Component, inject, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -32,19 +32,19 @@ export type AddEditPlanDialogCloseResult =
   ],
 })
 export class AddEditPlanDialogComponent {
+  private readonly fb = inject(FormBuilder);
+  dialogRef = inject<MatDialogRef<AddEditPlanDialogComponent, AddEditPlanDialogCloseResult>>(MatDialogRef);
+  data = inject<AddEditPlanDialogData>(MAT_DIALOG_DATA);
+
   planForm: FormGroup;
 
   private readonly matDialog = inject(MatDialog);
   private readonly destroyRef = inject(DestroyRef);
 
-  constructor(
-    private fb: FormBuilder,
-    public dialogRef: MatDialogRef<AddEditPlanDialogComponent, AddEditPlanDialogCloseResult>,
-    @Inject(MAT_DIALOG_DATA) public data: AddEditPlanDialogData
-  ) {
+  constructor() {
     this.planForm = this.fb.group({
-      name: [data?.name || '', Validators.required],
-      description: [data?.description || ''],
+      name: [this.data?.name || '', Validators.required],
+      description: [this.data?.description || ''],
     });
   }
 

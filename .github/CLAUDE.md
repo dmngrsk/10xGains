@@ -27,5 +27,6 @@ Guidelines for working on CI/CD workflows in this repository:
 
 ## Deployment specifics
 
-- The CD chain is `database` (Supabase migrations) → `backend-api` (Azure Functions) → `frontend` (Azure Static Web App) → `e2e`. The frontend calls the API, so the SWA deploy must stay ordered after the Functions deploy.
-- The Azure Functions deploy uses OIDC (`azure/login@v2` + `Azure/functions-action@v1` with `remote-build: true`, `sku: flexconsumption`). Jobs using OIDC need `permissions: id-token: write`, and reusable-workflow callers must grant it too.
+- The CD chain is `database` (Supabase migrations) → `backend-api` (Azure Functions) → `frontend` (Azure Static Web Apps) → `e2e`. The frontend calls the API, so the SWA deploy must stay ordered after the Functions deploy.
+- Both apps are built in CI (`build-api` and `build-web` run in parallel) and passed to CD as `dist-api-<environment>` / `dist-web-<environment>` artifacts; CD jobs only download and deploy. This relies on CI and CD running in the same workflow run.
+- The Azure Functions deploy uses OIDC (`azure/login@v3` + `Azure/functions-action@v1` with `remote-build: true`, `sku: flexconsumption`). Jobs using OIDC need `permissions: id-token: write`, and reusable-workflow callers must grant it too.

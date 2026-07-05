@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule, NativeDateAdapter } from '@angular/material/core';
@@ -37,6 +37,11 @@ import { dateRangeValidator } from '@shared/utils/forms/validators/date-range.va
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
+  dialogRef = inject<MatDialogRef<HistoryFilterDialogComponent>>(MatDialogRef);
+  data = inject<{
+    filters: HistoryFiltersViewModel;
+}>(MAT_DIALOG_DATA);
+
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
 
@@ -53,11 +58,6 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
   get validationMessages() {
     return VALIDATION_MESSAGES;
   }
-
-  constructor(
-    public dialogRef: MatDialogRef<HistoryFilterDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { filters: HistoryFiltersViewModel }
-  ) { }
 
   ngOnInit(): void {
     this.filterForm = this.fb.group({

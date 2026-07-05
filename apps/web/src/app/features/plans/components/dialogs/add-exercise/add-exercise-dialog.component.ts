@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, Validators, FormControl, FormBuilder, FormGroup } from '@angular/forms';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -51,6 +51,10 @@ export type AddExerciseDialogCloseResult =
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddExerciseDialogComponent implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  dialogRef = inject<MatDialogRef<AddExerciseDialogComponent, AddExerciseDialogCloseResult>>(MatDialogRef);
+  data = inject<AddExerciseDialogData>(MAT_DIALOG_DATA);
+
   exerciseForm: FormGroup;
   isCreatingNewExercise = signal<boolean>(false);
 
@@ -60,11 +64,7 @@ export class AddExerciseDialogComponent implements OnInit {
     return VALIDATION_MESSAGES;
   }
 
-  constructor(
-    private fb: FormBuilder,
-    public dialogRef: MatDialogRef<AddExerciseDialogComponent, AddExerciseDialogCloseResult>,
-    @Inject(MAT_DIALOG_DATA) public data: AddExerciseDialogData,
-  ) {
+  constructor() {
     this.exerciseForm = this.fb.group({
       exerciseControl: new FormControl<string | AddExerciseDialogAutocompleteOption>('', Validators.required),
       newExerciseName: [''],

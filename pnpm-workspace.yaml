@@ -12,6 +12,14 @@ allowBuilds:
   esbuild: true
   lmdb: true
   msgpackr-extract: true
-  nx: true
   supabase: true
   unrs-resolver: true
+
+# Security overrides for vulnerable transitive dependencies (pnpm audit).
+overrides:
+  '@babel/core@<7.29.1': ^7.29.1
+  esbuild@>=0.27.3 <0.28.1: ^0.28.1
+  http-proxy-middleware@>=3.0.0 <3.0.7: ^3.0.7
+  tar@<7.5.16: ^7.5.16
+  uuid@<11.1.1: ^11.1.1
+  webpack-dev-server@<5.2.5: ^5.2.5

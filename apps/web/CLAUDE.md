@@ -1,6 +1,6 @@
 # Frontend (@txg/web)
 
-Angular 19 application with Angular Material Design 3 and Tailwind CSS 4.
+Angular 22 application with Angular Material Design 3 and Tailwind CSS 4.
 
 ## Feature Organization
 

@@ -38,7 +38,7 @@ jobs:
     needs: [ci]
     steps:
       - name: Add a detailed comment about the CI job results
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -47,7 +47,9 @@ jobs:
 
             const ciJobPrefix = 'CI / ';
             const ciCurrentJobName = 'CI / Add status comment';
-            const ciJobs = jobs.filter(job => job.name.includes(ciJobPrefix) && job.name !== ciCurrentJobName);
+            const ciJobs = jobs
+              .filter(job => job.name.includes(ciJobPrefix) && job.name !== ciCurrentJobName)
+              .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.name.localeCompare(b.name));
 
             let commentBody = '### CI Job Results\n\n';
             commentBody += '| Job | Status | Details |\n';
@@ -79,7 +81,7 @@ jobs:
     needs: [cd]
     steps:
       - name: Add a detailed comment about the CD job results
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -89,7 +91,9 @@ jobs:
             const cdJobPrefix = 'CD / ';
             const cdCurrentJobName = 'CD / Add status comment';
             const cdDeferJobName = 'CD / Defer deployment';
-            const cdJobs = jobs.filter(job => job.name.includes(cdJobPrefix) && job.name !== cdCurrentJobName && job.name !== cdDeferJobName);
+            const cdJobs = jobs
+              .filter(job => job.name.includes(cdJobPrefix) && job.name !== cdCurrentJobName && job.name !== cdDeferJobName)
+              .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.name.localeCompare(b.name));
 
             if (cdJobs.length === 0) return;
 

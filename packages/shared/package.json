@@ -13,6 +13,6 @@
     "test": "echo \"No tests in @txg/shared (types only)\""
   },
   "devDependencies": {
-    "typescript": "~5.7.2"
+    "typescript": "~6.0.3"
   }
 }

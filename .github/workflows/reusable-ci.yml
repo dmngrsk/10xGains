@@ -25,13 +25,13 @@ jobs:
           exit 1
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -50,13 +50,13 @@ jobs:
     needs: [lint]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload unit test coverage
         if: inputs.environment == 'staging'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-coverage
           path: |
@@ -79,20 +79,65 @@ jobs:
             apps/api/coverage/
           retention-days: 7
 
-  build:
-    name: Build Angular application
+  build-api:
+    name: Build API app
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: |
+          pnpm install --frozen-lockfile
+
+      - name: Typecheck API app
+        run: |
+          pnpm --filter @txg/api typecheck
+
+      - name: Build API app deployment package
+        run: |
+          pnpm --filter @txg/api build:deploy
+
+      - name: Upload build artifacts for staging
+        if: inputs.environment == 'staging'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-api-staging
+          path: apps/api/deploy/
+          retention-days: 7
+
+      - name: Upload build artifacts for production
+        if: inputs.environment == 'production'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-api-production
+          path: apps/api/deploy/
+          retention-days: 30
+
+  build-web:
+    name: Build web app
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     needs: [lint, test]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: '.nvmrc'
           cache: 'pnpm'
@@ -146,27 +191,22 @@ jobs:
           echo ""
           cat "${WEBMANIFEST_FILE}"
 
-      - name: Build web application
+      - name: Build web app
         run: |
           pnpm build:${{ inputs.environment }}
 
-      - name: Typecheck and build API
-        run: |
-          pnpm --filter @txg/api typecheck
-          pnpm --filter @txg/api build
-
       - name: Upload build artifacts for staging
         if: inputs.environment == 'staging'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: dist-staging
+          name: dist-web-staging
           path: apps/web/dist/
           retention-days: 7
 
       - name: Upload build artifacts for production
         if: inputs.environment == 'production'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: dist-production
+          name: dist-web-production
           path: apps/web/dist/
           retention-days: 30

@@ -2,7 +2,7 @@
   "name": "@txg/api",
   "version": "0.1.0",
   "private": true,
-  "description": "10xGains backend API: Hono app hosted on Azure Functions (Node 22).",
+  "description": "10xGains backend API: Hono app hosted on Azure Functions (Node 24).",
   "main": "dist/main.js",
   "scripts": {
     "build": "node esbuild.mjs",
@@ -24,7 +24,7 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@types/node": "^22.14.0",
+    "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^3.2.2",
     "azure-functions-core-tools": "^4",
     "esbuild": "^0.25.0",

@@ -1,8 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["es5", "dom"],
+    "lib": ["ES2022", "dom"],
     "sourceMap": true,
     "types": ["cypress", "node"]
   },
