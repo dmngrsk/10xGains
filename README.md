@@ -55,7 +55,7 @@ This is a pnpm workspace monorepo:
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 5 and 6.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 6 and 7.
 
 4.  **Apply database migrations and seed data:**
 
