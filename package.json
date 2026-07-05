@@ -17,13 +17,13 @@
     "test:coverage": "pnpm -r --if-present test:coverage",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
-    "e2e:smoke": "cypress run --env grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
+    "e2e:smoke": "cypress run --expose grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
   },
   "devDependencies": {
-    "@cypress/grep": "^4.1.0",
+    "@cypress/grep": "^6.0.2",
     "@supabase/supabase-js": "^2.49.4",
     "@types/node": "^24.0.0",
-    "cypress": "^14.4.1",
+    "cypress": "^15.18.0",
     "dotenv": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",

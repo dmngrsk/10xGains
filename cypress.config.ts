@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
-
+import { plugin as cypressGrepPlugin } from "@cypress/grep/plugin";
 import { defineConfig } from "cypress";
 import { config } from "dotenv";
 import { tasks } from "./cypress/support/tasks";
@@ -23,7 +22,7 @@ export default defineConfig({
     video: true,
     setupNodeEvents(on, config) {
       on('task', tasks);
-      require('@cypress/grep/src/plugin')(config);
+      cypressGrepPlugin(config);
       return config;
     },
   },
