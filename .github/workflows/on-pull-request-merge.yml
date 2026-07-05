@@ -13,6 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
     steps:
+      - name: Suppress git default-branch hint
+        # actions/checkout runs `git init`, which prints the init.defaultBranch hint otherwise.
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:

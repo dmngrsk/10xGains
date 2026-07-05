@@ -46,6 +46,11 @@ jobs:
           echo "Error: e2e_scope must be either 'full' or 'smoke'"
           exit 1
 
+      - name: Suppress git default-branch hint
+        # actions/checkout runs `git init`, which prints the init.defaultBranch hint otherwise.
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -88,6 +93,9 @@ jobs:
 
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
+        env:
+          # The action's bundled dependencies emit a DEP0005 Buffer() deprecation warning.
+          NODE_OPTIONS: '--no-deprecation'
         with:
           app-name: ${{ vars.AZURE_FUNCTIONAPP_NAME }}
           package: apps/api/deploy
@@ -103,6 +111,11 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Suppress git default-branch hint
+        # actions/checkout runs `git init`, which prints the init.defaultBranch hint otherwise.
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -112,8 +125,10 @@ jobs:
           node-version-file: '.nvmrc'
 
       - name: Install Azure SWA CLI
+        # The SWA CLI pulls deprecated transitive dependencies we cannot fix here;
+        # raise the log level so npm does not warn about them on every deploy.
         run: |
-          npm install -g @azure/static-web-apps-cli
+          npm install -g @azure/static-web-apps-cli --loglevel error
 
       - name: Download web app artifact
         uses: actions/download-artifact@v8
@@ -147,6 +162,9 @@ jobs:
         # environments on pull_request events, ignoring deployment_environment. Staging deploys
         # run from PR-triggered pipelines and must target the SWA production environment, so we
         # deploy directly to the resource via the SWA CLI instead.
+        env:
+          # The SWA CLI's dependencies emit a DEP0005 Buffer() deprecation warning.
+          NODE_OPTIONS: '--no-deprecation'
         run: |
           swa deploy ./apps/web/dist/browser \
             --app-name ${{ vars.AZURE_STATIC_WEB_APP_NAME }} \
@@ -160,11 +178,20 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
+      - name: Suppress git default-branch hint
+        # actions/checkout runs `git init`, which prints the init.defaultBranch hint otherwise.
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
+        with:
+          # The standalone binary skips the pnpm self-installer, which warns about the
+          # pnpm v10 installation layout preinstalled at PNPM_HOME on the runner image.
+          standalone: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
