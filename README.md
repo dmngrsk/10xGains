@@ -36,8 +36,9 @@ This is a pnpm workspace monorepo:
 ### Prerequisites
 - **Node.js**: Version specified in `.nvmrc` (e.g., `24.18.0`)
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
-- **Docker**: Required to run Supabase locally
+- **Docker**: Required to run Supabase and Azurite locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
+- **Azurite**: Local Azure Storage emulator required by the API's Functions host. Follow Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub)
 
 ### Installation
 1.  **Clone the repository:**
@@ -55,7 +56,7 @@ This is a pnpm workspace monorepo:
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 6 and 7.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 7 and 8.
 
 4.  **Apply database migrations and seed data:**
 
@@ -64,22 +65,30 @@ This is a pnpm workspace monorepo:
     npx supabase db reset
     ```
 
-5.  **Install dependencies:**
+5.  **Start the Azurite storage emulator:**
+
+    The API's local Azure Functions host needs a storage backend (`AzureWebJobsStorage`). Pull and run the container detached with the required ports mapped, the same way the Supabase stack runs in the background (see Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub) for more options):
+    ```bash
+    docker run -d --name azurite -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+    ```
+    Once it's running, it will be available for the API Function app to consume. For subsequent starts after the container has been created, you can simply run `docker start azurite`.
+
+6.  **Install dependencies:**
 
     Install the necessary npm packages for all workspace packages.
     ```bash
     pnpm install
     ```
 
-6.  **Configure the API:**
+7.  **Configure the API:**
 
     The API runs on a local Azure Functions host. Create its local settings file from the provided example:
     ```bash
     cp apps/api/local.settings.json.example apps/api/local.settings.json
     ```
-    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 3.
+    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 3. `AzureWebJobsStorage` is already set to use the Azurite container started in step 5.
 
-7.  **Configure the Angular app:**
+8.  **Configure the Angular app:**
 
     The frontend needs to know how to connect to your local Supabase instance. Create a copy of the development environment file:
     ```bash
@@ -99,7 +108,7 @@ This is a pnpm workspace monorepo:
     };
     ```
 
-8.  **Start the apps:**
+9.  **Start the apps:**
 
     Run both the Angular dev server and the API host together with a single command:
     ```bash
@@ -107,7 +116,7 @@ This is a pnpm workspace monorepo:
     ```
     This runs the `dev` script of every workspace package in parallel (equivalent to `pnpm --filter @txg/web start:development` and `pnpm --filter @txg/api start` run side by side), prefixing each line of output with its package name. To run them separately instead (e.g. in two terminals), use those individual commands.
 
-9.  **Open your browser and navigate to `http://localhost:4200`**
+10. **Open your browser and navigate to `http://localhost:4200`**
 
 ## Available Scripts
 
@@ -116,7 +125,7 @@ Below are the most important scripts defined in `package.json`.
 ### Development Server
 
 - `pnpm dev` - Runs the Angular dev server and the API host together, in parallel, each with output prefixed by package name. This is the recommended way to start local development once [Getting Started Locally](#getting-started-locally) is complete.
-- `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`.
+- `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`. Requires Azurite to be running (see [Getting Started Locally](#getting-started-locally)).
 - `pnpm --filter @txg/web start:development` - Runs only the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
 - `pnpm --filter @txg/web start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
 
