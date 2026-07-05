@@ -46,6 +46,10 @@ jobs:
           echo "Error: e2e_scope must be either 'full' or 'smoke'"
           exit 1
 
+      - name: Set git default branch
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -103,6 +107,10 @@ jobs:
       id-token: write
       contents: read
     steps:
+      - name: Set git default branch
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -113,7 +121,7 @@ jobs:
 
       - name: Install Azure SWA CLI
         run: |
-          npm install -g @azure/static-web-apps-cli
+          npm install -g @azure/static-web-apps-cli --loglevel error
 
       - name: Download web app artifact
         uses: actions/download-artifact@v8
@@ -160,11 +168,17 @@ jobs:
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
+      - name: Set git default branch
+        run: |
+          git config --global init.defaultBranch main
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v6
+        with:
+          standalone: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v6

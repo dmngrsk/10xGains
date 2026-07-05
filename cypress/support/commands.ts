@@ -62,7 +62,7 @@ export {};
  * Helper functions for commands
  */
 const isSmoke = () => Cypress.currentTestTags?.includes('@smoke') ?? false;
-const isStaging = () => Cypress.env('ENVIRONMENT') === 'development' || Cypress.env('ENVIRONMENT') === 'staging';
+const isStaging = () => Cypress.expose('ENVIRONMENT') === 'development' || Cypress.expose('ENVIRONMENT') === 'staging';
 
 const getProcessedTestTags = () => {
   const tags = Cypress.currentTestTags ?? [];
@@ -73,14 +73,17 @@ const getProcessedTestTags = () => {
 };
 
 function loginAsCanaryUser(): void {
-  const email = Cypress.env('CANARY_USER_EMAIL').trim();
-  const password = Cypress.env('CANARY_USER_PASSWORD').trim();
+  cy.env<{ CANARY_USER_EMAIL?: string; CANARY_USER_PASSWORD?: string }>(['CANARY_USER_EMAIL', 'CANARY_USER_PASSWORD'])
+    .then(({ CANARY_USER_EMAIL, CANARY_USER_PASSWORD }) => {
+      const email = CANARY_USER_EMAIL?.trim();
+      const password = CANARY_USER_PASSWORD?.trim();
 
-  if (!email || !password) {
-    throw new Error('Canary user credentials not found in environment variables');
-  }
+      if (!email || !password) {
+        throw new Error('Canary user credentials not found in environment variables');
+      }
 
-  fillLoginForm(email, password);
+      fillLoginForm(email, password);
+    });
 }
 
 function loginAsEphemeralUser(): void {

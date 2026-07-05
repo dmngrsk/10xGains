@@ -6,9 +6,15 @@ import { tasks } from "./cypress/support/tasks";
 config();
 
 export default defineConfig({
+  // Secrets stay in `env` and are read in specs via the cy.env() command;
+  // Cypress.env() in the browser is deprecated, so opt out of it entirely.
+  allowCypressEnv: false,
   env: {
     CANARY_USER_EMAIL: process.env['APP_CANARY_USER_EMAIL'],
     CANARY_USER_PASSWORD: process.env['APP_CANARY_USER_PASSWORD'],
+  },
+  // Non-secret values exposed to the browser, read via Cypress.expose().
+  expose: {
     ENVIRONMENT: process.env['CYPRESS_ENVIRONMENT'],
   },
   e2e: {
