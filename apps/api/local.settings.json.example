@@ -5,6 +5,10 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "APP_URL": "http://localhost:4200",
     "SUPABASE_URL": "http://127.0.0.1:54321",
-    "SUPABASE_PUBLISHABLE_KEY": "<local supabase publishable key from `supabase start`>"
+    "SUPABASE_PUBLISHABLE_KEY": "<local supabase publishable key from `supabase start`>",
+    "SUPABASE_SECRET_KEY": "<local supabase secret key from `supabase start`; used only by the push queue trigger>",
+    "VAPID_SUBJECT": "mailto:you@example.com",
+    "VAPID_PUBLIC_KEY": "<VAPID public key from `npx web-push generate-vapid-keys`>",
+    "VAPID_PRIVATE_KEY": "<VAPID private key from `npx web-push generate-vapid-keys`>"
   }
 }
