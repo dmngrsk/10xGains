@@ -1,8 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { SwPush } from '@angular/service-worker';
-import { Subject } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { PushService } from '@shared/api/push.service';
 import { SessionNotificationContent, SessionNotificationService } from './session-notification.service';
+
+vi.mock('../../../../environments/environment', () => ({
+  environment: { vapidPublicKey: 'TEST_VAPID_KEY' },
+}));
 
 interface NotificationClickEvent { action: string; notification: unknown; }
 
@@ -18,11 +23,15 @@ describe('SessionNotificationService', () => {
   let clicks$: Subject<NotificationClickEvent>;
   let showNotification: ReturnType<typeof vi.fn>;
   let getNotifications: ReturnType<typeof vi.fn>;
+  let requestSubscription: ReturnType<typeof vi.fn>;
+  let saveSubscription: ReturnType<typeof vi.fn>;
 
   const configure = (swEnabled: boolean, permission: NotificationPermission = 'granted') => {
     clicks$ = new Subject<NotificationClickEvent>();
     showNotification = vi.fn().mockResolvedValue(undefined);
     getNotifications = vi.fn().mockResolvedValue([]);
+    requestSubscription = vi.fn();
+    saveSubscription = vi.fn().mockReturnValue(of({ data: null, error: null }));
 
     Object.defineProperty(navigator, 'serviceWorker', {
       value: { ready: Promise.resolve({ showNotification, getNotifications }) },
@@ -36,7 +45,8 @@ describe('SessionNotificationService', () => {
     TestBed.configureTestingModule({
       providers: [
         SessionNotificationService,
-        { provide: SwPush, useValue: { isEnabled: swEnabled, notificationClicks: clicks$.asObservable() } },
+        { provide: SwPush, useValue: { isEnabled: swEnabled, notificationClicks: clicks$.asObservable(), requestSubscription } },
+        { provide: PushService, useValue: { saveSubscription } },
       ],
     });
     return TestBed.inject(SessionNotificationService);
@@ -89,6 +99,29 @@ describe('SessionNotificationService', () => {
       await service.clear();
       expect(getNotifications).toHaveBeenCalledWith({ tag: 'session-active' });
       expect(close).toHaveBeenCalled();
+    });
+  });
+
+  describe('subscribeToPush', () => {
+    it('requests a push subscription and registers it with the API', async () => {
+      const service = configure(true, 'granted');
+      const subscription = {
+        endpoint: 'https://push/1',
+        toJSON: () => ({ endpoint: 'https://push/1', keys: { p256dh: 'p', auth: 'a' } }),
+      } as unknown as PushSubscription;
+      requestSubscription.mockResolvedValue(subscription);
+
+      await service.subscribeToPush();
+
+      expect(requestSubscription).toHaveBeenCalledWith({ serverPublicKey: 'TEST_VAPID_KEY' });
+      expect(saveSubscription).toHaveBeenCalledWith({ endpoint: 'https://push/1', keys: { p256dh: 'p', auth: 'a' } });
+      await service.clear();
+    });
+
+    it('does nothing when the service worker is unsupported', async () => {
+      const service = configure(false, 'granted');
+      await service.subscribeToPush();
+      expect(requestSubscription).not.toHaveBeenCalled();
     });
   });
 

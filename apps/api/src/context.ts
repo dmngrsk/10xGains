@@ -4,6 +4,7 @@ import type { PlanRepository } from './repositories/plan.repository';
 import type { ExerciseRepository } from './repositories/exercise.repository';
 import type { ProfileRepository } from './repositories/profile.repository';
 import type { SessionRepository } from './repositories/session.repository';
+import type { PushSubscriptionRepository } from './repositories/push-subscription.repository';
 
 /**
  * Placeholder for TelemetryClient - can be expanded later
@@ -31,5 +32,6 @@ export type AppContext = {
     exerciseRepository: ExerciseRepository;
     profileRepository: ProfileRepository;
     sessionRepository: SessionRepository;
+    pushSubscriptionRepository: PushSubscriptionRepository;
   };
 };

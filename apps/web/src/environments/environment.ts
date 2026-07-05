@@ -12,5 +12,6 @@ export const environment = {
   supabase: {
     url: '__SUPABASE_URL__',
     key: '__SUPABASE_PUBLISHABLE_KEY__',
-  }
+  },
+  vapidPublicKey: '__VAPID_PUBLIC_KEY__',
 };

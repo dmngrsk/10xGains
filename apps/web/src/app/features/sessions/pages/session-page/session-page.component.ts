@@ -269,6 +269,7 @@ export class SessionPageComponent implements OnDestroy {
   private requestNotificationPermission(): void {
     void this.notificationService.requestPermission().then(permission => {
       if (permission === 'granted') {
+        void this.notificationService.subscribeToPush();
         this.notificationSync$.next(this.viewModel());
       }
     });

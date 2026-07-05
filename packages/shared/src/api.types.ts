@@ -179,3 +179,15 @@ export type FailSessionSetCommand = Record<string, never>; // Represents an empt
 // For PATCH /sessions/{sessionId}/sets/{setId}/reset
 // Request body is empty.
 export type ResetSessionSetCommand = Record<string, never>; // Represents an empty request body
+
+// 10. Push Subscription DTO and Command
+export type PushSubscriptionDto = Database["public"]["Tables"]["push_subscriptions"]["Row"];
+
+// Mirrors the browser `PushSubscription.toJSON()` shape sent when registering a device.
+export type UpsertPushSubscriptionCommand = {
+  endpoint: string;
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+};

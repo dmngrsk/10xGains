@@ -4,6 +4,7 @@ import { PlanRepository } from '../repositories/plan.repository';
 import { ExerciseRepository } from '../repositories/exercise.repository';
 import { ProfileRepository } from '../repositories/profile.repository';
 import { SessionRepository } from '../repositories/session.repository';
+import { PushSubscriptionRepository } from '../repositories/push-subscription.repository';
 
 /**
  * Middleware to initialize and inject repositories into the Hono context.
@@ -28,6 +29,7 @@ export async function repositoriesMiddleware(c: Context<AppContext>, next: Next)
   c.set('exerciseRepository', new ExerciseRepository(supabase));
   c.set('profileRepository', new ProfileRepository(supabase, getUserId));
   c.set('sessionRepository', new SessionRepository(supabase, getUserId));
+  c.set('pushSubscriptionRepository', new PushSubscriptionRepository(supabase, getUserId));
 
   await next();
 }

@@ -44,6 +44,8 @@ import { handleDeleteSessionSetById } from '../handlers/session-sets/delete-id';
 import { handleCompleteSessionSet } from '../handlers/session-sets/patch-complete';
 import { handleFailSessionSet } from '../handlers/session-sets/patch-fail';
 import { handleResetSessionSet } from '../handlers/session-sets/patch-reset';
+import { handleUpsertPushSubscription } from '../handlers/push/post';
+import { handleDeletePushSubscription } from '../handlers/push/delete';
 import type { AppContext } from '../context';
 import { createErrorDataWithLogging } from "../utils/api-helpers";
 
@@ -141,6 +143,13 @@ function createSessionSetRoutes(): Hono<AppContext> {
     .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);
 }
 
+// /api/push/subscriptions
+function createPushRoutes(): Hono<AppContext> {
+  return new Hono<AppContext>()
+    .post('/subscriptions', requiredAuthMiddleware, handleUpsertPushSubscription)
+    .delete('/subscriptions', requiredAuthMiddleware, handleDeletePushSubscription);
+}
+
 // Handles health check endpoint
 function handleHealthEndpoint(c: Context) {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -165,6 +174,7 @@ routes.route('/exercises', createExerciseRoutes());
 routes.route('/profiles', createProfileRoutes());
 routes.route('/plans', createPlanRoutes());
 routes.route('/sessions', createSessionRoutes());
+routes.route('/push', createPushRoutes());
 routes.get('/health', handleHealthEndpoint);
 routes.notFound(handleNotFound);
 routes.onError(handleOnError);
