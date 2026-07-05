@@ -11,6 +11,7 @@ export const planEditSelectors = {
     name: 'plan-edit-day-name',
     editButton: 'plan-edit-day-edit-button',
     addExerciseButton: 'plan-day-add-exercise-button',
+    dragHandle: 'plan-edit-day-drag-handle',
   },
   exercises: {
     item: 'plan-exercise-item',
@@ -19,11 +20,13 @@ export const planEditSelectors = {
     addProgressionButton: 'plan-exercise-add-progression-button',
     editProgressionButton: 'plan-exercise-edit-progression-button',
     addSetButton: 'plan-exercise-add-set-button',
+    dragHandle: 'plan-exercise-drag-handle',
   },
   sets: {
     item: 'plan-exercise-set-item',
     details: 'plan-exercise-set-details',
     editButton: 'plan-exercise-set-edit-button',
     deleteButton: 'plan-exercise-set-delete-button',
+    dragHandle: 'plan-exercise-set-drag-handle',
   },
 };
