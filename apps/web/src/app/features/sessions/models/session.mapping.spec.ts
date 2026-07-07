@@ -96,6 +96,17 @@ describe('Session Mapping Functions', () => {
       expect(result.actualReps).toBeNull();
       expect(result.weight).toBe(0);
       expect(result.planExerciseId).toBe('tpe1');
+      expect(result.completedAt).toBeNull();
+    });
+
+    it('should map completed_at to a Date, treating a bare timestamp as UTC', () => {
+      const completedSetDto: SessionSetDto = {
+        ...mockSetDto, status: 'COMPLETED' as SessionSetStatus, completed_at: '2023-01-01T10:05:00',
+      };
+
+      const result = mapToSessionSetViewModel(completedSetDto, 10);
+
+      expect(result.completedAt).toEqual(new Date('2023-01-01T10:05:00Z'));
     });
 
     it('should use dto.expected_reps if originalExpectedReps is null', () => {
@@ -237,6 +248,18 @@ describe('Session Mapping Functions', () => {
       expect(result.exercises[0].sets[0].id).toBe('set1');
       expect(result.exercises[0].sets[0].expectedReps).toBe(12);
       expect(result.exercises[0].sets[0].weight).toBe(0);
+      expect(result.exercises[0].sets[0].completedAt).toBeNull();
+    });
+
+    it('should map completed_at on session sets to a Date', () => {
+      const completedSetDto: SessionSetDto = { ...mockSetDto, status: 'COMPLETED' as SessionSetStatus, completed_at: '2023-01-10T11:00:00Z' };
+      const sessionWithCompletedSet = { ...mockSessionDto, sets: [completedSetDto] };
+
+      const result = mapToSessionPageViewModel(sessionWithCompletedSet, mockPlanDto, exerciseMap);
+      expect(result).not.toBeNull();
+      if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
+
+      expect(result.exercises[0].sets[0].completedAt).toEqual(new Date('2023-01-10T11:00:00Z'));
     });
 
     it('should return null if plan is null or undefined', () => {

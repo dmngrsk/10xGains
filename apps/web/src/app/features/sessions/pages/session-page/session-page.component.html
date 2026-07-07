@@ -24,7 +24,7 @@
 
         @if (!isReadOnly()) {
           <txg-session-timer
-            [resetTrigger]="timerResetTrigger"
+            [startTimestamp]="timerStartTimestamp"
             [allExercisesComplete]="allExercisesComplete()"
             (sessionCompleted)="onSessionCompleted()">
           </txg-session-timer>

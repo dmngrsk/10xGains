@@ -1,4 +1,4 @@
-import { inject, signal, Injectable, DestroyRef } from '@angular/core';
+import { inject, signal, computed, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, EMPTY } from 'rxjs';
 import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
@@ -37,13 +37,32 @@ export class SessionPageFacade {
   private readonly debouncerService = inject(KeyedDebouncerService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
-  readonly timerResetTrigger = signal<number | null>(null);
+
+  readonly timerStartTimestamp = computed<number | null>(() => {
+    const { metadata, exercises } = this.viewModel();
+
+    if (metadata?.status === 'COMPLETED' || metadata?.status === 'CANCELLED') {
+      return null;
+    }
+
+    let latest: number | null = null;
+    for (const exercise of exercises) {
+      for (const set of exercise.sets) {
+        if (!set.completedAt) continue;
+        const time = set.completedAt.getTime();
+        if (latest === null || time > latest) {
+          latest = time;
+        }
+      }
+    }
+
+    return latest;
+  });
 
   loadSessionData(sessionId: string | null): void {
     if (!sessionId) {
       console.error('Session ID is missing. Cannot load session data.');
       this.viewModel.set(initialState);
-      this.timerResetTrigger.set(null);
       this.flushPendingSetUpdate();
       return;
     }
@@ -238,10 +257,6 @@ export class SessionPageFacade {
         this.viewModel.update(s => ({ ...s, isLoading: false }));
       })
     );
-  }
-
-  triggerTimerReset(disable: boolean = false): void {
-    this.timerResetTrigger.set(disable ? null : Date.now());
   }
 
   flushPendingSetUpdate(): void {

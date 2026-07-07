@@ -58,8 +58,7 @@ class TestableSessionTimerComponent extends SessionTimerComponent {
   }
   // Public getters for private properties using bracket notation
   public get testIsPulsing(): boolean { return this['isPulsing']; }
-  public get testSecondsElapsed(): number { return this['secondsElapsed']; }
-  public set testSecondsElapsed(value: number) { this['secondsElapsed'] = value; }
+  public get testCurrentTimestamp(): number | null { return this['currentTimestamp']; }
   public get testTimerSubscription(): Subscription | undefined { return this['timerSubscription']; }
   public get testDestroy$(): Subject<void> { return this['destroy$']; }
   public get testPulseTimeoutId(): ReturnType<typeof setTimeout> | null { return this['pulseTimeoutId']; }
@@ -67,16 +66,16 @@ class TestableSessionTimerComponent extends SessionTimerComponent {
   // Public wrappers for private methods using bracket notation
   public callTriggerPulse(): void { this['triggerPulse'](); }
   public callStopTimer(): void { this['stopTimer'](); }
-  public callResetTimer(): void { this['resetTimer'](); }
 }
 
 describe('SessionTimerComponent', () => {
   let component: TestableSessionTimerComponent;
-  let mockResetTrigger: WritableSignal<number | null>;
+  let mockStartTimestamp: WritableSignal<number | null>;
   let spiedEffect: CustomMockEffect;
 
   beforeEach(() => {
     vi.useFakeTimers();
+    vi.setSystemTime(new Date('2023-01-01T00:00:00Z'));
     spiedEffect = vi.mocked(effect) as CustomMockEffect;
     spiedEffect.clearRegistry();
 
@@ -86,10 +85,10 @@ describe('SessionTimerComponent', () => {
       runOutsideAngular: vi.fn((fn) => fn()),
     } as unknown as NgZone;
 
-    mockResetTrigger = signal<number | null>(null);
+    mockStartTimestamp = signal<number | null>(null);
     component = new TestableSessionTimerComponent();
 
-    component.resetTrigger = mockResetTrigger;
+    component.startTimestamp = mockStartTimestamp;
 
     // Manually trigger the effect for the first time AFTER inputs are set.
     // This simulates Angular's lifecycle where effects run after input binding.
@@ -112,46 +111,88 @@ describe('SessionTimerComponent', () => {
     expect(component.allExercisesComplete).toBe(false);
     expect(component.timerText).toBe('--:--');
     expect(component.testIsPulsing).toBe(false);
+    expect(component.testCurrentTimestamp).toBeNull();
   });
 
-  describe('resetTrigger Effect', () => {
-    it('should start timer and pulse when resetTrigger emits a number', () => {
-      const resetTime = Date.now();
-      mockResetTrigger.set(resetTime);
+  describe('startTimestamp Effect', () => {
+    it('should start timer and pulse when startTimestamp becomes a number', () => {
+      const start = Date.now();
+      mockStartTimestamp.set(start);
       triggerEffectManually();
-      vi.advanceTimersByTime(0);
 
-      expect(component.testSecondsElapsed).toBe(0);
+      expect(component.testCurrentTimestamp).toBe(start);
       expect(component.testTimerSubscription).toBeDefined();
       expect(component.testIsPulsing).toBe(true);
+      expect(component.timerText).toBe('00:00');
       expect(currentMockCdr.markForCheck).toHaveBeenCalled();
 
       vi.advanceTimersByTime(1000);
       expect(component.testIsPulsing).toBe(false);
-      expect(component.testSecondsElapsed).toBe(1);
       expect(component.timerText).toBe('00:01');
     });
 
-    it('should reset and stop timer when resetTrigger emits null after being a number', () => {
-      mockResetTrigger.set(Date.now());
+    it('should derive elapsed time from the timestamp, not a local counter', () => {
+      const start = Date.now();
+      mockStartTimestamp.set(start);
+      triggerEffectManually();
+
+      // Advance far beyond a single tick: the display reflects wall-clock elapsed time,
+      // even if intermediate ticks were "missed" (e.g. an app freeze).
+      vi.advanceTimersByTime(90 * 1000);
+      expect(component.timerText).toBe('01:30');
+    });
+
+    it('should show elapsed time immediately for an already-set timestamp without pulsing', () => {
+      spiedEffect.clearRegistry();
+      const start = Date.now() - 5000;
+      const loadedSignal = signal<number | null>(start);
+      const loaded = new TestableSessionTimerComponent();
+      loaded.startTimestamp = loadedSignal;
+
+      spiedEffect.trigger(0);
+
+      expect(loaded.testCurrentTimestamp).toBe(start);
+      expect(loaded.testTimerSubscription).toBeDefined();
+      expect(loaded.testIsPulsing).toBe(false);
+      expect(loaded.timerText).toBe('00:05');
+
+      loaded.ngOnDestroy();
+    });
+
+    it('should reset and stop timer when startTimestamp becomes null after being a number', () => {
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
-      expect(component.testSecondsElapsed).toBe(2);
+      expect(component.timerText).toBe('00:02');
 
-      mockResetTrigger.set(null);
+      mockStartTimestamp.set(null);
       triggerEffectManually();
-      vi.advanceTimersByTime(0);
 
-      expect(component.testSecondsElapsed).toBe(0);
+      expect(component.testCurrentTimestamp).toBeNull();
       expect(component.testTimerSubscription).toBeUndefined();
       expect(component.timerText).toBe('--:--');
       expect(currentMockCdr.markForCheck).toHaveBeenCalled();
     });
 
-    it('should remain reset if resetTrigger is initially null', () => {
+    it('should re-pulse and re-anchor when the timestamp changes to a newer value', () => {
+      const start = Date.now();
+      mockStartTimestamp.set(start);
       triggerEffectManually();
-      vi.advanceTimersByTime(0);
-      expect(component.testSecondsElapsed).toBe(0);
+      vi.advanceTimersByTime(5000);
+      expect(component.timerText).toBe('00:05');
+
+      const newStart = Date.now();
+      mockStartTimestamp.set(newStart);
+      triggerEffectManually();
+
+      expect(component.testCurrentTimestamp).toBe(newStart);
+      expect(component.testIsPulsing).toBe(true);
+      expect(component.timerText).toBe('00:00');
+    });
+
+    it('should remain reset if startTimestamp is initially null', () => {
+      triggerEffectManually();
+      expect(component.testCurrentTimestamp).toBeNull();
       expect(component.testTimerSubscription).toBeUndefined();
       expect(component.timerText).toBe('--:--');
     });
@@ -163,46 +204,44 @@ describe('SessionTimerComponent', () => {
     });
 
     it('should be "--:--" when allExercisesComplete is true, even if timer was running', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(1000);
       expect(component.timerText).toBe('00:01');
 
       component.allExercisesComplete = true;
-      triggerEffectManually();
       expect(component.timerText).toBe('--:--');
     });
 
     it('should format time correctly (0 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
-      vi.advanceTimersByTime(0);
       expect(component.timerText).toBe('00:00');
     });
 
     it('should format time correctly (59 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(59 * 1000);
       expect(component.timerText).toBe('00:59');
     });
 
     it('should format time correctly (1 minute)', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(60 * 1000);
       expect(component.timerText).toBe('01:00');
     });
 
     it('should format time correctly (2 minutes and 5 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(2 * 60 * 1000 + 5 * 1000);
       expect(component.timerText).toBe('02:05');
     });
 
     it('should format time correctly (100 minutes and 10 seconds)', () => {
-      mockResetTrigger.set(Date.now());
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(100 * 60 * 1000 + 10 * 1000);
       expect(component.timerText).toBe('100:10');
@@ -210,48 +249,17 @@ describe('SessionTimerComponent', () => {
   });
 
   describe('allExercisesComplete Input', () => {
-    it('should update timerText to "--:--" when true and timer is active', () => {
-      (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
-      mockResetTrigger.set(Date.now());
-      triggerEffectManually(); // Effect runs: resetTimer (MFC#1), startTimer, triggerPulse (MFC#2)
-      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(2);
+    it('should show "--:--" when true and revert when false while timer is active', () => {
+      mockStartTimestamp.set(Date.now());
+      triggerEffectManually();
+      vi.advanceTimersByTime(1000);
+      expect(component.timerText).toBe('00:01');
 
-      vi.advanceTimersByTime(1000); // Interval (MFC#3), Pulse timeout (MFC#4). secondsElapsed = 1.
-      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(4);
-      expect(component.timerText).toBe('00:01'); // Verify pre-condition
-
-      (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
       component.allExercisesComplete = true;
-      // No triggerEffectManually(). secondsElapsed is still 1.
-      // timerText getter will now return '--:--'. No new markForCheck calls.
       expect(component.timerText).toBe('--:--');
-      expect(currentMockCdr.markForCheck).not.toHaveBeenCalled();
-    });
 
-    it('should revert timerText when false and timer is active', () => {
-      (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
-      mockResetTrigger.set(Date.now());
-      triggerEffectManually(); // Effect runs: resetTimer (MFC#1), startTimer, triggerPulse (MFC#2)
-      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(2);
-
-      vi.advanceTimersByTime(1000); // Interval (MFC#3), Pulse timeout (MFC#4). secondsElapsed = 1.
-      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(4);
-      // At this point, component.timerText is '00:01'.
-
-      (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
-      component.allExercisesComplete = true;
-      // No triggerEffectManually(). secondsElapsed is still 1.
-      // timerText getter returns '--:--'. No new markForCheck calls.
-      expect(component.timerText).toBe('--:--');
-      expect(currentMockCdr.markForCheck).not.toHaveBeenCalled();
-
-      // component.allExercisesComplete is still true from the previous step.
-      // No need to clear mockCdr again as we still expect no calls.
       component.allExercisesComplete = false;
-      // No triggerEffectManually(). secondsElapsed is still 1.
-      // timerText getter returns '00:01'. No new markForCheck calls.
-      expect(component.timerText).toBe('00:01'); // This should now pass.
-      expect(currentMockCdr.markForCheck).not.toHaveBeenCalled();
+      expect(component.timerText).toBe('00:01');
     });
   });
 
@@ -263,15 +271,6 @@ describe('SessionTimerComponent', () => {
 
   describe('triggerPulse Method (via callTriggerPulse)', () => {
     it('isPulsing should be true then false after 1s', () => {
-      // Defensive cleanup specific to this test to ensure no prior timer is running.
-      // This helps isolate whether an old interval from another test is firing.
-      if (component.testTimerSubscription) {
-        component.callStopTimer();
-      }
-      // Ensure secondsElapsed is also reset if we are defensively stopping a timer,
-      // as this test doesn't expect timer activity otherwise.
-      component.testSecondsElapsed = 0;
-
       (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
       component.callTriggerPulse();
       expect(component.testIsPulsing).toBe(true);
@@ -300,39 +299,27 @@ describe('SessionTimerComponent', () => {
   });
 
   describe('Timer Mechanics', () => {
-    it('startTimer should increment secondsElapsed', () => {
-      mockResetTrigger.set(Date.now());
+    it('startTimer should keep the display advancing with wall-clock time', () => {
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
-      vi.advanceTimersByTime(0);
-      expect(component.testSecondsElapsed).toBe(0);
+      expect(component.timerText).toBe('00:00');
       vi.advanceTimersByTime(1000);
-      expect(component.testSecondsElapsed).toBe(1);
+      expect(component.timerText).toBe('00:01');
       vi.advanceTimersByTime(1000);
-      expect(component.testSecondsElapsed).toBe(2);
+      expect(component.timerText).toBe('00:02');
     });
 
-    it('stopTimer should stop incrementing secondsElapsed', () => {
-      mockResetTrigger.set(Date.now());
+    it('stopTimer should stop the display from advancing', () => {
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
-      expect(component.testSecondsElapsed).toBe(2);
+      expect(component.timerText).toBe('00:02');
 
       component.callStopTimer();
-      vi.advanceTimersByTime(3000);
-      expect(component.testSecondsElapsed).toBe(2);
-    });
-
-    it('resetTimer should set secondsElapsed to 0 and stop timer', () => {
-      mockResetTrigger.set(Date.now());
-      triggerEffectManually();
-      vi.advanceTimersByTime(3000);
-      expect(component.testSecondsElapsed).toBe(3);
-
-      component.callResetTimer();
-      expect(component.testSecondsElapsed).toBe(0);
+      expect(component.testCurrentTimestamp).toBeNull();
       expect(component.testTimerSubscription).toBeUndefined();
-      vi.advanceTimersByTime(2000);
-      expect(component.testSecondsElapsed).toBe(0);
+      vi.advanceTimersByTime(3000);
+      expect(component.timerText).toBe('--:--');
     });
   });
 
@@ -345,17 +332,16 @@ describe('SessionTimerComponent', () => {
       expect(destroyCompleteSpy).toHaveBeenCalledOnce();
     });
 
-    it('should effectively stop the timer', () => { // Renamed test for clarity
-      mockResetTrigger.set(Date.now());
+    it('should effectively stop the timer', () => {
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(1000);
-      expect(component.testSecondsElapsed).toBe(1);
+      expect(component.timerText).toBe('00:01');
 
       component.ngOnDestroy();
 
-      vi.advanceTimersByTime(1000);
-      expect(component.testSecondsElapsed).toBe(1);
       expect(component.testTimerSubscription).toBeUndefined();
+      expect(component.timerText).toBe('--:--');
     });
 
     it('should clear pulseTimeoutId if it exists', () => {

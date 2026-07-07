@@ -92,6 +92,7 @@ export function mapToSessionPageViewModel(
           expectedReps: correspondingPlannedSet?.expected_reps ?? actualSet.expected_reps ?? 0,
           actualReps: actualSet.actual_reps,
           weight: actualSet.actual_weight,
+          completedAt: actualSet.completed_at ? new Date(ensureUtc(actualSet.completed_at)) : null,
         };
         return viewModelSet;
       })
@@ -132,6 +133,7 @@ export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpected
     actualReps: setDto.actual_reps,
     weight: setDto.actual_weight,
     planExerciseId: setDto.plan_exercise_id,
+    completedAt: setDto.completed_at ? new Date(ensureUtc(setDto.completed_at)) : null,
   };
 }
 

@@ -14,7 +14,7 @@ import { Subscription, Subject, takeUntil, interval } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionTimerComponent implements OnDestroy {
-  @Input({ required: true }) resetTrigger!: Signal<number | null | undefined>;
+  @Input({ required: true }) startTimestamp!: Signal<number | null | undefined>;
   @Input() @HostBinding('class.all-sets-complete-highlight') allExercisesComplete: boolean = false;
 
   @Output() readonly sessionCompleted = new EventEmitter<void>();
@@ -25,33 +25,25 @@ export class SessionTimerComponent implements OnDestroy {
   private readonly ngZone = inject(NgZone);
   private readonly destroy$ = new Subject<void>();
   private pulseTimeoutId: ReturnType<typeof setTimeout> | null = null;
-  private secondsElapsed: number = 0;
+  private currentTimestamp: number | null = null;
+  private isInitialized: boolean = false;
   private timerSubscription: Subscription | undefined;
 
   get timerText(): string {
-    if (this.timerSubscription === undefined || this.allExercisesComplete) {
+    if (this.currentTimestamp === null || this.allExercisesComplete) {
       return '--:--';
     }
 
-    const minutes = Math.floor(this.secondsElapsed / 60);
-    const seconds = this.secondsElapsed % 60;
+    const secondsElapsed = Math.max(0, Math.floor((Date.now() - this.currentTimestamp) / 1000));
+    const minutes = Math.floor(secondsElapsed / 60);
+    const seconds = secondsElapsed % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
 
   constructor() {
     effect(() => {
-      const triggerValue = this.resetTrigger();
-      if (triggerValue === null || triggerValue === undefined) {
-        untracked(() => {
-          this.resetTimer();
-        });
-      } else {
-        untracked(() => {
-          this.resetTimer();
-          this.startTimer();
-          this.triggerPulse();
-        });
-      }
+      const timestamp = this.startTimestamp();
+      untracked(() => this.applyTimestamp(timestamp ?? null));
     });
   }
 
@@ -67,6 +59,24 @@ export class SessionTimerComponent implements OnDestroy {
 
   onCompleteSession(): void {
     this.sessionCompleted.emit();
+  }
+
+  private applyTimestamp(timestamp: number | null): void {
+    const isNewCompletion = this.isInitialized && timestamp !== null && timestamp !== this.currentTimestamp;
+    this.isInitialized = true;
+
+    if (timestamp === null) {
+      this.stopTimer();
+      return;
+    }
+
+    this.currentTimestamp = timestamp;
+    this.startTimer();
+    this.cdr.markForCheck();
+
+    if (isNewCompletion) {
+      this.triggerPulse();
+    }
   }
 
   private triggerPulse(): void {
@@ -85,13 +95,15 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private startTimer(): void {
+    if (this.timerSubscription) {
+      return;
+    }
+
     this.ngZone.runOutsideAngular(() => {
-      this.timerSubscription?.unsubscribe();
       this.timerSubscription = interval(1000)
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => {
           this.ngZone.run(() => {
-            this.secondsElapsed++;
             this.cdr.markForCheck();
           });
         });
@@ -99,13 +111,9 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private stopTimer(): void {
+    this.currentTimestamp = null;
     this.timerSubscription?.unsubscribe();
     this.timerSubscription = undefined;
-  }
-
-  private resetTimer(): void {
-    this.secondsElapsed = 0;
-    this.stopTimer();
     this.cdr.markForCheck();
   }
 }
