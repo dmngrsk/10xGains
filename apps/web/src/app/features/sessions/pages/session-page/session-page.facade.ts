@@ -13,7 +13,7 @@ import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../model
 import { SessionStatus } from '../../models/session.types';
 
 // Types used by KeyedDebouncerService for session set update operations
-type SessionSetUpdateSuccessDataContext = { exerciseId: string; originalExpectedReps: number | null };
+type SessionSetUpdateSuccessDataContext = { exerciseId: string; originalExpectedReps: number | null; optimisticCompletedAt: Date | null };
 type SessionSetUpdateSuccessPayload = DebouncerSuccessEvent<SessionSetDto, SessionSetUpdateSuccessDataContext>;
 type SessionSetUpdateFailureDataContext = { originalSetSnapshot: SessionSetViewModel; exerciseId: string };
 type SessionSetUpdateFailurePayload = DebouncerFailureEvent<SessionSetUpdateFailureDataContext, string | Error>;
@@ -136,7 +136,8 @@ export class SessionPageFacade {
 
     const successContext: SessionSetUpdateSuccessDataContext = {
       exerciseId,
-      originalExpectedReps: originalSetSnapshotForRevert.expectedReps
+      originalExpectedReps: originalSetSnapshotForRevert.expectedReps,
+      optimisticCompletedAt: setPayload.completedAt ?? null
     };
     const failureContext: SessionSetUpdateFailureDataContext = {
       originalSetSnapshot: originalSetSnapshotForRevert,
@@ -161,6 +162,9 @@ export class SessionPageFacade {
 
     successEvent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(eventPayload => {
       const updatedViewModel = mapToSessionSetViewModel(eventPayload.data, eventPayload.context.originalExpectedReps);
+      // Keep the optimistic (tap-time) completion instant as the timer anchor. The server's
+      // completed_at is generated ~1 debounce later, which would otherwise snap the timer back.
+      updatedViewModel.completedAt = eventPayload.context.optimisticCompletedAt;
       this.updateSessionViewModelWithUpsertedSet(updatedViewModel, eventPayload.context.exerciseId);
       this.viewModel.update(s => ({ ...s, error: null }));
     });

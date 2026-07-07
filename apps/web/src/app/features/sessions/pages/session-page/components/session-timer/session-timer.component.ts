@@ -22,13 +22,16 @@ export class SessionTimerComponent implements OnDestroy {
 
   @HostBinding('class.pulsing') protected isPulsing = false;
 
+  // A newly anchored timestamp only pulses when it represents a completion that just happened;
+  // anything older (e.g. loading a session that already has completed sets) must not pulse.
+  private static readonly PULSE_ELAPSED_THRESHOLD_MS = 1000;
+
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
   private readonly serverClock = inject(ServerClockService);
   private readonly destroy$ = new Subject<void>();
   private pulseTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private currentTimestamp: number | null = null;
-  private isInitialized: boolean = false;
   private timerSubscription: Subscription | undefined;
 
   get timerText(): string {
@@ -64,8 +67,10 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private applyTimestamp(timestamp: number | null): void {
-    const isNewCompletion = this.isInitialized && timestamp !== null && (this.currentTimestamp === null || timestamp > this.currentTimestamp);
-    this.isInitialized = true;
+    const isNewCompletion =
+      timestamp !== null &&
+      (this.currentTimestamp === null || timestamp > this.currentTimestamp) &&
+      (this.serverClock.now() - timestamp) < SessionTimerComponent.PULSE_ELAPSED_THRESHOLD_MS;
 
     if (timestamp === null) {
       this.stopTimer();

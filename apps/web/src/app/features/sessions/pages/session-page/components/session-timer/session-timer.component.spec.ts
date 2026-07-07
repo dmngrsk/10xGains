@@ -166,6 +166,18 @@ describe('SessionTimerComponent', () => {
       loaded.ngOnDestroy();
     });
 
+    it('should not pulse when a past timestamp arrives after the initial null (returning to a session)', () => {
+      // beforeEach already ran the effect once with null (session still loading), then real
+      // session data arrives carrying an older completion timestamp.
+      mockStartTimestamp.set(Date.now() - 30000);
+      triggerEffectManually();
+
+      expect(component.testCurrentTimestamp).toBe(Date.now() - 30000);
+      expect(component.testTimerSubscription).toBeDefined();
+      expect(component.testIsPulsing).toBe(false);
+      expect(component.timerText).toBe('00:30');
+    });
+
     it('should reset and stop timer when startTimestamp becomes null after being a number', () => {
       mockStartTimestamp.set(Date.now());
       triggerEffectManually();
