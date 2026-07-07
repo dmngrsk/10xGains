@@ -5,12 +5,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService } from '@shared/services/keyed-debouncer.service';
+import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionPageFacade } from './session-page.facade';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
+import { SessionSetStatus } from '../../models/session.types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CapturedEnqueue = { successSubject: Subject<any>; failureSubject: Subject<any>; context: any; buildSuccess: any };
+
+const SERVER_NOW = new Date('2023-01-01T10:00:00.000Z').getTime();
 
 describe('SessionPageFacade', () => {
   let facade: SessionPageFacade;
@@ -28,13 +32,13 @@ describe('SessionPageFacade', () => {
     ...overrides,
   });
 
-  const seedViewModel = (set: SessionSetViewModel): void => {
+  const seedViewModel = (sets: SessionSetViewModel[]): void => {
     const viewModel: SessionPageViewModel = {
       id: 'session1',
       isLoading: false,
       error: null,
       metadata: { status: 'IN_PROGRESS' },
-      exercises: [{ planExerciseId: 'tpe1', exerciseName: 'Bench Press', order: 1, plannedSetsCount: 1, sets: [set] }],
+      exercises: [{ planExerciseId: 'tpe1', exerciseName: 'Bench Press', order: 1, plannedSetsCount: 1, sets }],
     };
     facade.viewModel.set(viewModel);
   };
@@ -56,8 +60,9 @@ describe('SessionPageFacade', () => {
         SessionPageFacade,
         { provide: PlanService, useValue: {} },
         { provide: ExerciseService, useValue: {} },
-        { provide: SessionService, useValue: { completeSet: vi.fn() } },
+        { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn() } },
         { provide: KeyedDebouncerService, useValue: { enqueue: enqueueMock, flushCurrentActiveDebounce: () => of(undefined) } },
+        { provide: ServerClockService, useValue: { now: () => SERVER_NOW } },
       ],
     });
     facade = TestBed.inject(SessionPageFacade);
@@ -68,18 +73,22 @@ describe('SessionPageFacade', () => {
   });
 
   describe('enqueueSetPatch timer anchor', () => {
-    it('should keep the optimistic completion time as the timer anchor after the server responds', () => {
-      const optimisticCompletedAt = new Date('2023-01-01T10:00:00.000Z');
-      const original = buildSet();
-      seedViewModel(original);
+    it.each<SessionSetStatus>(['COMPLETED', 'FAILED', 'PENDING'])(
+      'should restart the timer at the server-clock instant when a set is set to %s',
+      (status) => {
+        seedViewModel([buildSet()]);
 
-      const optimisticSet = buildSet({ status: 'COMPLETED', actualReps: 10, completedAt: optimisticCompletedAt });
-      facade.enqueueSetPatch(optimisticSet, 'tpe1', original);
+        facade.enqueueSetPatch(buildSet({ status, actualReps: status === 'COMPLETED' ? 10 : 0 }), 'tpe1', buildSet());
 
-      // Optimistic anchor is applied immediately.
-      expect(facade.timerStartTimestamp()).toBe(optimisticCompletedAt.getTime());
+        expect(facade.timerStartTimestamp()).toBe(SERVER_NOW);
+      }
+    );
 
-      // Server confirms ~1 debounce later, with a *later* completed_at.
+    it('should not move the timer anchor when the debounced server response arrives later', () => {
+      seedViewModel([buildSet()]);
+      facade.enqueueSetPatch(buildSet({ status: 'COMPLETED', actualReps: 10 }), 'tpe1', buildSet());
+      expect(facade.timerStartTimestamp()).toBe(SERVER_NOW);
+
       const serverDto: SessionSetDto = {
         id: 'set1',
         plan_exercise_id: 'tpe1',
@@ -93,25 +102,29 @@ describe('SessionPageFacade', () => {
       };
       captured.successSubject.next(captured.buildSuccess(serverDto, captured.context, 'set1'));
 
-      // The anchor must not snap forward to the server's completed_at.
-      expect(facade.timerStartTimestamp()).toBe(optimisticCompletedAt.getTime());
-      const syncedSet = facade.viewModel().exercises[0].sets[0];
-      expect(syncedSet.completedAt).toEqual(optimisticCompletedAt);
-      expect(syncedSet.actualReps).toBe(10);
+      // Anchor stays put; the server's later completed_at must not snap the timer.
+      expect(facade.timerStartTimestamp()).toBe(SERVER_NOW);
+    });
+  });
+
+  describe('getLatestCompletionTime', () => {
+    const getLatestCompletionTime = (viewModel: SessionPageViewModel): number | null =>
+      (facade as unknown as { getLatestCompletionTime(vm: SessionPageViewModel): number | null }).getLatestCompletionTime(viewModel);
+
+    it('should return the newest completion time across all sets', () => {
+      seedViewModel([
+        buildSet({ id: 'a', completedAt: new Date('2023-01-01T09:58:00.000Z') }),
+        buildSet({ id: 'b', completedAt: new Date('2023-01-01T09:59:30.000Z') }),
+        buildSet({ id: 'c', completedAt: null }),
+      ]);
+
+      expect(getLatestCompletionTime(facade.viewModel())).toBe(new Date('2023-01-01T09:59:30.000Z').getTime());
     });
 
-    it('should restore the previous anchor when the server call fails', () => {
-      const previousCompletedAt = new Date('2023-01-01T09:59:00.000Z');
-      const original = buildSet({ status: 'COMPLETED', actualReps: 10, completedAt: previousCompletedAt });
-      seedViewModel(original);
+    it('should return null when no set has been completed', () => {
+      seedViewModel([buildSet({ completedAt: null })]);
 
-      const optimisticSet = buildSet({ status: 'PENDING', completedAt: null });
-      facade.enqueueSetPatch(optimisticSet, 'tpe1', original);
-      expect(facade.timerStartTimestamp()).toBeNull();
-
-      captured.failureSubject.next({ error: 'boom', context: { originalSetSnapshot: original, exerciseId: 'tpe1' }, key: 'set1' });
-
-      expect(facade.timerStartTimestamp()).toBe(previousCompletedAt.getTime());
+      expect(getLatestCompletionTime(facade.viewModel())).toBeNull();
     });
   });
 });

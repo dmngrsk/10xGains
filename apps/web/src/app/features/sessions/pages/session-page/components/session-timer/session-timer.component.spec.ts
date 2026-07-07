@@ -178,24 +178,21 @@ describe('SessionTimerComponent', () => {
       expect(component.timerText).toBe('00:30');
     });
 
-    it('should keep the clock running when the anchor clears after all sets are reset', () => {
-      const start = Date.now();
-      mockStartTimestamp.set(start);
+    it('should stop and show --:-- when the anchor is cleared', () => {
+      mockStartTimestamp.set(Date.now());
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
       expect(component.timerText).toBe('00:02');
 
-      // Resetting the last completed set clears the anchor; leave the clock as is.
       mockStartTimestamp.set(null);
       triggerEffectManually();
 
-      expect(component.testCurrentTimestamp).toBe(start);
-      expect(component.testTimerSubscription).toBeDefined();
-      vi.advanceTimersByTime(1000);
-      expect(component.timerText).toBe('00:03');
+      expect(component.testCurrentTimestamp).toBeNull();
+      expect(component.testTimerSubscription).toBeUndefined();
+      expect(component.timerText).toBe('--:--');
     });
 
-    it('should re-pulse and re-anchor when the timestamp changes to a newer value', () => {
+    it('should re-pulse and re-anchor when the timestamp changes to a newer value (any set action)', () => {
       const start = Date.now();
       mockStartTimestamp.set(start);
       triggerEffectManually();
@@ -209,23 +206,6 @@ describe('SessionTimerComponent', () => {
       expect(component.testCurrentTimestamp).toBe(newStart);
       expect(component.testIsPulsing).toBe(true);
       expect(component.timerText).toBe('00:00');
-    });
-
-    it('should leave the running clock unchanged when a set is reset to an older timestamp', () => {
-      const start = Date.now();
-      mockStartTimestamp.set(start);
-      triggerEffectManually();
-      vi.advanceTimersByTime(5000);
-      expect(component.timerText).toBe('00:05');
-
-      // Resetting the latest set drops the anchor to an earlier completion; the clock must not
-      // jump backwards to it — it stays counting from where it was, without pulsing.
-      mockStartTimestamp.set(start - 60_000);
-      triggerEffectManually();
-
-      expect(component.testCurrentTimestamp).toBe(start);
-      expect(component.testIsPulsing).toBe(false);
-      expect(component.timerText).toBe('00:05');
     });
 
     it('should remain reset if startTimestamp is initially null', () => {

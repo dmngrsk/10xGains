@@ -67,18 +67,14 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private applyTimestamp(timestamp: number | null): void {
-    // The anchor only moves forward to a newer completion. Resetting a set lowers or clears the
-    // latest completion time; in that case we leave the running clock as is rather than jumping
-    // it back to an earlier set (or blanking it). The clock only shows --:-- before it ever starts.
-    const isForward = timestamp !== null && (this.currentTimestamp === null || timestamp > this.currentTimestamp);
-    if (!isForward) {
-      if (this.currentTimestamp === null) {
-        this.stopTimer();
-      }
+    if (timestamp === null) {
+      this.stopTimer();
       return;
     }
 
-    const isNewCompletion = (this.serverClock.now() - timestamp!) < SessionTimerComponent.PULSE_ELAPSED_THRESHOLD_MS;
+    // A just-happened completion pulses; an anchor seeded from an older completion (e.g. loading
+    // a session that already has completed sets) does not.
+    const isNewCompletion = (this.serverClock.now() - timestamp) < SessionTimerComponent.PULSE_ELAPSED_THRESHOLD_MS;
 
     this.currentTimestamp = timestamp;
     this.startTimer();
