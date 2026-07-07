@@ -62,7 +62,7 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private applyTimestamp(timestamp: number | null): void {
-    const isNewCompletion = this.isInitialized && timestamp !== null && timestamp !== this.currentTimestamp;
+    const isNewCompletion = this.isInitialized && timestamp !== null && (this.currentTimestamp === null || timestamp > this.currentTimestamp);
     this.isInitialized = true;
 
     if (timestamp === null) {

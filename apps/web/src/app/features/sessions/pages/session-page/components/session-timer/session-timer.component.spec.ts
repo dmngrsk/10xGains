@@ -190,6 +190,23 @@ describe('SessionTimerComponent', () => {
       expect(component.timerText).toBe('00:00');
     });
 
+    it('should re-anchor without pulsing when the timestamp reverts to an older value (set reset)', () => {
+      const start = Date.now();
+      mockStartTimestamp.set(start);
+      triggerEffectManually();
+      vi.advanceTimersByTime(5000);
+      expect(component.testIsPulsing).toBe(false);
+
+      // Reverting to an earlier completion (e.g. unchecking the latest set) must not pulse.
+      const olderStart = start - 60_000;
+      mockStartTimestamp.set(olderStart);
+      triggerEffectManually();
+
+      expect(component.testCurrentTimestamp).toBe(olderStart);
+      expect(component.testIsPulsing).toBe(false);
+      expect(component.timerText).toBe('01:05');
+    });
+
     it('should remain reset if startTimestamp is initially null', () => {
       triggerEffectManually();
       expect(component.testCurrentTimestamp).toBeNull();
