@@ -67,15 +67,18 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private applyTimestamp(timestamp: number | null): void {
-    const isNewCompletion =
-      timestamp !== null &&
-      (this.currentTimestamp === null || timestamp > this.currentTimestamp) &&
-      (this.serverClock.now() - timestamp) < SessionTimerComponent.PULSE_ELAPSED_THRESHOLD_MS;
-
-    if (timestamp === null) {
-      this.stopTimer();
+    // The anchor only moves forward to a newer completion. Resetting a set lowers or clears the
+    // latest completion time; in that case we leave the running clock as is rather than jumping
+    // it back to an earlier set (or blanking it). The clock only shows --:-- before it ever starts.
+    const isForward = timestamp !== null && (this.currentTimestamp === null || timestamp > this.currentTimestamp);
+    if (!isForward) {
+      if (this.currentTimestamp === null) {
+        this.stopTimer();
+      }
       return;
     }
+
+    const isNewCompletion = (this.serverClock.now() - timestamp!) < SessionTimerComponent.PULSE_ELAPSED_THRESHOLD_MS;
 
     this.currentTimestamp = timestamp;
     this.startTimer();

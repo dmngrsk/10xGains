@@ -178,19 +178,21 @@ describe('SessionTimerComponent', () => {
       expect(component.timerText).toBe('00:30');
     });
 
-    it('should reset and stop timer when startTimestamp becomes null after being a number', () => {
-      mockStartTimestamp.set(Date.now());
+    it('should keep the clock running when the anchor clears after all sets are reset', () => {
+      const start = Date.now();
+      mockStartTimestamp.set(start);
       triggerEffectManually();
       vi.advanceTimersByTime(2000);
       expect(component.timerText).toBe('00:02');
 
+      // Resetting the last completed set clears the anchor; leave the clock as is.
       mockStartTimestamp.set(null);
       triggerEffectManually();
 
-      expect(component.testCurrentTimestamp).toBeNull();
-      expect(component.testTimerSubscription).toBeUndefined();
-      expect(component.timerText).toBe('--:--');
-      expect(currentMockCdr.markForCheck).toHaveBeenCalled();
+      expect(component.testCurrentTimestamp).toBe(start);
+      expect(component.testTimerSubscription).toBeDefined();
+      vi.advanceTimersByTime(1000);
+      expect(component.timerText).toBe('00:03');
     });
 
     it('should re-pulse and re-anchor when the timestamp changes to a newer value', () => {
@@ -209,21 +211,21 @@ describe('SessionTimerComponent', () => {
       expect(component.timerText).toBe('00:00');
     });
 
-    it('should re-anchor without pulsing when the timestamp reverts to an older value (set reset)', () => {
+    it('should leave the running clock unchanged when a set is reset to an older timestamp', () => {
       const start = Date.now();
       mockStartTimestamp.set(start);
       triggerEffectManually();
       vi.advanceTimersByTime(5000);
-      expect(component.testIsPulsing).toBe(false);
+      expect(component.timerText).toBe('00:05');
 
-      // Reverting to an earlier completion (e.g. unchecking the latest set) must not pulse.
-      const olderStart = start - 60_000;
-      mockStartTimestamp.set(olderStart);
+      // Resetting the latest set drops the anchor to an earlier completion; the clock must not
+      // jump backwards to it — it stays counting from where it was, without pulsing.
+      mockStartTimestamp.set(start - 60_000);
       triggerEffectManually();
 
-      expect(component.testCurrentTimestamp).toBe(olderStart);
+      expect(component.testCurrentTimestamp).toBe(start);
       expect(component.testIsPulsing).toBe(false);
-      expect(component.timerText).toBe('01:05');
+      expect(component.timerText).toBe('00:05');
     });
 
     it('should remain reset if startTimestamp is initially null', () => {
