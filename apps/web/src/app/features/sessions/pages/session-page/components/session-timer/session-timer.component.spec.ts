@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, NgZone, WritableSignal, signal, effect } from '@angular/core';
 import { Subject, Subscription } from 'rxjs';
 import { vi, describe, it, expect, beforeEach, afterEach, MockedFunction } from 'vitest';
+import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionTimerComponent } from './session-timer.component';
 
 // Define a type for our augmented effect mock
@@ -12,6 +13,8 @@ interface CustomMockEffect extends MockedFunction<typeof effect> {
 // These will be reassigned in beforeEach, but need to be accessible to the vi.mock scope.
 let currentMockCdr: ChangeDetectorRef;
 let currentMockNgZone: NgZone;
+// Milliseconds the mock server clock runs ahead of the device clock (tunable per test).
+let serverClockOffset: number;
 
 vi.mock('@angular/core', async (importOriginal) => {
   const actualCore = await importOriginal<typeof import('@angular/core')>();
@@ -41,6 +44,9 @@ vi.mock('@angular/core', async (importOriginal) => {
       }
       if (token === NgZone) {
         return currentMockNgZone; // Return the instance from the test scope
+      }
+      if (token === ServerClockService) {
+        return { now: () => Date.now() + serverClockOffset } as ServerClockService;
       }
       // Fallback for other inject calls if any (though not expected for this component)
       if (actualCore.inject) {
@@ -76,6 +82,7 @@ describe('SessionTimerComponent', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2023-01-01T00:00:00Z'));
+    serverClockOffset = 0;
     spiedEffect = vi.mocked(effect) as CustomMockEffect;
     spiedEffect.clearRegistry();
 
@@ -337,6 +344,47 @@ describe('SessionTimerComponent', () => {
       expect(component.testTimerSubscription).toBeUndefined();
       vi.advanceTimersByTime(3000);
       expect(component.timerText).toBe('--:--');
+    });
+  });
+
+  describe('Server clock skew', () => {
+    it('should measure elapsed time against the server clock, not the device clock', () => {
+      // Device clock trails the server by 3s; the timestamp is server-generated.
+      serverClockOffset = 3000;
+      mockStartTimestamp.set(Date.now() + 3000);
+      triggerEffectManually();
+
+      // Without offset correction this would clamp to 00:00 for the first 3 seconds.
+      expect(component.timerText).toBe('00:00');
+      vi.advanceTimersByTime(1000);
+      expect(component.timerText).toBe('00:01');
+      vi.advanceTimersByTime(1000);
+      expect(component.timerText).toBe('00:02');
+    });
+  });
+
+  describe('Tick alignment', () => {
+    it('should fire the first tick at the next whole second rather than a full second later', () => {
+      // Loaded session (initial value already set) so no pulse timeout competes for markForCheck.
+      spiedEffect.clearRegistry();
+      const aligned = new TestableSessionTimerComponent();
+      aligned.startTimestamp = signal<number | null>(Date.now() - 4500);
+      spiedEffect.trigger(0);
+
+      expect(aligned.timerText).toBe('00:04');
+      (currentMockCdr.markForCheck as MockedFunction<() => void>).mockClear();
+
+      vi.advanceTimersByTime(499);
+      expect(currentMockCdr.markForCheck).not.toHaveBeenCalled();
+
+      vi.advanceTimersByTime(1); // 500ms in: the elapsed time crosses the 5s boundary
+      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(1);
+      expect(aligned.timerText).toBe('00:05');
+
+      vi.advanceTimersByTime(1000); // subsequent ticks stay a second apart
+      expect(currentMockCdr.markForCheck).toHaveBeenCalledTimes(2);
+
+      aligned.ngOnDestroy();
     });
   });
 

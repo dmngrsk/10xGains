@@ -3,7 +3,8 @@ import { ChangeDetectionStrategy, Component, Input, OnDestroy, inject, NgZone, C
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { Subscription, Subject, takeUntil, interval } from 'rxjs';
+import { Subscription, Subject, takeUntil, timer } from 'rxjs';
+import { ServerClockService } from '@shared/services/server-clock.service';
 
 @Component({
   selector: 'txg-session-timer',
@@ -23,6 +24,7 @@ export class SessionTimerComponent implements OnDestroy {
 
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly ngZone = inject(NgZone);
+  private readonly serverClock = inject(ServerClockService);
   private readonly destroy$ = new Subject<void>();
   private pulseTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private currentTimestamp: number | null = null;
@@ -34,7 +36,7 @@ export class SessionTimerComponent implements OnDestroy {
       return '--:--';
     }
 
-    const secondsElapsed = Math.max(0, Math.floor((Date.now() - this.currentTimestamp) / 1000));
+    const secondsElapsed = Math.max(0, Math.floor((this.serverClock.now() - this.currentTimestamp) / 1000));
     const minutes = Math.floor(secondsElapsed / 60);
     const seconds = secondsElapsed % 60;
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
@@ -95,12 +97,10 @@ export class SessionTimerComponent implements OnDestroy {
   }
 
   private startTimer(): void {
-    if (this.timerSubscription) {
-      return;
-    }
+    this.timerSubscription?.unsubscribe();
 
     this.ngZone.runOutsideAngular(() => {
-      this.timerSubscription = interval(1000)
+      this.timerSubscription = timer(this.delayToNextSecond(), 1000)
         .pipe(takeUntil(this.destroy$))
         .subscribe(() => {
           this.ngZone.run(() => {
@@ -108,6 +108,16 @@ export class SessionTimerComponent implements OnDestroy {
           });
         });
     });
+  }
+
+  private delayToNextSecond(): number {
+    if (this.currentTimestamp === null) {
+      return 1000;
+    }
+
+    const elapsedMs = Math.max(0, this.serverClock.now() - this.currentTimestamp);
+    const remainder = elapsedMs % 1000;
+    return remainder === 0 ? 1000 : 1000 - remainder;
   }
 
   private stopTimer(): void {

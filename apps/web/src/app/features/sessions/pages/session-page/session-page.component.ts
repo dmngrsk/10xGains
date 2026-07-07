@@ -7,6 +7,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
 import { filter, map, switchMap } from 'rxjs/operators';
+import { ServerClockService } from '@shared/services/server-clock.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
@@ -38,6 +39,7 @@ export class SessionPageComponent implements OnDestroy {
   private snackBar = inject(MatSnackBar);
   private facade = inject(SessionPageFacade);
   private route = inject(ActivatedRoute);
+  private serverClock = inject(ServerClockService);
 
   readonly viewModel = this.facade.viewModel;
   readonly timerStartTimestamp = this.facade.timerStartTimestamp;
@@ -91,7 +93,7 @@ export class SessionPageComponent implements OnDestroy {
     const setToUpdateTo = { ...event.set };
 
     const isCompletedOrFailed = setToUpdateTo.status === 'COMPLETED' || setToUpdateTo.status === 'FAILED';
-    setToUpdateTo.completedAt = isCompletedOrFailed ? new Date() : null;
+    setToUpdateTo.completedAt = isCompletedOrFailed ? new Date(this.serverClock.now()) : null;
 
     const exercise = session.exercises.find(ex => ex.planExerciseId === exerciseId)!;
     const setInSignal = exercise.sets.find(s => s.id === setToUpdateTo.id)!;
