@@ -31,6 +31,9 @@ export interface ApiSuccessResponse<T> {
 
   /** Success message (optional) */
   message?: string;
+
+  /** Server time (ISO 8601) when the response was generated, used by clients to correct clock skew */
+  timestamp: string;
 }
 
 /**
@@ -171,6 +174,7 @@ export function createSuccessData<T>(
     data,
     totalCount: metadata?.totalCount ?? undefined,
     message: metadata?.message ?? undefined,
+    timestamp: new Date().toISOString(),
   };
 }
 

@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { SupabaseService } from '../db/supabase.service';
 import { EnvironmentService } from '../services/environment.service';
+import { ServerClockService } from '../services/server-clock.service';
 
 const API_URL = 'https://func-test.azurewebsites.net';
 const ACCESS_TOKEN = 'test-access-token';
@@ -12,12 +13,14 @@ describe('ApiService', () => {
   let service: ApiService;
   let fetchMock: ReturnType<typeof vi.fn>;
   let getSessionMock: ReturnType<typeof vi.fn>;
+  let serverClockSyncMock: ReturnType<typeof vi.fn>;
 
   const mockJsonResponse = (status: number, body: unknown) =>
     new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
   beforeEach(() => {
     getSessionMock = vi.fn().mockResolvedValue({ data: { session: { access_token: ACCESS_TOKEN } } });
+    serverClockSyncMock = vi.fn();
     fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
@@ -26,6 +29,7 @@ describe('ApiService', () => {
         ApiService,
         { provide: SupabaseService, useValue: { client: { auth: { getSession: getSessionMock } } } },
         { provide: EnvironmentService, useValue: { apiUrl: API_URL } },
+        { provide: ServerClockService, useValue: { sync: serverClockSyncMock } },
       ]
     });
     service = TestBed.inject(ApiService);
@@ -46,6 +50,23 @@ describe('ApiService', () => {
       body: undefined,
     });
     expect(result).toEqual({ data: [{ id: '1' }], totalCount: 1, error: null });
+  });
+
+  it('should sync the server clock from the response timestamp', async () => {
+    const serverTimestamp = '2023-01-01T00:00:00.000Z';
+    fetchMock.mockResolvedValue(mockJsonResponse(200, { data: { id: '1' }, timestamp: serverTimestamp }));
+
+    await firstValueFrom(service.get('/plans/1'));
+
+    expect(serverClockSyncMock).toHaveBeenCalledWith(serverTimestamp);
+  });
+
+  it('should not sync the server clock when the response has no timestamp', async () => {
+    fetchMock.mockResolvedValue(mockJsonResponse(200, { data: { id: '1' } }));
+
+    await firstValueFrom(service.get('/plans/1'));
+
+    expect(serverClockSyncMock).not.toHaveBeenCalled();
   });
 
   it('should omit the Authorization header when there is no session', async () => {

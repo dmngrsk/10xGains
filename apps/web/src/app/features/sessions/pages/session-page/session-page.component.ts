@@ -40,7 +40,7 @@ export class SessionPageComponent implements OnDestroy {
   private route = inject(ActivatedRoute);
 
   readonly viewModel = this.facade.viewModel;
-  readonly timerResetTrigger = this.facade.timerResetTrigger;
+  readonly timerStartTimestamp = this.facade.timerStartTimestamp;
 
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
 
@@ -94,7 +94,6 @@ export class SessionPageComponent implements OnDestroy {
     const setInSignal = exercise.sets.find(s => s.id === setToUpdateTo.id)!;
     const originalSetStateForRevert = { ...setInSignal };
 
-    this.facade.triggerTimerReset();
     this.facade.enqueueSetPatch(setToUpdateTo, exerciseId, originalSetStateForRevert);
   }
 
@@ -208,7 +207,6 @@ export class SessionPageComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.flushPendingSetUpdate();
-    this.facade.triggerTimerReset(true);
   }
 
   private showSnackbar(message: string, duration: number = 3000): void {

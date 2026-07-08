@@ -32,4 +32,5 @@ export interface SessionSetViewModel {
   expectedReps: number;
   actualReps?: number | null;
   weight?: number;
+  completedAt?: Date | null;
 }

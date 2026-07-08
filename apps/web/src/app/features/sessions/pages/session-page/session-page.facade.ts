@@ -6,6 +6,7 @@ import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
+import { ServerClockService } from '@shared/services/server-clock.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
@@ -35,21 +36,26 @@ export class SessionPageFacade {
   private readonly exerciseService = inject(ExerciseService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly debouncerService = inject(KeyedDebouncerService);
+  private readonly serverClock = inject(ServerClockService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
-  readonly timerResetTrigger = signal<number | null>(null);
+
+  // The instant the rest timer counts up from. Seeded on load from the latest completed set so it
+  // survives app freezes and view re-entry, then bumped to "now" on every set interaction.
+  readonly timerStartTimestamp = signal<number | null>(null);
 
   loadSessionData(sessionId: string | null): void {
     if (!sessionId) {
       console.error('Session ID is missing. Cannot load session data.');
       this.viewModel.set(initialState);
-      this.timerResetTrigger.set(null);
+      this.timerStartTimestamp.set(null);
       this.flushPendingSetUpdate();
       return;
     }
 
     this.flushPendingSetUpdate();
     this.viewModel.set({ ...initialState, id: sessionId, isLoading: true });
+    this.timerStartTimestamp.set(null);
 
     this.sessionService.getSession(sessionId).pipe(
       takeUntilDestroyed(this.destroyRef),
@@ -91,6 +97,7 @@ export class SessionPageFacade {
     ).subscribe(updatedViewModel => {
       if (updatedViewModel && typeof updatedViewModel.isLoading !== 'undefined') {
         this.viewModel.set(updatedViewModel as SessionPageViewModel);
+        this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel as SessionPageViewModel));
       }
     });
   }
@@ -98,6 +105,9 @@ export class SessionPageFacade {
   enqueueSetPatch(setPayload: SessionSetViewModel, exerciseId: string, originalSetSnapshotForRevert: SessionSetViewModel): void {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
+
+    // Every set interaction (complete, fail or reset) restarts the rest timer from now.
+    this.timerStartTimestamp.set(this.serverClock.now());
 
     const setId = setPayload.id;
     let apiCallProvider: () => Observable<SessionSetDto | null>;
@@ -240,10 +250,6 @@ export class SessionPageFacade {
     );
   }
 
-  triggerTimerReset(disable: boolean = false): void {
-    this.timerResetTrigger.set(disable ? null : Date.now());
-  }
-
   flushPendingSetUpdate(): void {
     this.debouncerService.flushCurrentActiveDebounce().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }
@@ -252,6 +258,20 @@ export class SessionPageFacade {
     const map = new Map<string, Pick<ExerciseDto, 'name'>>();
     allExercises.forEach(ex => map.set(ex.id, { name: ex.name }));
     return map;
+  }
+
+  private getLatestCompletionTime(viewModel: SessionPageViewModel): number | null {
+    let latest: number | null = null;
+    for (const exercise of viewModel.exercises) {
+      for (const set of exercise.sets) {
+        if (!set.completedAt) continue;
+        const time = set.completedAt.getTime();
+        if (latest === null || time > latest) {
+          latest = time;
+        }
+      }
+    }
+    return latest;
   }
 
   private handleSessionOperation<T>(

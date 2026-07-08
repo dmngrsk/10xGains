@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, from } from 'rxjs';
 import { SupabaseService } from '../db/supabase.service';
 import { EnvironmentService } from '../services/environment.service';
+import { ServerClockService } from '../services/server-clock.service';
 
 export interface ApiServiceResponse<T> {
   data: T | null;
@@ -9,7 +10,7 @@ export interface ApiServiceResponse<T> {
   error: string | null;
 }
 
-interface ApiInternalSuccessResponse<T> { data: T; totalCount?: number; message?: string; }
+interface ApiInternalSuccessResponse<T> { data: T; totalCount?: number; message?: string; timestamp?: string; }
 interface ApiInternalErrorResponse { error: string; details?: Record<string, unknown>; code?: string; }
 
 @Injectable({
@@ -18,6 +19,7 @@ interface ApiInternalErrorResponse { error: string; details?: Record<string, unk
 export class ApiService {
   private supabaseService = inject(SupabaseService);
   private environmentService = inject(EnvironmentService);
+  private serverClock = inject(ServerClockService);
 
   public get<T>(url: string): Observable<ApiServiceResponse<T>> {
     return from(this.request<T>('GET', url));
@@ -69,6 +71,9 @@ export class ApiService {
     }
 
     const successResponse = await response.json() as ApiInternalSuccessResponse<T>;
+    if (successResponse.timestamp) {
+      this.serverClock.sync(successResponse.timestamp);
+    }
     return { data: successResponse.data ?? null, totalCount: successResponse.totalCount, error: null };
   }
 
