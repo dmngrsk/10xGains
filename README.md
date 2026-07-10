@@ -38,7 +38,7 @@ This is a pnpm workspace monorepo:
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase and Azurite locally
 - **Supabase CLI**: Follow the [official installation guide](https://supabase.com/docs/guides/cli/getting-started)
-- **Azurite**: Local Azure Storage emulator required by the API's Functions host. Follow Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub)
+- **Azurite**: Local Azure Storage emulator required by the API's Functions host
 
 ### Installation
 1.  **Clone the repository:**
@@ -50,51 +50,43 @@ This is a pnpm workspace monorepo:
     cd 10xGains
     ```
 
-3.  **Start the local Supabase services:**
-
-    This command uses Docker to start the local Supabase stack (database, auth, storage, etc.).
-    ```bash
-    npx supabase start
-    ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 7 and 8.
-
-4.  **Apply database migrations and seed data:**
-
-    This command resets your local database and applies all schema changes from the `supabase/migrations` folder.
-    ```bash
-    npx supabase db reset
-    ```
-
-5.  **Start the Azurite storage emulator:**
-
-    The API's local Azure Functions host needs a storage backend (`AzureWebJobsStorage`). Pull and run the container detached with the required ports mapped, the same way the Supabase stack runs in the background (see Microsoft's [Docker Hub installation guide](https://learn.microsoft.com/en-us/azure/storage/common/storage-install-azurite?tabs=docker-hub) for more options):
-    ```bash
-    docker run -d --name azurite -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
-    ```
-    Once it's running, it will be available for the API Function app to consume. For subsequent starts after the container has been created, you can simply run `docker start azurite`.
-
-6.  **Install dependencies:**
+3.  **Install dependencies:**
 
     Install the necessary npm packages for all workspace packages.
     ```bash
     pnpm install
     ```
 
-7.  **Configure the API:**
+4.  **Start the local Supabase services:**
+
+    This command uses Docker to start the local Supabase stack (database, auth, storage, etc.). On first run, it also creates the database and applies all schema changes from the `supabase/migrations` folder.
+    ```bash
+    npx supabase start
+    ```
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 6 and 7.
+
+5.  **Start the Azurite storage emulator:**
+
+    The API's local Functions host needs a storage backend (`AzureWebJobsStorage`). Start it via the root `docker-compose.yml`:
+    ```bash
+    docker compose up -d
+    ```
+
+6.  **Configure the API:**
 
     The API runs on a local Azure Functions host. Create its local settings file from the provided example:
     ```bash
     cp apps/api/local.settings.json.example apps/api/local.settings.json
     ```
-    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 3. `AzureWebJobsStorage` is already set to use the Azurite container started in step 5.
+    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 4. `AzureWebJobsStorage` is already set to use the Azurite container started in step 5.
 
-8.  **Configure the Angular app:**
+7.  **Configure the Angular app:**
 
     The frontend needs to know how to connect to your local Supabase instance. Create a copy of the development environment file:
     ```bash
     cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
     ```
-    The Angular CLI will use this file during local development. Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from step 3:
+    The Angular CLI will use this file during local development. Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from step 4:
     ```typescript
     export const environment = {
       production: false,
@@ -102,13 +94,13 @@ This is a pnpm workspace monorepo:
         url: 'http://localhost:7071', // The local Azure Functions host
       },
       supabase: {
-        url: 'YOUR_LOCAL_SUPABASE_URL', // e.g., http://localhost:54321
-        key: 'YOUR_LOCAL_SUPABASE_PUBLISHABLE_KEY', // sb_publishable_...
+        url: 'http://localhost:54321', // The local Supabase project URL 
+        key: 'sb_publishable_...',  // The local Supabase publishable auth key
       }
     };
     ```
 
-9.  **Start the apps:**
+8.  **Start the apps:**
 
     Run both the Angular dev server and the API host together with a single command:
     ```bash
@@ -116,7 +108,7 @@ This is a pnpm workspace monorepo:
     ```
     This runs the `dev` script of every workspace package in parallel (equivalent to `pnpm --filter @txg/web start:development` and `pnpm --filter @txg/api start` run side by side), prefixing each line of output with its package name. To run them separately instead (e.g. in two terminals), use those individual commands.
 
-10. **Open your browser and navigate to `http://localhost:4200`**
+9.  **Open your browser and navigate to `http://localhost:4200`**
 
 ## Available Scripts
 
