@@ -143,6 +143,11 @@ Below are the most important scripts defined in `package.json`.
 
 #### End-to-End Tests (Cypress)
 
+Before running the suite locally, copy `.env.example` to `.env` and fill in the values (your local Supabase credentials from step 4, and a canary user email/password of your choice).
+```bash
+cp .env.example .env
+```
+
 - `pnpm e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
