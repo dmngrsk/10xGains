@@ -195,44 +195,10 @@ Process:
 
 ## Canary User Setup
 
-The pipeline uses a dedicated canary user for smoke E2E tests. This user needs to be created and configured in both staging and production environments.
+The pipeline uses a dedicated canary user (`APP_CANARY_USER_EMAIL` / `APP_CANARY_USER_PASSWORD`) for E2E tests. Before every canary login, the `users:ensureCanaryScaffolded` task (`cypress/support/tasks.ts`) signs in with the publishable key and checks its test data (`scaffoldTestUserData()` in `cypress/support/test-data/scaffold.ts`: two workouts, exercise definitions, progression rules, 14 historical sessions, a pending session).
 
-### Creating the Canary User
-
-1. **Register the User**
-   - Create a new user account in the Supabase Dashboard
-   - Use the email and password that will be set in GitHub secrets:
-     - `APP_CANARY_USER_EMAIL`
-     - `APP_CANARY_USER_PASSWORD`
-   - Create an account for each exercise
-
-2. **Initialize Test Data**
-The repository includes a SQL function to scaffold test data for the canary user. Execute these steps in both staging and production databases:
-
-```sql
--- 1. Connect to the database using psql or Supabase Dashboard's SQL Editor
-
--- 2. Verify the environment setting is not 'production' for the function to work
-SHOW app.environment;
--- Should return 'staging' or 'development' for staging database
--- For production database, temporarily set it:
-ALTER DATABASE postgres SET app.environment = 'staging';
-
--- 3. Execute the function as the canary user
--- Important: You must be authenticated as the canary user when running this
--- Alternatively: Execute the function's body directly in the Supabase Dashboard
-select test_scaffold_user_data();
-
--- 4. For production database, revert the environment setting
-ALTER DATABASE postgres SET app.environment = 'production';
-```
-
-The `test_scaffold_user_data()` function will create:
-- A plan with two workouts
-- Exercise definitions (Squat, Bench Press, Deadlift)
-- Progression rules
-- 14 historical sessions
-- A pending session
+- **Local development & staging**: fully automatic. If the account or its data is missing, the task uses the secret-key client to create the user and/or scaffold the data. Requires a real, non-placeholder `APP_CANARY_USER_PASSWORD` - it refuses to auto-create an account with an empty or default password.
+- **Production**: create the account once, manually (e.g. via the Supabase Dashboard). Production only ever runs smoke tests, which intentionally never receive `SUPABASE_SECRET_KEY` (Cypress must not hold service-role access there), so it can't self-heal - `ensureCanaryScaffolded` fails with a readable error if the account or its data is missing.
 
 ### Verifying the Setup
 
@@ -243,6 +209,7 @@ After creating the canary user and scaffolding the data:
    select * from profiles where id = (
      select id from auth.users where email = 'your-canary-email@example.com'
    );
+   -- active_plan_id should be set
    ```
 
 2. **Verify Session Data**

@@ -51,6 +51,7 @@ testem.log
 # Environment files
 .env
 .env.*
+!.env.example
 local.settings.json
 apps/web/src/environments/environment.*.ts
 
