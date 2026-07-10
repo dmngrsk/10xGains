@@ -1,5 +1,5 @@
 import { config } from 'dotenv';
-import { AuthError, createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { generateTestEmail, generateTestPassword } from './test-data/auth';
 import { scaffoldTestUserData } from './test-data/scaffold';
 
