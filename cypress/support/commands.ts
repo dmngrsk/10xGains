@@ -112,6 +112,7 @@ function loginAsCanaryUser(): void {
         throw new Error('Canary user credentials not found in environment variables');
       }
 
+      cy.task('users:ensureCanaryScaffolded', { email, password });
       fillLoginForm(email, password);
     });
 }
