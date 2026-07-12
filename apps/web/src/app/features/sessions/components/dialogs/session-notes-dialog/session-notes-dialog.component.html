@@ -27,9 +27,10 @@
     </mat-form-field>
   }
 
-  <div class="flex flex-col flex-grow gap-2">
-    <button mat-flat-button color="primary" (click)="onSave()" data-cy="session-notes-dialog-save-button">
-      <span>Save</span>
-    </button>
-  </div>
 </mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-flat-button color="primary" (click)="onSave()" [disabled]="notesForm.invalid" data-cy="session-notes-dialog-save-button">
+    Save
+  </button>
+</mat-dialog-actions>

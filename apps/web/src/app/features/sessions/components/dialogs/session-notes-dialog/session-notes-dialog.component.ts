@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -42,14 +42,12 @@ export class SessionNotesDialogComponent {
   readonly maxLength = NOTES_MAX_LENGTH;
   readonly showPlanNotes = this.data.planNotes !== undefined;
 
-  notesForm: FormGroup;
+  readonly notesForm = this.fb.group({
+    sessionNotes: [this.data.sessionNotes ?? '', [Validators.maxLength(NOTES_MAX_LENGTH)]],
+    planNotes: [this.data.planNotes ?? '', [Validators.maxLength(NOTES_MAX_LENGTH)]],
+  });
 
   constructor() {
-    this.notesForm = this.fb.group({
-      sessionNotes: [this.data.sessionNotes ?? '', [Validators.maxLength(NOTES_MAX_LENGTH)]],
-      planNotes: [this.data.planNotes ?? '', [Validators.maxLength(NOTES_MAX_LENGTH)]],
-    });
-
     this.dialogRef.backdropClick()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.closeWithResult());
