@@ -51,6 +51,12 @@ namespace Cypress {
     getMatSnackBar(): Cypress.Chainable<JQuery<HTMLElement>>;
 
     /**
+     * Dismiss the Material Snackbar if one is currently shown.
+     * Useful before clicking elements a lingering snackbar may overlay.
+     */
+    closeMatSnackBar(): void;
+
+    /**
      * Simulate a long press on an element.
      * @param subject The element to long press.
      * @param duration The duration of the long press in milliseconds.

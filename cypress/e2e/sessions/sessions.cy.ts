@@ -109,6 +109,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Felt strong on squats today.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before reloading
 
       cy.reload();
       cy.getBySel(dataCy.sessions.notesButton).click();
@@ -121,6 +122,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Saved via backdrop click.');
       cy.get('.cdk-overlay-backdrop').click({ force: true });
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before reloading
 
       cy.reload();
       cy.getBySel(dataCy.sessions.notesButton).click();
@@ -133,6 +135,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before navigating away
 
       // Open a completed session of the same plan from the history.
       cy.navigateBack();
@@ -141,6 +144,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         cy.getBySel(dataCy.history.sessionNavigateButton).click();
       });
 
+      cy.closeMatSnackBar(); // A lingering snackbar can overlay the notes FAB
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('have.value', 'Switch to low-bar next cycle.');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
@@ -152,6 +156,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before navigating away
 
       // Create and activate a second plan (the global Squat exercise exists via scaffolding)
       cy.navigateBack(); // The session page has no bottom navigation
@@ -167,6 +172,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Workout C'); // Session from the second plan
       cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
 
+      cy.closeMatSnackBar(); // A lingering snackbar can overlay the notes FAB
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('have.value', '');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
@@ -185,6 +191,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Private note of user one.');
         cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
         cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
+        cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before navigating away
 
         cy.url().then((ephemeralUserSessionUrl) => {
           cy.navigateBack();
