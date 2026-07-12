@@ -1,3 +1,4 @@
+import { createPlan, createPlanDay, createPlanExercise, createPlanExerciseSet } from '../../support/helpers/plans.helpers';
 import { dataCy } from '../../support/selectors';
 
 describe('Plan Management', { tags: ['@plans'] }, () => {
@@ -193,7 +194,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
       cy.getBySel(dataCy.plans.planEdit.activateButton).click();
 
       // Complete a training session and navigate back to the plan editor
-      cy.getBySel(dataCy.home.sessionNavigateButton).click({ force: true });
+      cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click({ force: true });
       cy.getBySel(dataCy.sessions.set.bubble).first().click();
       cy.getBySel(dataCy.sessions.completeButton).click({ force: true });
       cy.getBySel(dataCy.shared.dialogs.confirmation.confirmButton).click();
@@ -224,63 +225,3 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
     });
   });
 });
-
-function createPlan() {
-  cy.getBySel(dataCy.plans.planList.createButton).click();
-  cy.getBySel(dataCy.plans.dialogs.plans.title).should('contain.text', 'Create New Plan');
-  cy.getBySel(dataCy.plans.dialogs.plans.content).should('be.visible');
-  cy.getBySel(dataCy.plans.dialogs.plans.nameInput).type('Test Training Plan');
-  cy.getBySel(dataCy.plans.dialogs.plans.saveButton).click();
-
-  cy.getBySel(dataCy.plans.dialogs.plans.content).should('not.exist');
-  cy.getBySel(dataCy.plans.planEdit.metadata).should('contain.text', 'Test Training Plan');
-}
-
-function createPlanDay() {
-  cy.getBySel(dataCy.plans.planEdit.addDayButton).click();
-  cy.getBySel(dataCy.plans.dialogs.days.title).should('contain.text', 'Add New Day');
-  cy.getBySel(dataCy.plans.dialogs.days.content).should('be.visible');
-  cy.getBySel(dataCy.plans.dialogs.days.nameInput).type('Test Training Day');
-  cy.getBySel(dataCy.plans.dialogs.days.saveButton).click();
-
-  cy.getBySel(dataCy.plans.planEdit.days.item).should('exist');
-  cy.getBySel(dataCy.plans.planEdit.days.name).should('contain.text', 'Test Training Day');
-  cy.getBySel(dataCy.plans.planEdit.days.item).click();
-}
-
-function createPlanExercise({ name, createGlobal }: { name?: string; createGlobal?: boolean } = {}) {
-  cy.getBySel(dataCy.plans.planEdit.days.addExerciseButton).click();
-  cy.getBySel(dataCy.plans.dialogs.exercises.title).should('contain.text', 'Add New Exercise');
-  cy.getBySel(dataCy.plans.dialogs.exercises.content).should('be.visible');
-  cy.getBySel(dataCy.plans.dialogs.exercises.exerciseInput).type(name!);
-  cy.getBySel(dataCy.plans.dialogs.exercises.exerciseAutocompleteOption).contains(name!).click();
-  if (createGlobal) {
-    cy.getBySel(dataCy.plans.dialogs.exercises.newGlobalExerciseNotice).should('be.visible');
-  }
-  cy.getBySel(dataCy.plans.dialogs.exercises.saveButton).click();
-  cy.getBySel(dataCy.plans.dialogs.exercises.content).should('not.exist');
-
-  cy.getBySel(dataCy.plans.dialogs.exerciseProgression.title).should('contain.text', 'Edit Exercise Progression');
-  cy.getBySel(dataCy.plans.dialogs.exerciseProgression.content).should('be.visible');
-  cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).type('2.5');
-  cy.getBySel(dataCy.plans.dialogs.exerciseProgression.saveButton).click();
-  cy.getBySel(dataCy.plans.dialogs.exerciseProgression.content).should('not.exist');
-  cy.getBySel(dataCy.plans.planEdit.exercises.editProgressionButton).should('exist');
-
-  cy.getBySel(dataCy.plans.planEdit.exercises.item).should('exist');
-  cy.getBySel(dataCy.plans.planEdit.exercises.name).should('contain.text', name);
-  cy.getBySel(dataCy.plans.planEdit.exercises.item).click();
-}
-
-function createPlanExerciseSet() {
-  cy.getBySel(dataCy.plans.planEdit.exercises.addSetButton).click();
-  cy.getBySel(dataCy.plans.dialogs.sets.title).should('contain.text', 'Add Set');
-  cy.getBySel(dataCy.plans.dialogs.sets.content).should('be.visible');
-  cy.getBySel(dataCy.plans.dialogs.sets.repsInput).type('10');
-  cy.getBySel(dataCy.plans.dialogs.sets.weightInput).type('100');
-  cy.getBySel(dataCy.plans.dialogs.sets.saveButton).click({ force: true });
-  cy.getBySel(dataCy.plans.dialogs.sets.content).should('not.exist');
-
-  cy.getBySel(dataCy.plans.planEdit.sets.item).should('exist');
-  cy.getBySel(dataCy.plans.planEdit.sets.details).should('contain.text', '10 x 100kg');
-}

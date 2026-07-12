@@ -7,6 +7,7 @@ import { CompleteSessionSetCommand,
   ResetSessionSetCommand,
   SessionSetDto,
   SessionDto,
+  UpdateSessionCommand,
   UpdateSessionSetCommand
 } from '@txg/shared';
 import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
@@ -95,6 +96,24 @@ export class SessionService {
 
     const url = `/sessions`;
     return this.apiService.post<CreateSessionCommand, SessionDto>(url, { plan_id: planId });
+  }
+
+  /**
+   * Updates a session's mutable fields (status and/or notes).
+   * @param sessionId The ID of the session to update.
+   * @param command The command with the fields to update; at least one must be present.
+   * @returns An Observable emitting the updated session data.
+   */
+  updateSession(sessionId: string, command: UpdateSessionCommand): Observable<SessionServiceResponse<SessionDto>> {
+    if (!sessionId) {
+      return throwError(() => new Error('Session ID is required.'));
+    }
+    if (!command || Object.keys(command).length === 0) {
+      return throwError(() => new Error('Update command cannot be empty.'));
+    }
+
+    const url = `/sessions/${sessionId}`;
+    return this.apiService.put<UpdateSessionCommand, SessionDto>(url, command);
   }
 
   /**

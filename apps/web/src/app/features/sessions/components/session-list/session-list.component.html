@@ -1,7 +1,13 @@
 @if (sessions && sessions.length > 0) {
   <div class="grid grid-cols-1 gap-4">
     @for (session of sessions; track session.id) {
-      <txg-session-card [sessionData]="session" (sessionNavigated)="onSessionNavigated($event)" data-cy="session-card"></txg-session-card>
+      <txg-session-card
+        [sessionData]="session"
+        [notesAccessible]="notesAccessible"
+        (sessionNavigated)="onSessionNavigated($event)"
+        (notesClicked)="onNotesClicked($event)"
+        data-cy="session-card">
+      </txg-session-card>
     }
   </div>
 } @else {

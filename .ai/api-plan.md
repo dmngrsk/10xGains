@@ -6,7 +6,7 @@
 
 - **Exercises**: Corresponds to the `exercises` table. This resource includes predefined exercises (name and description) available for users to include in their plans.
 
-- **Plans**: Represents the `plans` table. It contains the plan name, associated user, and creation timestamp.
+- **Plans**: Represents the `plans` table. It contains the plan name, associated user, creation timestamp, and an optional free-form note shared across all sessions of the plan.
 
 - **Plan Days**: Maps to the `plan_days` table. These are the individual days within a plan, each having a name, description, and order index.
 
@@ -16,7 +16,7 @@
 
 - **Plan Exercise Progressions**: Maps to the `plan_exercise_progressions` table. It defines the progression rules for each exercise within a plan (e.g., weight increment, failure thresholds, deload strategy).
 
-- **Sessions**: Corresponds to the `sessions` table. These resources track individual workout sessions including session date, status, and the associated plan/day.
+- **Sessions**: Corresponds to the `sessions` table. These resources track individual workout sessions including session date, status, the associated plan/day, and an optional free-form note.
 
 - **Session Sets**: Based on the `session_sets` table, this resource records the actual performance data for each set within a training session (actual weight, actual reps, status, and completion time).
 
@@ -290,12 +290,13 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /plans/{planId}**
-  - Description: Update a plan belonging to the authenticated user.
+  - Description: Update a plan belonging to the authenticated user. All fields are optional, but at least one must be present.
   - Request Body:
     ```json
     {
       "name": "Updated Plan Name",
-      "description": "Updated description"
+      "description": "Updated description",
+      "notes": "Updated plan note"
     }
     ```
   - Example Response:
@@ -304,6 +305,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "id": "uuid",
       "name": "Updated Plan Name",
       "description": "Updated description",
+      "notes": "Updated plan note",
       "user_id": "uuid",
       "updated_at": "2023-01-02T00:00:00Z"
     }
@@ -915,11 +917,12 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Errors: 401 Unauthorized, 404 Not Found
 
 - **PUT /sessions/{sessionId}**
-  - Description: Update session details (e.g., status such as CANCELLED) for a training session belonging to the authenticated user.
+  - Description: Update session details (e.g., status such as CANCELLED, or the session note) for a training session belonging to the authenticated user. All fields are optional, but at least one must be present.
   - Request Body:
     ```json
     {
-      "status": "CANCELLED"
+      "status": "CANCELLED",
+      "notes": "Updated session note"
     }
     ```
   - Example Response:
@@ -930,7 +933,8 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
       "plan_day_id": "uuid",
       "user_id": "uuid",
       "session_date": "2023-01-01T00:00:00Z",
-      "status": "CANCELLED"
+      "status": "CANCELLED",
+      "notes": "Updated session note"
     }
     ```
   - Success: 200 OK
@@ -1103,6 +1107,7 @@ All endpoints require that the client is authenticated. This means all data is v
 - **Input Validation**: Each endpoint will validate the incoming payloads against the database constraints. For example:
   - `expected_reps`, `expected_weight`, and `actual_reps`, `actual_weight` must be greater than 0.
   - `order_index`, `set_index`, and other numeric fields are validated to ensure uniqueness and proper sequencing.
+  - `notes` on plans and sessions must not exceed 5000 characters (also enforced by a database CHECK constraint).
 
 - **Business Logic**:
   - **Reordering**: For list-based entities like `Plan Days` (within a plan), `Plan Exercises` (within a day), and `Plan Exercise Sets` (within an exercise), the API will automatically manage the `order_index` (or `set_index` for sets) to ensure a dense, sequential order.

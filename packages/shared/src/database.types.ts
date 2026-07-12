@@ -204,6 +204,7 @@ export interface Database {
           description: string | null
           id: string
           name: string
+          notes: string | null
           user_id: string
         }
         Insert: {
@@ -211,6 +212,7 @@ export interface Database {
           description?: string | null
           id?: string
           name: string
+          notes?: string | null
           user_id: string
         }
         Update: {
@@ -218,6 +220,7 @@ export interface Database {
           description?: string | null
           id?: string
           name?: string
+          notes?: string | null
           user_id?: string
         }
         Relationships: []
@@ -318,6 +321,7 @@ export interface Database {
       sessions: {
         Row: {
           id: string
+          notes: string | null
           plan_day_id: string | null
           plan_id: string
           session_date: string | null
@@ -326,6 +330,7 @@ export interface Database {
         }
         Insert: {
           id?: string
+          notes?: string | null
           plan_day_id?: string | null
           plan_id: string
           session_date?: string | null
@@ -334,6 +339,7 @@ export interface Database {
         }
         Update: {
           id?: string
+          notes?: string | null
           plan_day_id?: string | null
           plan_id?: string
           session_date?: string | null

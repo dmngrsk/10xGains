@@ -250,6 +250,51 @@ export class SessionPageFacade {
     );
   }
 
+  saveNotes(sessionNotes: string | null, planNotes: string | null | undefined): Observable<boolean> {
+    const state = this.viewModel();
+    const sessionId = state.id!;
+    const metadata = state.metadata;
+
+    const operations: Observable<boolean>[] = [];
+
+    if (sessionNotes !== (metadata?.notes ?? null)) {
+      operations.push(
+        this.sessionService.updateSession(sessionId, { notes: sessionNotes }).pipe(
+          map(res => !res?.error),
+          tapIf(success => success, () =>
+            this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, notes: sessionNotes } }))
+          ),
+          catchError(err => {
+            console.error('Failed to save session notes:', err);
+            return of(false);
+          })
+        )
+      );
+    }
+
+    const planId = metadata?.planId;
+    if (planNotes !== undefined && planId && planNotes !== (metadata?.planNotes ?? null)) {
+      operations.push(
+        this.planService.updatePlan(planId, { notes: planNotes }).pipe(
+          map(res => !res?.error),
+          tapIf(success => success, () =>
+            this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, planNotes } }))
+          ),
+          catchError(err => {
+            console.error('Failed to save plan notes:', err);
+            return of(false);
+          })
+        )
+      );
+    }
+
+    if (operations.length === 0) {
+      return of(true);
+    }
+
+    return forkJoin(operations).pipe(map(results => results.every(success => success)));
+  }
+
   flushPendingSetUpdate(): void {
     this.debouncerService.flushCurrentActiveDebounce().pipe(takeUntilDestroyed(this.destroyRef)).subscribe();
   }

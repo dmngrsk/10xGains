@@ -58,9 +58,9 @@ describe('SessionPageFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         SessionPageFacade,
-        { provide: PlanService, useValue: {} },
+        { provide: PlanService, useValue: { updatePlan: vi.fn() } },
         { provide: ExerciseService, useValue: {} },
-        { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn() } },
+        { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn(), updateSession: vi.fn() } },
         { provide: KeyedDebouncerService, useValue: { enqueue: enqueueMock, flushCurrentActiveDebounce: () => of(undefined) } },
         { provide: ServerClockService, useValue: { now: () => SERVER_NOW } },
       ],
@@ -104,6 +104,79 @@ describe('SessionPageFacade', () => {
 
       // Anchor stays put; the server's later completed_at must not snap the timer.
       expect(facade.timerStartTimestamp()).toBe(SERVER_NOW);
+    });
+  });
+
+  describe('saveNotes', () => {
+    const seedNotesViewModel = (notes: string | null, planNotes: string | null): void => {
+      facade.viewModel.set({
+        id: 'session1',
+        isLoading: false,
+        error: null,
+        metadata: { status: 'IN_PROGRESS', planId: 'plan1', notes, planNotes },
+        exercises: [],
+      });
+    };
+
+    it('should update the session note and metadata when it changed', () => {
+      seedNotesViewModel(null, null);
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.updateSession).mockReturnValue(of({ data: null, error: null }));
+
+      let result: boolean | undefined;
+      facade.saveNotes('New session note', null).subscribe(r => (result = r));
+
+      expect(result).toBe(true);
+      expect(sessionService.updateSession).toHaveBeenCalledWith('session1', { notes: 'New session note' });
+      expect(facade.viewModel().metadata?.notes).toBe('New session note');
+    });
+
+    it('should update the plan note via the plan service when it changed', () => {
+      seedNotesViewModel('unchanged', null);
+      const planService = TestBed.inject(PlanService);
+      vi.mocked(planService.updatePlan).mockReturnValue(of({ data: null, error: null }));
+
+      let result: boolean | undefined;
+      facade.saveNotes('unchanged', 'New plan note').subscribe(r => (result = r));
+
+      expect(result).toBe(true);
+      expect(planService.updatePlan).toHaveBeenCalledWith('plan1', { notes: 'New plan note' });
+      expect(facade.viewModel().metadata?.planNotes).toBe('New plan note');
+      expect(TestBed.inject(SessionService).updateSession).not.toHaveBeenCalled();
+    });
+
+    it('should make no API calls when nothing changed', () => {
+      seedNotesViewModel('same', 'same plan');
+
+      let result: boolean | undefined;
+      facade.saveNotes('same', 'same plan').subscribe(r => (result = r));
+
+      expect(result).toBe(true);
+      expect(TestBed.inject(SessionService).updateSession).not.toHaveBeenCalled();
+      expect(TestBed.inject(PlanService).updatePlan).not.toHaveBeenCalled();
+    });
+
+    it('should not touch plan notes when the plan section was not shown (undefined)', () => {
+      seedNotesViewModel(null, 'existing plan note');
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.updateSession).mockReturnValue(of({ data: null, error: null }));
+
+      facade.saveNotes('note from history', undefined).subscribe();
+
+      expect(TestBed.inject(PlanService).updatePlan).not.toHaveBeenCalled();
+      expect(facade.viewModel().metadata?.planNotes).toBe('existing plan note');
+    });
+
+    it('should return false and keep the old metadata when the update fails', () => {
+      seedNotesViewModel('old note', null);
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.updateSession).mockReturnValue(of({ data: null, error: 'boom' }));
+
+      let result: boolean | undefined;
+      facade.saveNotes('new note', null).subscribe(r => (result = r));
+
+      expect(result).toBe(false);
+      expect(facade.viewModel().metadata?.notes).toBe('old note');
     });
   });
 

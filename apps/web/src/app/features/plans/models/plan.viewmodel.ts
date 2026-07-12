@@ -3,6 +3,7 @@ export interface PlanViewModel {
   userId: string;
   name: string;
   description: string | null;
+  notes: string | null;
   createdAt: Date | null;
   isActive: boolean;
   days: PlanDayViewModel[];

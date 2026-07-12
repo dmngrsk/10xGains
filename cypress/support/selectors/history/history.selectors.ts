@@ -1,6 +1,8 @@
 export const historySelectors = {
   sessionCard: 'session-card',
   sessionList: 'history-session-list',
+  sessionNavigateButton: 'session-card-navigate-button',
+  notesButton: 'session-card-notes-button',
   paginator: 'history-paginator',
   filterButton: 'history-filter-button',
   emptyNotice: 'history-empty-notice',

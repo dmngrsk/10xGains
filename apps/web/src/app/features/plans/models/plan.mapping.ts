@@ -69,6 +69,7 @@ export function mapToPlanViewModel(
     userId: dto.user_id,
     name: dto.name,
     description: dto.description,
+    notes: dto.notes ?? null,
     createdAt: dto.created_at ? new Date(dto.created_at) : null,
     isActive: profile ? dto.id === profile.active_plan_id : false,
     days: trainingDays.sort((a,b) => a.orderIndex - b.orderIndex),
@@ -86,6 +87,7 @@ export function mapToPlanDto(viewModel: PlanViewModel): PlanDto {
     user_id: viewModel.userId,
     name: viewModel.name,
     description: viewModel.description,
+    notes: viewModel.notes ?? null,
     created_at: viewModel.createdAt?.toISOString() ?? new Date().toISOString(),
     days: (viewModel.days || [])
       .map(mapToPlanDayDto)

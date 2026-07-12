@@ -15,6 +15,7 @@ describe('SessionCardComponent', () => {
     title: 'Test Session Title',
     sessionDate: sessionDate,
     status: status,
+    notes: null,
     exercises: exercises,
   });
 
@@ -349,6 +350,30 @@ describe('SessionCardComponent', () => {
       component.sessionNavigated.emit(mockSessionId);
 
       expect(emitSpy).toHaveBeenCalledWith(mockSessionId);
+    });
+  });
+
+  describe('notes', () => {
+    it('should report hasNotes as true when the session has a note', () => {
+      component.sessionData = { ...createMockSession('COMPLETED', new Date()), notes: 'Solid session' };
+      expect(component.hasNotes).toBe(true);
+    });
+
+    it('should report hasNotes as false when the note is null or empty', () => {
+      component.sessionData = createMockSession('COMPLETED', new Date());
+      expect(component.hasNotes).toBe(false);
+
+      component.sessionData = { ...createMockSession('COMPLETED', new Date()), notes: '' };
+      expect(component.hasNotes).toBe(false);
+    });
+
+    it('should emit notesClicked with the session id', () => {
+      component.sessionData = createMockSession('COMPLETED', new Date());
+      const emitSpy = vi.spyOn(component.notesClicked, 'emit');
+
+      component.onNotesClicked();
+
+      expect(emitSpy).toHaveBeenCalledWith('test-session-id');
     });
   });
 });

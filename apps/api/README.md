@@ -407,7 +407,8 @@ Updates an existing plan by its ID, if it belongs to the authenticated user.
     ```json
     {
       "name": "string (optional, max 255)",
-      "description": "string (optional)"
+      "description": "string (optional)",
+      "notes": "string (optional, max 5000, nullable)"
     }
     ```
 -   **Response (200 OK)**: The updated `PlanDto` object.
@@ -417,6 +418,7 @@ Updates an existing plan by its ID, if it belongs to the authenticated user.
         "id": "uuid",
         "name": "Updated Plan Name",
         "description": "Updated description.",
+        "notes": "User's plan note.",
         "user_id": "uuid",
         "updated_at": "timestamp" 
       }
@@ -1139,14 +1141,15 @@ Retrieves a specific training session by its ID, if it belongs to the authentica
 
 #### PUT /api/sessions/{sessionId}
 
-Updates the status of an existing training session (e.g., to cancel it).
+Updates the status and/or notes of an existing training session (e.g., to cancel it or save a session note).
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session.
--   **Request Body**: `UpdateSessionCommand`
+-   **Request Body**: `UpdateSessionCommand` (at least one field must be present)
     ```json
     {
-      "status": "CANCELLED" // e.g., 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
+      "status": "CANCELLED", // optional; e.g., 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'
+      "notes": "string (optional, max 5000, nullable)"
     }
     ```
 -   **Response (200 OK)**: The full, updated `SessionDto` object, including any nested sets.
@@ -1159,6 +1162,7 @@ Updates the status of an existing training session (e.g., to cancel it).
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
         "status": "CANCELLED", // Updated status
+        "notes": "User's session note.",
         "sets": [
           {
             "id": "uuid",

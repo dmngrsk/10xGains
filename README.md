@@ -156,8 +156,8 @@ cp .env.example .env
 The current MVP scope includes:
 - **User Account System**: Secure user registration and login.
 - **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
-- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers and detailed editing capabilities.
-- **Workout History**: Chronological record of past workout sessions.
+- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers, detailed editing capabilities, and free-form session and plan notes.
+- **Workout History**: Chronological record of past workout sessions, including access to per-session notes.
 - **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status

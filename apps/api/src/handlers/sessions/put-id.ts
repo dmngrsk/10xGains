@@ -10,7 +10,10 @@ const PATH_SCHEMA = z.object({
 });
 
 const COMMAND_SCHEMA = z.object({
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']),
+  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  notes: z.string().max(5000, 'Notes must not exceed 5000 characters').nullable().optional(),
+}).refine(data => Object.keys(data).length > 0, {
+  message: "Request body must contain at least one field to update"
 });
 
 export async function handlePutSessionById(c: Context<AppContext>) {

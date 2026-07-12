@@ -7,11 +7,13 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { debounceTime, filter, tap } from 'rxjs/operators';
+import { debounceTime, filter, switchMap, tap } from 'rxjs/operators';
 import { HistoryFiltersViewModel, HistoryPageViewModel } from '@features/history/models/history-page.viewmodel';
+import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '@features/sessions/components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionListComponent } from '@features/sessions/components/session-list/session-list.component';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
@@ -44,6 +46,7 @@ export class HistoryPageComponent implements OnInit {
   private readonly facade = inject(HistoryPageFacade);
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
@@ -72,6 +75,29 @@ export class HistoryPageComponent implements OnInit {
 
   onSessionNavigated(sessionId: string): void {
     this.router.navigate(['/sessions', sessionId]);
+  }
+
+  onNotesClicked(sessionId: string): void {
+    const session = this.viewModel().sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const dialogData: SessionNotesDialogData = {
+      sessionNotes: session.notes,
+    };
+
+    this.dialog
+      .open(SessionNotesDialogComponent, { width: '400px', data: dialogData, disableClose: true })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((result): result is SessionNotesDialogResult => !!result && result.sessionNotes !== session.notes),
+        switchMap(result => this.facade.saveSessionNotes(sessionId, result.sessionNotes))
+      )
+      .subscribe(success => {
+        if (!success) {
+          this.snackBar.open('Failed to save notes. Please try again.', 'Close', { duration: 3000 });
+        }
+      });
   }
 
   onPageChanged(event: PageEvent): void {

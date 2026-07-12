@@ -16,6 +16,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-123',
         name: 'My Awesome Plan',
         description: 'A plan to be awesome',
+        notes: null,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
         isActive: true,
         days: [
@@ -109,6 +110,7 @@ describe('Plan Mapping Functions', () => {
           "description": "A plan to be awesome",
           "id": "plan-1",
           "name": "My Awesome Plan",
+          "notes": null,
           "progressions": [
             {
               "consecutive_failures": 0,
@@ -139,6 +141,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-456',
         name: 'Plan with null createdAt',
         description: null,
+        notes: null,
         createdAt: null,
         isActive: false,
         days: [],
@@ -157,6 +160,7 @@ describe('Plan Mapping Functions', () => {
           "description": null,
           "id": "plan-2",
           "name": "Plan with null createdAt",
+          "notes": null,
           "progressions": [],
           "user_id": "user-456",
         }
@@ -170,6 +174,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-789',
         name: 'Plan without days',
         description: 'empty',
+        notes: null,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
         isActive: true,
         days: [],
@@ -184,6 +189,7 @@ describe('Plan Mapping Functions', () => {
           "description": "empty",
           "id": "plan-no-days",
           "name": "Plan without days",
+          "notes": null,
           "progressions": [],
           "user_id": "user-789",
         }
@@ -196,6 +202,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-abc',
         name: 'Plan with null days',
         description: 'also empty',
+        notes: null,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
         isActive: false,
         days: null!,
@@ -210,6 +217,7 @@ describe('Plan Mapping Functions', () => {
           "description": "also empty",
           "id": "plan-null-days",
           "name": "Plan with null days",
+          "notes": null,
           "progressions": [],
           "user_id": "user-abc",
         }
@@ -222,6 +230,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-abc',
         name: 'Plan with no progressions',
         description: 'empty',
+        notes: null,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
         isActive: false,
         days: null!,
@@ -237,6 +246,7 @@ describe('Plan Mapping Functions', () => {
           "description": "empty",
           "id": "plan-no-progressions",
           "name": "Plan with no progressions",
+          "notes": null,
           "progressions": [],
           "user_id": "user-abc",
         }
@@ -249,6 +259,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-abc',
         name: 'Plan with null progressions',
         description: 'also empty',
+        notes: null,
         createdAt: new Date('2023-01-01T00:00:00.000Z'),
         isActive: false,
         days: null!,
@@ -264,6 +275,7 @@ describe('Plan Mapping Functions', () => {
           "description": "also empty",
           "id": "plan-null-progressions",
           "name": "Plan with null progressions",
+          "notes": null,
           "progressions": [],
           "user_id": "user-abc",
         }
@@ -621,6 +633,7 @@ describe('Plan Mapping Functions', () => {
         user_id: 'user-123',
         name: 'Strength Program',
         description: 'A plan focused on building strength.',
+        notes: null,
         created_at: new Date().toISOString(),
         progressions: [
           {
@@ -823,6 +836,7 @@ describe('Plan Mapping Functions', () => {
         user_id: 'user-rt-dto',
         name: 'DTO Round Trip Plan',
         description: 'Full description for DTO round trip.',
+        notes: null,
         created_at: new Date('2023-01-01T12:00:00.000Z').toISOString(),
         progressions: [
           {
@@ -865,6 +879,7 @@ describe('Plan Mapping Functions', () => {
         userId: 'user-vm-rt',
         name: 'VM Round Trip Plan',
         description: 'Full description for VM round trip.',
+        notes: null,
         createdAt: new Date('2023-02-01T10:00:00.000Z'),
         isActive: true,
         progressions: [
