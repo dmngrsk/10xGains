@@ -67,15 +67,15 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 ### 2.8 Active Session View
 - **Route**: `/sessions/:sessionId`
 - **Main Goal**: Track an ongoing workout session.
-- **Key Info**: Fixed order list of exercises; for each exercise a row of set bubbles showing expected sets; "+" icon next to last bubble to add new sets via dialog.
-- **Key Components**: `MatButton` for bubbles, `MatDialog` to add set (pre-filled weight/reps), real-time PATCH to update set status.
+- **Key Info**: Fixed order list of exercises; for each exercise a row of set bubbles showing expected sets; "+" icon next to last bubble to add new sets via dialog; floating notes button opening a dialog with the session note and the plan note (shared across sessions of the plan).
+- **Key Components**: `MatButton` for bubbles, `MatDialog` to add set (pre-filled weight/reps), real-time PATCH to update set status, mini-FAB + `MatDialog` for session/plan notes (saved on 'Save' or backdrop click).
 - **UX/Accessibility/Security**: Clear visual feedback for completed/failed sets, confirmation snackbars, offline warning if network drops.
 
 ### 2.9 History View
 - **Route**: `/history`
 - **Main Goal**: Browse past workout sessions with filters and pagination.
-- **Key Info**: Chronological list of sessions (date, status), swipe or icon to open filter panel, pagination controls.
-- **Key Components**: `MatDrawer` for filters (`debounceTime(100ms)` + `switchMap`), `MatPaginator`, list items with Skeleton loader.
+- **Key Info**: Chronological list of sessions (date, status), swipe or icon to open filter panel, pagination controls; sessions with a note show an indicator that opens the session note (plan notes are not shown here).
+- **Key Components**: `MatDrawer` for filters (`debounceTime(100ms)` + `switchMap`), `MatPaginator`, list items with Skeleton loader, notes dialog reused from the session view.
 - **UX/Accessibility/Security**: Secure RLS filter parameters.
 
 ### 2.10 Progress Stub View
@@ -124,6 +124,7 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **PlanEditorAccordionComponent**: Wraps `MatAccordion` and DnD logic.
 - **ExerciseSelectorComponent**: `MatAutocomplete` with remote search and "Add new exercise" option.
 - **FilterDrawerComponent**: Wraps `MatDrawer`, filter form with debounce.
+- **SessionNotesDialogComponent**: `MatDialog` for session and plan notes, opened from the session view's notes button and from history entries.
 - **PaginatorComponent**: Wraps `MatPaginator` for unified styling.
 - **AuthGuard & HttpInterceptor**: Enforce security and error handling.
 - **DialogService**: Centralized service to open confirmation and form dialogs.

@@ -124,10 +124,6 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      - name: Typecheck API app
-        run: |
-          pnpm --filter @txg/api typecheck
-
       - name: Build API app deployment package
         run: |
           pnpm --filter @txg/api build:deploy

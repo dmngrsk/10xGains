@@ -55,7 +55,7 @@ export type PlanDto = Database["public"]["Tables"]["plans"]["Row"] & {
 
 export type CreatePlanCommand = Pick<Database["public"]["Tables"]["plans"]["Insert"], "name" | "description">;
 
-export type UpdatePlanCommand = Pick<Database["public"]["Tables"]["plans"]["Update"], "name" | "description">;
+export type UpdatePlanCommand = Pick<Database["public"]["Tables"]["plans"]["Update"], "name" | "description" | "notes">;
 
 // Command for POST /plans/{planId}/suggest
 export interface AiSuggestPlanQueryCommand {
@@ -155,7 +155,8 @@ export type SessionDto = Database["public"]["Tables"]["sessions"]["Row"] & {
 
 export type CreateSessionCommand = Pick<Database["public"]["Tables"]["sessions"]["Insert"], "plan_id" | "plan_day_id">;
 
-export type UpdateSessionCommand = Required<Pick<Database["public"]["Tables"]["sessions"]["Update"], "status">>;
+// At least one field must be present; status-only and notes-only updates are both valid.
+export type UpdateSessionCommand = Pick<Database["public"]["Tables"]["sessions"]["Update"], "status" | "notes">;
 
 // For PATCH /sessions/{sessionId}/complete
 // Request body is empty.

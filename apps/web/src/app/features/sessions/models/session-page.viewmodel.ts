@@ -14,6 +14,8 @@ export interface SessionMetadataViewModel {
   planName?: string;
   date?: Date;
   status?: SessionStatus;
+  notes?: string | null;
+  planNotes?: string | null;
 }
 
 export interface SessionExerciseViewModel {

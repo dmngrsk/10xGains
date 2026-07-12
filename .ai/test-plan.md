@@ -42,15 +42,19 @@ The following features and components are within the scope of testing:
     *   Drag-and-drop reordering for days, exercises, and sets.
     *   Configuration and updates of exercise progression rules.
     *   Activation of a plan.
+    *   Plan note shared across all sessions of the same plan.
 *   **Session Tracking:**
     *   Creation of a new session from an active plan.
     *   Real-time tracking of set completion (complete, fail, reset).
     *   Long-press and tap interactions on set bubbles (`long-press.directive.ts`).
     *   Session timer functionality and state management.
+    *   Opening the notes dialog from the session view FAB.
+    *   Creating, editing, and clearing session notes and plan notes (save on dialog close via 'Save' or backdrop click).
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
     *   Viewing a paginated list of completed sessions.
     *   Filtering session history by plan and date range.
+    *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Home & Settings:**
     *   Dashboard view displaying the current active session or prompts.
     *   User profile management (updating name).
@@ -140,6 +144,11 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | SESS-04 | The session timer starts and updates correctly after the first set interaction. | Critical | No |
 | | SESS-05 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
 | | SESS-06 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
+| | SESS-07 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
+| | SESS-08 | Closing the notes dialog by clicking outside of it persists the entered text the same way as the 'Save' action. | High | No |
+| | SESS-09 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
+| | SESS-10 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
+| | SESS-11 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
 | **History** | HIST-01 | A completed session correctly appears in the session history list. | High | No |
 | | HIST-02 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
 | | HIST-03 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
@@ -147,6 +156,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | HIST-05 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
 | | HIST-06 | An error notice is displayed if the session history fails to load. | High | No |
 | | HIST-07 | On error, a user can click the retry button to reload the session history. | High | No |
+| | HIST-08 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
 
 ---
 

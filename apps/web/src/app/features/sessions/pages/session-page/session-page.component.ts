@@ -11,10 +11,12 @@ import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
+import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '../../components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './components/dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
 import { SessionExerciseListComponent } from './components/session-exercise-list/session-exercise-list.component';
 import { SessionHeaderComponent } from './components/session-header/session-header.component';
+import { SessionNotesComponent } from './components/session-notes/session-notes.component';
 import { SessionTimerComponent } from './components/session-timer/session-timer.component';
 import { SessionPageFacade } from './session-page.facade';
 @Component({
@@ -25,6 +27,7 @@ import { SessionPageFacade } from './session-page.facade';
     MainLayoutComponent,
     SessionHeaderComponent,
     SessionExerciseListComponent,
+    SessionNotesComponent,
     SessionTimerComponent,
     NoticeComponent
   ],
@@ -170,6 +173,30 @@ export class SessionPageComponent implements OnDestroy {
         })
       )
       .subscribe();
+  }
+
+  onNotesClicked(): void {
+    const metadata = this.viewModel().metadata;
+    const dialogData: SessionNotesDialogData = {
+      sessionNotes: metadata?.notes ?? null,
+      planNotes: metadata?.planNotes ?? null,
+    };
+
+    this.dialog
+      .open(SessionNotesDialogComponent, { width: '400px', data: dialogData, disableClose: true })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((result): result is SessionNotesDialogResult => !!result),
+        switchMap(result => this.facade.saveNotes(result.sessionNotes, result.planNotes))
+      )
+      .subscribe(success => {
+        if (success) {
+          this.showSnackbar('Notes saved successfully.', 2000);
+        } else {
+          this.showSnackbar('Failed to save notes. Please try again.');
+        }
+      });
   }
 
   onSessionCompleted(): void {

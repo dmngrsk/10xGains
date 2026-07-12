@@ -82,15 +82,15 @@ export class PlanService {
   /**
    * Updates a plan.
    * @param planId The ID of the plan to update.
-   * @param command The command object containing the data to update (name, description).
+   * @param command The command object containing the data to update (name, description, notes).
    * @returns Observable with the updated plan data and potential error.
    */
   updatePlan(planId: string, command: UpdatePlanCommand): Observable<PlanServiceResponse<PlanDto>> {
     if (!planId) {
       return throwError(() => new Error('Plan ID is required for update'));
     }
-    if (!command || (command.name === undefined && command.description === undefined)) {
-      return throwError(() => new Error('Command with name or description is required for update'));
+    if (!command || (command.name === undefined && command.description === undefined && command.notes === undefined)) {
+      return throwError(() => new Error('Command with at least one field to update is required'));
     }
 
     const url = `/plans/${planId}`;

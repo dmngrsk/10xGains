@@ -15,6 +15,7 @@
 - user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 - name: VARCHAR(255) NOT NULL
 - description: TEXT
+- notes: TEXT CHECK (char_length(notes) <= 5000)
 - created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 ### 1.3. exercises
@@ -65,6 +66,7 @@
 - plan_day_id: UUID REFERENCES plan_days(id)
 - session_date: TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 - status: VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
+- notes: TEXT CHECK (char_length(notes) <= 5000)
 
 ### 1.9. session_sets
 - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()

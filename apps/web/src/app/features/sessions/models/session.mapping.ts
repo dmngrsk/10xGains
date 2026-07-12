@@ -36,6 +36,7 @@ export function mapToSessionCardViewModel(
     title: planDay?.name || 'N/A',
     sessionDate: new Date(ensureUtc(session.session_date)),
     status: session.status as SessionStatus,
+    notes: session.notes ?? null,
     exercises: sessionExercises,
   };
 }
@@ -116,7 +117,9 @@ export function mapToSessionPageViewModel(
       dayName: planDay.name,
       planName: plan.name,
       date: currentSession.session_date ? new Date(ensureUtc(currentSession.session_date)) : undefined,
-      status: currentSession.status as SessionStatus
+      status: currentSession.status as SessionStatus,
+      notes: currentSession.notes ?? null,
+      planNotes: plan.notes ?? null
     },
     exercises: sessionExercisesViewModel,
     isLoading: false,

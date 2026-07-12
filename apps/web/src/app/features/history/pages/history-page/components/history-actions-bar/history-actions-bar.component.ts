@@ -18,7 +18,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatDividerModule,
   ],
   templateUrl: './history-actions-bar.component.html',
-  styleUrls: ['./history-actions-bar.component.scss'],
+  styleUrl: './history-actions-bar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryActionsBarComponent {

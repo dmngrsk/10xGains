@@ -24,7 +24,7 @@ interface NextSetStateAttributes {
     LongPressDirective
   ],
   templateUrl: './session-set-bubble.component.html',
-  styleUrls: ['./session-set-bubble.component.scss'],
+  styleUrl: './session-set-bubble.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionSetBubbleComponent implements OnChanges {

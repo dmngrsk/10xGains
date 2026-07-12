@@ -128,7 +128,7 @@ Below are the most important scripts defined in `package.json`.
 
 ### Linting and Formatting
 
-- `pnpm lint` - Runs ESLint across all workspace packages (`apps/web`, `apps/api`, `packages/shared`) and the Cypress test code.
+- `pnpm lint` - Runs each package's lint script: ESLint across `apps/web`, `apps/api`, and the Cypress test code, plus a TypeScript typecheck (spec files included) for `apps/web`, `apps/api`, and `packages/shared`.
 - `pnpm lint:fix` - Runs the same linters but attempts to automatically fix any detected issues.
 - *Note: A pre-commit hook is configured with Husky and `lint-staged` to automatically format your code before every commit.*
 
@@ -156,8 +156,8 @@ cp .env.example .env
 The current MVP scope includes:
 - **User Account System**: Secure user registration and login.
 - **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
-- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers and detailed editing capabilities.
-- **Workout History**: Chronological record of past workout sessions.
+- **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers, detailed editing capabilities, and free-form session and plan notes.
+- **Workout History**: Chronological record of past workout sessions, including access to per-session notes.
 - **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status

@@ -12,6 +12,7 @@ const PATH_SCHEMA = z.object({
 const COMMAND_SCHEMA = z.object({
   name: z.string().min(1, 'Name must not be empty').optional(),
   description: z.string().nullable().optional(),
+  notes: z.string().max(5000, 'Notes must not exceed 5000 characters').nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update"
 });

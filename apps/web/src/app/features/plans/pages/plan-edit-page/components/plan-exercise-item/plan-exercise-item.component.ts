@@ -10,7 +10,7 @@ import { PlanExerciseSetListComponent } from '../plan-exercise-set-list/plan-exe
 @Component({
   selector: 'txg-plan-exercise-item',
   templateUrl: './plan-exercise-item.component.html',
-  styleUrls: ['./plan-exercise-item.component.scss'],
+  styleUrl: './plan-exercise-item.component.scss',
   standalone: true,
   imports: [
     CommonModule,

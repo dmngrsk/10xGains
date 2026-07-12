@@ -11,7 +11,7 @@ import { ServerClockService } from '@shared/services/server-clock.service';
   standalone: true,
   imports: [CommonModule, MatIconModule, MatButtonModule, MatDividerModule],
   templateUrl: './session-timer.component.html',
-  styleUrls: ['./session-timer.component.scss'],
+  styleUrl: './session-timer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionTimerComponent implements OnDestroy {

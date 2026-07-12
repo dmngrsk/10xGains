@@ -19,8 +19,14 @@ import { SessionCardViewModel, SessionCardSetViewModel } from '../../models/sess
 })
 export class SessionCardComponent {
   @Input() sessionData!: SessionCardViewModel;
+  @Input() notesAccessible = false;
   @Output() sessionNavigated = new EventEmitter<string>();
   @Output() sessionAbandoned = new EventEmitter<string>();
+  @Output() notesClicked = new EventEmitter<string>();
+
+  get hasNotes(): boolean {
+    return !!this.sessionData?.notes;
+  }
 
   get buttonText(): string {
     if (!this.sessionData) return '';
@@ -145,6 +151,10 @@ export class SessionCardComponent {
 
   onSessionAbandoned(): void {
     this.sessionAbandoned.emit(this.sessionData.id);
+  }
+
+  onNotesClicked(): void {
+    this.notesClicked.emit(this.sessionData.id);
   }
 
   private formatDisplayDate(date: Date | null): string | null {

@@ -68,7 +68,7 @@ These environments should be configured in GitHub with required reviewers to ens
 
 ### Process Flow
 1. **Code Verification and Build**
-   - Linting using ESLint
+   - Linting using ESLint and TypeScript typechecks (per-package `lint` scripts)
    - Unit testing with coverage reporting
    - Building the Angular application
    - Artifacts:

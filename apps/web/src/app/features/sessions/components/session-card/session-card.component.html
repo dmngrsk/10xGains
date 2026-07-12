@@ -1,4 +1,4 @@
-<mat-card class="flex flex-col">
+<mat-card class="flex flex-col relative">
   <mat-card-header>
     <mat-card-title class="!text-xl !font-medium text-primary">{{ sessionData.title }}</mat-card-title>
     @if (sessionDateTimeText) {
@@ -18,6 +18,17 @@
       <p class="text-sm">No exercises defined for this session.</p>
     }
   </mat-card-content>
+  @if (notesAccessible && hasNotes) {
+    <div class="absolute top-2 right-2">
+      <button
+        mat-icon-button
+        aria-label="Session notes"
+        (click)="onNotesClicked()"
+        data-cy="session-card-notes-button">
+        <mat-icon>sticky_note_2</mat-icon>
+      </button>
+    </div>
+  }
   @if (buttonText) {
     <mat-card-actions class="mt-auto mb-2">
       <div class="flex flex-col gap-2 w-full">
@@ -28,15 +39,15 @@
           <button mat-flat-button (click)="onSessionAbandoned()" class="w-full">
             Abandon Session
           </button>
-          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
+          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-card-navigate-button">
             {{ buttonText }}
           </button>
         } @else if (isActiveSession) {
-          <button mat-flat-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
+          <button mat-flat-button (click)="onSessionNavigated()" class="w-full" data-cy="session-card-navigate-button">
             {{ buttonText }}
           </button>
         } @else {
-          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-navigate-button">
+          <button mat-raised-button (click)="onSessionNavigated()" class="w-full" data-cy="session-card-navigate-button">
             {{ buttonText }}
           </button>
         }

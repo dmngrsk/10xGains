@@ -70,4 +70,19 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.getBySel(dataCy.history.sessionList).should('exist');
     });
   });
+
+  describe('when a completed session has a note', () => {
+    it('shows a note indicator on the history entry and opens the note from it', { tags: ['HIST-08'] }, () => {
+      // The session fixture references the plan fixture, so both requests are stubbed together.
+      cy.intercept('GET', '**/api/plans*', { statusCode: 200, fixture: 'history/plans-single-plan.json' });
+      cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'history/sessions-completed-with-note.json' });
+      cy.navigateTo('history');
+
+      cy.getBySel(dataCy.history.sessionCard).first().within(() => {
+        cy.getBySel(dataCy.history.notesButton).should('be.visible').click();
+      });
+      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Tough workout, felt tired.');
+      cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('not.exist'); // Plan notes are reachable from the session view only
+    });
+  });
 });

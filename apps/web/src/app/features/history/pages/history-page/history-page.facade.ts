@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { of, forkJoin } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 import { SessionDto, PlanDto, ExerciseDto, ProfileDto } from '@txg/shared';
 import { catchError, map, tap } from 'rxjs/operators';
 import { HistoryPageViewModel, HistoryFiltersViewModel } from '@features/history/models/history-page.viewmodel';
@@ -133,6 +133,23 @@ export class HistoryPageFacade {
         error: null
       }));
     });
+  }
+
+  saveSessionNotes(sessionId: string, notes: string | null): Observable<boolean> {
+    return this.sessionService.updateSession(sessionId, { notes }).pipe(
+      map(res => !res?.error),
+      tap(success => {
+        if (!success) return;
+        this.viewModel.update(vm => ({
+          ...vm,
+          sessions: vm.sessions.map(s => s.id === sessionId ? { ...s, notes } : s)
+        }));
+      }),
+      catchError(err => {
+        console.error(`Failed to save notes for session ${sessionId}:`, err);
+        return of(false);
+      })
+    );
   }
 
   updateFilters(newFilters: Partial<HistoryFiltersViewModel>): void {

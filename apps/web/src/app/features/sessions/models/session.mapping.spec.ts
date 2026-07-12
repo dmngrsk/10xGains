@@ -52,6 +52,7 @@ const mockPlanDto: PlanDto = {
   user_id: 'user1',
   name: 'My Strength Plan',
   description: 'A plan for strength',
+  notes: null,
   created_at: '2023-01-01T00:00:00Z',
   days: [mockPlanDay],
 };
@@ -63,6 +64,7 @@ const mockSessionDto: SessionDto = {
   plan_day_id: 'day1',
   session_date: '2023-01-10T10:00:00Z',
   status: 'PENDING' as SessionStatus,
+  notes: null,
   sets: [mockSetDto],
 };
 
@@ -209,6 +211,17 @@ describe('Session Mapping Functions', () => {
       expect(diff).toBeLessThan(5000);
     });
 
+    it('should map session notes onto the card view model', () => {
+      const sessionWithNotes = { ...mockSessionDto, notes: 'Felt strong today' };
+      const result = mapToSessionCardViewModel(sessionWithNotes, mockPlanDto, mockAllExercises);
+      expect(result.notes).toBe('Felt strong today');
+    });
+
+    it('should map missing session notes to null on the card view model', () => {
+      const result = mapToSessionCardViewModel(mockSessionDto, mockPlanDto, mockAllExercises);
+      expect(result.notes).toBeNull();
+    });
+
     it('should handle exercises in planDay not found in allExercises gracefully', () => {
       const planWithUnknownExercise: PlanDto = {
         ...mockPlanDto,
@@ -249,6 +262,23 @@ describe('Session Mapping Functions', () => {
       expect(result.exercises[0].sets[0].expectedReps).toBe(12);
       expect(result.exercises[0].sets[0].weight).toBe(0);
       expect(result.exercises[0].sets[0].completedAt).toBeNull();
+    });
+
+    it('should map session and plan notes into the page metadata', () => {
+      const sessionWithNotes = { ...mockSessionDto, notes: 'Right shoulder felt tight' };
+      const planWithNotes = { ...mockPlanDto, notes: 'Switch to low-bar next cycle' };
+
+      const result = mapToSessionPageViewModel(sessionWithNotes, planWithNotes, exerciseMap);
+
+      expect(result?.metadata?.notes).toBe('Right shoulder felt tight');
+      expect(result?.metadata?.planNotes).toBe('Switch to low-bar next cycle');
+    });
+
+    it('should default missing notes to null in the page metadata', () => {
+      const result = mapToSessionPageViewModel(mockSessionDto, mockPlanDto, exerciseMap);
+
+      expect(result?.metadata?.notes).toBeNull();
+      expect(result?.metadata?.planNotes).toBeNull();
     });
 
     it('should map completed_at on session sets to a Date', () => {
