@@ -191,7 +191,9 @@ export class SessionPageComponent implements OnDestroy {
         switchMap(result => this.facade.saveNotes(result.sessionNotes, result.planNotes))
       )
       .subscribe(success => {
-        if (!success) {
+        if (success) {
+          this.showSnackbar('Notes saved successfully.', 2000);
+        } else {
           this.showSnackbar('Failed to save notes. Please try again.');
         }
       });

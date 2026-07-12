@@ -94,7 +94,9 @@ export class HistoryPageComponent implements OnInit {
         switchMap(result => this.facade.saveSessionNotes(sessionId, result.sessionNotes))
       )
       .subscribe(success => {
-        if (!success) {
+        if (success) {
+          this.snackBar.open('Notes saved successfully.', 'Close', { duration: 2000 });
+        } else {
           this.snackBar.open('Failed to save notes. Please try again.', 'Close', { duration: 3000 });
         }
       });
