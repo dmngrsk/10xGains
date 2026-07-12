@@ -9,9 +9,9 @@
     "start": "pnpm build && func start",
     "build": "node esbuild.mjs",
     "build:deploy": "pnpm build && node pack.mjs",
+    "lint": "eslint \"src/**/*.ts\" && pnpm typecheck",
+    "lint:fix": "eslint --fix \"src/**/*.ts\" && pnpm typecheck",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\"",
-    "lint:fix": "eslint --fix \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage"

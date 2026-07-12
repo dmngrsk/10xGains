@@ -128,7 +128,7 @@ Below are the most important scripts defined in `package.json`.
 
 ### Linting and Formatting
 
-- `pnpm lint` - Runs each package's lint script: ESLint across `apps/web`, `apps/api`, and the Cypress test code, plus a TypeScript typecheck for `apps/web` (including spec files) and `packages/shared`.
+- `pnpm lint` - Runs each package's lint script: ESLint across `apps/web`, `apps/api`, and the Cypress test code, plus a TypeScript typecheck (spec files included) for `apps/web`, `apps/api`, and `packages/shared`.
 - `pnpm lint:fix` - Runs the same linters but attempts to automatically fix any detected issues.
 - *Note: A pre-commit hook is configured with Husky and `lint-staged` to automatically format your code before every commit.*
 
