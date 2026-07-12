@@ -214,7 +214,8 @@ export class SessionRepository {
       plan_id: command.plan_id,
       plan_day_id: currentDayId,
       status: 'PENDING',
-      session_date: null
+      session_date: null,
+      notes: null
     });
 
     const currentDay = plan.days.find(d => d.id === currentDayId);
