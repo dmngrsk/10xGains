@@ -17,7 +17,7 @@ import { PlanExerciseSetViewModel } from '@features/plans/models/plan.viewmodel'
     MatCardModule,
   ],
   templateUrl: './plan-exercise-set-item.component.html',
-  styleUrls: ['./plan-exercise-set-item.component.scss'],
+  styleUrl: './plan-exercise-set-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanExerciseSetItemComponent {

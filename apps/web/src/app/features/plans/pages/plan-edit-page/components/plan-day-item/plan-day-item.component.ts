@@ -19,7 +19,7 @@ import { PlanExerciseListComponent } from '../plan-exercise-list/plan-exercise-l
     DragDropModule,
   ],
   templateUrl: './plan-day-item.component.html',
-  styleUrls: ['./plan-day-item.component.scss'],
+  styleUrl: './plan-day-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanDayItemComponent {

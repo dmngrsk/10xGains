@@ -25,7 +25,7 @@ interface NavLink {
     MatDividerModule
   ],
   templateUrl: './bottom-navigation-bar.component.html',
-  styleUrls: ['./bottom-navigation-bar.component.scss'],
+  styleUrl: './bottom-navigation-bar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BottomNavigationBarComponent {

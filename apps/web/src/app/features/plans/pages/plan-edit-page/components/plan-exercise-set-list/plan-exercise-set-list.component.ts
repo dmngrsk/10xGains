@@ -17,7 +17,7 @@ import { PlanExerciseSetItemComponent } from '../plan-exercise-set-item/plan-exe
     DragDropModule,
   ],
   templateUrl: './plan-exercise-set-list.component.html',
-  styleUrls: ['./plan-exercise-set-list.component.scss'],
+  styleUrl: './plan-exercise-set-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlanExerciseSetListComponent {
