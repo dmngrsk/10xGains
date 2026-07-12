@@ -13,8 +13,9 @@
     "build:development": "ng build --configuration=development",
     "build:staging": "ng build --configuration=staging",
     "build:production": "ng build --configuration=production",
-    "lint": "eslint \"src/**/*.{ts,html}\"",
-    "lint:fix": "eslint --fix \"src/**/*.{ts,html}\"",
+    "lint": "eslint \"src/**/*.{ts,html}\" && pnpm typecheck",
+    "lint:fix": "eslint --fix \"src/**/*.{ts,html}\" && pnpm typecheck",
+    "typecheck": "tsc --noEmit -p tsconfig.spec.json",
     "test": "vitest run",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest run --coverage"
