@@ -33,7 +33,7 @@ export class BottomNavigationBarComponent {
     { label: 'Home', icon: 'home', path: '/home', dataCy: 'bottom-navigation-home' },
     { label: 'Plans', icon: 'list_alt', path: '/plans', dataCy: 'bottom-navigation-plans' },
     { label: 'History', icon: 'history', path: '/history', dataCy: 'bottom-navigation-history' },
-    { label: 'Progress', icon: 'stacked_line_chart', disabled: true, dataCy: 'bottom-navigation-progress' },
+    { label: 'Progress', icon: 'stacked_line_chart', path: '/progress', dataCy: 'bottom-navigation-progress' },
     { label: 'Settings', icon: 'settings', path: '/settings', dataCy: 'bottom-navigation-settings' }
   ];
 }

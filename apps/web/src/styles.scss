@@ -33,6 +33,22 @@ $material-color-role-tokens: (
   }
 }
 
+/*
+ * Categorical palette for chart series (Tableau 10).
+ */
+:root {
+  --txg-chart-series-1: #4e79a7;
+  --txg-chart-series-2: #f28e2b;
+  --txg-chart-series-3: #59a14f;
+  --txg-chart-series-4: #e15759;
+  --txg-chart-series-5: #b07aa1;
+  --txg-chart-series-6: #76b7b2;
+  --txg-chart-series-7: #edc948;
+  --txg-chart-series-8: #ff9da7;
+  --txg-chart-series-9: #9c755f;
+  --txg-chart-series-10: #bab0ac;
+}
+
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
 .mdc-notched-outline__notch { border-right: none; }
 

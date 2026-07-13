@@ -1,0 +1,33 @@
+<h2 mat-dialog-title>Filter Progress</h2>
+
+<mat-dialog-content class="!pt-4">
+  <form [formGroup]="filterForm" class="space-y-4 p-1">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Training plan</mat-label>
+      <mat-select formControlName="selectedPlanId" data-cy="progress-filter-dialog-plan-select">
+        <mat-option [value]="allPlans">All plans</mat-option>
+        @for (plan of availablePlans; track plan.id) {
+          <mat-option [value]="plan.id">{{ plan.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Date range</mat-label>
+      <mat-select formControlName="dateRangePreset" data-cy="progress-filter-dialog-range-select">
+        @for (preset of presetOptions; track preset.value) {
+          <mat-option [value]="preset.value">{{ preset.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancelled()" type="button">
+    Cancel
+  </button>
+  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid" data-cy="progress-filter-dialog-apply-filters-button">
+    Apply Filters
+  </button>
+</mat-dialog-actions>
