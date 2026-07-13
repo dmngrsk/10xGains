@@ -2,6 +2,7 @@ import { authSelectors } from './auth';
 import { historySelectors } from './history';
 import { homeSelectors } from './home';
 import { plansSelectors } from './plans';
+import { progressSelectors } from './progress';
 import { sessionsSelectors } from './sessions';
 import { settingsSelectors } from './settings';
 import { sharedSelectors } from './shared';
@@ -11,6 +12,7 @@ export const dataCy = {
   history: historySelectors,
   home: homeSelectors,
   plans: plansSelectors,
+  progress: progressSelectors,
   sessions: sessionsSelectors,
   settings: settingsSelectors,
   shared: sharedSelectors,
