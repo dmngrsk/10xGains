@@ -3,6 +3,7 @@ import type { AppContext } from '../context';
 import { PlanRepository } from '../repositories/plan.repository';
 import { ExerciseRepository } from '../repositories/exercise.repository';
 import { ProfileRepository } from '../repositories/profile.repository';
+import { ProgressRepository } from '../repositories/progress.repository';
 import { SessionRepository } from '../repositories/session.repository';
 
 /**
@@ -27,6 +28,7 @@ export async function repositoriesMiddleware(c: Context<AppContext>, next: Next)
   c.set('planRepository', new PlanRepository(supabase, getUserId));
   c.set('exerciseRepository', new ExerciseRepository(supabase));
   c.set('profileRepository', new ProfileRepository(supabase, getUserId));
+  c.set('progressRepository', new ProgressRepository(supabase, getUserId));
   c.set('sessionRepository', new SessionRepository(supabase, getUserId));
 
   await next();
