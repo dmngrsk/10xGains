@@ -79,26 +79,17 @@ export class PlanRepository {
       `, { count: 'exact' })
       .eq('user_id', this.getUserId())
       .range(options.offset, options.offset + options.limit - 1)
-      .order(sortColumn, { ascending: sortDirection === 'asc' });
+      .order(sortColumn, { ascending: sortDirection === 'asc' })
+      .order('order_index', { referencedTable: 'days', ascending: true })
+      .order('order_index', { referencedTable: 'days.exercises', ascending: true })
+      .order('set_index', { referencedTable: 'days.exercises.sets', ascending: true });
 
     if (error) {
       throw error;
     }
 
-    // Sort nested data by order indices
-    const sortedData = data?.map(plan => ({
-      ...plan,
-      days: plan.days?.sort((a, b) => a.order_index - b.order_index).map(day => ({
-        ...day,
-        exercises: day.exercises?.sort((a, b) => a.order_index - b.order_index).map(exercise => ({
-          ...exercise,
-          sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
-        }))
-      }))
-    })) || [];
-
     return {
-      data: sortedData as PlanDto[],
+      data: (data ?? []) as PlanDto[],
       totalCount: count ?? 0
     };
   }
@@ -129,6 +120,9 @@ export class PlanRepository {
       `)
       .eq('id', planId)
       .eq('user_id', this.getUserId())
+      .order('order_index', { referencedTable: 'days', ascending: true })
+      .order('order_index', { referencedTable: 'days.exercises', ascending: true })
+      .order('set_index', { referencedTable: 'days.exercises.sets', ascending: true })
       .single();
 
     if (error) {
@@ -241,23 +235,16 @@ export class PlanRepository {
       `, { count: 'exact' })
       .eq('plan_id', planId)
       .order('order_index', { ascending: true })
+      .order('order_index', { referencedTable: 'exercises', ascending: true })
+      .order('set_index', { referencedTable: 'exercises.sets', ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
 
     if (error) {
       throw error;
     }
 
-    // Sort nested data by order indices
-    const sortedData = data?.map(day => ({
-      ...day,
-      exercises: day.exercises?.sort((a, b) => a.order_index - b.order_index).map(exercise => ({
-        ...exercise,
-        sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
-      }))
-    })) || [];
-
     return {
-      data: sortedData as PlanDayDto[],
+      data: (data ?? []) as PlanDayDto[],
       totalCount: count ?? 0
     };
   }
@@ -285,6 +272,8 @@ export class PlanRepository {
       `)
       .eq('id', dayId)
       .eq('plan_id', planId)
+      .order('order_index', { referencedTable: 'exercises', ascending: true })
+      .order('set_index', { referencedTable: 'exercises.sets', ascending: true })
       .single();
 
     if (error) {
@@ -418,20 +407,15 @@ export class PlanRepository {
       .select('*, sets:plan_exercise_sets(*)', { count: 'exact' })
       .eq('plan_day_id', dayId)
       .order('order_index', { ascending: true })
+      .order('set_index', { referencedTable: 'sets', ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
 
     if (error) {
       throw error;
     }
 
-    // Sort nested data by order indices
-    const sortedData = data?.map(exercise => ({
-      ...exercise,
-      sets: exercise.sets?.sort((a, b) => a.set_index - b.set_index)
-    })) || [];
-
     return {
-      data: sortedData as PlanExerciseDto[],
+      data: (data ?? []) as PlanExerciseDto[],
       totalCount: count ?? 0
     };
   }
@@ -452,6 +436,7 @@ export class PlanRepository {
       .select('*, sets:plan_exercise_sets(*)')
       .eq('id', exerciseId)
       .eq('plan_day_id', dayId)
+      .order('set_index', { referencedTable: 'sets', ascending: true })
       .single();
 
     if (error) {

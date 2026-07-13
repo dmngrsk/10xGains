@@ -3,6 +3,7 @@ import type { Database } from '@txg/shared';
 import type { PlanRepository } from './repositories/plan.repository';
 import type { ExerciseRepository } from './repositories/exercise.repository';
 import type { ProfileRepository } from './repositories/profile.repository';
+import type { ProgressRepository } from './repositories/progress.repository';
 import type { SessionRepository } from './repositories/session.repository';
 
 /**
@@ -30,6 +31,7 @@ export type AppContext = {
     planRepository: PlanRepository;
     exerciseRepository: ExerciseRepository;
     profileRepository: ProfileRepository;
+    progressRepository: ProgressRepository;
     sessionRepository: SessionRepository;
   };
 };

@@ -1,0 +1,9 @@
+<div class="fixed bottom-16 h-16 left-0 right-0 bg-surface z-100">
+  <mat-divider class="!border-t-outline-variant"></mat-divider>
+  <div class="flex flex-row items-center justify-between px-2 h-[calc(100%-1px)]">
+    <span class="px-2 text-sm text-on-surface-variant truncate" data-cy="progress-filter-summary">{{ summary }}</span>
+    <button mat-icon-button (click)="onFilterClicked()" data-cy="progress-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
+</div>

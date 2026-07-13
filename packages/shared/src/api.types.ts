@@ -180,3 +180,20 @@ export type FailSessionSetCommand = Record<string, never>; // Represents an empt
 // For PATCH /sessions/{sessionId}/sets/{setId}/reset
 // Request body is empty.
 export type ResetSessionSetCommand = Record<string, never>; // Represents an empty request body
+
+// 10. Exercise Progress DTOs (GET /progress/exercises)
+// Computed aggregates, not table-backed: one point per (exercise, session) pair,
+// holding the top completed set of that session.
+export interface ExerciseProgressPointDto {
+  session_id: string;
+  session_date: string; // ISO datetime
+  plan_id: string;
+  top_weight: number; // max actual_weight among COMPLETED sets
+  reps: number[]; // actual reps of every set in set order, including failed ones (0 when not performed)
+}
+
+export interface ExerciseProgressDto {
+  exercise_id: string;
+  exercise_name: string;
+  points: ExerciseProgressPointDto[];
+}

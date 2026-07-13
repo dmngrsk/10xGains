@@ -22,6 +22,11 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'progress',
+    loadChildren: () => import('@features/progress/progress.routes').then(m => m.PROGRESS_ROUTES),
+    canActivate: [authGuard]
+  },
+  {
     path: 'sessions',
     loadChildren: () => import('@features/sessions/sessions.routes').then(m => m.SESSIONS_ROUTES),
     canActivate: [authGuard]

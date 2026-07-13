@@ -3,25 +3,15 @@ import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { PlanDayDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { validatePathParams, validateQueryParams } from "../../utils/validation";
-
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
-const DEFAULT_OFFSET = 0;
+import { optionalLimit, optionalOffset, validatePathParams, validateQueryParams } from "../../utils/validation";
 
 const PATH_SCHEMA = z.object({
   planId: z.string().uuid('Invalid planId format'),
 });
 
 const QUERY_SCHEMA = z.object({
-  limit: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_LIMIT),
-    z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT)
-  ),
-  offset: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_OFFSET),
-    z.number().int().min(0).default(DEFAULT_OFFSET)
-  )
+  limit: optionalLimit(),
+  offset: optionalOffset()
 });
 
 export async function handleGetPlanDays(c: Context<AppContext>) {

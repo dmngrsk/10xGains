@@ -55,6 +55,11 @@ The following features and components are within the scope of testing:
     *   Viewing a paginated list of completed sessions.
     *   Filtering session history by plan and date range.
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
+*   **Exercise Progress:**
+    *   Weight-over-time chart, scoped to the active plan and the last 3 months by default.
+    *   Filtering by training plan (including "All plans", which spans plans) and by date-range preset.
+    *   Toggling which exercise series are plotted via the chip row.
+    *   Aggregation correctness: top completed set per session, reps of every set (failed ones included).
 *   **Home & Settings:**
     *   Dashboard view displaying the current active session or prompts.
     *   User profile management (updating name).
@@ -65,8 +70,8 @@ The following features and components are within the scope of testing:
     *   `KeyedDebouncerService` for API call optimization in the session page.
     *   UI layouts, dialogs, and notice components.
 *   **Backend (Azure Functions API, `apps/api`):**
-    *   All API handlers for `exercises`, `plans`, `sessions`, and `profiles`.
-    *   Business logic, including Zod schema validation and `resolveExerciseProgressions`.
+    *   All API handlers for `exercises`, `plans`, `sessions`, `profiles`, and `progress`.
+    *   Business logic, including Zod schema validation and the pure services: session creation (`resolveNextPlanDayId`, `cancelOutstandingSessions`, `buildSessionSets`), session completion (`assertSessionCompletable`, `skipPendingSets`, the row-flattening helpers), `resolveExerciseProgressions`, `aggregateExerciseProgress`, and `insertAndNormalizeOrder`. Repositories are I/O only and are covered by the E2E suite against a real database, not by mocked unit tests.
     *   Database interactions, including RPC calls for reordering logic.
 *   **Static Code Analysis & Tooling:**
     *   Adherence to ESLint rules enforced by pre-commit hooks.
@@ -75,7 +80,6 @@ The following features and components are within the scope of testing:
 
 *   **Password Reset / Forgot Password:** This functionality is commented out in the codebase and is considered out of scope until implemented.
 *   **AI-Suggested Training Plans:** While types exist in `api.types.ts`, no implementation is present.
-*   **"Progress" Feature:** The navigation link is present but disabled.
 *   **Underlying Frameworks/Libraries:** Testing of Angular, Vitest, Supabase, or other third-party libraries themselves. We will only test our implementation and integration with them.
 *   **Exhaustive Performance/Load Testing:** While basic performance benchmarks will be monitored, large-scale load and stress testing is not in the initial scope.
 *   **Backend Infrastructure Testing:** Testing the Supabase and Azure infrastructure (e.g., database server uptime) is the responsibility of the cloud providers. We will test the API we build on top of them.
@@ -157,6 +161,12 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | HIST-06 | An error notice is displayed if the session history fails to load. | High | No |
 | | HIST-07 | On error, a user can click the retry button to reload the session history. | High | No |
 | | HIST-08 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
+| **Progress** | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default. | High | No |
+| | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
+| | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |
+| | PROG-04 | The empty state notice is shown when no progress data matches the filter criteria. | Medium | No |
+| | PROG-05 | An error notice is displayed if the progress data fails to load. | High | No |
+| | PROG-06 | On error, a user can click the retry button to reload the progress data. | High | No |
 
 ---
 

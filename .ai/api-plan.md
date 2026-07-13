@@ -20,6 +20,8 @@
 
 - **Session Sets**: Based on the `session_sets` table, this resource records the actual performance data for each set within a training session (actual weight, actual reps, status, and completion time).
 
+- **Exercise Progress**: A computed resource with no table of its own. It aggregates `session_sets` of completed `sessions` into a per-exercise time series of the weight lifted, and backs the Progress tab's chart. Series are keyed by the global exercise, not by the plan, so a line follows an exercise across the plans it appears in.
+
 ## 2. Endpoints
 
 > **Note:** Except for global resources, all endpoints operate on data exclusively associated with the currently authenticated user. Queries are automatically filtered using the user's ID (via Row-Level Security in the database). Any attempt to access data that does not belong to the authenticated user will be rejected with a 404 Not Found error.
@@ -1094,6 +1096,44 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Success: 200 OK
   - Errors: 401 Unauthorized, 404 Not Found
 
+### Exercise Progress
+
+- **GET /progress/exercises**
+  - Description: Retrieve per-exercise progress series for the authenticated user, built from the sets of their completed sessions. Returns one series per exercise, each holding one point per completed session in which that exercise had at least one completed set. Series are sorted by exercise name, points by `session_date` ascending. Not paginated — one point per exercise per session keeps the payload small regardless of how many sets were performed.
+  - Query Parameters:
+    - `plan_id` (uuid, optional): Restrict to sessions of a single plan. Omit to span all of the user's plans.
+    - `exercise_ids` (comma-separated uuids, optional): Restrict the returned series to these exercises.
+    - `date_from` (ISO 8601, optional): Include sessions from this date (inclusive).
+    - `date_to` (ISO 8601, optional): Include sessions up to this date (inclusive).
+  - Example Response:
+    ```json
+    [
+      {
+        "exercise_id": "uuid",
+        "exercise_name": "Bench Press",
+        "points": [
+          {
+            "session_id": "uuid",
+            "session_date": "2023-01-01T00:00:00Z",
+            "plan_id": "uuid",
+            "top_weight": 80,
+            "reps": [5, 5, 5]
+          },
+          {
+            "session_id": "uuid",
+            "session_date": "2023-01-04T00:00:00Z",
+            "plan_id": "uuid",
+            "top_weight": 82.5,
+            "reps": [5, 5, 4, 0, 0]
+          }
+        ]
+      }
+    ]
+    ```
+  - Success: 200 OK
+  - Errors: 400 Bad Request (malformed uuid or date), 401 Unauthorized
+  - Business Logic: See "Exercise Progress Aggregation" in section 4.
+
 ## 3. Authentication and Authorization
 
 All endpoints require that the client is authenticated. This means all data is visible only when the user is signed in, and unauthenticated requests will be rejected.
@@ -1117,6 +1157,11 @@ All endpoints require that the client is authenticated. This means all data is v
     This simplifies client-side logic and maintains data integrity.
   - **Automated Weight Progression**: Marking a training session as complete (via `POST /sessions/{sessionId}/complete`) will trigger an update to the corresponding `plan_exercise_progression` for each exercise in that session. This involves increasing the weight by the defined `weight_increment` if the exercise was completed successfully, or applying deload logic (e.g., 10% deload after three consecutive failures based on `deload_percentage` and `deload_strategy`).
   - **Active Session Tracking**: As users mark sets as completed or failed (via the PATCH session set endpoints), the session's overall status and related metrics are updated in real-time.
+  - **Exercise Progress Aggregation**: `GET /progress/exercises` derives one data point per (exercise, session) pair from the raw `session_sets`:
+    - Only sessions with status `COMPLETED` contribute; a pair with no completed set produces no point at all.
+    - `top_weight` is the highest `actual_weight` among the sets with status `COMPLETED`, ties broken by the higher `actual_reps`. Non-completed sets never contribute to it, so a failed heavy attempt cannot inflate the plotted line.
+    - `reps` lists the `actual_reps` of **every** set of that exercise in that session, in set order, including `FAILED` and `SKIPPED` ones (a set with no recorded reps counts as `0`). This is what lets a client distinguish a clean `5x5` from a `5/5/4/0/0`.
+  - **Ordering of Nested Collections**: Endpoints that embed nested collections return them already ordered — plan days and plan exercises by `order_index`, plan exercise sets by `set_index`, and session sets by `(plan_exercise_id, set_index)`. The ordering is declared on the query itself, so it holds for single-resource reads (e.g. `GET /plans/{planId}`) exactly as it does for list reads; clients do not need to re-sort.
   - **AI Integration**: The `/plans/{planId}/suggest` endpoint wraps the external AI service to provide tailored training suggestions.
 
 - **Error Handling**: The API will return appropriate HTTP status codes and error messages:

@@ -1,0 +1,57 @@
+<txg-main-layout title="Progress" [loadingSignal]="isLoadingSignal">
+  <div class="flex justify-center p-4 min-h-[calc(100vh-12.25rem)]">
+    @if (viewModel(); as viewModel) {
+      @if (viewModel.isLoading) {
+        <div class="flex justify-center items-center min-h-[calc(100vh-12.25rem)]">
+          <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="progress-loading-spinner"></mat-progress-spinner>
+        </div>
+      } @else if (viewModel.error) {
+        <txg-notice
+          [descriptionText]="viewModel.error!"
+          buttonText="Try Again"
+          (buttonClicked)="onErrorButtonClicked()"
+          [isError]="true"
+          data-cy="progress-error-notice">
+        </txg-notice>
+      } @else if (viewModel.series.length === 0) {
+        @if (noDataAtAll()) {
+          <txg-notice
+            iconName="stacked_line_chart"
+            titleText="No Progress Yet"
+            descriptionText="Complete a few workouts to see your progress here."
+            buttonText="Go to Home"
+            (buttonClicked)="onGoHomeClicked()"
+            data-cy="progress-no-data-notice">
+          </txg-notice>
+        } @else {
+          <txg-notice
+            iconName="search_off"
+            titleText="No Progress Data Found"
+            descriptionText="It looks like there is no progress data matching your current filters."
+            buttonText="Edit Filters"
+            (buttonClicked)="onFilterButtonClicked()"
+            data-cy="progress-empty-notice">
+          </txg-notice>
+        }
+      } @else {
+        <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
+          <txg-exercise-chip-row
+            [exercises]="viewModel.series"
+            (exerciseToggled)="onExerciseToggled($event)">
+          </txg-exercise-chip-row>
+          <txg-progress-chart
+            class="block flex-1 min-h-0"
+            [series]="selectedSeries()"
+            [showPlanName]="isAllPlansSelected()">
+          </txg-progress-chart>
+        </div>
+      }
+    }
+  </div>
+
+  <txg-progress-actions-bar
+    [summary]="filterSummary()"
+    (filterButtonClicked)="onFilterButtonClicked()"
+    data-cy="progress-actions-bar">
+  </txg-progress-actions-bar>
+</txg-main-layout>

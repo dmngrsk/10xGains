@@ -7,14 +7,20 @@ import type {
   SessionSetDto,
   CreateSessionSetCommand,
   UpdateSessionSetCommand,
-  PlanExerciseDto,
-  PlanExerciseProgressionDto,
   ApiResult,
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
 import { ApiErrorResponse, createErrorData, createErrorDataWithLogging } from "../utils/api-helpers";
 import { resolveExerciseProgressions } from '../services/exercise-progressions/exercise-progressions';
+import { buildSessionSets, cancelOutstandingSessions, resolveNextPlanDayId } from '../services/session-creation/session-creation';
+import {
+  assertSessionCompletable,
+  extractPlanProgressionContext,
+  extractSessionSetContext,
+  skipPendingSets
+} from '../services/session-completion/session-completion';
+import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase';
 
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
@@ -67,6 +73,10 @@ export class SessionRepository {
       supabaseQuery = supabaseQuery.order('session_date', { ascending: false });
     }
 
+    supabaseQuery = supabaseQuery
+      .order('plan_exercise_id', { referencedTable: 'sets', ascending: true })
+      .order('set_index', { referencedTable: 'sets', ascending: true });
+
     if (options.limit !== undefined && options.offset !== undefined) {
       supabaseQuery = supabaseQuery.range(options.offset, options.offset + options.limit - 1);
     } else if (options.limit !== undefined) {
@@ -78,14 +88,6 @@ export class SessionRepository {
     if (error) {
       throw error;
     }
-
-    // Sort nested data by order indices
-    data?.forEach((session: SessionDto) =>
-      session.sets?.sort((a: SessionSetDto, b: SessionSetDto) =>
-        a.plan_exercise_id.localeCompare(b.plan_exercise_id) ||
-        a.set_index - b.set_index
-      )
-    );
 
     return {
       data: data as SessionDto[] || [],
@@ -105,6 +107,8 @@ export class SessionRepository {
       .select('*, sets:session_sets!session_sets_session_id_fkey(*)')
       .eq('id', sessionId)
       .eq('user_id', this.getUserId())
+      .order('plan_exercise_id', { referencedTable: 'sets', ascending: true })
+      .order('set_index', { referencedTable: 'sets', ascending: true })
       .single();
 
     if (error) {
@@ -112,13 +116,6 @@ export class SessionRepository {
         return null;
       }
       throw error;
-    }
-
-    if (data.sets) {
-      data.sets.sort((a: SessionSetDto, b: SessionSetDto) =>
-        a.plan_exercise_id.localeCompare(b.plan_exercise_id) ||
-        a.set_index - b.set_index
-      );
     }
 
     return data as SessionDto;
@@ -158,8 +155,6 @@ export class SessionRepository {
       throw new Error('Plan not found.');
     }
 
-    const dayIds = plan.days.sort((a, b) => a.order_index - b.order_index).map(d => d.id);
-
     // Step 2: Fetch existing sessions to determine next day
     const { data: sessions, error: sessionsError } = await this.supabase
       .from('sessions')
@@ -174,68 +169,29 @@ export class SessionRepository {
       throw sessionsError;
     }
 
-    let currentDayId = command.plan_day_id;
-    if (!currentDayId) {
-      const latestCompletedSession = sessions!
-        .filter(s => !!s.session_date)
-        .sort((a, b) => new Date(b.session_date!).getTime() - new Date(a.session_date!).getTime())
-        .find(s => s.status === 'COMPLETED');
-
-      if (latestCompletedSession) {
-        const dayIndex = dayIds.indexOf(latestCompletedSession.plan_day_id!);
-        if (dayIndex !== -1) {
-          currentDayId = dayIds[(dayIndex + 1) % dayIds.length];
-        } else {
-          throw new Error('Failed to identify next day for plan');
-        }
-      } else if (!currentDayId) {
-        currentDayId = dayIds[0];
-      }
-    }
-
-    // Step 3: Build records to upsert
-    const recordsToUpsert: SessionDto[] = [];
-    const sessionsInProgress = sessions!.filter(s => s.status === 'IN_PROGRESS' || s.status === 'PENDING');
-
-    if (sessionsInProgress && sessionsInProgress.length > 0) {
-      sessionsInProgress.forEach(s => {
-        recordsToUpsert.push({
-           ...s,
-           plan_day_id: s.plan_day_id!,
-           status: 'CANCELLED',
-        });
-      });
-    }
-
-    const newSessionId = crypto.randomUUID();
-    recordsToUpsert.push({
-      id: newSessionId,
-      user_id: userId,
-      plan_id: command.plan_id,
-      plan_day_id: currentDayId,
-      status: 'PENDING',
-      session_date: null,
-      notes: null
-    });
+    const currentDayId = resolveNextPlanDayId(plan.days, sessions!, command.plan_day_id);
 
     const currentDay = plan.days.find(d => d.id === currentDayId);
     if (!currentDay) {
       throw new Error('Plan day not found in the specified plan.');
     }
 
-    const newSessionSets = (currentDay.exercises ?? [])
-      .flatMap(e => e.sets ?? [])
-      .map((tpes) => ({
-        id: crypto.randomUUID(),
-        session_id: newSessionId,
-        plan_exercise_id: tpes.plan_exercise_id,
-        set_index: tpes.set_index,
-        expected_reps: tpes.expected_reps,
-        actual_reps: null,
-        actual_weight: tpes.expected_weight,
+    // Step 3: Build records to upsert
+    const newSessionId = crypto.randomUUID();
+    const recordsToUpsert: SessionDto[] = [
+      ...cancelOutstandingSessions(sessions!),
+      {
+        id: newSessionId,
+        user_id: userId,
+        plan_id: command.plan_id,
+        plan_day_id: currentDayId,
         status: 'PENDING',
-        completed_at: null
-      })) as SessionSetDto[];
+        session_date: null,
+        notes: null
+      }
+    ];
+
+    const newSessionSets = buildSessionSets(currentDay, newSessionId);
 
     // Step 4: Use batch operations to atomically create session and sets
     const batchOperations = [
@@ -357,13 +313,7 @@ export class SessionRepository {
       return null;
     }
 
-    if (existingSession.status !== 'IN_PROGRESS') {
-      throw new Error(`Session cannot be completed. Current status: ${existingSession.status}. Expected: IN_PROGRESS.`);
-    }
-
-    if (!existingSession.plan_id) {
-      throw new Error('Plan ID missing from the session. Cannot calculate progressions.');
-    }
+    assertSessionCompletable(existingSession);
 
     // Step 2: Fetch all session sets and associated plan exercise data
     const { data: setData, error: sessionSetsError } = await this.supabase
@@ -382,16 +332,7 @@ export class SessionRepository {
       throw sessionSetsError;
     }
 
-    const exerciseIds = [
-      ...new Set(setData
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((ss: any) => ss.plan_exercises)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((tpe: any) => tpe.exercises)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((e: any) => e.id)
-      )
-    ];
+    const { sessionSets, exerciseIds } = extractSessionSetContext(setData as unknown as SessionSetWithExerciseRow[]);
 
     const { data: planData, error: planDataError } = await this.supabase
       .from('plan_days')
@@ -416,30 +357,9 @@ export class SessionRepository {
     }
 
     // Step 3: Recalculate weight and progression rules for each exercise
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const sessionSets = setData.map(({ plan_exercises: _, ...ss }: any) => ss) as SessionSetDto[];
-
-    const planExercises = [...new Map(
-      planData
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((s: any) => s.exercises)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map(({ global_exercises: _, ...tpe }: any) => [tpe.id, tpe])
-      ).values()
-    ] as PlanExerciseDto[];
-
-    const planExerciseProgressions = [...new Map(
-      planData
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((s: any) => s.exercises)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((pe: any) => pe.global_exercises)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .flatMap((pe: any) => pe.progression)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((p: any) => [p.id, p])
-      ).values()
-    ] as PlanExerciseProgressionDto[];
+    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(
+      planData as unknown as PlanDayWithProgressionsRow[]
+    );
 
     const { exerciseSetsToUpdate, exerciseProgressionsToUpdate } = resolveExerciseProgressions(
       sessionSets,
@@ -448,9 +368,7 @@ export class SessionRepository {
     );
 
     // Step 4: Fetch full session and update all data in a single atomic transaction
-    const sessionSetsToUpdate = sessionSets
-      .filter(ss => ss.status === 'PENDING')
-      .map(ss => ({ ...ss, status: 'SKIPPED' as const }));
+    const sessionSetsToUpdate = skipPendingSets(sessionSets);
 
     const { data: fullSession, error: fullSessionError } = await this.supabase
       .from('sessions')

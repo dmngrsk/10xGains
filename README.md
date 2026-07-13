@@ -12,10 +12,10 @@
 - [License](#license)
 
 ## Project Description
-10xGains is a streamlined platform designed to lower the entry barrier for powerlifting and weightlifting. The application enables users to create, customize, and track personalized training plans with AI-driven suggestions, ensuring safe and effective workout routines. Key features include secure user registration/login, flexible training plan creation, active workout session tracking, and comprehensive workout history.
+10xGains is a streamlined platform designed to lower the entry barrier for powerlifting and weightlifting. The application enables users to create, customize, and track personalized training plans with AI-driven suggestions, ensuring safe and effective workout routines. Key features include secure user registration/login, flexible training plan creation, active workout session tracking, comprehensive workout history, and exercise progress charts.
 
 ## Tech Stack
-- **Frontend**: Angular 22, Angular Material Design 3, Tailwind CSS 4
+- **Frontend**: Angular 22, Angular Material Design 3, Tailwind CSS 4, Chart.js 4 (via ng2-charts)
 - **Backend**: Hono on Azure Functions (Node.js 24) for the API; Supabase for PostgreSQL and authentication
 - **AI Integration**: OpenRouter API for AI-driven training plan suggestions
 - **Test Suite**: Vitest (unit), Cypress (e2e)
@@ -158,6 +158,7 @@ The current MVP scope includes:
 - **Training Plan Creation**: Ability to create personalized training plans with both predefined and custom exercises, incorporating manual adjustments and automated weight progression.
 - **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers, detailed editing capabilities, and free-form session and plan notes.
 - **Workout History**: Chronological record of past workout sessions, including access to per-session notes.
+- **Exercise Progress**: Weight-over-time line chart with one line per exercise, defaulting to the active plan and the last 3 months, filterable by training plan (or across all of them) and date range.
 - **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status

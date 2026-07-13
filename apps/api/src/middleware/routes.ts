@@ -7,6 +7,7 @@ import { handlePutExerciseById } from '../handlers/exercises/put-id';
 import { handleDeleteExerciseById } from '../handlers/exercises/delete-id';
 import { handleGetProfile } from '../handlers/profiles/get-id';
 import { handleUpsertProfile } from '../handlers/profiles/put-id';
+import { handleGetExerciseProgress } from '../handlers/progress/get-exercises';
 import { handleGetPlans } from '../handlers/plans/get';
 import { handleCreatePlan } from '../handlers/plans/post';
 import { handleGetPlanById } from '../handlers/plans/get-id';
@@ -116,6 +117,12 @@ function createPlanExerciseProgressionRoutes(): Hono<AppContext> {
     .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseProgressionById);
 }
 
+// /api/progress
+function createProgressRoutes(): Hono<AppContext> {
+  return new Hono<AppContext>()
+    .get('/exercises', requiredAuthMiddleware, handleGetExerciseProgress);
+}
+
 // /api/sessions
 function createSessionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
@@ -164,6 +171,7 @@ const routes = new Hono<AppContext>();
 routes.route('/exercises', createExerciseRoutes());
 routes.route('/profiles', createProfileRoutes());
 routes.route('/plans', createPlanRoutes());
+routes.route('/progress', createProgressRoutes());
 routes.route('/sessions', createSessionRoutes());
 routes.get('/health', handleHealthEndpoint);
 routes.notFound(handleNotFound);
