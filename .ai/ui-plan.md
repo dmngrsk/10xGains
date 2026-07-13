@@ -2,11 +2,10 @@
 
 ## 1. Overview of UI Structure
 
-The UI is built with a mobile-first approach using Angular 19, Tailwind CSS 4, and Angular Material. It provides three primary layouts:
+The UI is built with a mobile-first approach using Angular 22, Tailwind CSS 4, and Angular Material. It provides two primary layouts:
 
 - **AuthLayout**: Displays a simple centered card for login, registration and password recovery views. Neither the bottom navigation nor the top app bar are visible.
-- **MainLayout**: Displays the bottom navigation bar only on the Home Dashboard.
-- **FullScreenLayout**: Shows a top app bar with a back button on Plans, Plan Editor, Active Session, History, Progress, and Settings.
+- **MainLayout**: Shows a top app bar and the bottom navigation bar across the five main tabs (Home, Plans, History, Progress, Settings). When a `backNavigation` target is given instead (Plan Editor, Active Session), the top app bar shows a back button and the bottom navigation is hidden.
 
 Global services (AuthGuard, HttpInterceptor, shared state services) manage authentication, error handling, and data caching.
 
@@ -78,12 +77,12 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **Key Components**: `MatDrawer` for filters (`debounceTime(100ms)` + `switchMap`), `MatPaginator`, list items with Skeleton loader, notes dialog reused from the session view.
 - **UX/Accessibility/Security**: Secure RLS filter parameters.
 
-### 2.10 Progress Stub View
+### 2.10 Progress View
 - **Route**: `/progress`
-- **Main Goal**: Placeholder for future analytics ("Coming soon…").
-- **Key Info**: Static message and illustration.
-- **Key Components**: `MatCard`, Tailwind styling.
-- **UX/Accessibility/Security**: Informative alt text for illustrations.
+- **Main Goal**: Visualize strength progression as a weight-over-time line chart, with one line per exercise.
+- **Key Info**: Time-scaled chart of the top completed set per session; a scrollable chip row selecting which exercises are plotted; a sticky actions bar summarizing the active filters. Defaults to the user's active plan over the last 3 months, with all of its exercises plotted. Point tooltips show `Exercise: <weight> kg – <reps>` (reps collapse to `5x5` when uniform, else `5/5/4/0/0`), plus the plan name when "All plans" is selected.
+- **Key Components**: Chart.js line chart via `ng2-charts` (`BaseChartDirective`), `MatChipListbox` for the exercise toggles, `MatDialog` filter with plan and date-range-preset `MatSelect`s, `txg-notice` for empty/error states.
+- **UX/Accessibility/Security**: Series are exercise-scoped, so a line spans training plans under the "All plans" filter; empty and error states offer a corrective action; RLS and an explicit `user_id` filter scope all data to the authenticated user.
 
 ### 2.11 Settings View
 - **Route**: `/settings`
@@ -104,14 +103,16 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
    - From Home or Plans, tap session ➔ `/sessions/:sessionId` ➔ mark sets complete or add sets ➔ auto-save and PATCH calls.
 6. **History & Filter**:
    - Tap History ➔ `/history` ➔ open filter panel, apply filters, page results.
-7. **Settings**:
+7. **Progress**:
+   - Tap Progress ➔ `/progress` ➔ review the weight-over-time chart of the active plan ➔ toggle exercises, or widen the plan/date filters.
+8. **Settings**:
    - Tap Settings ➔ `/settings` ➔ update profile ➔ logout.
 
 ## 4. Layout and Navigation Structure
 
 - **AuthLayout**: Used for `/auth/*` routes (login, register, password recovery) — centered card layout, hides bottom navigation and top toolbar.
-- **BottomNavigation**: Visible only on `/home`, five tabs: Home, Plans, History, Progress, Settings.
-- **FullScreenLayout**: For all other routes, show a top `MatToolbar` with a back button that returns to `/home` (or other previous tab, depending on UI context).
+- **BottomNavigation**: Visible on the five main tabs: Home, Plans, History, Progress, Settings.
+- **Back navigation**: Views reached from a tab (Plan Editor, Active Session) hide the bottom navigation and show a top `MatToolbar` with a back button that returns to the originating tab.
 - **Router Setup**: Angular Router with AuthGuard on protected routes (Home, Plans, Session, History, Progress, Settings).
 - **HttpInterceptor**: Injects Supabase JWT, handles 401 by redirecting to `/login`, and globally catches errors to show snackbars.
 

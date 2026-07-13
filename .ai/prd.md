@@ -29,7 +29,12 @@ Many users face an overwhelming number of available training plans, which create
    - Present a clear summary of past workout sessions, including details such as exercises performed, sets, reps, and weight adjustments.
    - Ensure the history is updated in real-time as new sessions are completed.
 
-5. AI Integration:
+5. Exercise Progress Visualization:
+   - Display a line chart of weight lifted over time, with one line per exercise, built from completed sets in completed sessions.
+   - Default the chart to the user's currently active training plan and the last 3 months, with filters for other plans (or all plans) and wider date ranges.
+   - Allow users to choose which exercises are plotted.
+
+6. AI Integration:
    - Integrate a chat-based AI tool within the training plan creation view to offer tailored training plan suggestions.
    - Allow users to refine AI suggestions through manual customization.
    - Enable the AI to lookup and embed external educational resources, presenting brief summaries and direct links during the conversation.
@@ -42,7 +47,6 @@ MVP Scope:
 Exclusions:
    - AI progress tracking features such as monitoring improvements and providing progress-based suggestions.
    - Detailed body metrics tracking (e.g., weight, measurements, body fat percentage calculations).
-   - Advanced progress analytics (e.g., visual charts of exercise volume trends).
    - Gamification elements such as in-app achievements or rewards.
 
 ## 5. User Stories
@@ -94,6 +98,17 @@ US-005: Workout History Overview
   - Each entry includes information on exercises performed, sets, reps, and weight adjustments.
   - The history updates automatically as new sessions are recorded.
   - Accessing the workout history is not possible without signing in to the system (US-001).
+
+US-006: Exercise Progress Visualization
+- Title: Visualize Strength Progression Over Time
+- Description: As a user, I want to see a chart of the weights I have lifted for my exercises over time, across all my training plans, so that I can verify my training is making me stronger.
+- Acceptance Criteria:
+  - A progress page displays a line chart of weight over time, with one line per selected exercise.
+  - Chart data defaults to the user's currently active training plan; the user can switch to another plan, to all plans, and/or adjust the date range.
+  - The user can choose which exercises are plotted; by default all exercises of the selected plan are plotted.
+  - Only completed sets from completed sessions contribute data points.
+  - An informative empty state is shown when no data matches the current filters.
+  - Accessing the progress page is not possible without signing in to the system (US-001).
 
 ## 6. Success Metrics
 - 90% of users should be able to create a personalized training plan that meets their needs.

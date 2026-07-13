@@ -20,6 +20,7 @@ This workspace package (`@txg/api`) contains the main API for the 10xGains appli
   - [Plan Exercise Progression API](#plan-exercise-progression-api)
   - [Sessions API](#sessions-api)
   - [Session Sets API](#session-sets-api)
+  - [Progress API](#progress-api)
   - [Health Check API](#health-check-api)
 
 ## Architecture
@@ -35,8 +36,8 @@ The API is organized into the following structure, using Hono for routing:
     - `auth.ts`, `supabase.ts`, `telemetry.ts` - Middleware for handling authentication, initializing the Supabase client, and telemetry.
   - `src/handlers/` - Contains the business logic for each API endpoint.
     - `[resource]/[method]-[modifier].ts` - Each file implements the logic for a specific action on a resource (e.g., `exercises/get.ts`, `plans/get-id.ts`). These handlers receive a context object with the request, response, and middleware data.
-  - `src/repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`).
-  - `src/services/` - Contains business logic that can be shared across different handlers. Unit tests live next to the tested file as `{tested-file}.spec.ts`.
+  - `src/repositories/` - Contains data access logic. Each file abstracts the database interactions for a specific resource (e.g., `plan.repository.ts`, `session.repository.ts`). Repositories are I/O only: they build the Supabase query and delegate any decision to a service. They carry no unit tests — their correctness lies in the query, which is verified end-to-end against a real database.
+  - `src/services/` - Contains the pure, dependency-free domain logic, one folder per concern: `session-creation/` (which day of a plan the next session trains, cancelling outstanding sessions, seeding a session's sets from the plan), `session-completion/` (completability guards, flattening the joined rows, skipping unfinished sets), `exercise-progressions/` (weight progression and deload), `exercise-progress/` (aggregating completed sets into chart series), `index-order/` (ordering of days, exercises and sets). This is the layer unit tests target; each test file lives next to the tested file as `{tested-file}.spec.ts`.
   - `src/utils/` - Shared utility functions.
   - `host.json` - Azure Functions host configuration.
   - `local.settings.json` - Local-only runtime settings (gitignored; see `local.settings.json.example`). The deployed apps read the same variables (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `APP_URL`) from their Azure app settings.
@@ -1492,6 +1493,60 @@ Marks a specific set as pending.
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+### Progress API
+
+Provides aggregated, per-exercise progress series for the authenticated user, built from the sets of their completed sessions. This is the data behind the Progress tab's weight-over-time chart.
+
+#### GET /api/progress/exercises
+
+Returns one series per exercise, each holding one data point per completed session in which that exercise had at least one completed set.
+
+For every `(exercise, session)` pair:
+
+-   `top_weight` is the highest `actual_weight` among the sets with status `COMPLETED`, ties broken by the higher `actual_reps`. Non-completed sets never contribute, so a failed heavy attempt cannot inflate the plotted line.
+-   `reps` lists the `actual_reps` of **every** set of that exercise in that session, in set order, including `FAILED` and `SKIPPED` ones (a set with no recorded reps counts as `0`). This is what lets a client distinguish `5x5` from `5/5/4/0/0`.
+
+Sessions whose status is not `COMPLETED` are excluded entirely, and a pair with no completed set yields no point. Series are sorted by exercise name, points by `session_date` ascending. The response is not paginated — one point per exercise per session keeps it small regardless of set count — so no `totalCount` is returned.
+
+-   **Authorization**: Bearer token required.
+-   **URL Query Parameters**:
+    -   `plan_id` (optional, string UUID): Restrict to sessions of a single plan. Omit to span all of the user's plans.
+    -   `exercise_ids` (optional, comma-separated UUIDs): Restrict the returned series to these exercises.
+    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
+    -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
+-   **Response (200 OK)**: An array of `ExerciseProgressDto` objects.
+    ```json
+    {
+      "data": [
+        {
+          "exercise_id": "uuid",
+          "exercise_name": "Bench Press",
+          "points": [
+            {
+              "session_id": "uuid",
+              "session_date": "2026-04-15T17:32:11.000Z",
+              "plan_id": "uuid",
+              "top_weight": 80,
+              "reps": [5, 5, 5]
+            },
+            {
+              "session_id": "uuid",
+              "session_date": "2026-04-18T17:45:03.000Z",
+              "plan_id": "uuid",
+              "top_weight": 82.5,
+              "reps": [5, 5, 4, 0, 0]
+            }
+          ]
+        }
+        // ... other exercises, sorted by name
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If query parameters are invalid (e.g. a malformed UUID or date).
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `500 Internal Server Error`: For unexpected server issues.
 
 ### Health Check API
 

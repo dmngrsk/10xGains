@@ -64,6 +64,14 @@ Additionally, each feature folder includes a `shared/` directory for storing mut
 - Implement accessibility attributes and ARIA labels for interactive components; use Material's built-in a11y features like focus indicators and keyboard navigation.
 - Use the Material 3 design system updates where available; leverage the Angular Material theming system and typography hierarchy.
 
+## Charts
+
+- Charts are Chart.js, used through `ng2-charts` (`BaseChartDirective` in the template, `provideCharts` in the component's `providers`).
+- Register only the controllers, elements, and scales a chart actually needs (e.g. `LineController`, `LineElement`, `PointElement`, `LinearScale`, `TimeScale`, `Tooltip`); avoid `withDefaultRegisterables`, which defeats tree-shaking.
+- A time-scaled axis needs a date adapter: `import 'chartjs-adapter-date-fns';` in the chart component.
+- Derive chart colors from the Material 3 system variables (`--mat-sys-on-surface-variant`, `--mat-sys-outline-variant`, …) so charts follow the app theme instead of hardcoding light-theme colors.
+- The canvas sizes itself to its container, so give that container a definite height. Inside a flex column, that means `flex-1 min-h-0` — a fixed height wastes screen space on tall viewports.
+
 ## Tailwind CSS
 
 - Use the `@layer` directive to organize styles into components, utilities, and base layers.
