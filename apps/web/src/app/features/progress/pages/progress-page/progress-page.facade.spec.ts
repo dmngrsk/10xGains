@@ -28,7 +28,7 @@ describe('ProgressPageFacade', () => {
   let getExerciseProgressMock: ReturnType<typeof vi.fn>;
   let getProfileMock: ReturnType<typeof vi.fn>;
 
-  const configure = (activePlanId: string | null) => {
+  const configure = (activePlanId: string | null, user: { id: string } | null = { id: 'user-1' }) => {
     getExerciseProgressMock = vi.fn().mockReturnValue(
       of({ data: [makeDto('ex-1', 'Bench Press'), makeDto('ex-2', 'Squat')], error: null })
     );
@@ -42,7 +42,7 @@ describe('ProgressPageFacade', () => {
         { provide: ProgressService, useValue: { getExerciseProgress: getExerciseProgressMock } },
         { provide: PlanService, useValue: { getPlans: () => of({ data: PLANS, error: null }) } },
         { provide: ProfileService, useValue: { getProfile: getProfileMock } },
-        { provide: AuthService, useValue: { currentUser: () => ({ id: 'user-1' }) } },
+        { provide: AuthService, useValue: { currentUser: () => user } },
       ],
     });
     facade = TestBed.inject(ProgressPageFacade);
@@ -86,6 +86,21 @@ describe('ProgressPageFacade', () => {
       expect(facade.viewModel().error).toContain('Failed to load exercise progress');
       expect(facade.viewModel().isLoading).toBe(false);
       expect(facade.viewModel().series).toEqual([]);
+    });
+  });
+
+  describe('loadProgressPageData without a signed-in user', () => {
+    // forkJoin builds its argument object eagerly, so reading the id off a null user would
+    // throw synchronously, before the pipe exists for catchError to handle it.
+    it('should surface an error instead of throwing', () => {
+      configure('plan-1', null);
+
+      expect(() => facade.loadProgressPageData()).not.toThrow();
+
+      expect(facade.viewModel().error).toContain('Please sign in again');
+      expect(facade.viewModel().isLoading).toBe(false);
+      expect(getProfileMock).not.toHaveBeenCalled();
+      expect(getExerciseProgressMock).not.toHaveBeenCalled();
     });
   });
 

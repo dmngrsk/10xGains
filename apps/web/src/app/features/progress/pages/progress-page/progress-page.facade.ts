@@ -35,11 +35,23 @@ export class ProgressPageFacade {
 
   loadProgressPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
+
+    // Guarded rather than asserted: forkJoin's argument object is built eagerly, so
+    // reading `user.id` on a null user would throw before the pipe below exists, and
+    // the catchError would never see it.
     const user = this.currentUser();
+    if (!user) {
+      this.viewModel.update(vm => ({
+        ...vm,
+        isLoading: false,
+        error: 'Failed to load your session. Please sign in again.'
+      }));
+      return;
+    }
 
     forkJoin({
       plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as PlanDto[]))),
-      profile: this.profileService.getProfile(user!.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
+      profile: this.profileService.getProfile(user.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
     }).pipe(
       tap(({ plans, profile }) => {
         this.internalPlans.set(plans);
