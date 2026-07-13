@@ -1,0 +1,219 @@
+import type { PlanExerciseProgressionDto, SessionSetDto } from '@txg/shared';
+import { describe, it, expect } from 'vitest';
+import {
+  assertSessionCompletable,
+  extractPlanProgressionContext,
+  extractSessionSetContext,
+  skipPendingSets
+} from './session-completion';
+import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from './session-completion';
+
+const SQUAT_ID = 'exercise-squat';
+const BENCH_ID = 'exercise-bench';
+
+function makeSet(overrides: Partial<SessionSetDto> = {}): SessionSetDto {
+  return {
+    id: 'set-1',
+    session_id: 'session-1',
+    plan_exercise_id: 'plan-exercise-1',
+    set_index: 1,
+    expected_reps: 5,
+    actual_reps: 5,
+    actual_weight: 100,
+    status: 'COMPLETED',
+    completed_at: '2026-06-01T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function makeProgression(id: string, exerciseId: string): PlanExerciseProgressionDto {
+  return {
+    id,
+    plan_id: 'plan-1',
+    exercise_id: exerciseId,
+    weight_increment: 2.5,
+    failure_count_for_deload: 3,
+    deload_percentage: 10,
+    deload_strategy: 'PROPORTIONAL',
+    consecutive_failures: 0,
+    reference_set_index: null,
+    last_updated: '2026-06-01T10:00:00.000Z',
+  };
+}
+
+describe('assertSessionCompletable', () => {
+  it('should accept a session that is in progress and has a plan', () => {
+    expect(() => assertSessionCompletable({ status: 'IN_PROGRESS', plan_id: 'plan-1' })).not.toThrow();
+  });
+
+  it.each(['PENDING', 'COMPLETED', 'CANCELLED'] as const)(
+    'should reject a session whose status is %s',
+    (status) => {
+      expect(() => assertSessionCompletable({ status, plan_id: 'plan-1' }))
+        .toThrow(`Session cannot be completed. Current status: ${status}. Expected: IN_PROGRESS.`);
+    }
+  );
+
+  it('should reject a session with no plan, as progressions cannot be calculated', () => {
+    expect(() => assertSessionCompletable({ status: 'IN_PROGRESS', plan_id: null as unknown as string }))
+      .toThrow('Plan ID missing from the session. Cannot calculate progressions.');
+  });
+});
+
+describe('extractSessionSetContext', () => {
+  it('should strip the embedded relation off the sets', () => {
+    const rows = [
+      { ...makeSet(), plan_exercises: { exercises: { id: SQUAT_ID } } },
+    ] as SessionSetWithExerciseRow[];
+
+    const { sessionSets } = extractSessionSetContext(rows);
+
+    expect(sessionSets).toEqual([makeSet()]);
+    expect(sessionSets[0]).not.toHaveProperty('plan_exercises');
+  });
+
+  it('should collect the unique exercise ids the session trained', () => {
+    const rows = [
+      { ...makeSet({ id: 'set-1' }), plan_exercises: { exercises: { id: SQUAT_ID } } },
+      { ...makeSet({ id: 'set-2' }), plan_exercises: { exercises: { id: SQUAT_ID } } },
+      { ...makeSet({ id: 'set-3' }), plan_exercises: { exercises: { id: BENCH_ID } } },
+    ] as SessionSetWithExerciseRow[];
+
+    const { exerciseIds } = extractSessionSetContext(rows);
+
+    expect(exerciseIds).toEqual([SQUAT_ID, BENCH_ID]);
+  });
+
+  it('should read an embed that arrives as an array just like a to-one object', () => {
+    const rows = [
+      { ...makeSet(), plan_exercises: [{ exercises: [{ id: SQUAT_ID }] }] },
+    ] as unknown as SessionSetWithExerciseRow[];
+
+    const { exerciseIds } = extractSessionSetContext(rows);
+
+    expect(exerciseIds).toEqual([SQUAT_ID]);
+  });
+
+  it('should tolerate a missing embed rather than throwing', () => {
+    const rows = [
+      { ...makeSet(), plan_exercises: null },
+    ] as SessionSetWithExerciseRow[];
+
+    const { sessionSets, exerciseIds } = extractSessionSetContext(rows);
+
+    expect(sessionSets).toHaveLength(1);
+    expect(exerciseIds).toEqual([]);
+  });
+
+  it('should return empty results for no rows', () => {
+    expect(extractSessionSetContext([])).toEqual({ sessionSets: [], exerciseIds: [] });
+  });
+});
+
+describe('extractPlanProgressionContext', () => {
+  it('should flatten the days into plan exercises, stripped of their embed', () => {
+    const rows = [
+      {
+        exercises: [
+          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } },
+        ],
+      },
+    ] as unknown as PlanDayWithProgressionsRow[];
+
+    const { planExercises } = extractPlanProgressionContext(rows);
+
+    expect(planExercises).toEqual([{ id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 }]);
+    expect(planExercises[0]).not.toHaveProperty('global_exercises');
+  });
+
+  it('should de-duplicate an exercise that the join repeats across days', () => {
+    const squat = { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } };
+    const rows = [
+      { exercises: [squat] },
+      { exercises: [squat] },
+    ] as unknown as PlanDayWithProgressionsRow[];
+
+    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(rows);
+
+    expect(planExercises).toHaveLength(1);
+    expect(planExerciseProgressions).toHaveLength(1);
+  });
+
+  it('should collect the progression rules, unique by id', () => {
+    const rows = [
+      {
+        exercises: [
+          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } },
+          { id: 'pe-2', plan_day_id: 'day-1', exercise_id: BENCH_ID, order_index: 2, global_exercises: { progression: [makeProgression('prog-2', BENCH_ID)] } },
+        ],
+      },
+    ] as unknown as PlanDayWithProgressionsRow[];
+
+    const { planExerciseProgressions } = extractPlanProgressionContext(rows);
+
+    expect(planExerciseProgressions.map(p => p.id)).toEqual(['prog-1', 'prog-2']);
+  });
+
+  it('should tolerate an exercise that has no progression rule yet', () => {
+    const rows = [
+      {
+        exercises: [
+          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: null } },
+        ],
+      },
+    ] as unknown as PlanDayWithProgressionsRow[];
+
+    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(rows);
+
+    expect(planExercises).toHaveLength(1);
+    expect(planExerciseProgressions).toEqual([]);
+  });
+
+  it('should return empty results for no rows', () => {
+    expect(extractPlanProgressionContext([])).toEqual({ planExercises: [], planExerciseProgressions: [] });
+  });
+});
+
+describe('skipPendingSets', () => {
+  it('should mark every pending set as skipped', () => {
+    const sets = [
+      makeSet({ id: 'set-1', status: 'PENDING' }),
+      makeSet({ id: 'set-2', status: 'PENDING' }),
+    ];
+
+    const result = skipPendingSets(sets);
+
+    expect(result.map(s => s.id)).toEqual(['set-1', 'set-2']);
+    expect(result.every(s => s.status === 'SKIPPED')).toBe(true);
+  });
+
+  it('should return only the sets that changed', () => {
+    const sets = [
+      makeSet({ id: 'set-1', status: 'COMPLETED' }),
+      makeSet({ id: 'set-2', status: 'FAILED' }),
+      makeSet({ id: 'set-3', status: 'PENDING' }),
+    ];
+
+    const result = skipPendingSets(sets);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('set-3');
+  });
+
+  it('should NOT overwrite the outcome of a set the user already completed or failed', () => {
+    const sets = [
+      makeSet({ id: 'set-1', status: 'COMPLETED' }),
+      makeSet({ id: 'set-2', status: 'FAILED' }),
+    ];
+
+    expect(skipPendingSets(sets)).toEqual([]);
+  });
+
+  it('should not mutate the input sets', () => {
+    const sets = [makeSet({ status: 'PENDING' })];
+
+    skipPendingSets(sets);
+
+    expect(sets[0].status).toBe('PENDING');
+  });
+});
