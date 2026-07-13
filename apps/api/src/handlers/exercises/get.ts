@@ -3,29 +3,12 @@ import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { ExerciseDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { validateQueryParams } from "../../utils/validation";
-
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
-const DEFAULT_OFFSET = 0;
-const DEFAULT_SORT_COLUMN = 'name';
-const DEFAULT_SORT_DIRECTION = 'asc';
+import { optionalLimit, optionalOffset, optionalSort, validateQueryParams } from "../../utils/validation";
 
 const QUERY_SCHEMA = z.object({
-  limit: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_LIMIT),
-    z.number().int().min(1).max(MAX_LIMIT).default(DEFAULT_LIMIT)
-  ),
-  offset: z.preprocess(
-    (val: unknown) => (val ? parseInt(String(val), 10) : DEFAULT_OFFSET),
-    z.number().int().min(0).default(DEFAULT_OFFSET)
-  ),
-  sort: z.preprocess(
-    (val: unknown) => (val ? String(val) : `${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`),
-    z.string()
-      .regex(/^[a-zA-Z_]+\.(asc|desc)$/, 'Sort parameter must be in format column_name.(asc|desc)')
-      .default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
-  )
+  limit: optionalLimit(),
+  offset: optionalOffset(),
+  sort: optionalSort('name', 'asc')
 });
 
 export async function handleGetExercises(c: Context<AppContext>) {

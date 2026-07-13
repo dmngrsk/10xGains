@@ -3,29 +3,12 @@ import { z } from 'zod';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { PlanDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { validateQueryParams } from "../../utils/validation";
-
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
-const DEFAULT_OFFSET = 0;
-const DEFAULT_SORT_COLUMN = 'created_at';
-const DEFAULT_SORT_DIRECTION = 'desc';
+import { optionalLimit, optionalOffset, optionalSort, validateQueryParams } from "../../utils/validation";
 
 export const QUERY_SCHEMA = z.object({
-  limit: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().positive().max(MAX_LIMIT).optional().default(DEFAULT_LIMIT)
-  ),
-  offset: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().min(0).optional().default(DEFAULT_OFFSET)
-  ),
-  sort: z.preprocess(
-    (val: unknown) => (val ? String(val) : `${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`),
-    z.string()
-      .regex(/^[a-zA-Z_]+\.(asc|desc)$/, 'Sort parameter must be in format column_name.(asc|desc)')
-      .default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
-  )
+  limit: optionalLimit(),
+  offset: optionalOffset(),
+  sort: optionalSort('created_at', 'desc')
 });
 
 export async function handleGetPlans(c: Context<AppContext>) {

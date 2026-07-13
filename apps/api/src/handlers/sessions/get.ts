@@ -3,41 +3,15 @@ import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { SessionDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { validateQueryParams } from '../../utils/validation';
-
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
-const DEFAULT_OFFSET = 0;
-const DEFAULT_SORT_COLUMN = 'session_date';
-const DEFAULT_SORT_DIRECTION = 'asc';
+import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateQueryParams } from '../../utils/validation';
 
 const QUERY_SCHEMA = z.object({
-  limit: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().nonnegative().max(MAX_LIMIT).optional().default(DEFAULT_LIMIT)
-  ),
-  offset: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().int().nonnegative().optional().default(DEFAULT_OFFSET)
-  ),
-  sort: z.preprocess(
-    (val: unknown) => (val ? String(val) : `${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`),
-    z.string()
-      .regex(/^[a-zA-Z_]+\.(asc|desc)$/, 'Sort parameter must be in format column_name.(asc|desc)')
-      .default(`${DEFAULT_SORT_COLUMN}.${DEFAULT_SORT_DIRECTION}`)
-  ),
-  status: z.preprocess(
-    (val) => (typeof val === 'string' ? val.split(',').map(s => s.trim()) : undefined),
-    z.array(z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])).optional()
-  ),
-  date_from: z.preprocess(
-    (val) => (val ? new Date(String(val)).toISOString() : undefined),
-    z.string().datetime().optional()
-  ),
-  date_to: z.preprocess(
-    (val) => (val ? new Date(String(val)).toISOString() : undefined),
-    z.string().datetime().optional()
-  ),
+  limit: optionalLimit(),
+  offset: optionalOffset(),
+  sort: optionalSort('session_date', 'asc'),
+  status: optionalCsvList(z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])),
+  date_from: optionalIsoDate(),
+  date_to: optionalIsoDate(),
   plan_id: z.string().uuid().optional(),
 });
 
