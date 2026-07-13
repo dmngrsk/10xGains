@@ -1,4 +1,8 @@
-<authentication_analysis>
+# Auth Sequence Diagram
+
+This document traces the request/response sequence between the browser, `AuthService`, and Supabase Auth for each authentication flow. See [auth-spec.md](../../auth-spec.md) for the full specification.
+
+## Authentication Analysis
 
 ### 1. Authentication Flows
 
@@ -28,9 +32,8 @@ Based on the `auth-spec.md` document, the following authentication flows are def
 *   **Logout:** `AuthService` calls Supabase `signOut`. The client library clears the stored session, and the user is redirected to the login page.
 *   **Password Recovery:** The user requests a password reset. `AuthService` calls Supabase `resetPasswordForEmail`. The user receives a magic link. Clicking it validates their session via a callback and redirects them to a settings page to update their password.
 
-</authentication_analysis>
+## Diagram
 
-<mermaid_diagram>
 ```mermaid
 sequenceDiagram
     autonumber
@@ -129,4 +132,3 @@ sequenceDiagram
     Angular AuthService-->>Browser: Clears local session, redirects to /auth/login
     deactivate Angular AuthService
 ```
-</mermaid_diagram>

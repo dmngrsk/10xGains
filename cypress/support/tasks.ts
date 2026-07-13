@@ -116,14 +116,14 @@ export const tasks = {
       if (!canAutoCreate) {
         throw new Error(
           `Could not sign in as the canary user (${email}): ${signInError?.message ?? 'unknown error'}. ` +
-          'The canary user must already exist in this environment - see "Canary User Setup" in .ai/ci-cd-spec.md.'
+          'The canary user must already exist in this environment - see "Canary User Setup" in docs/ci-cd-spec.md.'
         );
       }
 
       if (!password || password === CANARY_PASSWORD_PLACEHOLDER) {
         throw new Error(
           `Cannot auto-create the canary user (${email}) on ${environment}: APP_CANARY_USER_PASSWORD is empty or still set to ` +
-          'the placeholder value from .env.example. Set a real password, then re-run the tests - see "Canary User Setup" in .ai/ci-cd-spec.md.'
+          'the placeholder value from .env.example. Set a real password, then re-run the tests - see "Canary User Setup" in docs/ci-cd-spec.md.'
         );
       }
 
@@ -148,7 +148,7 @@ export const tasks = {
       throw new Error(
         `The canary user (${email}) has no test data (no active training plan), and this environment has no SUPABASE_SECRET_KEY ` +
         'configured, so Cypress cannot seed it automatically - by design, Cypress never gets service-role access in production. ' +
-        'Seed the canary user\'s test data manually, then re-run the tests - see "Canary User Setup" in .ai/ci-cd-spec.md.'
+        'Seed the canary user\'s test data manually, then re-run the tests - see "Canary User Setup" in docs/ci-cd-spec.md.'
       );
     }
 

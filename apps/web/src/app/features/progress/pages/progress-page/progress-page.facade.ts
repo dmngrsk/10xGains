@@ -36,9 +36,6 @@ export class ProgressPageFacade {
   loadProgressPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
 
-    // Guarded rather than asserted: forkJoin's argument object is built eagerly, so
-    // reading `user.id` on a null user would throw before the pipe below exists, and
-    // the catchError would never see it.
     const user = this.currentUser();
     if (!user) {
       this.viewModel.update(vm => ({

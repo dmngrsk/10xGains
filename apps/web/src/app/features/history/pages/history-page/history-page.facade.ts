@@ -44,12 +44,21 @@ export class HistoryPageFacade {
 
   loadHistoryPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
+
     const user = this.currentUser();
+    if (!user) {
+      this.viewModel.update(vm => ({
+        ...vm,
+        isLoading: false,
+        error: 'Failed to load your session. Please sign in again.'
+      }));
+      return;
+    }
 
     forkJoin({
       plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as PlanDto[]))),
       exercises: this.exerciseService.getExercises().pipe(map(res => res.data ?? []), catchError(() => of([] as ExerciseDto[]))),
-      profile: this.profileService.getProfile(user!.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
+      profile: this.profileService.getProfile(user.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
     }).pipe(
       tap(({ plans, exercises, profile }) => {
         this.internalPlans.set(plans);
