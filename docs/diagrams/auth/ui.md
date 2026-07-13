@@ -1,4 +1,8 @@
-<architecture_analysis>
+# Auth Component Architecture
+
+This document maps the components, layouts, guards, and services that make up the authentication feature. See [auth-spec.md](../../auth-spec.md) for the full specification.
+
+## Architecture Analysis
 
 1.  **Component & Page Listing**:
     *   **Page Components**:
@@ -43,9 +47,8 @@
     *   `AuthGuard`: A route guard that prevents unauthenticated users from accessing protected parts of the application.
     *   `NoAuthGuard`: A route guard that prevents authenticated users from accessing the authentication pages (login, register), redirecting them to the main app dashboard instead.
 
-</architecture_analysis>
+## Diagram
 
-<mermaid_diagram>
 ```mermaid
 flowchart TD
 
@@ -141,4 +144,4 @@ flowchart TD
   class AppRouter,AuthRouter router
   class Supabase external
 ```
-</mermaid_diagram> 
+

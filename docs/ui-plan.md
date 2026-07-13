@@ -15,29 +15,29 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **Route**: `/auth/login`
 - **Main Goal**: Allow users to authenticate.
 - **Key Info**: Email input, Password input, Submit button, Link to Register.
-- **Key Components**: `ReactiveForm` with validation (Zod), `MatInput`, `MatButton`, `AuthGuard` redirect logic.
+- **Key Components**: `ReactiveForm` with `required`/`email` validators, `EmailInputComponent`, `PasswordInputComponent`, `MatButton`, `noAuthGuard` redirect logic.
 - **UX/Accessibility/Security**: Inline error messages, password show/hide, CSRF and HTTPS enforced.
 
 ### 2.2 Register View
 - **Route**: `/auth/register`
 - **Main Goal**: Enable new user sign‑up.
 - **Key Info**: Email input, Password input, Confirm password, Submit button.
-- **Key Components**: `ReactiveForm`, `MatInput`, `MatButton`, client‑side validation.
+- **Key Components**: `ReactiveForm` with the custom `passwordStrength` and `passwordMatch` validators, `EmailInputComponent`, `PasswordInputComponent`, `MatButton`.
 - **UX/Accessibility/Security**: Real‑time validation, feedback snackbars for server errors, secure password requirements.
 
-### 2.3 Forgot Password View
-- **Route**: `/auth/forgot-password`
-- **Main Goal**: Allow users to request a password reset email.
+### 2.3 Reset Password View
+- **Route**: `/auth/reset-password`
+- **Main Goal**: Allow users to request a password reset email. The new password is not set here — Supabase sends a magic link, and the callback hands the user off to Settings to complete the change.
 - **Key Info**: Email input, Submit button, link back to Login view.
-- **Key Components**: `ReactiveForm` (required, email), `MatInput`, `MatButton`.
+- **Key Components**: `ReactiveForm` (required, email), `EmailInputComponent`, `MatButton`.
 - **UX/Accessibility/Security**: Inline error messages and snackbar feedback on success/failure.
 
-### 2.4 Reset Password View
-- **Route**: `/auth/reset-password/:token`
-- **Main Goal**: Allow users to set a new password using a valid token.
-- **Key Info**: New Password input, Confirm Password input, Submit button.
-- **Key Components**: `ReactiveForm` (required, minLength(8), passwordMatchValidator), `MatInput`, `MatButton`.
-- **UX/Accessibility/Security**: Inline field validation, disabled submit until valid, snackbar on reset result.
+### 2.4 Auth Callback View
+- **Route**: `/auth/callback?type=register|reset-password`
+- **Main Goal**: Handle Supabase auth redirects. It renders no UI; it resolves the callback and forwards the user on.
+- **Key Info**: No form. `type=register` creates the default user profile, shows a success snackbar, and redirects to `/auth/login`. `type=reset-password` redirects to `/settings` with a `changePassword` action so the user can set a new password on an authenticated page.
+- **Key Components**: `CallbackComponent` (empty template), `AuthService`, `ProfileService`, `MatSnackBar`.
+- **UX/Accessibility/Security**: An unrecognized `type` falls back to `/auth/login` with an error snackbar; the password change itself happens only within an authenticated session.
 
 ### 2.5 Home Dashboard
 - **Route**: `/home`
@@ -86,35 +86,36 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 
 ### 2.11 Settings View
 - **Route**: `/settings`
-- **Main Goal**: Allow profile editing and logout.
-- **Key Info**: Email (read-only or editable), First name, Save button, Logout button.
+- **Main Goal**: Allow profile editing, password changes, and logout.
+- **Key Info**: Email (read-only or editable), First name, Save button, Logout button. Also the destination of the password-reset callback (see 2.4), which arrives with a `changePassword` action to prompt the user for a new password.
 - **Key Components**: `ReactiveForm`, `MatInput`, `MatButton`, `HttpInterceptor` auto token refresh.
 - **UX/Accessibility/Security**: Confirm dialog on logout, inline validation, HTTPS.
 
 ## 3. User Journey Map
 
-1. **Onboarding**: `/auth/register` ➔ successful signup ➔ redirect to `/home`.
+1. **Onboarding**: `/auth/register` ➔ successful signup ➔ if email verification is enabled, the user verifies via `/auth/callback?type=register` and lands on `/auth/login`; if it is disabled, the user is auto-logged-in to `/home`.
 2. **Authentication**: `/auth/login` ➔ successful login ➔ `/home`.
-3. **Overview**: `/home` (view next session or history snapshot).
-4. **Plan Management**:
+3. **Password Recovery**: `/auth/login` ➔ `/auth/reset-password` ➔ magic link ➔ `/auth/callback?type=reset-password` ➔ `/settings` to set the new password.
+4. **Overview**: `/home` (view next session or history snapshot).
+5. **Plan Management**:
    - Tap Plans ➔ `/plans` ➔ tap "+" ➔ open `MatDialog` ➔ create plan ➔ navigate to `/plans/:planId/edit`.
    - In editor: add days/exercises, reorder, save ➔ snackbar confirmation.
-5. **Workout Tracking**:
+6. **Workout Tracking**:
    - From Home or Plans, tap session ➔ `/sessions/:sessionId` ➔ mark sets complete or add sets ➔ auto-save and PATCH calls.
-6. **History & Filter**:
+7. **History & Filter**:
    - Tap History ➔ `/history` ➔ open filter panel, apply filters, page results.
-7. **Progress**:
+8. **Progress**:
    - Tap Progress ➔ `/progress` ➔ review the weight-over-time chart of the active plan ➔ toggle exercises, or widen the plan/date filters.
-8. **Settings**:
-   - Tap Settings ➔ `/settings` ➔ update profile ➔ logout.
+9. **Settings**:
+   - Tap Settings ➔ `/settings` ➔ update profile, change password, or log out.
 
 ## 4. Layout and Navigation Structure
 
-- **AuthLayout**: Used for `/auth/*` routes (login, register, password recovery) — centered card layout, hides bottom navigation and top toolbar.
+- **AuthLayout**: Used for the `/auth/*` form routes (login, register, reset-password) — centered card layout, hides bottom navigation and top toolbar. `/auth/callback` renders no layout at all.
 - **BottomNavigation**: Visible on the five main tabs: Home, Plans, History, Progress, Settings.
 - **Back navigation**: Views reached from a tab (Plan Editor, Active Session) hide the bottom navigation and show a top `MatToolbar` with a back button that returns to the originating tab.
-- **Router Setup**: Angular Router with AuthGuard on protected routes (Home, Plans, Session, History, Progress, Settings).
-- **HttpInterceptor**: Injects Supabase JWT, handles 401 by redirecting to `/login`, and globally catches errors to show snackbars.
+- **Router Setup**: Angular Router with `authGuard` on protected routes (Home, Plans, Session, History, Progress, Settings), and `noAuthGuard` on the `/auth/*` form routes to bounce already-authenticated users to `/home`.
+- **HttpInterceptor**: Injects Supabase JWT, handles 401 by redirecting to `/auth/login`, and globally catches errors to show snackbars.
 
 ## 5. Key Components
 

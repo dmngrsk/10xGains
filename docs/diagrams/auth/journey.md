@@ -1,8 +1,9 @@
-# User Journey Diagram for Authentication
+# Auth User Journey Diagram
 
-This document contains a Mermaid diagram that visualizes the user flows for registration, login, and password recovery based on the specifications.
+This document visualizes the user flows for registration, login, and password recovery as a state machine. See [auth-spec.md](../../auth-spec.md) for the full specification.
 
-<mermaid_diagram>
+## Diagram
+
 ```mermaid
 stateDiagram-v2
     [*] --> Unauthenticated
@@ -68,4 +69,4 @@ stateDiagram-v2
 
     AppAccess --> [*]: Session ends
 ```
-</mermaid_diagram> 
+
