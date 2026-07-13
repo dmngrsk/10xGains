@@ -1,6 +1,6 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, switchMap, forkJoin } from 'rxjs';
+import { Observable, of, switchMap, forkJoin, throwError } from 'rxjs';
 import { CreatePlanCommand, PlanDto, ExerciseDto, ProfileDto } from '@txg/shared';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { PlanViewModel } from '@features/plans/models/plan.viewmodel';
@@ -119,8 +119,13 @@ export class PlanListPageFacade {
       return of({ profile: this.internalProfile, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel });
     }
 
+    const user = this.authService.currentUser();
+    if (!user) {
+      return throwError(() => new Error('Failed to load your session. Please sign in again.'));
+    }
+
     return this.profileService
-      .getProfile(this.authService.currentUser()!.id)
+      .getProfile(user.id)
       .pipe(switchMap(profileResponse => {
         if (profileResponse.error) {
           throw profileResponse.error || new Error('Failed to load user profile.');

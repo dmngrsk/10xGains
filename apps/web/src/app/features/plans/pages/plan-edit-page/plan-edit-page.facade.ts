@@ -64,9 +64,19 @@ export class PlanEditPageFacade {
 
     this.viewModelSignal.update(s => ({ ...s, isLoading: true, error: null, plan: s.plan?.id === planId ? s.plan : null }));
 
+    const user = this.authService.currentUser();
+    if (!user) {
+      this.viewModelSignal.update(s => ({
+        ...s,
+        isLoading: false,
+        error: 'Failed to load your session. Please sign in again.'
+      }));
+      return;
+    }
+
     const profile$ = this.internalProfile
       ? of(this.internalProfile)
-      : this.profileService.getProfile(this.authService.currentUser()!.id).pipe(
+      : this.profileService.getProfile(user.id).pipe(
           map(response => response.data!),
           tapIf(profile => !!profile, profile => this.internalProfile = profile),
           catchError(err => this.handleError<ProfileDto>(err))
@@ -163,10 +173,15 @@ export class PlanEditPageFacade {
       return of({ error: 'Before activating the plan, you need to define exercise progression strategies for all exercises.' } as PlanServiceResponse<null>);
     }
 
+    const user = this.authService.currentUser();
+    if (!user) {
+      return of({ error: 'Failed to load your session. Please sign in again.' } as PlanServiceResponse<null>);
+    }
+
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
 
     const session$ = this.sessionService.createSession(planId);
-    const user$ = this.profileService.upsertProfile(this.authService.currentUser()!.id, { active_plan_id: planId }).pipe(
+    const user$ = this.profileService.upsertProfile(user.id, { active_plan_id: planId }).pipe(
       tapIf(response => !!response?.data, response => this.internalProfile = response.data!),
       catchError(err => this.handleError<PlanServiceResponse<null>>(err))
     );

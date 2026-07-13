@@ -90,8 +90,6 @@ describe('ProgressPageFacade', () => {
   });
 
   describe('loadProgressPageData without a signed-in user', () => {
-    // forkJoin builds its argument object eagerly, so reading the id off a null user would
-    // throw synchronously, before the pipe exists for catchError to handle it.
     it('should surface an error instead of throwing', () => {
       configure('plan-1', null);
 
