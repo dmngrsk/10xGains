@@ -4,7 +4,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 echo "Waiting for the container's Docker daemon..."
-timeout 90 bash -c 'until docker info >/dev/null 2>&1; do sleep 1; done'
+if ! timeout 90 bash -c 'until docker info >/dev/null 2>&1; do sleep 1; done'; then
+  echo "The container's Docker daemon did not come up within 90s." >&2
+  exit 1
+fi
 
 docker compose up -d
 
