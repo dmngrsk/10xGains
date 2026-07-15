@@ -112,7 +112,7 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. Step 6 reads these for you.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in step 6.
 
 5.  **Start the Azurite storage emulator:**
 

@@ -10,7 +10,8 @@ export async function scaffoldTestUserData(
 ): Promise<PostgrestResponse<unknown>> {
   // Step 1: Ensure exercises exist and get their IDs
   const [squatId, benchPressId, deadliftId] = await ensureExercisesExist(supabase);
-  const planCreatedAt = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+  const planCreatedAt = new Date(Date.now() - 34 * 24 * 60 * 60 * 1000);
+  const planCreatedAtISOString = planCreatedAt.toISOString();
 
   // Generate UUIDs for entities
   const planId = crypto.randomUUID();
@@ -27,7 +28,7 @@ export async function scaffoldTestUserData(
     user_id: userId,
     name: 'Test Training Plan',
     description: 'Scaffolded training plan for testing.',
-    created_at: planCreatedAt
+    created_at: planCreatedAtISOString
   }];
 
   // Step 3: Create plan days
@@ -108,7 +109,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: planCreatedAt
+      last_updated: planCreatedAtISOString
     },
     {
       id: crypto.randomUUID(),
@@ -120,7 +121,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: planCreatedAt
+      last_updated: planCreatedAtISOString
     },
     {
       id: crypto.randomUUID(),
@@ -132,7 +133,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: planCreatedAt
+      last_updated: planCreatedAtISOString
     }
   ];
 
@@ -142,13 +143,13 @@ export async function scaffoldTestUserData(
     first_name: 'Test User',
     active_plan_id: planId,
     ai_suggestions_remaining: 0,
-    created_at: planCreatedAt,
-    updated_at: planCreatedAt
+    created_at: planCreatedAtISOString,
+    updated_at: planCreatedAtISOString
   }];
 
   // Step 8: Create sessions and session sets
   const { sessions, sessionSets } = generateSessionHistory(
-    userId, planId, dayAId, dayBId, 
+    userId, planId, planCreatedAt, dayAId, dayBId, 
     squatExerciseAId, benchPressExerciseId, squatExerciseBId, deadliftExerciseId
   );
 
@@ -235,6 +236,7 @@ async function ensureExercisesExist(supabase: SupabaseClient): Promise<[string, 
 function generateSessionHistory(
   userId: string,
   planId: string,
+  planCreatedAt: Date,
   dayAId: string,
   dayBId: string,
   squatExerciseAId: string,
@@ -271,14 +273,14 @@ function generateSessionHistory(
   sessionSets.push(...pendingSets);
 
   // Create 14 historical sessions, counting back from today
-  let sessionDate = new Date();
-  let squatWeight = 97.5; // Start lower to simulate progression
-  let benchPressWeight = 67.5;
-  let deadliftWeight = 115;
+  let sessionDate = planCreatedAt;
+  let squatWeight = 65;
+  let benchPressWeight = 52.5;
+  let deadliftWeight = 85;
 
   for (let i = 1; i <= 14; i++) {
     const daysGap = i % 3 === 0 ? 3 : 2;
-    sessionDate = new Date(sessionDate.getTime() - (daysGap * 24 * 60 * 60 * 1000));
+    sessionDate = new Date(sessionDate.getTime() + (daysGap * 24 * 60 * 60 * 1000));
     
     const isWorkoutA = i % 2 === 0;
     const currentDayId = isWorkoutA ? dayAId : dayBId;
@@ -308,8 +310,8 @@ function generateSessionHistory(
 
       sessionSets.push(...workoutASets);
       
-      squatWeight -= 2.5;
-      benchPressWeight -= 2.5;
+      squatWeight += 2.5;
+      benchPressWeight += 2.5;
     } else {
       // Workout B sets (squat + deadlift)
       const workoutBSets = [
@@ -323,8 +325,8 @@ function generateSessionHistory(
 
       sessionSets.push(...workoutBSets);
       
-      squatWeight -= 2.5;
-      deadliftWeight -= 5;
+      squatWeight += 2.5;
+      deadliftWeight += 5;
     }
   }
 
