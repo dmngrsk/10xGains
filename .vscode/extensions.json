@@ -2,7 +2,12 @@
   // For more information, visit: https://go.microsoft.com/fwlink/?linkid=827846
   "recommendations": [
     "angular.ng-template",
+    "bradlc.vscode-tailwindcss",
+    "dbaeumer.vscode-eslint",
     "github.vscode-github-actions",
-    "ms-ossdata.vscode-postgresql"
+    "ms-azuretools.vscode-azurefunctions",
+    "ms-ossdata.vscode-postgresql",
+    "ms-vscode-remote.remote-containers",
+    "ms-vscode-remote.remote-wsl"
   ]
 }
