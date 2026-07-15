@@ -1,0 +1,63 @@
+{
+  "name": "10xGains",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "username": "node",
+      "installZsh": true,
+      "upgradePackages": false
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  "remoteUser": "node",
+
+  // Per-worktree host ports, so containers can run side by side; see README.
+  "appPort": [
+    "${localEnv:TXG_WEB_PORT:4200}:4200",
+    "${localEnv:TXG_API_PORT:7071}:7071",
+    "${localEnv:TXG_SUPABASE_PORT:54321}:54321",
+    "${localEnv:TXG_STUDIO_PORT:54323}:54323",
+    "${localEnv:TXG_MAIL_PORT:54324}:54324"
+  ],
+  "containerEnv": {
+    "TXG_WEB_PORT": "${localEnv:TXG_WEB_PORT:4200}",
+    "TXG_API_PORT": "${localEnv:TXG_API_PORT:7071}",
+    "TXG_SUPABASE_PORT": "${localEnv:TXG_SUPABASE_PORT:54321}",
+    "TXG_STUDIO_PORT": "${localEnv:TXG_STUDIO_PORT:54323}",
+    "TXG_MAIL_PORT": "${localEnv:TXG_MAIL_PORT:54324}",
+    "CYPRESS_CACHE_FOLDER": "/home/node/.cache/Cypress"
+  },
+
+  // Per-container so parallel worktrees don't share one ~/.claude (two agents writing the
+  // same settings and session files) or one Cypress cache. node_modules and pnpm's store are
+  // deliberately NOT volumes: kept in the bind mount they share a filesystem, so pnpm can
+  // hardlink into the store rather than copy (hardlinks cannot cross a mount boundary).
+  "mounts": [
+    "source=txg-claude-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=txg-cache-${devcontainerId},target=/home/node/.cache,type=volume"
+  ],
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  // Mirror of .vscode/extensions.json; keep the two in sync.
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "angular.ng-template",
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "github.vscode-github-actions",
+        "ms-azuretools.vscode-azurefunctions",
+        "ms-ossdata.vscode-postgresql",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode-remote.remote-wsl"
+      ]
+    }
+  }
+}

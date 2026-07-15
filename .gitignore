@@ -11,6 +11,9 @@ out-tsc/
 node_modules/
 npm-debug.log
 
+# pnpm
+.pnpm-store/
+
 # Cypress
 /cypress/videos/
 /cypress/screenshots/
@@ -29,7 +32,8 @@ coverage/
 *.launch
 .settings/
 *.sublime-workspace
-.claude/
+.claude/*
+!.claude/skills/
 
 # Visual Studio Code
 .vscode/*

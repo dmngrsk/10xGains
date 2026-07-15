@@ -1,0 +1,2 @@
+# LF everywhere: the container executes these shell scripts, and CRLF breaks bash.
+* text=auto eol=lf
