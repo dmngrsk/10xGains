@@ -98,17 +98,16 @@ upsert_env() {
 
 # Seed from the template on first run; thereafter the file is the developer's.
 if [ ! -f .env ]; then
-  cp .env.example .env
+  sed 's/\r$//' .env.example > .env
 fi
 
-# Preserve an existing canary password: the account is provisioned from it on first e2e run.
-CANARY_PASSWORD="$(sed -n 's/^APP_CANARY_USER_PASSWORD=//p' .env)"
-case "$CANARY_PASSWORD" in
-  '' | '<canary user password>')
-    CANARY_PASSWORD="Canary$(node -e 'process.stdout.write(require("crypto").randomBytes(9).toString("base64url"))')!1"
-    ;;
-esac
-
+# Preserve an existing canary password; generate a random one only when unset or still the
+# placeholder. The e2e run provisions the account from this value, so keeping a stable one
+# avoids a mismatch on later starts against a persistent database.
+CANARY_PASSWORD="$(sed -n 's/^APP_CANARY_USER_PASSWORD=//p' .env | tr -d '\r')"
+if [ -z "$CANARY_PASSWORD" ] || [ "$CANARY_PASSWORD" = '<canary user password>' ]; then
+  CANARY_PASSWORD="Canary$(node -e 'process.stdout.write(require("crypto").randomBytes(9).toString("base64url"))')!1"
+fi
 upsert_env APP_CANARY_USER_PASSWORD "$CANARY_PASSWORD"
 upsert_env CYPRESS_BASE_URL "http://localhost:${WEB_PORT}"
 upsert_env SUPABASE_URL "http://127.0.0.1:${SUPABASE_PORT}"
@@ -143,4 +142,17 @@ sed \
   -e "s|__SUPABASE_PUBLISHABLE_KEY__|${PUBLISHABLE_KEY}|g" \
   apps/web/src/environments/environment.ts > apps/web/src/environments/environment.development.ts
 
+echo ""
 echo "Wrote .env, apps/api/local.settings.json and apps/web/src/environments/environment.development.ts."
+
+# Seed a known local dev account (dev@10xgains.com) with sample data. Idempotent and local
+# only - it uses the local service-role key that only exists here. Runs after the config
+# block above, since it reads the .env just generated.
+pnpm seed
+
+# Setup complete. Surface the seeded dev login so it is not buried in .env.
+DEV_EMAIL="$(sed -n 's/^APP_DEV_USER_EMAIL=//p' .env | tr -d '\r')"
+DEV_PASSWORD="$(sed -n 's/^APP_DEV_USER_PASSWORD=//p' .env | tr -d '\r')"
+echo ""
+echo "Dev container ready. Run 'pnpm dev', then open http://localhost:${WEB_PORT}"
+echo "Sign in with the seeded dev account: ${DEV_EMAIL} / ${DEV_PASSWORD}"

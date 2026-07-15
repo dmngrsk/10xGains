@@ -58,7 +58,7 @@ The [`windows-dev-container` skill](.claude/skills/windows-dev-container/SKILL.m
    code ~/10xGains
    ```
 3. **Reopen in Container** when prompted (or Command Palette → *Dev Containers: Reopen in Container*). The first build is slow — it installs dependencies and pulls the Supabase images — then starts Supabase and Azurite on the container's own Docker daemon and generates the local config files (see [Local configuration](#local-configuration)). Later starts reuse the stack and are fast.
-4. **Run the app** with `pnpm dev` and open `http://localhost:4200`.
+4. **Run the app** with `pnpm dev` and open `http://localhost:4200`. Sign in with the seeded dev account — `dev@10xgains.com` / `10xGains!` — which comes preloaded with sample training data (see [`pnpm seed`](#development-server)).
 
 If you use Claude Code, sign in once with `claude` in the container terminal. Because the container is the blast radius, Claude Code can be run inside it without permission prompts:
 
@@ -123,15 +123,22 @@ Each container runs a full Supabase stack, so two containers cannot both publish
 
 6.  **Write the local configuration:**
 
-    Create the three files listed under [Local configuration](#local-configuration) from their committed templates, filling in the API URL and publishable key that step 4 printed:
+    Create the three files listed under [Local configuration](#local-configuration) from their committed templates, filling in the API URL, publishable key and secret key that step 4 printed:
     ```bash
+    cp .env.example .env
     cp apps/api/local.settings.json.example apps/api/local.settings.json
     cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
-    cp .env.example .env
     ```
-    In the dev container this step is automatic, which is the main reason to prefer it.
 
-7.  **Start the apps:**
+7.  **Seed a local dev account (optional):**
+
+    Create `dev@10xgains.com` / `10xGains!` with sample training data, so the app has a realistic history to explore:
+    ```bash
+    pnpm seed
+    ```
+    This reads `SUPABASE_SECRET_KEY` from `.env` (printed by `supabase start`), and is idempotent — safe to re-run, e.g. after `supabase db reset`.
+
+8.  **Start the apps:**
 
     Run both the Angular dev server and the API host together with a single command:
     ```bash
@@ -139,7 +146,9 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     ```
     This runs the `dev` script of every workspace package in parallel (equivalent to `pnpm --filter @txg/web start:development` and `pnpm --filter @txg/api start` run side by side), prefixing each line of output with its package name. To run them separately instead (e.g. in two terminals), use those individual commands.
 
-8.  **Open your browser and navigate to `http://localhost:4200`**
+9.  **Navigate to the web app:**
+
+    Open your browser, navigate to `http://localhost:4200`, and sign in with `dev@10xgains.com` / `10xGains!` (if you ran the seed step).
 
 ### Local Configuration
 
@@ -158,6 +167,7 @@ Below are the most important scripts defined in `package.json`.
 ### Development Server
 
 - `pnpm dev` - Runs the Angular dev server and the API host together, in parallel, each with output prefixed by package name. This is the recommended way to start local development once [Getting Started Locally](#getting-started-locally) is complete.
+- `pnpm seed` - Seeds a local dev account (`dev@10xgains.com` / `10xGains!`) with sample training data, so the app has a realistic history to explore. Idempotent and local-only (it uses the local service-role key). The dev container runs it automatically on start; run it by hand after resetting the database (e.g. `supabase db reset`).
 - `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`. Requires Azurite to be running (see [Getting Started Locally](#getting-started-locally)).
 - `pnpm --filter @txg/web start:development` - Runs only the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
 - `pnpm --filter @txg/web start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.

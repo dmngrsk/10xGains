@@ -10,7 +10,8 @@ export async function scaffoldTestUserData(
 ): Promise<PostgrestResponse<unknown>> {
   // Step 1: Ensure exercises exist and get their IDs
   const [squatId, benchPressId, deadliftId] = await ensureExercisesExist(supabase);
-  
+  const planCreatedAt = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString();
+
   // Generate UUIDs for entities
   const planId = crypto.randomUUID();
   const dayAId = crypto.randomUUID();
@@ -26,7 +27,7 @@ export async function scaffoldTestUserData(
     user_id: userId,
     name: 'Test Training Plan',
     description: 'Scaffolded training plan for testing.',
-    created_at: '2025-04-27T10:00:00.000Z'
+    created_at: planCreatedAt
   }];
 
   // Step 3: Create plan days
@@ -107,7 +108,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: '2025-04-27T10:00:00.000Z'
+      last_updated: planCreatedAt
     },
     {
       id: crypto.randomUUID(),
@@ -119,7 +120,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: '2025-04-27T10:00:00.000Z'
+      last_updated: planCreatedAt
     },
     {
       id: crypto.randomUUID(),
@@ -131,7 +132,7 @@ export async function scaffoldTestUserData(
       deload_strategy: 'PROPORTIONAL',
       reference_set_index: null,
       consecutive_failures: 0,
-      last_updated: '2025-04-27T10:00:00.000Z'
+      last_updated: planCreatedAt
     }
   ];
 
@@ -141,8 +142,8 @@ export async function scaffoldTestUserData(
     first_name: 'Test User',
     active_plan_id: planId,
     ai_suggestions_remaining: 0,
-    created_at: '2025-04-27T10:00:00.000Z',
-    updated_at: '2025-04-27T10:00:00.000Z'
+    created_at: planCreatedAt,
+    updated_at: planCreatedAt
   }];
 
   // Step 8: Create sessions and session sets
@@ -269,8 +270,8 @@ function generateSessionHistory(
 
   sessionSets.push(...pendingSets);
 
-  // Create 14 historical sessions
-  let sessionDate = new Date('2025-06-01T12:00:00.000Z');
+  // Create 14 historical sessions, counting back from today
+  let sessionDate = new Date();
   let squatWeight = 97.5; // Start lower to simulate progression
   let benchPressWeight = 67.5;
   let deadliftWeight = 115;
