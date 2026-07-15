@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
+    "seed": "tsx cypress/support/seed.ts",
     "ng": "pnpm --filter @txg/web ng",
     "build": "pnpm --filter @txg/web build",
     "build:development": "pnpm --filter @txg/web build:development",
@@ -27,6 +28,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",
     "supabase": "2.109.0",
+    "tsx": "^4.20.6",
     "typescript": "~6.0.3"
   },
   "packageManager": "pnpm@11.9.0"

@@ -33,7 +33,56 @@ This is a pnpm workspace monorepo:
 
 ## Getting Started Locally
 
-### Prerequisites
+There are two ways to get a working environment. The [dev container](#dev-container-recommended) builds the whole stack — Node, the Supabase services, Azurite, and Claude Code — inside one container, and is the recommended path: it is the same environment for everyone, and an agent running in it cannot reach your machine. The [host setup](#host-setup) installs the same toolchain directly on your machine.
+
+### Dev Container (recommended)
+
+#### Prerequisites
+- **A Docker engine.** On Windows it must be reachable from WSL2: Docker Desktop with WSL integration (what the steps below assume and what this is tested against) or a Docker Engine installed directly in the WSL2 distro, which skips the integration step. On macOS/Linux, Docker Desktop or the native engine.
+- **[VS Code](https://code.visualstudio.com/)** with the **Dev Containers** and **WSL** extensions. Both are in this repo's recommended extensions, so VS Code offers to install them when you open the folder. (You can drive the container with the [Dev Containers CLI](https://github.com/devcontainers/cli) instead, but VS Code is the least-effort path.)
+
+On **Windows** there are two extra steps, because the working copy must live on the Linux (ext4) filesystem — never under `C:\`. A clone under `C:\` (or `/mnt/c`) reaches the container through a slow translation layer that the container's nested Docker daemon cannot create directories on, so Supabase Studio fails to start. Keep the clone in your WSL2 home instead:
+
+1. **A WSL2 distro.** If you don't have one, run `wsl --install -d Ubuntu` in an elevated PowerShell and set a username when it first launches. (Docker Desktop's own `docker-desktop` distro does not count.)
+2. **Docker reachable from the distro.** With Docker Desktop, enable its WSL integration (Settings → Resources → WSL Integration → enable your distro → Apply & Restart) and verify it — a disabled integration is the most common blocker, and its symptom is opaque (`dial unix /var/run/docker.sock: no such file`). A Docker Engine installed inside the distro is already reachable and needs nothing here.
+
+The [`windows-dev-container` skill](.claude/skills/windows-dev-container/SKILL.md) documents this setup and its failure modes in full.
+
+#### Set up the project
+1. **Clone into the WSL2 filesystem** (Windows) or anywhere (macOS/Linux). From a WSL/Ubuntu terminal:
+   ```bash
+   git clone https://github.com/dmngrsk/10xGains.git ~/10xGains
+   ```
+2. **Open it in VS Code:**
+   ```bash
+   code ~/10xGains
+   ```
+3. **Reopen in Container** when prompted (or Command Palette → *Dev Containers: Reopen in Container*). The first build is slow — it installs dependencies and pulls the Supabase images — then starts Supabase and Azurite on the container's own Docker daemon and generates the local config files (see [Local configuration](#local-configuration)). Later starts reuse the stack and are fast.
+4. **Run the app** with `pnpm dev` and open `http://localhost:4200`. Sign in with the seeded dev account — `dev@10xgains.com` / `10xGains!` — which comes preloaded with sample training data (see [`pnpm seed`](#development-server)).
+
+If you use Claude Code, sign in once with `claude` in the container terminal. Because the container is the blast radius, Claude Code can be run inside it without permission prompts:
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+This is safe for the *host* — the agent has no route to your machine's files or Docker daemon — but it is not a license to run untrusted code: anything reachable from inside the container, including the working copy and the credentials in `~/.claude`, is still fair game. See [Anthropic's dev container guidance](https://code.claude.com/docs/en/devcontainer).
+
+#### Running several containers at once
+
+Each container runs a full Supabase stack, so two containers cannot both publish the default ports. To run a second worktree in parallel, set the `TXG_*` host ports before opening it — the container picks them up, and the generated config points at them:
+
+| Variable            | Default | Worktree #2 | Service               |
+|---------------------|---------|-------------|-----------------------|
+| `TXG_WEB_PORT`      | `4200`  | `4300`      | Angular dev server    |
+| `TXG_API_PORT`      | `7071`  | `7171`      | Azure Functions host  |
+| `TXG_SUPABASE_PORT` | `54321` | `54421`     | Supabase API          |
+| `TXG_STUDIO_PORT`   | `54323` | `54423`     | Supabase Studio       |
+| `TXG_MAIL_PORT`     | `54324` | `54424`     | Mailpit               |
+
+### Host Setup
+
+#### Prerequisites
 - **Node.js**: Version specified in `.nvmrc` (e.g., `24.18.0`)
 - **pnpm**: This project uses `pnpm` for package management (managed via Corepack)
 - **Docker**: Required to run Supabase and Azurite locally
@@ -63,7 +112,7 @@ This is a pnpm workspace monorepo:
     ```bash
     npx supabase start
     ```
-    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in steps 6 and 7.
+    Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in step 6.
 
 5.  **Start the Azurite storage emulator:**
 
@@ -72,33 +121,22 @@ This is a pnpm workspace monorepo:
     docker compose up -d
     ```
 
-6.  **Configure the API:**
+6.  **Write the local configuration:**
 
-    The API runs on a local Azure Functions host. Create its local settings file from the provided example:
+    Create the three files listed under [Local configuration](#local-configuration) from their committed templates, filling in the API URL, publishable key and secret key that step 4 printed:
     ```bash
+    cp .env.example .env
     cp apps/api/local.settings.json.example apps/api/local.settings.json
-    ```
-    Open `apps/api/local.settings.json` and fill in your local Supabase URL and publishable key from step 4. `AzureWebJobsStorage` is already set to use the Azurite container started in step 5.
-
-7.  **Configure the Angular app:**
-
-    The frontend needs to know how to connect to your local Supabase instance. Create a copy of the development environment file:
-    ```bash
     cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
     ```
-    The Angular CLI will use this file during local development. Open `apps/web/src/environments/environment.development.ts` and replace the placeholder values with the credentials from step 4:
-    ```typescript
-    export const environment = {
-      production: false,
-      api: {
-        url: 'http://localhost:7071', // The local Azure Functions host
-      },
-      supabase: {
-        url: 'http://localhost:54321', // The local Supabase project URL 
-        key: 'sb_publishable_...',  // The local Supabase publishable auth key
-      }
-    };
+
+7.  **Seed a local dev account (optional):**
+
+    Create `dev@10xgains.com` / `10xGains!` with sample training data, so the app has a realistic history to explore:
+    ```bash
+    pnpm seed
     ```
+    This reads `SUPABASE_SECRET_KEY` from `.env` (printed by `supabase start`), and is idempotent — safe to re-run, e.g. after `supabase db reset`.
 
 8.  **Start the apps:**
 
@@ -108,7 +146,19 @@ This is a pnpm workspace monorepo:
     ```
     This runs the `dev` script of every workspace package in parallel (equivalent to `pnpm --filter @txg/web start:development` and `pnpm --filter @txg/api start` run side by side), prefixing each line of output with its package name. To run them separately instead (e.g. in two terminals), use those individual commands.
 
-9.  **Open your browser and navigate to `http://localhost:4200`**
+9.  **Navigate to the web app:**
+
+    Open your browser, navigate to `http://localhost:4200`, and sign in with `dev@10xgains.com` / `10xGains!` (if you ran the seed step).
+
+### Local Configuration
+
+Three files hold local settings, and all three are gitignored:
+
+- `.env` — Supabase keys and the canary user credentials, read by Cypress.
+- `apps/api/local.settings.json` — settings for the local Azure Functions host.
+- `apps/web/src/environments/environment.development.ts` — the API and Supabase URLs the Angular dev build is compiled against.
+
+In the dev container, `.devcontainer/post-start.sh` regenerates all three on every start from the keys the running Supabase stack reports, so they never drift. On a host setup you maintain them by hand, and must refresh the keys yourself after recreating the stack (`supabase stop --no-backup` followed by `supabase start`), because a fresh stack mints fresh ones.
 
 ## Available Scripts
 
@@ -117,6 +167,7 @@ Below are the most important scripts defined in `package.json`.
 ### Development Server
 
 - `pnpm dev` - Runs the Angular dev server and the API host together, in parallel, each with output prefixed by package name. This is the recommended way to start local development once [Getting Started Locally](#getting-started-locally) is complete.
+- `pnpm seed` - Seeds a local dev account (`dev@10xgains.com` / `10xGains!`) with sample training data, so the app has a realistic history to explore. Idempotent and local-only (it uses the local service-role key). The dev container runs it automatically on start; run it by hand after resetting the database (e.g. `supabase db reset`).
 - `pnpm --filter @txg/api start` - Builds the API and starts the local Azure Functions host at `http://localhost:7071/`. Requires Azurite to be running (see [Getting Started Locally](#getting-started-locally)).
 - `pnpm --filter @txg/web start:development` - Runs only the Angular application in development mode using the `development` configuration. The server is hosted at `http://localhost:4200/` and is accessible on your local network (especially to the e2e testing framework) thanks to `--host 0.0.0.0`.
 - `pnpm --filter @txg/web start:[staging|production]` - Runs the app locally but with the `staging` or `production` environment configurations. Useful for debugging environment-specific issues.
@@ -142,11 +193,6 @@ Below are the most important scripts defined in `package.json`.
 - `pnpm test:coverage` -Runs the unit tests and generates a code coverage report in the `/coverage` directory.
 
 #### End-to-End Tests (Cypress)
-
-Before running the suite locally, copy `.env.example` to `.env` and fill in the values (your local Supabase credentials from step 4, and a canary user email/password of your choice).
-```bash
-cp .env.example .env
-```
 
 - `pnpm e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
