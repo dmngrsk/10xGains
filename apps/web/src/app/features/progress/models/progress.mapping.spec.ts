@@ -108,3 +108,71 @@ describe('mapToExerciseSeriesViewModels', () => {
     expect(result[0].points[0].planName).toBe('Unknown plan');
   });
 });
+
+describe('mapToExerciseSeriesViewModels ordering', () => {
+  function makePlan(id: string, createdAt: string, dayExerciseIds: string[][]): PlanDto {
+    return {
+      id,
+      name: `Plan ${id}`,
+      created_at: createdAt,
+      days: dayExerciseIds.map((exerciseIds, dayIndex) => ({
+        id: `${id}-day-${dayIndex}`,
+        order_index: dayIndex,
+        exercises: exerciseIds.map((exerciseId, exerciseIndex) => ({
+          id: `${id}-day-${dayIndex}-ex-${exerciseIndex}`,
+          exercise_id: exerciseId,
+          order_index: exerciseIndex,
+        })),
+      })),
+    } as PlanDto;
+  }
+
+  // Alphabetical input order, as the API returns it.
+  const DTOS = [
+    makeDto({ exercise_id: 'ex-bench', exercise_name: 'Bench Press' }),
+    makeDto({ exercise_id: 'ex-deadlift', exercise_name: 'Deadlift' }),
+    makeDto({ exercise_id: 'ex-squat', exercise_name: 'Squat' }),
+  ];
+
+  it('should order series by exercise appearance in the plan', () => {
+    const plan = makePlan('plan-1', '2026-01-01T00:00:00.000Z', [['ex-squat', 'ex-bench'], ['ex-deadlift']]);
+
+    const result = mapToExerciseSeriesViewModels(DTOS, [plan], () => true);
+
+    expect(result.map(s => s.exerciseId)).toEqual(['ex-squat', 'ex-bench', 'ex-deadlift']);
+  });
+
+  it('should rank exercises of an older plan before those of a newer one', () => {
+    const newer = makePlan('plan-newer', '2026-05-01T00:00:00.000Z', [['ex-deadlift', 'ex-squat']]);
+    const older = makePlan('plan-older', '2026-01-01T00:00:00.000Z', [['ex-squat', 'ex-bench']]);
+
+    const result = mapToExerciseSeriesViewModels(DTOS, [newer, older], () => true);
+
+    expect(result.map(s => s.exerciseId)).toEqual(['ex-squat', 'ex-bench', 'ex-deadlift']);
+  });
+
+  it('should keep exercises absent from every plan last, in API order', () => {
+    const plan = makePlan('plan-1', '2026-01-01T00:00:00.000Z', [['ex-squat']]);
+
+    const result = mapToExerciseSeriesViewModels(DTOS, [plan], () => true);
+
+    expect(result.map(s => s.exerciseId)).toEqual(['ex-squat', 'ex-bench', 'ex-deadlift']);
+  });
+
+  it('should scope the appearance order to the selected plan when one is set', () => {
+    const older = makePlan('plan-older', '2026-01-01T00:00:00.000Z', [['ex-squat', 'ex-bench']]);
+    const newer = makePlan('plan-newer', '2026-05-01T00:00:00.000Z', [['ex-deadlift', 'ex-squat']]);
+
+    const result = mapToExerciseSeriesViewModels(DTOS, [older, newer], () => true, 'plan-newer');
+
+    expect(result.map(s => s.exerciseId)).toEqual(['ex-deadlift', 'ex-squat', 'ex-bench']);
+  });
+
+  it('should assign color tokens by the sorted position', () => {
+    const plan = makePlan('plan-1', '2026-01-01T00:00:00.000Z', [['ex-squat', 'ex-bench'], ['ex-deadlift']]);
+
+    const result = mapToExerciseSeriesViewModels(DTOS, [plan], () => true);
+
+    expect(result.map(s => s.colorToken)).toEqual([SERIES_COLOR_TOKENS[0], SERIES_COLOR_TOKENS[1], SERIES_COLOR_TOKENS[2]]);
+  });
+});

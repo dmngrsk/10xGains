@@ -94,7 +94,7 @@ export class ProgressPageFacade {
       options.selectAll || previouslySelectedIds.has(exerciseId) || !previousIds.has(exerciseId);
 
     this.progressService.getExerciseProgress(queryParams).pipe(
-      map(response => mapToExerciseSeriesViewModels(response.data ?? [], this.internalPlans(), isSelected)),
+      map(response => mapToExerciseSeriesViewModels(response.data ?? [], this.internalPlans(), isSelected, filters.selectedPlanId)),
       catchError((error: Error) => {
         console.error('Error loading exercise progress:', error);
         this.viewModel.update(vm => ({

@@ -53,24 +53,53 @@ export function formatRepsLabel(reps: number[]): string {
 }
 
 /**
- * Maps aggregated progress DTOs to chart series view models.
- *
- * Color tokens are assigned by series position (the API returns series sorted by
- * exercise name), so they stay stable while toggling visibility. Plan names
- * are resolved per point for the tooltip; selection is decided by the caller.
+ * Ranks exercises by their first appearance in the given plans
+ * (plans oldest to newest, then day and exercise order).
+ */
+function buildPlanAppearanceRank(plans: PlanDto[]): Map<string, number> {
+  const rank = new Map<string, number>();
+  const plansOldestFirst = [...plans].sort((a, b) => (a.created_at ?? '').localeCompare(b.created_at ?? ''));
+
+  for (const plan of plansOldestFirst) {
+    const days = [...(plan.days ?? [])].sort((a, b) => a.order_index - b.order_index);
+    for (const day of days) {
+      const exercises = [...(day.exercises ?? [])].sort((a, b) => a.order_index - b.order_index);
+      for (const exercise of exercises) {
+        if (!rank.has(exercise.exercise_id)) {
+          rank.set(exercise.exercise_id, rank.size);
+        }
+      }
+    }
+  }
+
+  return rank;
+}
+
+/**
+ * Maps aggregated progress DTOs to chart series view models, ordered by exercise
+ * appearance in the plans; exercises in no plan keep the API's alphabetical order,
+ * last. Color tokens are assigned by series position, so they stay stable while
+ * toggling visibility.
  *
  * @param dtos Aggregated series from the API.
- * @param plans All user plans, used to resolve plan names.
+ * @param plans All user plans, used to resolve plan names and appearance order.
  * @param isSelected Predicate deciding the initial selection of each series.
+ * @param selectedPlanId When set, only that plan defines the appearance order.
  */
 export function mapToExerciseSeriesViewModels(
   dtos: ExerciseProgressDto[],
   plans: PlanDto[],
-  isSelected: (exerciseId: string) => boolean
+  isSelected: (exerciseId: string) => boolean,
+  selectedPlanId: string | null = null
 ): ExerciseSeriesViewModel[] {
   const planNames = new Map(plans.map(p => [p.id, p.name]));
+  const rankSource = selectedPlanId ? plans.filter(p => p.id === selectedPlanId) : plans;
+  const appearanceRank = buildPlanAppearanceRank(rankSource);
+  const rankOf = (exerciseId: string) => appearanceRank.get(exerciseId) ?? Number.MAX_SAFE_INTEGER;
 
-  return dtos.map((dto, index) => ({
+  const sortedDtos = [...dtos].sort((a, b) => rankOf(a.exercise_id) - rankOf(b.exercise_id));
+
+  return sortedDtos.map((dto, index) => ({
     exerciseId: dto.exercise_id,
     exerciseName: dto.exercise_name,
     colorToken: SERIES_COLOR_TOKENS[index % SERIES_COLOR_TOKENS.length],
