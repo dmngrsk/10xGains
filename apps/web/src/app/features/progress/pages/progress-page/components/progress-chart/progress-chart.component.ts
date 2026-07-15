@@ -1,11 +1,52 @@
 import 'chartjs-adapter-date-fns';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
-import { ChartData, ChartOptions, LineController, LineElement, LinearScale, PointElement, TimeScale, Tooltip } from 'chart.js';
+import {
+  ChartData,
+  ChartOptions,
+  Interaction,
+  InteractionItem,
+  InteractionModeFunction,
+  LineController,
+  LineElement,
+  LinearScale,
+  Plugin,
+  PointElement,
+  TimeScale,
+  Tooltip,
+} from 'chart.js';
+import { startOfDay } from 'date-fns';
 import { BaseChartDirective, provideCharts } from 'ng2-charts';
 import { ExerciseSeriesViewModel } from '@features/progress/models/progress-page.viewmodel';
 
 const FALLBACK_SERIES_COLOR = '#49454f';
+
+declare module 'chart.js' {
+  interface InteractionModeMap {
+    dayX: InteractionModeFunction;
+  }
+}
+
+const dayXInteractionMode: InteractionModeFunction = (chart, event, options, useFinalPosition) => {
+  const nearest = Interaction.modes.nearest(chart, event, { ...options, axis: 'x', intersect: false }, useFinalPosition);
+  if (nearest.length === 0) {
+    return nearest;
+  }
+
+  // Points are normalized to day precision, so points of one day share their pixel x.
+  const targetX = nearest[0].element.x;
+  const items: InteractionItem[] = [];
+  for (const meta of chart.getSortedVisibleDatasetMetas()) {
+    meta.data.forEach((element, index) => {
+      if (Math.abs(element.x - targetX) < 1) {
+        items.push({ element, datasetIndex: meta.index, index });
+      }
+    });
+  }
+  return items;
+};
+
+Interaction.modes.dayX = dayXInteractionMode;
 
 interface ProgressChartDataPoint {
   x: number;
@@ -30,6 +71,9 @@ export class ProgressChartComponent implements OnChanges {
 
   chartData: ChartData<'line', ProgressChartDataPoint[]> = { datasets: [] };
   chartOptions: ChartOptions<'line'> = {};
+  readonly chartPlugins: Plugin<'line'>[] = [this.createSelectedDayLinePlugin()];
+
+  private selectedDayLineColor = FALLBACK_SERIES_COLOR;
 
   ngOnChanges(): void {
     this.chartData = {
@@ -39,7 +83,7 @@ export class ProgressChartComponent implements OnChanges {
         return {
           label: s.exerciseName,
           data: s.points.map(p => ({
-            x: new Date(p.date).getTime(),
+            x: startOfDay(new Date(p.date)).getTime(),
             y: p.weight,
             repsLabel: p.repsLabel,
             planName: p.planName,
@@ -59,11 +103,12 @@ export class ProgressChartComponent implements OnChanges {
   private buildOptions(): ChartOptions<'line'> {
     const textColor = this.getThemeColor('--mat-sys-on-surface-variant', '#49454f');
     const gridColor = this.getThemeColor('--mat-sys-outline-variant', '#cac4d0');
+    this.selectedDayLineColor = textColor;
 
     return {
       responsive: true,
       maintainAspectRatio: false,
-      interaction: { mode: 'nearest', intersect: false },
+      interaction: { mode: 'dayX', intersect: false },
       scales: {
         x: {
           type: 'time',
@@ -92,6 +137,30 @@ export class ProgressChartComponent implements OnChanges {
             },
           },
         },
+      },
+    };
+  }
+
+  private createSelectedDayLinePlugin(): Plugin<'line'> {
+    return {
+      id: 'txgSelectedDayLine',
+      afterDatasetsDraw: chart => {
+        const active = chart.tooltip?.getActiveElements() ?? [];
+        if (active.length === 0) {
+          return;
+        }
+
+        const { top, bottom } = chart.chartArea;
+        const ctx = chart.ctx;
+        ctx.save();
+        ctx.beginPath();
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = this.selectedDayLineColor;
+        ctx.moveTo(active[0].element.x, top);
+        ctx.lineTo(active[0].element.x, bottom);
+        ctx.stroke();
+        ctx.restore();
       },
     };
   }
