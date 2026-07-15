@@ -33,12 +33,13 @@ const dayXInteractionMode: InteractionModeFunction = (chart, event, options, use
     return nearest;
   }
 
-  // Points are normalized to day precision, so points of one day share their pixel x.
-  const targetX = nearest[0].element.x;
+  const dayOf = (datasetIndex: number, index: number) => (chart.data.datasets[datasetIndex].data[index] as { x: number }).x;
+
+  const targetDay = dayOf(nearest[0].datasetIndex, nearest[0].index);
   const items: InteractionItem[] = [];
   for (const meta of chart.getSortedVisibleDatasetMetas()) {
     meta.data.forEach((element, index) => {
-      if (Math.abs(element.x - targetX) < 1) {
+      if (dayOf(meta.index, index) === targetDay) {
         items.push({ element, datasetIndex: meta.index, index });
       }
     });
