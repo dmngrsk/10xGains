@@ -13,9 +13,11 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
     beforeEach(() => {
       cy.navigateTo('progress');
 
-      // The scaffolded session history has fixed mid-2025 dates, which fall
-      // outside the default "Last 3 months" range, so the page starts empty.
-      cy.getBySel(dataCy.progress.emptyNotice).should('exist');
+      // The scaffolded session history is anchored to the recent past, so it
+      // falls within the default "Last 3 months" range and the chart renders on
+      // load. Widen to "All time" for deterministic assertions regardless of the
+      // default range.
+      cy.getBySel(dataCy.progress.chartCanvas).should('be.visible');
 
       cy.getBySel(dataCy.progress.filterButton).click();
       cy.getBySel(dataCy.progress.filterDialog.rangeSelect).click();
@@ -87,8 +89,9 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
       cy.getBySel(dataCy.progress.errorNotice).should('exist');
       cy.getBySel(dataCy.progress.errorNotice).find('button').contains('Try Again').click();
 
-      // The reloaded real data is older than the default 3-month range.
-      cy.getBySel(dataCy.progress.emptyNotice).should('exist');
+      // The reloaded real data is anchored to the recent past, so it falls
+      // within the default 3-month range and the chart renders.
+      cy.getBySel(dataCy.progress.chartCanvas).should('be.visible');
     });
   });
 });

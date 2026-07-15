@@ -134,9 +134,9 @@ node -e '
 # No local settings here - this file is a build input, regenerated whole. Use start:staging
 # or start:production to run against another environment.
 sed \
-  -e "s|__BUILD_NAME__|local|g" \
-  -e "s|__BUILD_SHA__|local|g" \
-  -e "s|__BUILD_TAG__|local|g" \
+  -e "s|__BUILD_NAME__||g" \
+  -e "s|__BUILD_SHA__||g" \
+  -e "s|__BUILD_TAG__||g" \
   -e "s|__API_URL__|http://localhost:${API_PORT}|g" \
   -e "s|__SUPABASE_URL__|http://localhost:${SUPABASE_PORT}|g" \
   -e "s|__SUPABASE_PUBLISHABLE_KEY__|${PUBLISHABLE_KEY}|g" \
