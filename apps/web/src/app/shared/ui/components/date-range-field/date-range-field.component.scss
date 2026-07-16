@@ -2,10 +2,6 @@
   position: relative;
 }
 
-// The suffix holds two buttons where Material's fields usually hold one. It is a flex item that
-// shrinks by default, and its buttons are inline-level, so a narrow viewport squeezes the box and
-// wraps them onto a second line. Hold its width and keep the buttons inline; the date inputs
-// (which do shrink) give up the space instead.
 :host ::ng-deep .mat-mdc-form-field-icon-suffix {
   flex-shrink: 0;
   white-space: nowrap;
@@ -16,12 +12,10 @@
   inset: 0;
   display: flex;
   align-items: center;
-  pointer-events: none; // Clicks and focus fall through to the real inputs underneath.
+  pointer-events: none;
   color: var(--mat-sys-on-surface);
 }
 
-// While a preset is active the raw dates are hidden (not removed): the inputs stay mounted and
-// typeable, so the first keystroke clears the preset and the real values reappear.
 :host ::ng-deep .txg-preset-active {
   .mat-date-range-input-inner {
     color: transparent;
