@@ -2,17 +2,20 @@
   position: relative;
 }
 
+:host ::ng-deep .mat-mdc-form-field-icon-suffix {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .txg-preset-label {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
-  pointer-events: none; // Clicks and focus fall through to the real inputs underneath.
+  pointer-events: none;
   color: var(--mat-sys-on-surface);
 }
 
-// While a preset is active the raw dates are hidden (not removed): the inputs stay mounted and
-// typeable, so the first keystroke clears the preset and the real values reappear.
 :host ::ng-deep .txg-preset-active {
   .mat-date-range-input-inner {
     color: transparent;

@@ -2,9 +2,6 @@ import { dataCy } from '../../support/selectors';
 
 const daysAgo = (days: number): Date => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 const formatDate = (date: Date): string => `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
-
-// The scaffold lays completed sessions at 32, 30, 27, 25, 23, 20, 18, 16, 13, 11, 9, 6, 4 and
-// 2 days ago; this window covers the first six of them.
 const FILTER_DATE_FROM = formatDate(daysAgo(33));
 const FILTER_DATE_TO = formatDate(daysAgo(19));
 
