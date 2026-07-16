@@ -1,5 +1,20 @@
 import { dataCy } from '../../support/selectors';
 
+/**
+ * The slice of the live Chart.js instance PROG-08 introspects, exposed on window by the chart
+ * component. Declared here rather than imported from chart.js: the spec only reads these few
+ * members, and importing the real types would pull the library into the spec bundle.
+ */
+interface ProgressChart {
+  data: { datasets: { label: string; data: { x: number }[] }[] };
+  tooltip: { getActiveElements(): { datasetIndex: number; index: number }[] };
+  getSortedVisibleDatasetMetas(): { index: number; data: { x: number; y: number }[] }[];
+}
+
+interface ChartWindow {
+  Chart: { getChart(canvas: HTMLCanvasElement): ProgressChart };
+}
+
 const daysAgo = (days: number): Date => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 const formatDate = (date: Date): string => `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
 const WORKOUT_A_ONLY_FROM = formatDate(daysAgo(31));
@@ -129,12 +144,13 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
         const canvas = $canvas[0] as HTMLCanvasElement;
 
         cy.window().then((win) => {
-          const chart = (win as unknown as { Chart: { getChart: (c: HTMLCanvasElement) => any } }).Chart.getChart(canvas);
+          const chart = (win as unknown as ChartWindow).Chart.getChart(canvas);
 
           // Deadlift only appears on Workout B days, which also carry a Squat point, so
           // any Deadlift point sits on a day shared by two series.
-          const deadliftMeta = chart.getSortedVisibleDatasetMetas().find((meta: any) => chart.data.datasets[meta.index].label === 'Deadlift');
-          const point = deadliftMeta.data[0];
+          const deadliftMeta = chart.getSortedVisibleDatasetMetas()
+            .find(meta => chart.data.datasets[meta.index].label === 'Deadlift');
+          const point = deadliftMeta!.data[0];
 
           // Coordinates are element-relative, so Cypress derives the offsets Chart.js reads.
           cy.wrap(canvas)
@@ -147,7 +163,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
             const active = chart.tooltip.getActiveElements();
             expect(active).to.have.length(2);
 
-            const days = active.map((el: any) => chart.data.datasets[el.datasetIndex].data[el.index].x);
+            const days = active.map(el => chart.data.datasets[el.datasetIndex].data[el.index].x);
             expect(days[0]).to.equal(days[1]);
           });
         });
