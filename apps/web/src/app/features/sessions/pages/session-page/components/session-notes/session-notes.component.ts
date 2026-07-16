@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [MatButtonModule, MatIconModule],
   templateUrl: './session-notes.component.html',
-  styleUrl: './session-notes.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionNotesComponent {

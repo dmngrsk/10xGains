@@ -5,10 +5,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { ProgressDateRangePreset, ProgressFilterPlan, ProgressFiltersViewModel } from '@features/progress/models/progress-page.viewmodel';
-import { DATE_RANGE_PRESET_LABELS } from '@features/progress/models/progress.mapping';
+import { ProgressFilterPlan, ProgressFiltersViewModel } from '@features/progress/models/progress-page.viewmodel';
+import { DateRangeFieldComponent } from '@shared/ui/components/date-range-field/date-range-field.component';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
-export const PRESET_ORDER: ProgressDateRangePreset[] = ['3M', '6M', '1Y', 'ALL'];
 export const ALL_PLANS = 'ALL_PLANS';
 
 @Component({
@@ -21,6 +21,7 @@ export const ALL_PLANS = 'ALL_PLANS';
     MatFormFieldModule,
     MatSelectModule,
     MatButtonModule,
+    DateRangeFieldComponent,
   ],
   templateUrl: './progress-filter-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -33,7 +34,9 @@ export class ProgressFilterDialogComponent implements OnInit {
 
   filterForm!: FormGroup;
 
-  readonly presetOptions = PRESET_ORDER.map(preset => ({ value: preset, label: DATE_RANGE_PRESET_LABELS[preset] }));
+  dateRange!: DateRangeValue;
+  dateRangeValid = true;
+
   readonly allPlans = ALL_PLANS;
 
   get availablePlans(): ProgressFilterPlan[] {
@@ -43,19 +46,27 @@ export class ProgressFilterDialogComponent implements OnInit {
   ngOnInit(): void {
     this.filterForm = this.fb.group({
       selectedPlanId: [this.data.filters.selectedPlanId ?? ALL_PLANS],
-      dateRangePreset: [this.data.filters.dateRangePreset],
     });
+    this.dateRange = this.data.filters.dateRange;
+  }
+
+  onDateRangeChanged(value: DateRangeValue): void {
+    this.dateRange = value;
+  }
+
+  onDateRangeValidityChanged(valid: boolean): void {
+    this.dateRangeValid = valid;
   }
 
   onFiltersApplied(): void {
-    if (this.filterForm.invalid) {
+    if (this.filterForm.invalid || !this.dateRangeValid) {
       return;
     }
 
     const formValue = this.filterForm.value;
     const filtersToEmit: ProgressFiltersViewModel = {
       selectedPlanId: formValue.selectedPlanId === ALL_PLANS ? null : formValue.selectedPlanId,
-      dateRangePreset: formValue.dateRangePreset,
+      dateRange: this.dateRange,
       availablePlans: this.data.filters.availablePlans,
     };
 

@@ -8,9 +8,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ProgressFiltersViewModel, ProgressPageViewModel } from '@features/progress/models/progress-page.viewmodel';
-import { DATE_RANGE_PRESET_LABELS } from '@features/progress/models/progress.mapping';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
+import { formatDateRangeSummary } from '@shared/utils/dates/date-range-presets';
 import { ProgressFilterDialogComponent } from './components/dialogs/progress-filter-dialog/progress-filter-dialog.component';
 import { ExerciseChipRowComponent } from './components/exercise-chip-row/exercise-chip-row.component';
 import { ProgressActionsBarComponent } from './components/progress-actions-bar/progress-actions-bar.component';
@@ -53,12 +53,15 @@ export class ProgressPageComponent implements OnInit {
     const planName = filters.selectedPlanId
       ? filters.availablePlans.find(p => p.id === filters.selectedPlanId)?.name ?? 'Unknown plan'
       : 'All plans';
-    return `${planName} – ${DATE_RANGE_PRESET_LABELS[filters.dateRangePreset]}`;
+    return `${planName} – ${formatDateRangeSummary(filters.dateRange)}`;
   });
 
   readonly noDataAtAll = computed(() => {
     const { series, filters } = this.viewModel();
-    return series.length === 0 && filters.selectedPlanId === null && filters.dateRangePreset === 'ALL';
+    return series.length === 0
+      && filters.selectedPlanId === null
+      && filters.dateRange.dateFrom === null
+      && filters.dateRange.dateTo === null;
   });
 
   ngOnInit(): void {

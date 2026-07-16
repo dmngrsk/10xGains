@@ -1,7 +1,6 @@
-import { ExerciseDto, PlanDto, PlanExerciseSetDto, SessionDto, SessionSetDto } from '@txg/shared';
+import { ExerciseDto, PlanDto, PlanExerciseSetDto, SessionDto, SessionSetDto, SessionStatus, SessionSetStatus } from '@txg/shared';
 import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from "./session-card.viewmodel";
 import { SessionPageViewModel, SessionExerciseViewModel, SessionSetViewModel } from "./session-page.viewmodel";
-import { SessionStatus, SessionSetStatus } from "./session.types";
 
 export function mapToSessionCardViewModel(
   session: SessionDto,

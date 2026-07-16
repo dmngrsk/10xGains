@@ -141,7 +141,7 @@ describe('ProgressPageFacade', () => {
     it('should preserve the selection when only the date range changes', () => {
       facade.toggleExercise('ex-1');
 
-      facade.updateFilters({ ...facade.viewModel().filters, dateRangePreset: '1Y' });
+      facade.updateFilters({ ...facade.viewModel().filters, dateRange: { preset: '1Y', dateFrom: '2025-07-01T00:00:00.000Z', dateTo: null } });
 
       expect(facade.viewModel().series.find(s => s.exerciseId === 'ex-1')!.selected).toBe(false);
       expect(facade.viewModel().series.find(s => s.exerciseId === 'ex-2')!.selected).toBe(true);
@@ -149,21 +149,34 @@ describe('ProgressPageFacade', () => {
 
     it('should select exercises that the previous result did not contain', () => {
       getExerciseProgressMock.mockReturnValueOnce(of({ data: [], error: null }));
-      facade.updateFilters({ ...facade.viewModel().filters, dateRangePreset: '6M' });
+      facade.updateFilters({ ...facade.viewModel().filters, dateRange: { preset: '6M', dateFrom: '2026-01-01T00:00:00.000Z', dateTo: null } });
       expect(facade.viewModel().series).toEqual([]);
 
-      facade.updateFilters({ ...facade.viewModel().filters, dateRangePreset: 'ALL' });
+      facade.updateFilters({ ...facade.viewModel().filters, dateRange: { preset: 'ALL', dateFrom: null, dateTo: null } });
 
       expect(facade.viewModel().series).toHaveLength(2);
       expect(facade.viewModel().series.every(s => s.selected)).toBe(true);
     });
 
-    it('should send no date_from for the ALL preset', () => {
-      facade.updateFilters({ ...facade.viewModel().filters, dateRangePreset: 'ALL' });
+    it('should send neither bound for an open-ended range', () => {
+      facade.updateFilters({ ...facade.viewModel().filters, dateRange: { preset: 'ALL', dateFrom: null, dateTo: null } });
 
       const calls = getExerciseProgressMock.mock.calls;
       const params = calls[calls.length - 1][0];
       expect(params.date_from).toBeUndefined();
+      expect(params.date_to).toBeUndefined();
+    });
+
+    it('should send both bounds for a custom range', () => {
+      facade.updateFilters({
+        ...facade.viewModel().filters,
+        dateRange: { preset: null, dateFrom: '2026-03-01T00:00:00.000Z', dateTo: '2026-04-01T23:59:59.999Z' },
+      });
+
+      const calls = getExerciseProgressMock.mock.calls;
+      const params = calls[calls.length - 1][0];
+      expect(params.date_from).toBe('2026-03-01T00:00:00.000Z');
+      expect(params.date_to).toBe('2026-04-01T23:59:59.999Z');
     });
   });
 

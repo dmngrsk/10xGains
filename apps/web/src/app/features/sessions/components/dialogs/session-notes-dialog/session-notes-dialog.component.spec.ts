@@ -69,16 +69,22 @@ describe('SessionNotesDialogComponent', () => {
     } satisfies SessionNotesDialogResult);
   });
 
-  it('should close with the entered notes on backdrop click, same as Save', async () => {
+  it('should close without a result when Cancel is pressed, discarding the edit', async () => {
+    await setup({ sessionNotes: 'stored note', planNotes: null });
+
+    component.notesForm.setValue({ sessionNotes: 'edited but discarded', planNotes: '' });
+    component.onCancel();
+
+    expect(dialogRefMock.close).toHaveBeenCalledWith();
+  });
+
+  it('should ignore a backdrop click, so the dialog is only left through its buttons', async () => {
     await setup({ sessionNotes: null, planNotes: null });
 
     component.notesForm.setValue({ sessionNotes: 'typed then clicked away', planNotes: '' });
     backdropClickSubject.next(new MouseEvent('click'));
 
-    expect(dialogRefMock.close).toHaveBeenCalledWith({
-      sessionNotes: 'typed then clicked away',
-      planNotes: null,
-    } satisfies SessionNotesDialogResult);
+    expect(dialogRefMock.close).not.toHaveBeenCalled();
   });
 
   it('should normalize whitespace-only notes to null', async () => {

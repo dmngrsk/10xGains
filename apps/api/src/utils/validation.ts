@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
+import type { SessionSetStatus } from '@txg/shared';
 import { createErrorDataWithLogging } from './api-helpers';
 import type { AppContext } from '../context';
 
@@ -7,6 +8,13 @@ const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 const DEFAULT_OFFSET = 0;
 const SORT_PATTERN = /^[a-zA-Z_]+\.(asc|desc)$/;
+
+type DateRangeOutput = { date_from?: string; date_to?: string };
+
+type CompletedAtOutput = { status?: SessionSetStatus | null; completed_at?: string | null };
+
+/** The statuses that record when a set finished, and so require `completed_at`. */
+const TERMINAL_SET_STATUSES: readonly SessionSetStatus[] = ['COMPLETED', 'FAILED'];
 
 /**
  * The `limit` query parameter of a paginated list endpoint.
@@ -94,6 +102,63 @@ export function optionalCsvList<T extends z.ZodTypeAny>(itemSchema: T) {
     const items = val.split(',').map(s => s.trim()).filter(s => s.length > 0);
     return items.length > 0 ? items : undefined;
   }, z.array(itemSchema).optional());
+}
+
+/**
+ * Rejects an inverted date range, which would otherwise pass validation and silently return an
+ * empty result set. The error is reported on `date_from`.
+ *
+ * @param {z.ZodType<Output, Def, Input>} schema - The query schema to guard. Returns a
+ *   `ZodEffects`, so `.extend()` is no longer available: apply this last.
+ * @returns The schema extended with the refinement.
+ */
+export function withCoherentDateRange<Output extends DateRangeOutput, Def extends z.ZodTypeDef, Input>(
+  schema: z.ZodType<Output, Def, Input>
+): z.ZodEffects<z.ZodType<Output, Def, Input>, Output, Input> {
+  return schema.superRefine((data, ctx) => {
+    const { date_from: dateFrom, date_to: dateTo } = data;
+
+    if (dateFrom && dateTo && new Date(dateFrom) > new Date(dateTo)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'date_from must not be after date_to',
+        path: ['date_from'],
+      });
+    }
+  });
+}
+
+/**
+ * Rejects a set whose completion timestamp disagrees with its status: a terminal status must
+ * supply `completed_at`, any other status must omit it. Both errors are reported on `completed_at`.
+ *
+ * @param {z.ZodType<Output, Def, Input>} schema - The command schema to guard. Returns a
+ *   `ZodEffects`, so `.extend()` is no longer available: apply this last.
+ * @returns The schema extended with the refinement.
+ */
+export function withCompletedAtConsistency<Output extends CompletedAtOutput, Def extends z.ZodTypeDef, Input>(
+  schema: z.ZodType<Output, Def, Input>
+): z.ZodEffects<z.ZodType<Output, Def, Input>, Output, Input> {
+  return schema.superRefine((data, ctx) => {
+    const { status, completed_at: completedAt } = data;
+    const isTerminal = !!status && TERMINAL_SET_STATUSES.includes(status);
+
+    if (isTerminal && !completedAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'completed_at is required if status is COMPLETED or FAILED.',
+        path: ['completed_at'],
+      });
+    }
+
+    if (!isTerminal && completedAt) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'completed_at should only be provided if status is COMPLETED or FAILED.',
+        path: ['completed_at'],
+      });
+    }
+  });
 }
 
 /**

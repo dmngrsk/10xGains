@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Subject, of } from 'rxjs';
-import { SessionSetDto } from '@txg/shared';
+import { SessionSetDto, SessionSetStatus } from '@txg/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
@@ -9,7 +9,6 @@ import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionPageFacade } from './session-page.facade';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
-import { SessionSetStatus } from '../../models/session.types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type CapturedEnqueue = { successSubject: Subject<any>; failureSubject: Subject<any>; context: any; buildSuccess: any };

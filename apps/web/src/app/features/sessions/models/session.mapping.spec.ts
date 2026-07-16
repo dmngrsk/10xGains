@@ -1,7 +1,6 @@
-import { PlanDayDto, PlanDto, PlanExerciseDto, PlanExerciseSetDto, SessionDto, ExerciseDto, SessionSetDto } from '@txg/shared';
+import { PlanDayDto, PlanDto, PlanExerciseDto, PlanExerciseSetDto, SessionDto, ExerciseDto, SessionSetDto, SessionSetStatus, SessionStatus } from '@txg/shared';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { mapToSessionCardViewModel, mapToSessionPageViewModel, mapToSessionSetViewModel } from './session.mapping';
-import { SessionSetStatus, SessionStatus } from './session.types';
 
 const mockSetDto: SessionSetDto = {
   id: 'set1',

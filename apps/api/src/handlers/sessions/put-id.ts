@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
-import type { SessionDto, UpdateSessionCommand } from '@txg/shared';
+import { SESSION_STATUSES, type SessionDto, type UpdateSessionCommand } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { validateCommandBody, validatePathParams } from '../../utils/validation';
 
@@ -10,7 +10,7 @@ const PATH_SCHEMA = z.object({
 });
 
 const COMMAND_SCHEMA = z.object({
-  status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  status: z.enum(SESSION_STATUSES).optional(),
   notes: z.string().max(5000, 'Notes must not exceed 5000 characters').nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update"

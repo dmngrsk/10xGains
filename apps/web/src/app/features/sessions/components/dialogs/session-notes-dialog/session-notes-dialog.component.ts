@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -35,7 +34,6 @@ export interface SessionNotesDialogResult {
 })
 export class SessionNotesDialogComponent {
   private readonly dialogRef = inject<MatDialogRef<SessionNotesDialogComponent, SessionNotesDialogResult>>(MatDialogRef);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly fb = inject(FormBuilder);
 
   readonly data = inject<SessionNotesDialogData>(MAT_DIALOG_DATA);
@@ -47,14 +45,12 @@ export class SessionNotesDialogComponent {
     planNotes: [this.data.planNotes ?? '', [Validators.maxLength(NOTES_MAX_LENGTH)]],
   });
 
-  constructor() {
-    this.dialogRef.backdropClick()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.closeWithResult());
-  }
-
   onSave(): void {
     this.closeWithResult();
+  }
+
+  onCancel(): void {
+    this.dialogRef.close();
   }
 
   private closeWithResult(): void {

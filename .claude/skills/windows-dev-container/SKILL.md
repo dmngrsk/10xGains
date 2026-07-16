@@ -1,6 +1,6 @@
 ---
 name: windows-dev-container
-description: Recover a broken Windows dev-container setup for this repo - Supabase or Studio failing to mount paths inside the workspace, Docker's daemon unreachable from WSL, or git reporting the whole repo as modified after moving a checkout. The README's dev-container section covers first-time setup; reach for this when that path breaks, or when an existing C:\ checkout has to move onto the WSL2 filesystem.
+description: Recover a broken Windows dev-container setup for this repo - Supabase or Studio failing to mount paths inside the workspace, Docker's daemon unreachable from WSL, post-start.sh hanging at "Waiting for the container's Docker daemon...", or git reporting the whole repo as modified after moving a checkout. The README's dev-container section covers first-time setup; reach for this when that path breaks, or when an existing C:\ checkout has to move onto the WSL2 filesystem.
 ---
 
 # Recovering the Windows dev container
@@ -68,6 +68,45 @@ wsl -d Ubuntu -- bash -c 'ls -l /var/run/docker.sock; groups; docker ps'
 # want: srw-rw---- root docker  |  groups includes docker  |  docker ps succeeds
 ```
 
+## post-start.sh hangs at "Waiting for the container's Docker daemon..."
+
+This is a different failure from the previous section: the *host* side is fine (`docker ps`
+works from WSL, the devcontainer itself is up and `docker ps` on the host shows it running).
+The hang is inside the container, in `docker-in-docker`'s own nested `dockerd`, which
+`post-start.sh` polls with `docker info` before doing anything else.
+
+Confirm this is what's happening by checking the nested daemon's process tree from the host:
+
+```bash
+CID=$(docker ps -q -f name=<container-name-or-id>)
+docker exec "$CID" sh -c 'ps aux | grep -i docker'
+```
+
+If `dockerd` and `containerd` are both running but there's also an `iptables` process sitting
+in `D` state (uninterruptible sleep) touching `DOCKER-ISOLATION` — and a `docker info` process
+that never exits — the nested daemon is stuck setting up its forwarding rules. `docker info`
+will then hang forever (or until `post-start.sh`'s 90s timeout), even though nothing about
+Docker's reachability from WSL is actually broken.
+
+The cause is `networkingMode=mirrored` in the Windows-side `.wslconfig`
+(`C:\Users\<you>\.wslconfig`) — Docker Desktop's WSL2 backend and mirrored networking don't
+get along, and this nested-iptables hang is the concrete symptom. Fix it by removing the line
+(NAT, the default when it's absent, doesn't have this problem) and cycling WSL:
+
+```ini
+[wsl2]
+# networkingMode=mirrored
+```
+
+```
+docker desktop stop      # from Windows; quitting the tray icon also works
+wsl --shutdown           # kills ALL distros, including the running dev container - expected
+docker desktop start     # let it fully come up and reprovision WSL integration
+```
+
+Do the shutdown/restart from a Windows shell, not from inside the distro whose container you're
+diagnosing — `wsl --shutdown` kills that session too.
+
 ## Moving an existing checkout onto WSL2
 
 A fresh clone should go straight into the distro's home (`git clone ... ~/10xGains`), as the
@@ -105,7 +144,8 @@ lifecycle hook, where it would stage whatever a developer had in flight.
   daemon. It is equivalent to root on the host and removes the isolation the container exists
   to provide.
 - **`networkingMode=mirrored` in `.wslconfig`** is a known irritant for Docker Desktop's WSL
-  integration. Suspect it first if the daemon is reachable but container networking misbehaves.
+  integration. Suspect it first if the daemon is reachable but container networking misbehaves
+  — see the nested-`dockerd`/iptables hang above for the concrete case we've hit.
 - **WSL inherits the Windows PATH**, so when driving the distro from a Windows shell, `node`,
   `corepack`, and `npm` may resolve to Windows binaries (`/mnt/c/Program Files/nodejs/...`),
   which fail with `cannot execute: required file not found`. Strip PATH first:

@@ -5,15 +5,16 @@ import { catchError, map, tap } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { GetExerciseProgressParams, ProgressService } from '@features/progress/api/progress.service';
 import { ProgressFiltersViewModel, ProgressPageViewModel } from '@features/progress/models/progress-page.viewmodel';
-import { mapToExerciseSeriesViewModels, presetToDateFrom } from '@features/progress/models/progress.mapping';
+import { mapToExerciseSeriesViewModels } from '@features/progress/models/progress.mapping';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { presetToRange } from '@shared/utils/dates/date-range-presets';
 
 const initialProgressPageViewModel: ProgressPageViewModel = {
   series: [],
   filters: {
     selectedPlanId: null,
-    dateRangePreset: '3M',
+    dateRange: { preset: '3M', dateFrom: null, dateTo: null },
     availablePlans: [],
   },
   isLoading: false,
@@ -56,10 +57,11 @@ export class ProgressPageFacade {
         const availablePlans = plans.map(p => ({ id: p.id, name: p.name }));
         const activePlanId = profile?.active_plan_id;
         const selectedPlanId = activePlanId && plans.some(p => p.id === activePlanId) ? activePlanId : null;
+        const dateRange = { preset: '3M' as const, ...presetToRange('3M', new Date()) };
 
         this.viewModel.update(vm => ({
           ...vm,
-          filters: { ...vm.filters, availablePlans, selectedPlanId }
+          filters: { ...vm.filters, availablePlans, selectedPlanId, dateRange }
         }));
 
         this.loadProgress({ selectAll: true });
@@ -83,7 +85,8 @@ export class ProgressPageFacade {
 
     const queryParams: GetExerciseProgressParams = {
       plan_id: filters.selectedPlanId ?? undefined,
-      date_from: presetToDateFrom(filters.dateRangePreset, new Date()),
+      date_from: filters.dateRange.dateFrom ?? undefined,
+      date_to: filters.dateRange.dateTo ?? undefined,
     };
 
     const previousSeries = this.viewModel().series;

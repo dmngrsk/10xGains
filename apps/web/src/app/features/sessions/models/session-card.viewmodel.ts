@@ -1,4 +1,4 @@
-import { SessionStatus, SessionSetStatus } from "./session.types";
+import { SessionStatus, SessionSetStatus } from '@txg/shared';
 
 export interface SessionCardViewModel {
   id: string;

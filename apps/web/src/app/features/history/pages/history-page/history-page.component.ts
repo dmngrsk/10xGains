@@ -53,8 +53,8 @@ export class HistoryPageComponent implements OnInit {
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
 
   readonly filterSpecified = computed(() => {
-    const { selectedPlanId: _1, availablePlans: _2, pageSize: _3, pageSizeOptions: _4, ...filters } = this.viewModel().filters;
-    return Object.values(filters).some(value => !!value);
+    const { dateFrom, dateTo } = this.viewModel().filters.dateRange;
+    return !!dateFrom || !!dateTo;
   });
 
   readonly pageRecentlyChanged = signal(false);

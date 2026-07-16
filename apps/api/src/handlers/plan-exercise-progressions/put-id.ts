@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
-import type { PlanExerciseProgressionDto, UpsertPlanExerciseProgressionCommand } from '@txg/shared';
+import { DELOAD_STRATEGIES, type PlanExerciseProgressionDto, type UpsertPlanExerciseProgressionCommand } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { validateCommandBody, validatePathParams } from "../../utils/validation";
 
@@ -15,7 +15,7 @@ const COMMAND_SCHEMA = z.object({
   failure_count_for_deload: z.number().int().positive().optional(),
   consecutive_failures: z.number().int().min(0).optional(),
   deload_percentage: z.number().max(100).positive().optional(),
-  deload_strategy: z.enum(['PROPORTIONAL', 'REFERENCE_SET', 'CUSTOM']).optional(),
+  deload_strategy: z.enum(DELOAD_STRATEGIES).optional(),
   reference_set_index: z.number().int().min(0).nullable().optional()
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update"

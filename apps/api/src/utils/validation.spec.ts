@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
-import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort } from './validation';
+import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
 
 const UUID_A = '1f6a2c3e-9b4d-4e8f-a1b2-c3d4e5f6a7b8';
 const UUID_B = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -162,5 +162,86 @@ describe('optionalCsvList', () => {
 
     expect(statusSchema.safeParse({ status: 'PENDING,COMPLETED' }).success).toBe(true);
     expect(statusSchema.safeParse({ status: 'PENDING,NOPE' }).success).toBe(false);
+  });
+});
+
+describe('withCoherentDateRange', () => {
+  const schema = withCoherentDateRange(z.object({
+    date_from: optionalIsoDate(),
+    date_to: optionalIsoDate(),
+  }));
+
+  it('should accept a range whose start precedes its end', () => {
+    const result = schema.safeParse({ date_from: '2026-01-01', date_to: '2026-02-01' });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept a range whose start equals its end', () => {
+    const result = schema.safeParse({ date_from: '2026-01-01T00:00:00.000Z', date_to: '2026-01-01T00:00:00.000Z' });
+
+    expect(result.success).toBe(true);
+  });
+
+  it.each([
+    { date_from: '2026-01-01' },
+    { date_to: '2026-01-01' },
+    {},
+  ])('should accept an open-ended range for %p', (params) => {
+    expect(schema.safeParse(params).success).toBe(true);
+  });
+
+  it('should reject a range whose start comes after its end', () => {
+    const result = schema.safeParse({ date_from: '2026-02-01', date_to: '2026-01-01' });
+
+    expect(result.success).toBe(false);
+    expect(result.error!.flatten().fieldErrors['date_from']).toBeDefined();
+  });
+});
+
+describe('withCompletedAtConsistency', () => {
+  const schema = withCompletedAtConsistency(z.object({
+    status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'SKIPPED']).optional(),
+    completed_at: z.string().datetime().nullable().optional(),
+  }));
+
+  const COMPLETED_AT = '2026-07-16T10:00:00.000Z';
+
+  it.each(['COMPLETED', 'FAILED'])('should accept %s when a completion timestamp is supplied', (status) => {
+    expect(schema.safeParse({ status, completed_at: COMPLETED_AT }).success).toBe(true);
+  });
+
+  it.each(['COMPLETED', 'FAILED'])('should reject %s without a completion timestamp', (status) => {
+    const result = schema.safeParse({ status });
+
+    expect(result.success).toBe(false);
+    expect(result.error!.flatten().fieldErrors['completed_at']).toContain(
+      'completed_at is required if status is COMPLETED or FAILED.'
+    );
+  });
+
+  it.each([null, undefined])('should reject a terminal status whose timestamp is %p', (completedAt) => {
+    expect(schema.safeParse({ status: 'COMPLETED', completed_at: completedAt }).success).toBe(false);
+  });
+
+  it.each(['PENDING', 'SKIPPED'])('should accept %s with no completion timestamp', (status) => {
+    expect(schema.safeParse({ status }).success).toBe(true);
+  });
+
+  it.each(['PENDING', 'SKIPPED'])('should reject %s carrying a completion timestamp', (status) => {
+    const result = schema.safeParse({ status, completed_at: COMPLETED_AT });
+
+    expect(result.success).toBe(false);
+    expect(result.error!.flatten().fieldErrors['completed_at']).toContain(
+      'completed_at should only be provided if status is COMPLETED or FAILED.'
+    );
+  });
+
+  it('should reject a timestamp when the status is absent, since absent is not terminal', () => {
+    expect(schema.safeParse({ completed_at: COMPLETED_AT }).success).toBe(false);
+  });
+
+  it('should accept an empty command, leaving the fields to the other rules', () => {
+    expect(schema.safeParse({}).success).toBe(true);
   });
 });

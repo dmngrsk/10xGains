@@ -1,29 +1,23 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
-import type { SessionSetDto, UpdateSessionSetCommand } from '@txg/shared';
+import { SESSION_SET_STATUSES, type SessionSetDto, type UpdateSessionSetCommand } from '@txg/shared';
 import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { AppContext } from '../../context';
-import { validateCommandBody, validatePathParams } from "../../utils/validation";
+import { validateCommandBody, validatePathParams, withCompletedAtConsistency } from "../../utils/validation";
 
 const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
   setId: z.string().uuid('Invalid setId format'),
 });
 
-const COMMAND_SCHEMA = z.object({
+const COMMAND_SCHEMA = withCompletedAtConsistency(z.object({
   set_index: z.number().int().positive('Set index must be a positive integer').optional(),
   expected_reps: z.number().int().nonnegative('Expected reps must be a non-negative integer').optional(),
   actual_weight: z.number().nonnegative('Actual weight cannot be negative').optional(),
   actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer').nullable().optional(),
-  status: z.enum(['PENDING', 'COMPLETED', 'FAILED', 'SKIPPED']).optional(),
+  status: z.enum(SESSION_SET_STATUSES).optional(),
   completed_at: z.string().datetime('Invalid datetime format for completed_at').nullable().optional()
-}).refine(data => !((data.status === 'COMPLETED' || data.status === 'FAILED') && !data.completed_at), {
-  message: "completed_at is required if status is COMPLETED or FAILED.",
-  path: ["completed_at"],
-}).refine(data => (!data.completed_at) || (data.status === 'COMPLETED' || data.status === 'FAILED'), {
-  message: "completed_at should only be provided if status is COMPLETED or FAILED.",
-  path: ["completed_at"],
-});
+}));
 
 export async function handleUpdateSessionSetById(c: Context<AppContext>) {
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);
