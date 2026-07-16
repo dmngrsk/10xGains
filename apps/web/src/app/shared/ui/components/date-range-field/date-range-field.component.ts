@@ -47,10 +47,16 @@ export class DateRangeFieldComponent implements OnInit {
 
   @Input()
   set value(value: DateRangeValue | null | undefined) {
+    // No value clears the field, rather than silently keeping the previous range.
+    if (!value) {
+      this.setRange(null, null, null);
+      return;
+    }
+
     // A host that feeds `valueChange` back into `value` echoes every keystroke straight back.
     // Re-applying it would rewrite the inputs mid-edit - the date adapter reformats whatever it
     // parsed, so typing "6" would replace the text with "6/1/2001" - so ignore our own value.
-    if (value && !this.isCurrentValue(value)) {
+    if (!this.isCurrentValue(value)) {
       this.applyValue(value);
     }
   }
@@ -115,8 +121,8 @@ export class DateRangeFieldComponent implements OnInit {
     this.suppressEmit = true;
     this.activePreset.set(preset);
     this.rangeForm.setValue({
-      start: dateFrom ? new Date(dateFrom) : null,
-      end: dateTo ? new Date(dateTo) : null,
+      start: toDate(dateFrom),
+      end: toDate(dateTo),
     }, { emitEvent: false });
     this.suppressEmit = false;
   }
@@ -142,6 +148,18 @@ export class DateRangeFieldComponent implements OnInit {
       && current.dateFrom === value.dateFrom
       && current.dateTo === value.dateTo;
   }
+}
+
+/**
+ * Parses a bound the host supplied, treating an unparseable one as absent. Keeps the form free of
+ * Invalid Dates, which are truthy and would throw a RangeError once read back through toISOString.
+ */
+function toDate(iso: string | null): Date | null {
+  if (!iso) {
+    return null;
+  }
+  const date = new Date(iso);
+  return isNaN(date.getTime()) ? null : date;
 }
 
 /** Maps a picked date to the last millisecond of its local day, so the boundary day is included. */

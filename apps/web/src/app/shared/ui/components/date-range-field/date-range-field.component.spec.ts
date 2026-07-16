@@ -117,6 +117,26 @@ describe('DateRangeFieldComponent', () => {
     expect(validity[validity.length - 1]).toBe(true);
   });
 
+  it('should treat an unparseable bound as absent, so no Invalid Date reaches the form', () => {
+    createComponent({ preset: null, dateFrom: 'not-a-date', dateTo: null });
+
+    expect(component.rangeForm.controls.start.value).toBeNull();
+
+    // An Invalid Date is truthy, so reading it back through toISOString would throw a RangeError.
+    expect(() => component.rangeForm.controls.end.setValue(new Date(2026, 6, 15))).not.toThrow();
+    expect(emitted[emitted.length - 1]!.dateFrom).toBeNull();
+  });
+
+  it('should clear the field when the host passes no value', () => {
+    createComponent({ preset: '3M', dateFrom: '2026-04-13T00:00:00.000Z', dateTo: null });
+
+    component.value = null;
+
+    expect(component.activePreset()).toBeNull();
+    expect(component.rangeForm.controls.start.value).toBeNull();
+    expect(component.rangeForm.controls.end.value).toBeNull();
+  });
+
   it('should restore the active preset from the value input', () => {
     createComponent({ preset: '6M', dateFrom: '2026-01-13T00:00:00.000Z', dateTo: null });
 
