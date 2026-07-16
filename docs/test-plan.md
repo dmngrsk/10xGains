@@ -149,7 +149,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | SESS-05 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
 | | SESS-06 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
 | | SESS-07 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
-| | SESS-08 | Closing the notes dialog by clicking outside of it persists the entered text the same way as the 'Save' action. | High | No |
+| | SESS-08 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
 | | SESS-09 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
 | | SESS-10 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
 | | SESS-11 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
@@ -161,12 +161,14 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | HIST-06 | An error notice is displayed if the session history fails to load. | High | No |
 | | HIST-07 | On error, a user can click the retry button to reload the session history. | High | No |
 | | HIST-08 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
-| **Progress** | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default. | High | No |
+| **Progress** | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 | | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
 | | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |
-| | PROG-04 | The empty state notice is shown when no progress data matches the filter criteria. | Medium | No |
-| | PROG-05 | An error notice is displayed if the progress data fails to load. | High | No |
-| | PROG-06 | On error, a user can click the retry button to reload the progress data. | High | No |
+| | PROG-04 | Filtering by a custom date range narrows the plotted series to the exercises trained in that window. | Medium | No |
+| | PROG-05 | The empty state notice is shown when no progress data matches the filter criteria. | Medium | No |
+| | PROG-06 | An error notice is displayed if the progress data fails to load. | High | No |
+| | PROG-07 | On error, a user can click the retry button to reload the progress data. | High | No |
+| | PROG-08 | Pressing the chart activates every point of the pressed day: a scaffold day shared by Squat and Deadlift activates both points at the same day `x`. | Medium | No |
 
 ---
 

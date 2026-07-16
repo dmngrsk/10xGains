@@ -36,6 +36,8 @@ export function createPlanExercise({ name, createGlobal }: { name?: string; crea
   cy.getBySel(dataCy.plans.dialogs.exercises.exerciseAutocompleteOption).contains(name!).click();
   if (createGlobal) {
     cy.getBySel(dataCy.plans.dialogs.exercises.newGlobalExerciseNotice).should('be.visible');
+  } else {
+    cy.getBySel(dataCy.plans.dialogs.exercises.newGlobalExerciseNotice).should('not.exist');
   }
   cy.getBySel(dataCy.plans.dialogs.exercises.saveButton).click();
   cy.getBySel(dataCy.plans.dialogs.exercises.content).should('not.exist');

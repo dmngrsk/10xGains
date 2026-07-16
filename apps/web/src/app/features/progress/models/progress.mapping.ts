@@ -1,6 +1,5 @@
 import { ExerciseProgressDto, PlanDto } from '@txg/shared';
-import { subMonths } from 'date-fns';
-import { ExerciseSeriesViewModel, ProgressDateRangePreset } from './progress-page.viewmodel';
+import { ExerciseSeriesViewModel } from './progress-page.viewmodel';
 
 const SERIES_COLOR_COUNT = 10;
 
@@ -12,30 +11,6 @@ export const SERIES_COLOR_TOKENS = Array.from(
   { length: SERIES_COLOR_COUNT },
   (_, index) => `--txg-chart-series-${index + 1}`
 );
-
-export const DATE_RANGE_PRESET_LABELS: Record<ProgressDateRangePreset, string> = {
-  '3M': 'Last 3 months',
-  '6M': 'Last 6 months',
-  '1Y': 'Last year',
-  'ALL': 'All time',
-};
-
-/**
- * Converts a date range preset to the inclusive lower bound sent to the API.
- * Returns undefined for 'ALL', which means no lower bound.
- */
-export function presetToDateFrom(preset: ProgressDateRangePreset, now: Date): string | undefined {
-  switch (preset) {
-    case '3M':
-      return subMonths(now, 3).toISOString();
-    case '6M':
-      return subMonths(now, 6).toISOString();
-    case '1Y':
-      return subMonths(now, 12).toISOString();
-    case 'ALL':
-      return undefined;
-  }
-}
 
 /**
  * Formats the reps of every set of one exercise in one session.

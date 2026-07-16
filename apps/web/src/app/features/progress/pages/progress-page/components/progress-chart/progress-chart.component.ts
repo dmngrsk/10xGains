@@ -2,6 +2,7 @@ import 'chartjs-adapter-date-fns';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 import {
+  Chart,
   ChartData,
   ChartOptions,
   Interaction,
@@ -48,6 +49,12 @@ const dayXInteractionMode: InteractionModeFunction = (chart, event, options, use
 };
 
 Interaction.modes.dayX = dayXInteractionMode;
+
+// Expose the Chart registry so E2E tests can introspect the live chart via
+// `Chart.getChart(canvas)` (see the PROG-07 day-activation scenario).
+if (typeof window !== 'undefined') {
+  (window as unknown as { Chart?: typeof Chart }).Chart ??= Chart;
+}
 
 interface ProgressChartDataPoint {
   x: number;

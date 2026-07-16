@@ -1,19 +1,19 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
-import type { SessionDto } from '@txg/shared';
+import { SESSION_STATUSES, type SessionDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateQueryParams } from '../../utils/validation';
+import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateQueryParams, withCoherentDateRange } from '../../utils/validation';
 
-const QUERY_SCHEMA = z.object({
+const QUERY_SCHEMA = withCoherentDateRange(z.object({
   limit: optionalLimit(),
   offset: optionalOffset(),
   sort: optionalSort('session_date', 'asc'),
-  status: optionalCsvList(z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])),
+  status: optionalCsvList(z.enum(SESSION_STATUSES)),
   date_from: optionalIsoDate(),
   date_to: optionalIsoDate(),
   plan_id: z.string().uuid().optional(),
-});
+}));
 
 export async function handleGetSessions(c: Context<AppContext>) {
   const { query, error: queryError } = validateQueryParams(c, QUERY_SCHEMA);

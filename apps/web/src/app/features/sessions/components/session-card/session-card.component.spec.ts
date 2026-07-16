@@ -1,7 +1,7 @@
+import { SessionStatus, SessionSetStatus } from '@txg/shared';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { SessionCardComponent } from './session-card.component';
 import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from '../../models/session-card.viewmodel';
-import { SessionStatus, SessionSetStatus } from '../../models/session.types';
 
 describe('SessionCardComponent', () => {
   let component: SessionCardComponent;

@@ -1,7 +1,7 @@
 import { inject, signal, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, EMPTY } from 'rxjs';
-import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
+import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionStatus } from '@txg/shared';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
@@ -11,7 +11,6 @@ import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
-import { SessionStatus } from '../../models/session.types';
 
 // Types used by KeyedDebouncerService for session set update operations
 type SessionSetUpdateSuccessDataContext = { exerciseId: string; originalExpectedReps: number | null };

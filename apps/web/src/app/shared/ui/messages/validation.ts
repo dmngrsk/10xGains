@@ -10,7 +10,6 @@ export const VALIDATION_MESSAGES = {
   positive: 'Value must be positive',
   nonNegative: 'Value must be non-negative',
   percentageRange: 'Value must be between 0 and 100',
-  dateRangeInvalid: 'Start date cannot be after end date',
   email: 'Email is invalid',
   passwordLength: 'Password must be at least 8 characters long',
   passwordUppercase: 'Password must contain at least one uppercase letter',

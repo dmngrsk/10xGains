@@ -1,5 +1,6 @@
 import { createPlan, createPlanDay, createPlanExercise, createPlanExerciseSet } from '../../support/helpers/plans.helpers';
 import { dataCy } from '../../support/selectors';
+import { PLAN_FIXTURE_EXERCISE } from '../../support/test-data/exercises';
 
 describe('Plan Management', { tags: ['@plans'] }, () => {
   beforeEach(() => {
@@ -64,7 +65,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
     it('allows a user to add an exercise to a day, edit its progression, and delete it', { tags: ['PLAN-04'] }, () => {
       // Add an exercise
       createPlanDay();
-      createPlanExercise({ name: 'Test Training Exercise' });
+      createPlanExercise({ name: PLAN_FIXTURE_EXERCISE });
 
       // Edit exercise progression
       cy.getBySel(dataCy.plans.planEdit.exercises.editProgressionButton).click();
@@ -94,7 +95,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
     it('allows a user to add, edit, and delete a set for an exercise', { tags: ['PLAN-06'] }, () => {
       // Add a set
       createPlanDay();
-      createPlanExercise({ name: 'Test Training Exercise' });
+      createPlanExercise({ name: PLAN_FIXTURE_EXERCISE });
       createPlanExerciseSet();
 
       // Edit a set

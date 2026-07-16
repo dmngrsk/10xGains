@@ -2,6 +2,9 @@ import { dataCy } from '../../support/selectors';
 
 const daysAgo = (days: number): Date => new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 const formatDate = (date: Date): string => `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+
+// The scaffold lays completed sessions at 32, 30, 27, 25, 23, 20, 18, 16, 13, 11, 9, 6, 4 and
+// 2 days ago; this window covers the first six of them.
 const FILTER_DATE_FROM = formatDate(daysAgo(33));
 const FILTER_DATE_TO = formatDate(daysAgo(19));
 
@@ -33,8 +36,8 @@ describe('Session History', { tags: ['@history'] }, () => {
 
     it('allows filtering by date range', { tags: ['HIST-03'] }, () => {
       cy.getBySel(dataCy.history.filterButton).click();
-      cy.getBySel(dataCy.history.filterDialog.dateFromInput).clear().type(FILTER_DATE_FROM);
-      cy.getBySel(dataCy.history.filterDialog.dateToInput).clear().type(FILTER_DATE_TO);
+      cy.getBySel(dataCy.shared.dateRange.startInput).clear().type(FILTER_DATE_FROM);
+      cy.getBySel(dataCy.shared.dateRange.endInput).clear().type(FILTER_DATE_TO);
       cy.getBySel(dataCy.history.filterDialog.applyFiltersButton).click();
 
       cy.getBySel(dataCy.history.sessionCard).should('have.length', 6); // filtered by date range
@@ -42,8 +45,8 @@ describe('Session History', { tags: ['@history'] }, () => {
 
     it('highlights the filter button when a filter is active', { tags: ['HIST-04'] }, () => {
       cy.getBySel(dataCy.history.filterButton).click();
-      cy.getBySel(dataCy.history.filterDialog.dateFromInput).clear().type(FILTER_DATE_FROM);
-      cy.getBySel(dataCy.history.filterDialog.dateToInput).clear().type(FILTER_DATE_TO);
+      cy.getBySel(dataCy.shared.dateRange.startInput).clear().type(FILTER_DATE_FROM);
+      cy.getBySel(dataCy.shared.dateRange.endInput).clear().type(FILTER_DATE_TO);
       cy.getBySel(dataCy.history.filterDialog.applyFiltersButton).click();
 
       cy.getBySel(dataCy.history.filterButton).should('have.class', '!text-primary');

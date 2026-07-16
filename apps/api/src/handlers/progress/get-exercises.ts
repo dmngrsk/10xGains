@@ -3,14 +3,14 @@ import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { ExerciseProgressDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { optionalCsvList, optionalIsoDate, validateQueryParams } from '../../utils/validation';
+import { optionalCsvList, optionalIsoDate, validateQueryParams, withCoherentDateRange } from '../../utils/validation';
 
-const QUERY_SCHEMA = z.object({
+const QUERY_SCHEMA = withCoherentDateRange(z.object({
   plan_id: z.string().uuid().optional(),
   exercise_ids: optionalCsvList(z.string().uuid()),
   date_from: optionalIsoDate(),
   date_to: optionalIsoDate(),
-});
+}));
 
 export async function handleGetExerciseProgress(c: Context<AppContext>) {
   const { query, error: queryError } = validateQueryParams(c, QUERY_SCHEMA);

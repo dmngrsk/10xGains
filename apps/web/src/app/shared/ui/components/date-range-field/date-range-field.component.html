@@ -1,0 +1,30 @@
+<mat-form-field appearance="outline" class="w-full pb-5" floatLabel="always" [class.txg-preset-active]="showPresetLabel()">
+  <mat-label>Date range</mat-label>
+  <mat-date-range-input [formGroup]="rangeForm" [rangePicker]="picker" (focusin)="onInputFocus()" (focusout)="onInputBlur()">
+    <input matStartDate formControlName="start" placeholder="Start date" data-cy="date-range-start-input">
+    <input matEndDate formControlName="end" placeholder="End date" data-cy="date-range-end-input">
+  </mat-date-range-input>
+  @if (showPresetLabel()) {
+    <span class="txg-preset-label" aria-hidden="true" data-cy="date-range-preset-display">{{ presetLabels[activePreset()!] }}</span>
+  }
+  <button
+    mat-icon-button
+    matIconSuffix
+    type="button"
+    [matMenuTriggerFor]="presetMenu"
+    aria-label="Choose a preset range"
+    data-cy="date-range-preset-button">
+    <mat-icon>tune</mat-icon>
+  </button>
+  <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-date-range-picker #picker></mat-date-range-picker>
+</mat-form-field>
+
+<mat-menu #presetMenu="matMenu">
+  @for (preset of presets; track preset) {
+    <button mat-menu-item type="button" (click)="onPresetSelected(preset)" data-cy="date-range-preset-option">
+      <mat-icon>{{ activePreset() === preset ? 'check' : '' }}</mat-icon>
+      <span>{{ presetLabels[preset] }}</span>
+    </button>
+  }
+</mat-menu>

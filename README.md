@@ -27,7 +27,7 @@ This is a pnpm workspace monorepo:
 
 - `apps/web` - The Angular frontend application (`@txg/web`).
 - `apps/api` - The backend API: a Hono app hosted on Azure Functions (`@txg/api`). See [apps/api/README.md](apps/api/README.md) for architecture and endpoint documentation.
-- `packages/shared` - Shared TypeScript types (`@txg/shared`): API DTOs, command models, and generated database types consumed by both apps.
+- `packages/shared` - Shared code (`@txg/shared`) consumed by both apps: API DTOs, command models, and generated database types, plus the value unions the database constrains columns to.
 - `supabase` - Database migrations, tests, and local stack configuration.
 - `cypress` - System-level end-to-end tests run against a deployed (or locally running) application.
 

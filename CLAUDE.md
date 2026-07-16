@@ -14,7 +14,7 @@ This is a pnpm workspace monorepo:
 
 - `apps/web` - Angular frontend (`@txg/web`); see `apps/web/CLAUDE.md`
 - `apps/api` - Hono API on Azure Functions (`@txg/api`); see `apps/api/CLAUDE.md`
-- `packages/shared` - Shared types (`@txg/shared`): API DTOs, command models, and generated database types. Types only — no runtime code.
+- `packages/shared` - Shared code (`@txg/shared`): API DTOs, command models, and generated database types. Types only, with one exception: `src/domain.types.ts` also exports runtime lists of the value unions the database constrains columns to (statuses, deload strategies), because validators need the values and not just the type. Derive from the generated types there rather than retyping a union by hand.
 - `supabase` - Database migrations and local stack configuration; see `supabase/CLAUDE.md`
 - `cypress` - System-level E2E tests; see `cypress/CLAUDE.md`
 

@@ -11,7 +11,6 @@ export const progressSelectors = {
   loadingSpinner: 'progress-loading-spinner',
   filterDialog: {
     planSelect: 'progress-filter-dialog-plan-select',
-    rangeSelect: 'progress-filter-dialog-range-select',
     applyFiltersButton: 'progress-filter-dialog-apply-filters-button',
   },
 };

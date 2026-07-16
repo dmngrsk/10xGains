@@ -1,4 +1,5 @@
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 export interface HistoryPageViewModel {
   filters: HistoryFiltersViewModel;
@@ -11,8 +12,7 @@ export interface HistoryPageViewModel {
 
 export interface HistoryFiltersViewModel {
   selectedPlanId: string;
-  dateFrom: string | null;
-  dateTo: string | null;
+  dateRange: DateRangeValue;
   pageSize: number;
   availablePlans: HistoryFilterPlan[] | null;
   pageSizeOptions: number[];

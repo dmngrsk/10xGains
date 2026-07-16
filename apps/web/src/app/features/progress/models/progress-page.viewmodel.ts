@@ -1,4 +1,4 @@
-export type ProgressDateRangePreset = '3M' | '6M' | '1Y' | 'ALL';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 export interface ProgressFilterPlan {
   id: string;
@@ -22,7 +22,7 @@ export interface ExerciseSeriesViewModel {
 
 export interface ProgressFiltersViewModel {
   selectedPlanId: string | null; // null = all plans
-  dateRangePreset: ProgressDateRangePreset;
+  dateRange: DateRangeValue;
   availablePlans: ProgressFilterPlan[];
 }
 

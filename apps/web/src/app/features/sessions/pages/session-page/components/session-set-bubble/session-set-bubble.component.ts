@@ -3,9 +3,9 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Out
 import { MatButtonModule } from '@angular/material/button';
 import { MatRippleModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { SessionSetStatus } from '@txg/shared';
 import { LongPressDirective } from '@shared/utils/directives/long-press.directive';
 import { SessionSetViewModel } from '../../../../models/session-page.viewmodel';
-import { SessionSetStatus } from '../../../../models/session.types';
 
 interface NextSetStateAttributes {
   status: SessionSetStatus;

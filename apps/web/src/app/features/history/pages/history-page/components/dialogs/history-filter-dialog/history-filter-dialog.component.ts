@@ -1,18 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule, NativeDateAdapter } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { Subject } from 'rxjs';
 import { HistoryFiltersViewModel, HistoryFilterPlan } from '@features/history/models/history-page.viewmodel';
-import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
-import { dateRangeValidator } from '@shared/utils/forms/validators/date-range.validator';
+import { DateRangeFieldComponent } from '@shared/ui/components/date-range-field/date-range-field.component';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 @Component({
   selector: 'txg-history-filter-dialog',
@@ -23,29 +18,24 @@ import { dateRangeValidator } from '@shared/utils/forms/validators/date-range.va
     MatDialogModule,
     MatFormFieldModule,
     MatSelectModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatInputModule,
     MatButtonModule,
-    MatIconModule,
-  ],
-  providers: [
-    { provide: DateAdapter, useClass: NativeDateAdapter },
-    { provide: MAT_DATE_FORMATS, useValue: MAT_NATIVE_DATE_FORMATS },
+    DateRangeFieldComponent,
   ],
   templateUrl: './history-filter-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
+export class HistoryFilterDialogComponent implements OnInit {
   dialogRef = inject<MatDialogRef<HistoryFilterDialogComponent>>(MatDialogRef);
   data = inject<{
     filters: HistoryFiltersViewModel;
 }>(MAT_DIALOG_DATA);
 
   private readonly fb = inject(FormBuilder);
-  private readonly destroy$ = new Subject<void>();
 
   filterForm!: FormGroup;
+
+  dateRange!: DateRangeValue;
+  dateRangeValid = true;
 
   get availablePlans(): HistoryFilterPlan[] {
     return this.data.filters.availablePlans || [];
@@ -55,35 +45,31 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
     return this.data.filters.pageSizeOptions || [];
   }
 
-  get validationMessages() {
-    return VALIDATION_MESSAGES;
-  }
-
   ngOnInit(): void {
     this.filterForm = this.fb.group({
       selectedPlanId: [this.data.filters.selectedPlanId],
-      dateFrom: [this.data.filters.dateFrom ? new Date(this.data.filters.dateFrom) : null],
-      dateTo: [this.data.filters.dateTo ? new Date(this.data.filters.dateTo) : null],
       pageSize: [this.data.filters.pageSize],
-    }, {
-      validators: dateRangeValidator('dateFrom', 'dateTo')
     });
+    this.dateRange = this.data.filters.dateRange;
+  }
+
+  onDateRangeChanged(value: DateRangeValue): void {
+    this.dateRange = value;
+  }
+
+  onDateRangeValidityChanged(valid: boolean): void {
+    this.dateRangeValid = valid;
   }
 
   onFiltersApplied(): void {
-    if (this.filterForm.invalid) {
+    if (this.filterForm.invalid || !this.dateRangeValid) {
       return;
     }
 
     const formValue = this.filterForm.value;
-    const dateFrom = formValue.dateFrom ? new Date(formValue.dateFrom) : null;
-    const dateTo = formValue.dateTo ? new Date(formValue.dateTo) : null;
-    dateTo?.setHours(23, 59, 59, 999);
-
     const filtersToEmit: HistoryFiltersViewModel = {
       selectedPlanId: formValue.selectedPlanId,
-      dateFrom: dateFrom?.toISOString() || null,
-      dateTo: dateTo?.toISOString() || null,
+      dateRange: this.dateRange,
       pageSize: formValue.pageSize,
       pageSizeOptions: this.data.filters.pageSizeOptions,
       availablePlans: this.data.filters.availablePlans,
@@ -94,10 +80,5 @@ export class HistoryFilterDialogComponent implements OnInit, OnDestroy {
 
   onCancelled(): void {
     this.dialogRef.close();
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

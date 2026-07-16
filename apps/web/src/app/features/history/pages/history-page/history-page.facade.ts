@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { Observable, of, forkJoin } from 'rxjs';
+import { EMPTY, Observable, of, forkJoin } from 'rxjs';
 import { SessionDto, PlanDto, ExerciseDto, ProfileDto } from '@txg/shared';
 import { catchError, map, tap } from 'rxjs/operators';
 import { HistoryPageViewModel, HistoryFiltersViewModel } from '@features/history/models/history-page.viewmodel';
@@ -15,8 +15,7 @@ const initialHistoryPageViewModel: HistoryPageViewModel = {
   sessions: [],
   filters: {
     selectedPlanId: '',
-    dateFrom: null,
-    dateTo: null,
+    dateRange: { preset: null, dateFrom: null, dateTo: null },
     availablePlans: [],
     pageSize: 10,
     pageSizeOptions: [5, 10, 25, 100],
@@ -67,12 +66,16 @@ export class HistoryPageFacade {
         const availablePlansForFilter = plans.map(p => ({ id: p.id, name: p.name }));
         const activePlanId = profile?.active_plan_id;
 
+        const selectedPlanId = activePlanId && plans.some(p => p.id === activePlanId)
+          ? activePlanId
+          : (availablePlansForFilter[0]?.id ?? '');
+
         this.viewModel.update(vm => ({
           ...vm,
           filters: {
             ...vm.filters,
             availablePlans: availablePlansForFilter,
-            selectedPlanId: activePlanId || (availablePlansForFilter.length > 0 ? availablePlansForFilter[0].id : ''),
+            selectedPlanId,
           }
         }));
 
@@ -103,8 +106,8 @@ export class HistoryPageFacade {
       offset: currentPage * pageSize,
       sort: 'session_date.desc',
       status: ['COMPLETED'],
-      date_from: filters.dateFrom ?? undefined,
-      date_to: filters.dateTo ?? undefined,
+      date_from: filters.dateRange.dateFrom ?? undefined,
+      date_to: filters.dateRange.dateTo ?? undefined,
       plan_id: filters.selectedPlanId ?? undefined,
     };
 
@@ -131,7 +134,7 @@ export class HistoryPageFacade {
           sessions: [],
           totalSessions: 0
         }));
-        throw error;
+        return EMPTY;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
       this.viewModel.update(vm => ({

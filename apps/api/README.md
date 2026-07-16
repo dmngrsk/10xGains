@@ -1015,7 +1015,7 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
     -   `offset` (optional, integer, default: 0): Offset for pagination.
     -   `sort` (optional, string, default: `session_date.desc`): Sort criteria (e.g., `session_date.asc`, `status.asc`).
     -   `status` (optional, string): Filter by session status (e.g., `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`).
-    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
+    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive). Rejected with `400 Bad Request` if later than `date_to`.
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
     -   `plan_id` (optional, string UUID): Filter sessions associated with a plan with a given `plan_id`.
 -   **Response (200 OK)**: An array of `SessionDto` objects.
@@ -1513,7 +1513,7 @@ Sessions whose status is not `COMPLETED` are excluded entirely, and a pair with 
 -   **URL Query Parameters**:
     -   `plan_id` (optional, string UUID): Restrict to sessions of a single plan. Omit to span all of the user's plans.
     -   `exercise_ids` (optional, comma-separated UUIDs): Restrict the returned series to these exercises.
-    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive).
+    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive). Rejected with `400 Bad Request` if later than `date_to`.
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
 -   **Response (200 OK)**: An array of `ExerciseProgressDto` objects.
     ```json

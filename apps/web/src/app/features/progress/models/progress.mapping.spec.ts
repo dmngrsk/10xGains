@@ -1,8 +1,6 @@
 import { ExerciseProgressDto, PlanDto } from '@txg/shared';
 import { describe, expect, it } from 'vitest';
-import { SERIES_COLOR_TOKENS, formatRepsLabel, mapToExerciseSeriesViewModels, presetToDateFrom } from './progress.mapping';
-
-const NOW = new Date('2026-07-13T12:00:00.000Z');
+import { SERIES_COLOR_TOKENS, formatRepsLabel, mapToExerciseSeriesViewModels } from './progress.mapping';
 
 const PLANS = [
   { id: 'plan-1', name: 'Starting Strength' },
@@ -35,27 +33,6 @@ describe('formatRepsLabel', () => {
 
   it('should return an empty label for no sets', () => {
     expect(formatRepsLabel([])).toBe('');
-  });
-});
-
-describe('presetToDateFrom', () => {
-  it.each([
-    { preset: '3M', months: 3 },
-    { preset: '6M', months: 6 },
-    { preset: '1Y', months: 12 },
-  ] as const)('should subtract the preset length for $preset', ({ preset, months }) => {
-    const result = new Date(presetToDateFrom(preset, NOW)!);
-
-    const expected = new Date(NOW);
-    expected.setMonth(expected.getMonth() - months);
-
-    // Local-time month arithmetic may shift the UTC hour across DST boundaries.
-    const dstToleranceMs = 2 * 60 * 60 * 1000;
-    expect(Math.abs(result.getTime() - expected.getTime())).toBeLessThanOrEqual(dstToleranceMs);
-  });
-
-  it('should return undefined for ALL, meaning no lower bound', () => {
-    expect(presetToDateFrom('ALL', NOW)).toBeUndefined();
   });
 });
 

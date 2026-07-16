@@ -1,4 +1,5 @@
 import { PostgrestResponse, SupabaseClient } from '@supabase/supabase-js';
+import { REQUIRED_EXERCISES } from './exercises';
 
 /**
  * Generates comprehensive test data for a user including exercises, plans, and session history
@@ -178,8 +179,10 @@ async function ensureExercisesExist(supabase: SupabaseClient): Promise<[string, 
     return cachedExerciseIds;
   }
 
-  const requiredExercises = ['Squat', 'Bench Press', 'Deadlift'];
-  
+  // Includes the plan specs' fixture exercise, which no scaffolded session trains - see
+  // REQUIRED_EXERCISES for why it is seeded here rather than created by those specs.
+  const requiredExercises = REQUIRED_EXERCISES;
+
   // Single query to fetch all required exercises at once
   const { data: existingExercises, error: fetchError } = await supabase
     .from('exercises')

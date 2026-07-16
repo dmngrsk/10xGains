@@ -12,14 +12,11 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="w-full">
-      <mat-label>Date range</mat-label>
-      <mat-select formControlName="dateRangePreset" data-cy="progress-filter-dialog-range-select">
-        @for (preset of presetOptions; track preset.value) {
-          <mat-option [value]="preset.value">{{ preset.label }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
+    <txg-date-range-field
+      [value]="dateRange"
+      (valueChange)="onDateRangeChanged($event)"
+      (validityChange)="onDateRangeValidityChanged($event)">
+    </txg-date-range-field>
   </form>
 </mat-dialog-content>
 
@@ -27,7 +24,7 @@
   <button mat-button (click)="onCancelled()" type="button">
     Cancel
   </button>
-  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid" data-cy="progress-filter-dialog-apply-filters-button">
+  <button mat-flat-button (click)="onFiltersApplied()" type="submit" [disabled]="filterForm.invalid || !dateRangeValid" data-cy="progress-filter-dialog-apply-filters-button">
     Apply Filters
   </button>
 </mat-dialog-actions>

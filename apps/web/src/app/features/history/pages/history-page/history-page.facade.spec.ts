@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService } from '@features/sessions/api/session.service';
@@ -46,6 +46,35 @@ describe('HistoryPageFacade', () => {
         expect.objectContaining({ plan_id: 'plan-2' })
       );
     });
+
+    it('should surface an error when loading sessions fails', () => {
+      configure('plan-2');
+      getSessionsMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.loadHistoryPageData();
+
+      expect(facade.viewModel().error).toContain('Failed to load sessions');
+      expect(facade.viewModel().isLoading).toBe(false);
+      expect(facade.viewModel().sessions).toEqual([]);
+    });
+  });
+
+  describe('loadHistoryPageData without a usable active plan', () => {
+    it('should fall back to the first plan when the profile has no active plan', () => {
+      configure(null);
+
+      facade.loadHistoryPageData();
+
+      expect(facade.viewModel().filters.selectedPlanId).toBe('plan-1');
+    });
+
+    it('should fall back to the first plan when the active plan no longer exists', () => {
+      configure('plan-deleted');
+
+      facade.loadHistoryPageData();
+
+      expect(facade.viewModel().filters.selectedPlanId).toBe('plan-1');
+    });
   });
 
   describe('loadHistoryPageData without a signed-in user', () => {
@@ -58,6 +87,38 @@ describe('HistoryPageFacade', () => {
       expect(facade.viewModel().isLoading).toBe(false);
       expect(getProfileMock).not.toHaveBeenCalled();
       expect(getSessionsMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateFilters', () => {
+    beforeEach(() => {
+      configure('plan-1');
+      facade.loadHistoryPageData();
+    });
+
+    const lastQuery = () => getSessionsMock.mock.calls[getSessionsMock.mock.calls.length - 1][0];
+
+    it('should send the selected plan and reset to the first page', () => {
+      facade.viewModel.update(vm => ({ ...vm, currentPage: 3 }));
+
+      facade.updateFilters({ selectedPlanId: 'plan-2' });
+
+      expect(lastQuery().plan_id).toBe('plan-2');
+      expect(lastQuery().offset).toBe(0);
+      expect(facade.viewModel().currentPage).toBe(0);
+    });
+
+    it('should send the date range bounds from the filter', () => {
+      facade.updateFilters({ dateRange: { preset: null, dateFrom: '2026-03-01T00:00:00.000Z', dateTo: '2026-04-01T23:59:59.999Z' } });
+
+      expect(lastQuery().date_from).toBe('2026-03-01T00:00:00.000Z');
+      expect(lastQuery().date_to).toBe('2026-04-01T23:59:59.999Z');
+    });
+
+    it('should reload with the new page size', () => {
+      facade.updateFilters({ pageSize: 5 });
+
+      expect(lastQuery().limit).toBe(5);
     });
   });
 });

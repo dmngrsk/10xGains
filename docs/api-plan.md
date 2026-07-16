@@ -1103,7 +1103,7 @@ For each resource, standard CRUD endpoints are defined along with endpoints cate
   - Query Parameters:
     - `plan_id` (uuid, optional): Restrict to sessions of a single plan. Omit to span all of the user's plans.
     - `exercise_ids` (comma-separated uuids, optional): Restrict the returned series to these exercises.
-    - `date_from` (ISO 8601, optional): Include sessions from this date (inclusive).
+    - `date_from` (ISO 8601, optional): Include sessions from this date (inclusive). Rejected with `400 Bad Request` if later than `date_to`.
     - `date_to` (ISO 8601, optional): Include sessions up to this date (inclusive).
   - Example Response:
     ```json
