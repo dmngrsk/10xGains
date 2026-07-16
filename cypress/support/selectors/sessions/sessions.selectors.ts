@@ -24,6 +24,7 @@ export const sessionsSelectors = {
       sessionInput: 'session-notes-dialog-session-input',
       planInput: 'session-notes-dialog-plan-input',
       saveButton: 'session-notes-dialog-save-button',
+      cancelButton: 'session-notes-dialog-cancel-button',
     },
   },
   sessionCard: {

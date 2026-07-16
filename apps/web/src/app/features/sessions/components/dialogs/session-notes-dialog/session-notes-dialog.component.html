@@ -30,6 +30,9 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" type="button" data-cy="session-notes-dialog-cancel-button">
+    Cancel
+  </button>
   <button mat-flat-button color="primary" (click)="onSave()" [disabled]="notesForm.invalid" data-cy="session-notes-dialog-save-button">
     Save
   </button>

@@ -116,17 +116,22 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Felt strong on squats today.');
     });
 
-    it('persists the entered notes when the dialog is closed by clicking outside of it', { tags: ['SESS-08'] }, () => {
+    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-08'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Saved via backdrop click.');
+      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
+
+      // The dialog is modal: a backdrop click neither closes it nor saves.
       cy.get('.cdk-overlay-backdrop').click({ force: true });
+      cy.getBySel(dataCy.sessions.dialogs.notes.content).should('be.visible');
+      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Typed then clicked away.');
+
+      cy.getBySel(dataCy.sessions.dialogs.notes.cancelButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
-      cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before reloading
 
       cy.reload();
       cy.getBySel(dataCy.sessions.notesButton).click();
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Saved via backdrop click.');
+      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Cancel discarded it
     });
 
     it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-09'] }, () => {
