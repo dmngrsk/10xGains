@@ -1,0 +1,8 @@
+@use '../bubble' as bubble;
+
+button.warmup-bubble {
+  @include bubble.bubble-button;
+  @include bubble.bubble-labels;
+  border-style: dashed;
+  color: var(--mat-sys-secondary);
+}

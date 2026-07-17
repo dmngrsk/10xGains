@@ -10,6 +10,12 @@ export const sessionsSelectors = {
     bubbleText: 'set-bubble-text',
     bubbleWeightText: 'set-bubble-weight-text',
   },
+  warmup: {
+    toggle: 'warmup-toggle-bubble',
+    bubble: 'warmup-set-bubble',
+    bubbleText: 'warmup-set-bubble-text',
+    bubbleWeightText: 'warmup-set-bubble-weight-text',
+  },
   dialogs: {
     sets: {
       title: 'add-edit-set-dialog-title',
@@ -31,6 +37,7 @@ export const sessionsSelectors = {
     navigateButton: 'session-card-navigate-button',
     notesButton: 'session-card-notes-button',
   },
+  exerciseItem: 'session-exercise-item',
   timer: 'session-timer',
   completeButton: 'complete-session-button',
   notesButton: 'session-notes-button',

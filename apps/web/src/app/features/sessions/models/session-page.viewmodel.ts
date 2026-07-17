@@ -26,6 +26,12 @@ export interface SessionExerciseViewModel {
   plannedSetsCount: number;
 }
 
+export interface SessionWarmupSetViewModel {
+  id: string;
+  reps: number;
+  weight: number;
+}
+
 export interface SessionSetViewModel {
   id: string;
   planExerciseId: string;

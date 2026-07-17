@@ -1,0 +1,22 @@
+@if (isToggle) {
+  <button mat-stroked-button txgLongPress class="warmup-bubble"
+    aria-label="Show warmup sets"
+    data-cy="warmup-toggle-bubble"
+    (txgClick)="onBubbleClicked()">
+    <span class="bubble-text">W</span>
+  </button>
+} @else if (warmupSet) {
+  <button mat-stroked-button txgLongPress class="warmup-bubble"
+    aria-label="Dismiss warmup set"
+    data-cy="warmup-set-bubble"
+    (txgClick)="onBubbleClicked()">
+    <div class="flex flex-col items-center justify-center">
+      <span class="bubble-text" data-cy="warmup-set-bubble-text">
+        {{ warmupSet.reps }}
+      </span>
+      <span class="bubble-weight-text" data-cy="warmup-set-bubble-weight-text">
+        {{ warmupSet.weight }}
+      </span>
+    </div>
+  </button>
+}
