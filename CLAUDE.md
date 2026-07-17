@@ -45,10 +45,11 @@ Use the Conventional Commits format: `<type>(<optional scope>): <Description>`
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 - The type and scope MUST be lowercase; the first letter after the colon MUST be capitalized.
 - Use imperative mood ("Add feature", not "Added feature"); no period at the end; keep the description under 72 characters.
-- Scope by project area, e.g. `web`, `api`, `shared`, `db`, `auth`, `cd`, `config`.
+- Prefer the feature scope when a change is confined to one product feature, e.g. `sessions`, `plans`, `progress`, `home`, `auth` — regardless of which packages it touches.
+- Scope by project area for cross-feature or infrastructure changes, e.g. `web`, `api`, `shared`, `db`, `cd`, `config`.
 - One logical change per commit. For breaking changes, add `!` after the type/scope and a `BREAKING CHANGE:` body explaining the impact.
 
-Examples: `feat(web): Add profile image upload feature`, `fix(auth): Resolve token validation issue`.
+Examples: `feat(settings): Add profile image upload feature`, `fix(auth): Resolve token validation issue`, `chore(config): Bump the pnpm version`.
 
 ## Additional Notes
 

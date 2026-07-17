@@ -71,7 +71,86 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.timer).should('contain.text', '00:02');
     });
 
-    it('allows a user to complete a session', { tags: ['SESS-05'] }, () => {
+    it('expands warmup sets from the toggle and dismisses them one by one, without network traffic', { tags: ['SESS-05'] }, () => {
+      cy.intercept(/\/sessions\/[^/]+\/sets/).as('setRequests');
+
+      // Every exercise renders its own toggle before its first working set.
+      cy.getBySel(dataCy.sessions.warmup.toggle).should('have.length', 2);
+      cy.getBySel(dataCy.sessions.warmup.bubble).should('not.exist');
+
+      // Starting Strength even jumps for the first exercise's seeded 100 kg working weight.
+      const expectedWarmups = [
+        { reps: '5', weight: '20' },
+        { reps: '5', weight: '20' },
+        { reps: '5', weight: '40' },
+        { reps: '3', weight: '60' },
+        { reps: '2', weight: '80' },
+      ];
+
+      cy.getBySel(dataCy.sessions.exerciseItem).first().within(() => {
+        cy.getBySel(dataCy.sessions.warmup.toggle).click();
+
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('not.exist');
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('have.length', expectedWarmups.length);
+        expectedWarmups.forEach(({ reps, weight }, i) => {
+          cy.getBySel(dataCy.sessions.warmup.bubbleText).eq(i).should('contain.text', reps);
+          cy.getBySel(dataCy.sessions.warmup.bubbleWeightText).eq(i).should('contain.text', weight);
+        });
+
+        // A single click removes exactly the clicked bubble.
+        cy.getBySel(dataCy.sessions.warmup.bubble).eq(2).click();
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('have.length', expectedWarmups.length - 1);
+        cy.getBySel(dataCy.sessions.warmup.bubbleWeightText).should('not.contain.text', '40');
+
+        // Dismissing the remaining bubbles removes the warmup UI entirely.
+        cy.getBySel(dataCy.sessions.warmup.bubble).each(() => {
+          cy.getBySel(dataCy.sessions.warmup.bubble).first().click();
+        });
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('not.exist');
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('not.exist');
+      });
+
+      // The neighboring exercise's warmup UI is unaffected.
+      cy.getBySel(dataCy.sessions.exerciseItem).eq(1).within(() => {
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('be.visible');
+      });
+
+      // Warmup interactions are ephemeral: no session set requests were issued. Set writes
+      // are debounced by 1s, so outwait the window before asserting silence.
+      cy.getBySel(dataCy.sessions.header.status).should('not.contain.text', 'IN PROGRESS');
+      cy.wait(1100);
+      cy.get('@setRequests.all').should('have.length', 0);
+    });
+
+    it('dismisses the warmup UI when a working set is clicked', { tags: ['SESS-06'] }, () => {
+      cy.intercept(/\/sessions\/[^/]+\/sets\/[^/]+\/complete/).as('completeSet');
+
+      // Expanded case: warmup bubbles disappear on a working set interaction.
+      cy.getBySel(dataCy.sessions.exerciseItem).first().within(() => {
+        cy.getBySel(dataCy.sessions.warmup.toggle).click();
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('have.length.greaterThan', 0);
+        cy.getBySel(dataCy.sessions.set.bubble).first().click();
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('not.exist');
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('not.exist');
+      });
+
+      // The set completion is debounced; let it reach the API before reloading.
+      cy.wait('@completeSet', { requestTimeout: 15000 });
+
+      // The dismissal is per-exercise and survives a reload, because the first exercise is
+      // now mid-workout while the second remains untouched.
+      cy.reload();
+      cy.getBySel(dataCy.sessions.exerciseItem).first().within(() => {
+        cy.getBySel(dataCy.sessions.set.bubble).first().should('have.attr', 'data-cy-set-status', 'COMPLETED');
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('not.exist');
+        cy.getBySel(dataCy.sessions.warmup.bubble).should('not.exist');
+      });
+      cy.getBySel(dataCy.sessions.exerciseItem).eq(1).within(() => {
+        cy.getBySel(dataCy.sessions.warmup.toggle).should('be.visible');
+      });
+    });
+
+    it('allows a user to complete a session', { tags: ['SESS-07'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -82,7 +161,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 102.5 kg'); // Progression rules applied
     });
 
-    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-06'] }, () => {
+    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-08'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -102,7 +181,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 100 kg'); // Progression rules not applied due to incomplete sets
     });
 
-    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-07'] }, () => {
+    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-09'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.title).should('be.visible').and('contain.text', 'Notes');
@@ -116,7 +195,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Felt strong on squats today.');
     });
 
-    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-08'] }, () => {
+    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-10'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
@@ -134,7 +213,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Cancel discarded it
     });
 
-    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-09'] }, () => {
+    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-11'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
@@ -155,7 +234,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
     });
 
-    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-10'] }, () => {
+    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-12'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
@@ -183,7 +262,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
     });
 
-    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-11'] }, () => {
+    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-13'] }, () => {
       let userId1: string;
       let userId2: string;
 

@@ -7,11 +7,11 @@
     (txgClick)="onSetClicked()"
     (txgLongPress)="onSetLongPressed()">
     <div class="flex flex-col items-center justify-center">
-      <span class="text-xl font-medium leading-none" data-cy="set-bubble-text">
+      <span class="bubble-text" data-cy="set-bubble-text">
         {{ bubbleText }}
       </span>
       @if (bubbleWeightText) {
-        <span class="text-[0.625rem] font-normal leading-none mt-px" data-cy="set-bubble-weight-text">
+        <span class="bubble-weight-text" data-cy="set-bubble-weight-text">
           {{ bubbleWeightText }}
         </span>
       }

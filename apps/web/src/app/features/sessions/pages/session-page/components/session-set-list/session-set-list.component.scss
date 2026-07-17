@@ -1,0 +1,22 @@
+@keyframes warmup-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+txg-session-warmup-bubble.warmup-bubble-enter {
+  // `backwards` holds the from-state through the staggered delay.
+  animation: warmup-bubble-in 150ms ease-out backwards;
+  animation-delay: var(--warmup-enter-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  txg-session-warmup-bubble.warmup-bubble-enter {
+    animation: none;
+  }
+}

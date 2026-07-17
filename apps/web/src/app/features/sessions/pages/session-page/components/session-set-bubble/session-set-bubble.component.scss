@@ -1,10 +1,9 @@
+@use '../bubble' as bubble;
+
 button {
-  width: 48px;
-  height: 48px;
-  min-width: auto;
+  @include bubble.bubble-button;
+  @include bubble.bubble-labels;
   transition: background-color 0.3s ease, color 0.3s ease;
-  overflow: hidden;
-  line-height: normal;
 
   &:disabled {
     cursor: not-allowed;

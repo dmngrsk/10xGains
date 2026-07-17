@@ -1,0 +1,25 @@
+// Shared form factor for the 48px bubbles (working sets, warmups, add action) rendered side
+// by side in the session set row - they must stay pixel-identical to keep the row aligned.
+
+@mixin bubble-button {
+  width: 48px;
+  height: 48px;
+  min-width: auto;
+  overflow: hidden;
+  line-height: normal;
+}
+
+@mixin bubble-labels {
+  .bubble-text {
+    font-size: 1.25rem;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .bubble-weight-text {
+    font-size: 0.625rem;
+    font-weight: 400;
+    line-height: 1;
+    margin-top: 1px;
+  }
+}

@@ -58,12 +58,13 @@ export class LongPressDirective implements OnDestroy {
   @Output() txgLongPress = new EventEmitter<PointerEvent>();
 
   /**
-   * Emits the original `PointerEvent` when a tap action is successfully detected.
+   * Emits the original event when a tap action is successfully detected.
    * A tap occurs if the pointer is released before the `txgLongPressDuration` elapses
    * and the movement has not exceeded `txgLongPressMovementThreshold`,
-   * and a long press was not triggered.
+   * and a long press was not triggered. Keyboard activation (Enter/Space on the host,
+   * or an assistive-technology click) also emits, via the synthesized `click` event.
    */
-  @Output() txgClick = new EventEmitter<PointerEvent>();
+  @Output() txgClick = new EventEmitter<MouseEvent>();
 
   private pressTimeout: ReturnType<typeof setTimeout> | null = null;
   private initialX?: number;
@@ -136,6 +137,15 @@ export class LongPressDirective implements OnDestroy {
       }
     }
     this.resetState();
+  }
+
+  @HostListener('click', ['$event'])
+  onClick(event: MouseEvent): void {
+    // Pointer-driven taps are handled in onPointerUp; keyboard (Enter/Space) and
+    // assistive-technology activation dispatch a click with detail === 0 and no pointer
+    // events at all, so without this branch the host is unusable on non-pointer devices.
+    if (event.detail !== 0 || this.txgLongPressDisabled) return;
+    this.txgClick.emit(event);
   }
 
   @HostListener('pointerleave')

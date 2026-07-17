@@ -146,13 +146,15 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | SESS-02 | A user can tap a set bubble to cycle through its states (Pending -> Completed -> Failed -> Pending). | Critical | No |
 | | SESS-03 | A user can long-press a set bubble to open the edit dialog and successfully update its details. | High | No |
 | | SESS-04 | The session timer starts and updates correctly after the first set interaction. | Critical | No |
-| | SESS-05 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
-| | SESS-06 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
-| | SESS-07 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
-| | SESS-08 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
-| | SESS-09 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
-| | SESS-10 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
-| | SESS-11 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
+| | SESS-05 | A user can expand ephemeral warmup sets from the warmup toggle and dismiss them one by one, without any network traffic. | Medium | No |
+| | SESS-06 | Clicking a working set dismisses that exercise's warmup UI, and the dismissal persists per exercise across a reload. | Medium | No |
+| | SESS-07 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
+| | SESS-08 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
+| | SESS-09 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
+| | SESS-10 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
+| | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
+| | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
+| | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
 | **History** | HIST-01 | A completed session correctly appears in the session history list. | High | No |
 | | HIST-02 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
 | | HIST-03 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
