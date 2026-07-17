@@ -97,6 +97,9 @@ jobs:
 
             if (cdJobs.length === 0) return;
 
+            // A manually cancelled run marks every CD job as cancelled (or skipped); there is nothing to report.
+            if (cdJobs.every(job => job.conclusion === 'cancelled' || job.conclusion === 'skipped')) return;
+
             let commentBody = '### CD Job Results\n\n';
             commentBody += '| Job | Status | Details |\n';
             commentBody += '|-----|--------|---------|\n';
