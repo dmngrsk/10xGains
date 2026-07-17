@@ -59,6 +59,34 @@ alias_port "${TXG_SUPABASE_PORT:-54321}" 54321
 alias_port "${TXG_STUDIO_PORT:-54323}" 54323
 alias_port "${TXG_MAIL_PORT:-54324}" 54324
 
+# Cypress runs Electron, which needs an X server. The container inherits the host's DISPLAY
+# (WSLg passthrough) with no socket behind it, and a set-but-dead DISPLAY keeps Cypress from
+# falling back to its own Xvfb - Electron aborts with "Missing X server or $DISPLAY". Back
+# the advertised display with a headless X server on every start. Guard on the process, not
+# the socket file: a container stop SIGKILLs Xvfb, which then leaves a stale socket behind
+# that would otherwise suppress the relaunch forever.
+XVFB_DISPLAY="${DISPLAY:-:0}"
+XVFB_DISPLAY="${XVFB_DISPLAY%%.*}"
+XVFB_COMMAND="Xvfb ${XVFB_DISPLAY} -screen 0 1280x800x24"
+case "$XVFB_DISPLAY" in
+  :[0-9]*)
+    if ! pgrep -fx "$XVFB_COMMAND" >/dev/null; then
+      rm -f "/tmp/.X11-unix/X${XVFB_DISPLAY#:}" "/tmp/.X${XVFB_DISPLAY#:}-lock"
+      # shellcheck disable=SC2086 # word splitting builds the argument list
+      nohup $XVFB_COMMAND >/dev/null 2>&1 &
+      if timeout 10 bash -c "until [ -S '/tmp/.X11-unix/X${XVFB_DISPLAY#:}' ]; do sleep 0.2; done"; then
+        echo "Started Xvfb on ${XVFB_DISPLAY} for Cypress."
+      else
+        echo "Warning: Xvfb did not come up on ${XVFB_DISPLAY}; Cypress will not run." >&2
+      fi
+    fi
+    ;;
+  *)
+    # A hostname-bearing DISPLAY (e.g. SSH X forwarding) is not something Xvfb can serve.
+    echo "DISPLAY='${DISPLAY:-}' is not a local ':N' display; skipping Xvfb for Cypress." >&2
+    ;;
+esac
+
 # Point the three gitignored config files at the running stack (fresh keys on every recreate,
 # hence every start). Only the derived values are rewritten; other lines a developer added
 # are left intact.
