@@ -1,16 +1,35 @@
 <div class="fixed bottom-16 h-16 left-0 right-0 bg-surface z-100">
   <mat-divider class="!border-t-outline-variant"></mat-divider>
   <div class="flex flex-row items-center justify-between px-2 h-[calc(100%-1px)]">
-    <mat-paginator hidePageSize="true"
-      [length]="length"
-      [pageSize]="pageSize"
-      [pageIndex]="pageIndex"
-      [pageSizeOptions]="pageSizeOptions"
-      (page)="onPageChanged($event)"
-      data-cy="history-paginator">
-    </mat-paginator>
-    <button mat-icon-button [class.!text-primary]="filterSpecified" (click)="onFilterClicked()" data-cy="history-filter-button">
-      <mat-icon>filter_list</mat-icon>
-    </button>
+    @if (viewMode === 'list') {
+      <mat-paginator hidePageSize="true"
+        [length]="length"
+        [pageSize]="pageSize"
+        [pageIndex]="pageIndex"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="onPageChanged($event)"
+        data-cy="history-paginator">
+      </mat-paginator>
+    }
+    @if (viewMode === 'calendar') {
+      <!-- The calendar scrolls by month instead of paginating; keep the left slot occupied for the layout. -->
+      <div></div>
+    }
+    <div class="flex flex-row items-center">
+      <button
+        mat-icon-button
+        (click)="onViewToggleClicked()"
+        data-cy="history-view-toggle">
+        @if (viewMode === 'list') {
+          <mat-icon>calendar_month</mat-icon>
+        }
+        @if (viewMode === 'calendar') {
+          <mat-icon>list</mat-icon>
+        }
+      </button>
+      <button mat-icon-button (click)="onFilterClicked()" data-cy="history-filter-button">
+        <mat-icon>filter_list</mat-icon>
+      </button>
+    </div>
   </div>
 </div>

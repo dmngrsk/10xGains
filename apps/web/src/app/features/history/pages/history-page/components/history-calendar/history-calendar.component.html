@@ -1,0 +1,32 @@
+<div #scroller (scroll)="onScrolled()" class="txg-calendar-scroller relative h-full overflow-y-auto" data-cy="history-calendar">
+  <div data-weekday-header class="sticky top-0 z-10 grid grid-cols-7 bg-surface py-2 text-center text-sm text-on-surface-variant">
+    @for (weekday of weekdayLabels; track $index) {
+      <span>{{ weekday }}</span>
+    }
+  </div>
+
+  @for (month of renderedMonths(); track month.key) {
+    <section [attr.data-month]="month.key" class="pb-2">
+      <h3 class="py-2 text-center font-medium text-primary">{{ month.label }}</h3>
+      <div class="grid grid-cols-7">
+        @for (day of month.days; track $index) {
+          @if (day; as cell) {
+            @if (sessionsByDay().get(cell.key); as daySessions) {
+              <button
+                class="txg-day txg-session-day"
+                [class.txg-session-day--multi]="daySessions.length > 1"
+                [class.txg-day--today]="cell.isToday"
+                (click)="onDayClicked(cell.key)">
+                {{ cell.dayOfMonth }}
+              </button>
+            } @else {
+              <span class="txg-day txg-day--disabled" [class.txg-day--today]="cell.isToday">{{ cell.dayOfMonth }}</span>
+            }
+          } @else {
+            <span class="txg-day"></span>
+          }
+        }
+      </div>
+    </section>
+  }
+</div>

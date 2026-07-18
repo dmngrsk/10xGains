@@ -52,6 +52,10 @@ coverage/
 testem.log
 /typings
 
+# Draft documents (work-in-progress specs, notes)
+docs/drafts/*
+!docs/drafts/.gitkeep
+
 # Environment files
 .env
 .env.*
@@ -62,4 +66,3 @@ apps/web/src/environments/environment.*.ts
 # System files
 .DS_Store
 Thumbs.db
-

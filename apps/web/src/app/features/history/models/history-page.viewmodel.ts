@@ -1,11 +1,16 @@
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
+export type HistoryViewMode = 'list' | 'calendar';
+
 export interface HistoryPageViewModel {
   filters: HistoryFiltersViewModel;
   sessions: SessionCardViewModel[];
   totalSessions: number;
   currentPage: number;
+  viewMode: HistoryViewMode;
+  calendarMonth: string; // 'yyyy-MM'
+  calendarSessions: SessionCardViewModel[];
   isLoading: boolean;
   error: string | null;
 }

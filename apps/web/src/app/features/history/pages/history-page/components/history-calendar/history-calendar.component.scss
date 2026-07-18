@@ -1,0 +1,60 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.txg-calendar-scroller {
+  overscroll-behavior: contain;
+}
+
+.txg-day {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  margin: 0 auto;
+  width: 2.75rem;
+  border-radius: 50%;
+  font: inherit;
+  color: var(--mat-sys-on-surface);
+
+  &--disabled {
+    color: var(--mat-sys-outline);
+  }
+
+  &--today {
+    border: 1px solid var(--mat-sys-outline-variant);
+  }
+}
+
+button.txg-day {
+  cursor: pointer;
+  background: none;
+  border: none;
+
+  &.txg-day--today {
+    border: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
+  }
+}
+
+.txg-session-day::after {
+  content: '';
+  position: absolute;
+  bottom: 0.3rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--mat-sys-primary);
+}
+
+.txg-session-day--multi::after {
+  transform: translateX(calc(-50% - 3.5px));
+  box-shadow: 7px 0 0 0 var(--mat-sys-primary);
+}

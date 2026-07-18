@@ -3,13 +3,14 @@ import { ChangeDetectionStrategy, Component, DestroyRef, EventEmitter, Input, On
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule, NativeDateAdapter } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { DATE_RANGE_PRESET_LABELS, DATE_RANGE_PRESET_ORDER, DateRangePreset, DateRangeValue, presetToRange } from '@shared/utils/dates/date-range-presets';
+import { MondayFirstDateAdapter } from '@shared/utils/dates/monday-first-date-adapter';
 
 /**
  * A shared date range field pairing a manual `mat-date-range-input` with a preset menu, opened
@@ -34,7 +35,7 @@ import { DATE_RANGE_PRESET_LABELS, DATE_RANGE_PRESET_ORDER, DateRangePreset, Dat
     MatMenuModule,
   ],
   providers: [
-    { provide: DateAdapter, useClass: NativeDateAdapter },
+    { provide: DateAdapter, useClass: MondayFirstDateAdapter },
     { provide: MAT_DATE_FORMATS, useValue: MAT_NATIVE_DATE_FORMATS },
   ],
   templateUrl: './date-range-field.component.html',
