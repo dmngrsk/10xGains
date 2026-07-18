@@ -1,5 +1,5 @@
 <txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center p-4 min-h-[calc(100vh-12.25rem)]">
+  <div class="flex justify-center px-4 min-h-[calc(100vh-12.25rem)]" [class.py-4]="viewModel().viewMode === 'list'">
     @if (viewModel(); as viewModel) {
       @if (viewModel.isLoading || pageRecentlyChanged()) {
         <div class="flex justify-center items-center min-h-[calc(100vh-12.25rem)]">
@@ -13,24 +13,23 @@
           [isError]="true"
           data-cy="history-error-notice">
         </txg-notice>
-      } @else if (viewModel.sessions.length === 0) {
-        <txg-notice
-          iconName="search_off"
-          titleText="No Sessions Found"
-          descriptionText="It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet."
-          buttonText="Edit Filters"
-          (buttonClicked)="onFilterButtonClicked()"
-          data-cy="history-empty-notice">
-        </txg-notice>
-      } @else {
-        <div class="pb-18 w-full" data-cy="history-session-list">
-          <txg-session-list
-            [sessions]="viewModel.sessions"
-            [notesAccessible]="true"
-            (sessionNavigated)="onSessionNavigated($event)"
-            (notesClicked)="onNotesClicked($event)">
-          </txg-session-list>
+      } @else if (viewModel.viewMode === 'calendar') {
+        <div class="w-full max-w-100 mx-auto h-[calc(100vh-12rem)]" data-cy="history-calendar-view">
+          <txg-history-calendar
+            [sessions]="viewModel.calendarSessions"
+            [month]="viewModel.calendarMonth"
+            (monthChanged)="onMonthChanged($event)"
+            (dayClicked)="onDayClicked($event)">
+          </txg-history-calendar>
         </div>
+      } @else if (viewModel.viewMode === 'list') {
+        <txg-history-list
+          class="contents"
+          [sessions]="viewModel.sessions"
+          (sessionNavigated)="onSessionNavigated($event)"
+          (notesClicked)="onNotesClicked($event)"
+          (editFiltersClicked)="onFilterButtonClicked()">
+        </txg-history-list>
       }
     }
   </div>
@@ -40,9 +39,10 @@
     [pageSize]="viewModel().filters.pageSize"
     [pageIndex]="viewModel().currentPage"
     [pageSizeOptions]="viewModel().filters.pageSizeOptions"
-    [filterSpecified]="filterSpecified()"
+    [viewMode]="viewModel().viewMode"
     (pageChanged)="onPageChanged($event)"
     (filterButtonClicked)="onFilterButtonClicked()"
+    (viewModeChanged)="onViewModeChanged($event)"
     data-cy="history-actions-bar">
   </txg-history-actions-bar>
 </txg-main-layout>

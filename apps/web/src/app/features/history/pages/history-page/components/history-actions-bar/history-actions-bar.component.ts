@@ -5,6 +5,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { HistoryViewMode } from '@features/history/models/history-page.viewmodel';
 
 @Component({
   selector: 'txg-history-actions-bar',
@@ -26,10 +27,11 @@ export class HistoryActionsBarComponent {
   @Input() pageSize: number = 10;
   @Input() pageIndex: number = 0;
   @Input() pageSizeOptions: number[] = [5, 10, 25, 100];
-  @Input() filterSpecified: boolean = false;
+  @Input() viewMode: HistoryViewMode = 'list';
 
   @Output() filterButtonClicked = new EventEmitter<void>();
   @Output() pageChanged = new EventEmitter<PageEvent>();
+  @Output() viewModeChanged = new EventEmitter<HistoryViewMode>();
 
   onPageChanged(event: PageEvent): void {
     this.pageChanged.emit(event);
@@ -37,5 +39,14 @@ export class HistoryActionsBarComponent {
 
   onFilterClicked(): void {
     this.filterButtonClicked.emit();
+  }
+
+  onViewToggleClicked(): void {
+    if (this.viewMode === 'list') {
+      this.viewModeChanged.emit('calendar');
+    }
+    if (this.viewMode === 'calendar') {
+      this.viewModeChanged.emit('list');
+    }
   }
 }

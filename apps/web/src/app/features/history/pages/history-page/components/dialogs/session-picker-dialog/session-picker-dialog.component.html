@@ -1,0 +1,29 @@
+<h2 mat-dialog-title class="text-xl font-semibold" data-cy="history-session-picker-dialog-title">{{ data.date | date: 'fullDate' }}</h2>
+
+<mat-dialog-content class="!pt-2" data-cy="history-session-picker-dialog">
+  <div class="flex flex-col gap-1">
+    @for (session of data.sessions; track session.id) {
+      <button
+        mat-button
+        class="!justify-start !h-auto w-full"
+        (click)="onSessionPicked(session.id)"
+        data-cy="history-session-picker-dialog-session">
+        <div class="flex items-center gap-3 py-2">
+          <span class="txg-session-dot w-2 h-2 rounded-full shrink-0" style="background-color: var(--mat-sys-primary)"></span>
+          <div class="flex flex-col items-start">
+            <span class="font-medium">{{ session.title }}</span>
+            <span class="text-sm text-on-surface-variant whitespace-normal text-left font-normal">
+              <span class="font-medium">{{ session.sessionDate | date: 'shortTime' }}</span>{{ session.exercises.length > 0 ? ' · ' + exerciseNames(session) : '' }}
+            </span>
+          </div>
+        </div>
+      </button>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancelled()" type="button" data-cy="history-session-picker-dialog-cancel-button">
+    Cancel
+  </button>
+</mat-dialog-actions>

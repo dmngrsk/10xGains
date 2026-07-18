@@ -221,9 +221,10 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
       cy.getMatSnackBar().should('contain.text', 'Notes saved'); // Wait for the save to complete before navigating away
 
-      // Open a completed session of the same plan from the history.
+      // Open a completed session of the same plan from the history list (the calendar opens by default).
       cy.navigateBack();
       cy.navigateTo('history');
+      cy.getBySel(dataCy.history.viewToggle).click();
       cy.getBySel(dataCy.history.sessionCard).first().within(() => {
         cy.getBySel(dataCy.history.sessionNavigateButton).click();
       });

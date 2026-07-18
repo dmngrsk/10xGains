@@ -155,14 +155,21 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
 | | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
 | | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
-| **History** | HIST-01 | A completed session correctly appears in the session history list. | High | No |
-| | HIST-02 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
-| | HIST-03 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
-| | HIST-04 | The "filter applied" indicator on the action bar is highlighted when a filter is active. | Low | No |
-| | HIST-05 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
-| | HIST-06 | An error notice is displayed if the session history fails to load. | High | No |
-| | HIST-07 | On error, a user can click the retry button to reload the session history. | High | No |
-| | HIST-08 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
+| **History (Calendar)** | HIST-01 | Days holding completed sessions are marked with dots in the calendar. | High | No |
+| | HIST-02 | Tapping a day with a single session navigates to that session's detail page. | High | No |
+| | HIST-03 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |
+| | HIST-04 | Returning from a session detail page restores the calendar view and the displayed month. | Medium | No |
+| | HIST-05 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
+| | HIST-06 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
+| | HIST-07 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
+| **History (List)** | HIST-08 | A completed session correctly appears in the session history list. | High | No |
+| | HIST-09 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
+| | HIST-10 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
+| | HIST-11 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
+| | HIST-12 | An error notice is displayed if the session history fails to load. | High | No |
+| | HIST-13 | On error, a user can click the retry button to reload the session history. | High | No |
+| | HIST-14 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
+| | HIST-15 | Without a view parameter, the calendar opens by default; after toggling, the last used view (list, then calendar again) is restored on revisits. | Medium | No |
 | **Progress** | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 | | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
 | | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |

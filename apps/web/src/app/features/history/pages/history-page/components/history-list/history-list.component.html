@@ -1,0 +1,19 @@
+@if (sessions.length === 0) {
+  <txg-notice
+    iconName="search_off"
+    titleText="No Sessions Found"
+    descriptionText="It looks like there are no sessions matching your current filters, or you haven't recorded any sessions yet."
+    buttonText="Edit Filters"
+    (buttonClicked)="onEditFiltersClicked()"
+    data-cy="history-empty-notice">
+  </txg-notice>
+} @else {
+  <div class="pb-18 w-full" data-cy="history-session-list">
+    <txg-session-list
+      [sessions]="sessions"
+      [notesAccessible]="true"
+      (sessionNavigated)="onSessionNavigated($event)"
+      (notesClicked)="onNotesClicked($event)">
+    </txg-session-list>
+  </div>
+}
