@@ -1,5 +1,5 @@
 <div txgAutoHideScrollbar class="overflow-x-auto pb-2">
-  <mat-chip-listbox multiple aria-label="Plotted exercises">
+  <mat-chip-listbox multiple>
     @for (exercise of exercises; track exercise.exerciseId) {
       <mat-chip-option
         [selected]="exercise.selected"
