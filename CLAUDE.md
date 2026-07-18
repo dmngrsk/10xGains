@@ -54,3 +54,4 @@ Examples: `feat(settings): Add profile image upload feature`, `fix(auth): Resolv
 ## Additional Notes
 
 - When not sure about a solution to a problem, ask for feedback — do not make anything up.
+- Place draft documents (work-in-progress specs, design notes) in `docs/drafts/`, which is git-ignored; only finished documentation belongs directly in `docs/`.
