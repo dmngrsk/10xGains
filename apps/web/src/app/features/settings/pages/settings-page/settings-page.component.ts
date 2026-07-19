@@ -77,6 +77,21 @@ export class SettingsPageComponent implements OnInit {
       .subscribe();
   }
 
+  onGoogleConnected(): void {
+    this.facade.connectGoogle().pipe(
+      take(1),
+      tapIf(success => !success, () => this.snackBar.open('Failed to connect Google account.', 'Close', { duration: 3000 }))
+    ).subscribe();
+  }
+
+  onGoogleDisconnected(): void {
+    this.facade.disconnectGoogle().pipe(
+      take(1),
+      tapIf(success => success, () => this.snackBar.open('Google account disconnected.', 'Close', { duration: 3000 })),
+      tapIf(success => !success, () => this.snackBar.open('Failed to disconnect Google account.', 'Close', { duration: 3000 }))
+    ).subscribe();
+  }
+
   onSignedOut(): void {
     this.facade.signOut().pipe(
       take(1),

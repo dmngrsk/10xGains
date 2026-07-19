@@ -1,8 +1,8 @@
 import { Injectable, inject, Signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Observable, from, of, concat, OperatorFunction } from 'rxjs';
-import { catchError, map, shareReplay } from 'rxjs/operators';
-import { AuthError, AuthSession, AuthResponse as SupabaseAuthResponse, User } from '@supabase/supabase-js';
+import { catchError, map, shareReplay, switchMap } from 'rxjs/operators';
+import { AuthError, AuthSession, AuthResponse as SupabaseAuthResponse, User, UserIdentity } from '@supabase/supabase-js';
 import { ProfileService } from '@shared/api/profile.service';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SupabaseService } from '../db/supabase.service';
@@ -103,6 +103,68 @@ export class AuthService {
     return from(this.supabase.auth.signUp({ ...command, options })).pipe(
       this.toRegisterResponse(),
       tapIf(r => (r.success && r.emailVerified) ?? false, (r) => this.profileService.createDefaultProfile(r.userId!))
+    );
+  }
+
+  /**
+   * Starts the Google OAuth sign-in flow by redirecting the browser to Google.
+   * A successful response only means the redirect started; the real outcome
+   * arrives at the `/auth/callback?type=oauth` route after the OAuth dance.
+   * @returns An `Observable<LoginResponse>` that emits an object indicating success or failure of initiating the flow.
+   */
+  loginWithGoogle(): Observable<LoginResponse> {
+    const options = { redirectTo: `${window.location.origin}/auth/callback?type=oauth` };
+    return from(this.supabase.auth.signInWithOAuth({ provider: 'google', options })).pipe(this.toAuthResponse());
+  }
+
+  /**
+   * Links a Google identity to the currently authenticated user by redirecting the browser to Google.
+   * Requires an active session; the identity is attached to the current user instead of creating a new one.
+   * The real outcome arrives at the `/auth/callback?type=oauth-link` route after the OAuth dance.
+   * @returns An `Observable<AuthResponse>` that emits an object indicating success or failure of initiating the flow.
+   */
+  linkGoogleIdentity(): Observable<AuthResponse> {
+    const options = { redirectTo: `${window.location.origin}/auth/callback?type=oauth-link` };
+    return from(this.supabase.auth.linkIdentity({ provider: 'google', options })).pipe(this.toAuthResponse());
+  }
+
+  /**
+   * Unlinks the Google identity from the currently authenticated user.
+   * @returns An `Observable<AuthResponse>` that emits an object indicating success or failure.
+   * Fails when no Google identity is linked to the current user.
+   */
+  unlinkGoogleIdentity(): Observable<AuthResponse> {
+    return from(this.supabase.auth.getUserIdentities()).pipe(
+      switchMap(({ data, error }) => {
+        if (error) {
+          return of({ success: false, error: error.message });
+        }
+
+        const googleIdentity = data?.identities.find(identity => identity.provider === 'google');
+        if (!googleIdentity) {
+          return of({ success: false, error: 'No Google account is linked.' });
+        }
+
+        return from(this.supabase.auth.unlinkIdentity(googleIdentity)).pipe(this.toAuthResponse());
+      }),
+      catchError((error: Error) => of({ success: false, error: error.message }))
+    );
+  }
+
+  /**
+   * Retrieves the identities (sign-in methods) linked to the currently authenticated user.
+   * @returns An `Observable<UserIdentity[]>` that emits the user's identities.
+   * Errors when the identities cannot be retrieved, so callers can distinguish a genuine
+   * "no identities" result from a transient failure instead of treating both as empty.
+   */
+  getIdentities(): Observable<UserIdentity[]> {
+    return from(this.supabase.auth.getUserIdentities()).pipe(
+      map(({ data, error }) => {
+        if (error) {
+          throw new Error(error.message);
+        }
+        return data?.identities ?? [];
+      })
     );
   }
 

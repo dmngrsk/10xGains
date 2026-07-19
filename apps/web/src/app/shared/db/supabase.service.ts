@@ -17,7 +17,8 @@ export class SupabaseService {
     if (!this._client) {
       this._client = createClient<Database>(
         this.envService.supabaseUrl,
-        this.envService.supabaseKey
+        this.envService.supabaseKey,
+        { auth: { flowType: 'pkce' } }
       );
     }
     return this._client;

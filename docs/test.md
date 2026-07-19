@@ -132,6 +132,13 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | AUTH-10 | An authenticated user can sign out. | High | No |
 | | AUTH-11 | A user cannot access another user's data (RLS check). | Critical | No |
 | | AUTH-12 | A user is redirected to the login page when the session expires. | Critical | No
+| | AUTH-13 | A user can start the Google OAuth flow from the login page. | High | No |
+| | AUTH-14 | A user can start the Google OAuth flow from the register page. | High | No |
+| | AUTH-15 | A profile is created for a first-time Google user on the OAuth callback. | Critical | No |
+| | AUTH-16 | The existing profile of an auto-linked user is preserved on the OAuth callback. | Critical | No |
+| | AUTH-17 | Google is shown as not connected for a password-only account. | Medium | No |
+| | AUTH-18 | Google can be disconnected when another sign-in method exists. | Medium | No |
+| | AUTH-19 | Disconnecting Google is disabled when it is the only sign-in method. | High | No |
 | **Plan Management**| PLAN-01 | An authenticated user can create a new plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
 | | PLAN-03 | In the plan editor, a user can add, edit and delete a new day. | High | No |

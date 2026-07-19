@@ -110,7 +110,7 @@ Each container runs a full Supabase stack, so two containers cannot both publish
 
     This command uses Docker to start the local Supabase stack (database, auth, storage, etc.). On first run, it also creates the database and applies all schema changes from the `supabase/migrations` folder.
     ```bash
-    npx supabase start
+    pnpm exec supabase start
     ```
     Once it's running, the CLI will output your local Supabase credentials, including the **API URL** and the **publishable key**. You will need these in step 6.
 
@@ -137,6 +137,8 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     pnpm seed
     ```
     This reads `SUPABASE_SECRET_KEY` from `.env` (printed by `supabase start`), and is idempotent — safe to re-run, e.g. after `supabase db reset`.
+
+    > **Optional — Google sign-in:** the local stack enables the Google OAuth provider, whose credentials are resolved from `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` / `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET` at `supabase start` time (see `.env.example`). Without them everything else works; the Google button just fails at Google's door. To make it work, create an OAuth 2.0 Web client in the Google Cloud Console with `http://127.0.0.1:54321/auth/v1/callback` as an authorized redirect URI, export both variables (the dev container exports them from `.env` automatically), and restart the stack.
 
 8.  **Start the apps:**
 

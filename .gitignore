@@ -32,8 +32,6 @@ coverage/
 *.launch
 .settings/
 *.sublime-workspace
-.claude/*
-!.claude/skills/
 
 # Visual Studio Code
 .vscode/*
@@ -42,6 +40,11 @@ coverage/
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
+
+# Claude Code
+.claude/*
+!.claude/.gitkeep
+!.claude/skills/
 
 # Miscellaneous
 .angular/

@@ -13,5 +13,4 @@ import { RouterLink } from '@angular/router';
   ],
   templateUrl: './login-actions.component.html'
 })
-export class LoginActionsComponent {
-}
+export class LoginActionsComponent {}

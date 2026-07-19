@@ -14,8 +14,11 @@
           </txg-profile-settings-card>
 
           <txg-account-settings-card
+            [account]="viewModel.account"
             (passwordChanged)="onPasswordChanged()"
-            (signedOut)="onSignedOut()">
+            (signedOut)="onSignedOut()"
+            (googleConnected)="onGoogleConnected()"
+            (googleDisconnected)="onGoogleDisconnected()">
           </txg-account-settings-card>
         </div>
       }

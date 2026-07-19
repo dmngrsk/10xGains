@@ -26,7 +26,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.home.noActivePlanNotice).should('be.visible');
 
       cy.wait('@signup').then((interception) => {
-        cy.task('users:deleteEphemeral', { userId: interception.response!.body.user.id });
+        cy.task('users:delete', { userId: interception.response!.body.user.id });
       });
     });
 
@@ -159,8 +159,8 @@ describe('Authentication', { tags: ['@auth'] }, () => {
             cy.getBySel(dataCy.plans.planEdit.errorNotice).should('be.visible');
 
             // Clean up the ephemeral users.
-            cy.task('users:deleteEphemeral', { userId: userId1 });
-            cy.task('users:deleteEphemeral', { userId: userId2 });
+            cy.task('users:delete', { userId: userId1 });
+            cy.task('users:delete', { userId: userId2 });
             cy.wrap(null).as('ephemeralUserId');
           });
         });
@@ -175,6 +175,104 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.navigateTo('plans');
 
       cy.url().should('include', '/auth/login');
+    });
+  });
+
+  describe('Google authentication', () => {
+    // The real Google leg of the OAuth dance cannot be automated (Google blocks automated
+    // sign-ins), so these tests stub the authorize redirect, fabricate the post-OAuth state
+    // that the app's callback handles, or mock the identities Supabase reports.
+    const mockGoogleIdentity = (userId: string) => ({
+      identity_id: '00000000-0000-4000-8000-000000000000',
+      id: userId,
+      user_id: userId,
+      identity_data: { email: 'mock-google-user@gmail.com', email_verified: true, sub: 'mock-google-sub' },
+      provider: 'google',
+      last_sign_in_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    it('starts the Google OAuth flow from the login page', { tags: ['AUTH-13'] }, () => {
+      cy.intercept('GET', '**/auth/v1/authorize?provider=google*', { statusCode: 200, body: '<html>Google sign-in stub</html>' }).as('authorize');
+
+      cy.getBySel(dataCy.auth.login.googleButton).click();
+
+      cy.wait('@authorize');
+    });
+
+    it('starts the Google OAuth flow from the register page', { tags: ['AUTH-14'] }, () => {
+      cy.intercept('GET', '**/auth/v1/authorize?provider=google*', { statusCode: 200, body: '<html>Google sign-in stub</html>' }).as('authorize');
+
+      cy.getBySel(dataCy.auth.login.signUpButton).click();
+      cy.getBySel(dataCy.auth.register.googleButton).click();
+
+      cy.wait('@authorize');
+    });
+
+    it('creates a profile seeded with the Google name on the oauth callback', { tags: ['AUTH-15'] }, () => {
+      cy.task<{ userId: string; email: string; password: string }>('users:create', { prefix: 'auth15', scaffold: false, userMetadata: { given_name: 'Ada' } })
+        .then(({ userId, email, password }) => {
+          cy.getBySel(dataCy.auth.login.emailInput).type(email);
+          cy.getBySel(dataCy.auth.login.passwordInput).type(password);
+          cy.getBySel(dataCy.auth.login.signInButton).click();
+          cy.url().should('include', '/home');
+
+          cy.visit('/auth/callback?type=oauth');
+          cy.url().should('include', '/home');
+
+          cy.task<{ first_name: string } | null>('profiles:get', { userId }).then((profile) => {
+            expect(profile, 'profile created by the oauth callback').to.not.equal(null);
+            expect(profile?.first_name, 'first name seeded from Google given_name').to.equal('Ada');
+          });
+
+          cy.task('users:delete', { userId });
+        });
+    });
+
+    it('preserves the existing profile of an auto-linked user on the oauth callback', { tags: ['AUTH-16'] }, () => {
+      cy.login();
+      cy.navigateTo('settings');
+      cy.getBySel(dataCy.settings.profile.nameInput).invoke('val').should('not.be.empty').then((firstName) => {
+        cy.visit('/auth/callback?type=oauth');
+        cy.url().should('include', '/home');
+
+        cy.navigateTo('settings');
+        cy.getBySel(dataCy.settings.profile.nameInput).should('have.value', firstName as unknown as string);
+      });
+    });
+
+    it('shows Google as not connected for a password-only account', { tags: ['AUTH-17'] }, () => {
+      cy.login();
+      cy.navigateTo('settings');
+
+      cy.getBySel(dataCy.settings.account.connectGoogleButton).should('be.visible');
+      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('not.exist');
+    });
+
+    it('shows Google as connected with an enabled disconnect for a linked account', { tags: ['AUTH-18'] }, () => {
+      cy.login();
+      cy.intercept('GET', '**/auth/v1/user*', (req) => {
+        req.continue((res) => {
+          res.body.identities = [...(res.body.identities ?? []), mockGoogleIdentity(res.body.id)];
+        });
+      });
+      cy.navigateTo('settings');
+
+      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('be.enabled');
+      cy.getBySel(dataCy.settings.account.connectGoogleButton).should('not.exist');
+    });
+
+    it('disables disconnecting Google when it is the only sign-in method', { tags: ['AUTH-19'] }, () => {
+      cy.login();
+      cy.intercept('GET', '**/auth/v1/user*', (req) => {
+        req.continue((res) => {
+          res.body.identities = [mockGoogleIdentity(res.body.id)];
+        });
+      });
+      cy.navigateTo('settings');
+
+      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('be.disabled');
     });
   });
 });

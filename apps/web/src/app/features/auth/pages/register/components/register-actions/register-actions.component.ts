@@ -13,5 +13,4 @@ import { RouterModule } from '@angular/router';
   ],
   templateUrl: './register-actions.component.html'
 })
-export class RegisterActionsComponent {
-}
+export class RegisterActionsComponent {}

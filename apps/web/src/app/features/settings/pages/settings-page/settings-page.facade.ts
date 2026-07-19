@@ -11,6 +11,10 @@ const initialSettingsPageViewModel: SettingsPageViewModel = {
     email: null,
     aiSuggestionsRemaining: null,
   },
+  account: {
+    googleLinked: null,
+    identityCount: 0,
+  },
   isLoading: false,
   error: null,
 };
@@ -26,6 +30,7 @@ export class SettingsPageFacade {
 
   loadInitialData(): void {
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
+    this.loadIdentities();
 
     this.authService.currentUser$.pipe(
       first(user => user !== null),
@@ -63,6 +68,50 @@ export class SettingsPageFacade {
         return EMPTY;
       })
     ).subscribe();
+  }
+
+  loadIdentities(): void {
+    this.authService.getIdentities().pipe(first()).subscribe({
+      next: identities => this.viewModel.update(vm => ({
+        ...vm,
+        account: {
+          googleLinked: identities.some(identity => identity.provider === 'google'),
+          identityCount: identities.length,
+        }
+      })),
+      error: () => this.viewModel.update(vm => ({
+        ...vm,
+        account: { googleLinked: null, identityCount: 0 },
+      })),
+    });
+  }
+
+  connectGoogle(): Observable<boolean> {
+    return this.authService.linkGoogleIdentity().pipe(
+      map(response => response.success),
+      catchError(() => of(false))
+    );
+  }
+
+  disconnectGoogle(): Observable<boolean> {
+    this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
+
+    // unlinkGoogleIdentity() never errors - it maps failures to { success: false, error } - so a
+    // catchError here would be dead code. On success Google is gone, so update the account state
+    // locally instead of re-fetching the identities.
+    return this.authService.unlinkGoogleIdentity().pipe(
+      tap(response => {
+        this.viewModel.update(s => ({
+          ...s,
+          isLoading: false,
+          error: response.success ? null : (response.error ?? 'Failed to disconnect Google.'),
+          account: response.success
+            ? { googleLinked: false, identityCount: Math.max(0, s.account.identityCount - 1) }
+            : s.account,
+        }));
+      }),
+      map(response => response.success)
+    );
   }
 
   saveProfile(command: UpsertProfileCommand): Observable<boolean> {

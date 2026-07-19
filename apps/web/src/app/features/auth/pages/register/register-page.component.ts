@@ -7,6 +7,8 @@ import { AuthService, RegisterCommand, RegisterResponse } from '@shared/services
 import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { RegisterActionsComponent } from './components/register-actions/register-actions.component';
 import { RegisterFormComponent } from './components/register-form/register-form.component';
+import { AuthDividerComponent } from '../../components/auth-divider/auth-divider.component';
+import { GoogleButtonComponent } from '../../components/google-button/google-button.component';
 
 @Component({
   selector: 'txg-register-page',
@@ -15,6 +17,8 @@ import { RegisterFormComponent } from './components/register-form/register-form.
     CommonModule,
     RouterModule,
     AuthLayoutComponent,
+    AuthDividerComponent,
+    GoogleButtonComponent,
     RegisterActionsComponent,
     RegisterFormComponent
   ],
@@ -28,6 +32,17 @@ export class RegisterPageComponent {
 
   isRegistered = signal(false);
   @ViewChild('registerForm') registerForm!: RegisterFormComponent;
+
+  onGoogleClicked(): void {
+    this.authService
+      .loginWithGoogle()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response) => {
+        if (!response.success) {
+          this.registerForm?.setError(response.error || 'Google sign-in failed');
+        }
+      });
+  }
 
   onFormSubmitted(request: RegisterCommand): void {
     if (!this.registerForm) return;

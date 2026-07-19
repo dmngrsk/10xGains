@@ -7,6 +7,8 @@ import { AuthService, LoginCommand, LoginResponse } from '@shared/services/auth.
 import { AuthLayoutComponent } from '@shared/ui/layouts/auth-layout/auth-layout.component';
 import { LoginActionsComponent } from './components/login-actions/login-actions.component';
 import { LoginFormComponent } from './components/login-form/login-form.component';
+import { AuthDividerComponent } from '../../components/auth-divider/auth-divider.component';
+import { GoogleButtonComponent } from '../../components/google-button/google-button.component';
 
 @Component({
   selector: 'txg-login-page',
@@ -15,6 +17,8 @@ import { LoginFormComponent } from './components/login-form/login-form.component
     CommonModule,
     MatCardModule,
     AuthLayoutComponent,
+    AuthDividerComponent,
+    GoogleButtonComponent,
     LoginFormComponent,
     LoginActionsComponent
   ],
@@ -26,6 +30,17 @@ export class LoginPageComponent {
   private destroyRef = inject(DestroyRef);
 
   @ViewChild('loginForm') loginForm!: LoginFormComponent;
+
+  onGoogleClicked(): void {
+    this.authService
+      .loginWithGoogle()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((response: LoginResponse) => {
+        if (!response.success) {
+          this.loginForm?.setError(response.error || 'Google sign-in failed');
+        }
+      });
+  }
 
   onFormSubmitted(command: LoginCommand): void {
     if (!this.loginForm) return;

@@ -121,7 +121,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
   describe('when viewing the plan editor page with an existing, inactive plan', () => {
     beforeEach(() => {
       cy.get('@ephemeralUserId').then((userId) => {
-        cy.task('plans:resetActivePlan', { userId });
+        cy.task('plans:resetActive', { userId });
         cy.navigateTo('plans');
         cy.getBySel(dataCy.plans.planList.viewPlanButton).click();
       });
