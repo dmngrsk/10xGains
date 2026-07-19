@@ -353,10 +353,13 @@ export class HistoryPageFacade {
   }
 
   updatePagination(currentPage: number, pageSize: number): void {
+    // `pageSize` lives on `filters`, which is what `loadSessions` reads. Writing it to the
+    // view-model root instead left the request limit pinned at its initial value, so the
+    // paginator's page-size selector had no effect.
     this.viewModel.update(vm => ({
       ...vm,
       currentPage,
-      pageSize
+      filters: { ...vm.filters, pageSize }
     }));
     this.loadSessions();
   }

@@ -391,7 +391,11 @@ export class PlanEditPageFacade {
       message = (err as { error: string }).error;
     }
 
-    this.viewModelSignal.update(s => ({ ...s, plan: null, isLoading: false, message }));
+    // The view model's field is `error`; writing `message` set a property nothing reads, so every
+    // failure - a profile fetch, any plan mutation - showed the user nothing at all. The plan is
+    // left in place too: discarding it blanked the whole editor when a single mutation failed,
+    // and on an initial load failure there is no plan to discard anyway.
+    this.viewModelSignal.update(s => ({ ...s, isLoading: false, error: message }));
     return of({ error: message } as T);
   }
 }

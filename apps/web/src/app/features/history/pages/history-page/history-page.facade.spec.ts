@@ -103,6 +103,29 @@ describe('HistoryPageFacade', () => {
     });
   });
 
+  describe('updatePagination', () => {
+    beforeEach(() => {
+      configure('plan-1');
+      facade.loadHistoryPageData();
+    });
+
+    it('should request the selected page size', () => {
+      // The paginator's page-size selector is only wired up if the new size reaches the request:
+      // writing it to the view-model root instead of `filters` left the limit pinned at 10.
+      facade.updatePagination(0, 25);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 0 }));
+      expect(facade.viewModel().filters.pageSize).toBe(25);
+    });
+
+    it('should offset by the selected page size when paging forward', () => {
+      facade.updatePagination(2, 25);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 50 }));
+      expect(facade.viewModel().currentPage).toBe(2);
+    });
+  });
+
   describe('when using the list view', () => {
     beforeEach(() => {
       configure('plan-1');
