@@ -35,6 +35,6 @@ export async function handleCreateSessionSet(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (e) {
     const fallbackMessage = 'Failed to create session set';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleCreateSessionSet.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleCreateSessionSet.name, fallbackMessage);
   }
 }

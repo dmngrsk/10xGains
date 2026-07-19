@@ -29,12 +29,10 @@ export async function patch(
     const successData = createSuccessData(updatedSet, { message: 'Session set updated successfully.' });
     return c.json(successData, 200);
   } catch (e) {
-    if ((e as Error).message.includes('Session') && (e as Error).message.includes('is completed')) {
-      const errorData = createErrorDataWithLogging(400, (e as Error).message);
-      return c.json(errorData, 400);
-    }
-
+    // `patchSet` raises a ConflictError for a completed session and a NotFoundError for a missing
+    // session or set; `handleRepositoryError` maps both from their type, so the status no longer
+    // depends on matching words in the message.
     const fallbackMessage = 'Failed to update training session set';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, 'patch', fallbackMessage);
+    return handleRepositoryError(c, e as Error, 'patch', fallbackMessage);
   }
 }

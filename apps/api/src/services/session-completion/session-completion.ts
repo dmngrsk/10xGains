@@ -1,4 +1,5 @@
 import type { PlanExerciseDto, PlanExerciseProgressionDto, SessionDto, SessionSetDto } from '@txg/shared';
+import { ConflictError, DataIntegrityError } from '../../utils/errors';
 
 /**
  * PostgREST returns an embedded relation as an object for a to-one join and as an array
@@ -46,11 +47,11 @@ export interface PlanDayWithProgressionsRow {
  */
 export function assertSessionCompletable(session: Pick<SessionDto, 'status' | 'plan_id'>): void {
   if (session.status !== 'IN_PROGRESS') {
-    throw new Error(`Session cannot be completed. Current status: ${session.status}. Expected: IN_PROGRESS.`);
+    throw new ConflictError(`Session cannot be completed. Current status: ${session.status}. Expected: IN_PROGRESS.`, 'SESSION_NOT_COMPLETABLE', 'session_completion_error');
   }
 
   if (!session.plan_id) {
-    throw new Error('Plan ID missing from the session. Cannot calculate progressions.');
+    throw new DataIntegrityError('Plan ID missing from the session. Cannot calculate progressions.', 'PLAN_MISSING', 'plan_missing_error');
   }
 }
 

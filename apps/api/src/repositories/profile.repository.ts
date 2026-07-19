@@ -4,7 +4,7 @@ import type {
   ProfileDto,
   UpsertProfileCommand
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { ForbiddenError } from '../utils/errors';
 
 export class ProfileRepository {
   constructor(
@@ -21,7 +21,7 @@ export class ProfileRepository {
    */
   async findById(userId: string): Promise<ProfileDto | null> {
     if (userId !== this.getUserId()) {
-      throw new Error('Forbidden: You can only access your own profile');
+      throw new ForbiddenError('You can only access your own profile.', 'PROFILE_FORBIDDEN', 'profile_forbidden_error');
     }
 
     const { data, error } = await this.supabase
@@ -50,7 +50,7 @@ export class ProfileRepository {
    */
   async upsert(userId: string, command: UpsertProfileCommand): Promise<ProfileDto> {
     if (userId !== this.getUserId()) {
-      throw new Error('Forbidden: You can only update your own profile');
+      throw new ForbiddenError('You can only update your own profile.', 'PROFILE_FORBIDDEN', 'profile_forbidden_error');
     }
 
     const { data: existingProfile, error: existingProfileError } = await this.supabase
@@ -88,23 +88,4 @@ export class ProfileRepository {
     return data as ProfileDto;
   }
 
-  /**
-   * Handles profile-specific errors, returning a formatted API error response.
-   *
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleProfileError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Forbidden: You can only access your own profile') ||
-        error?.message?.includes('Forbidden: You can only update your own profile')) {
-      return createErrorData(
-        403,
-        error.message,
-        { type: 'profile_access_error' },
-        'PROFILE_ACCESS_ERROR'
-      );
-    }
-
-    return null;
-  }
 }

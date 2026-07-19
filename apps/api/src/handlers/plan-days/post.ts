@@ -31,6 +31,6 @@ export async function handleCreatePlanDay(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (error) {
     const fallbackMessage = 'Failed to create plan day';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleCreatePlanDay.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleCreatePlanDay.name, fallbackMessage);
   }
 }

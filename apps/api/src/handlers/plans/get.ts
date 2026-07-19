@@ -25,6 +25,6 @@ export async function handleGetPlans(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to retrieve plans';
-    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handleGetPlans.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetPlans.name, fallbackMessage);
   }
 }

@@ -50,6 +50,6 @@ export async function handlePutSessionById(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to update training session';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handlePutSessionById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handlePutSessionById.name, fallbackMessage);
   }
 }

@@ -21,6 +21,6 @@ export async function handleDeletePlanDayById(c: Context<AppContext>) {
     return c.body(null, 204);
   } catch (error) {
     const fallbackMessage = 'Failed to delete plan day';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleDeletePlanDayById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleDeletePlanDayById.name, fallbackMessage);
   }
 }

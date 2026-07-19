@@ -8,7 +8,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { ConflictError, ForbiddenError } from '../utils/errors';
 
 export type ExerciseQueryOptions = PagingQueryOptions & SortingQueryOptions;
 
@@ -26,7 +26,7 @@ export class ExerciseRepository {
   async findAll(options: ExerciseQueryOptions): Promise<ExerciseListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
     if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new Error('Invalid sort direction. Must be "asc" or "desc".');
+      throw new ConflictError('Invalid sort direction. Must be "asc" or "desc".', 'INVALID_SORT', 'invalid_sort_error');
     }
 
     const { data, count, error } = await this.supabase
@@ -98,7 +98,7 @@ export class ExerciseRepository {
   update(_exerciseId: string, _command: UpdateExerciseCommand): Promise<ExerciseDto | null> {
     // The catalog is shared between all users, so editing an entry is an administrative action.
     // There is no admin role yet; RLS denies the update as well, so this is not the only guard.
-    throw new Error('Forbidden: You cannot update this exercise');
+    throw new ForbiddenError('You cannot update this exercise.', 'EXERCISE_FORBIDDEN', 'exercise_forbidden_error');
   }
 
   /**
@@ -109,30 +109,7 @@ export class ExerciseRepository {
    */
   delete(_exerciseId: string): Promise<boolean> {
     // See `update`: removing a shared catalog entry is an administrative action, denied by RLS too.
-    throw new Error('Forbidden: You cannot delete this exercise');
+    throw new ForbiddenError('You cannot delete this exercise.', 'EXERCISE_FORBIDDEN', 'exercise_forbidden_error');
   }
 
-  /**
-   * Handles exercise-specific errors, returning a formatted API error response.
-   *
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleExerciseError(error: Error): ApiErrorResponse | null {
-    const errorMessages = [
-      'Forbidden: You cannot update this exercise',
-      'Forbidden: You cannot delete this exercise'
-    ];
-
-    if (errorMessages.some(msg => error?.message?.includes(msg))) {
-      return createErrorData(
-        403,
-        error.message,
-        { type: 'exercise_access_error' },
-        'EXERCISE_ACCESS_ERROR'
-      );
-    }
-
-    return null;
-  }
 }

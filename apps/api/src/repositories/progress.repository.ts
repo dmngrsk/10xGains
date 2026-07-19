@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@txg/shared';
 import type { ExerciseProgressDto } from '@txg/shared';
-import { ApiErrorResponse } from '../utils/api-helpers';
 import { aggregateExerciseProgress } from '../services/exercise-progress/exercise-progress';
 import type { ExerciseProgressRow } from '../services/exercise-progress/exercise-progress';
 
@@ -68,14 +67,4 @@ export class ProgressRepository {
     return aggregateExerciseProgress((data ?? []) as unknown as ExerciseProgressRow[]);
   }
 
-  /**
-   * Handles progress-specific repository errors, returning a formatted API error response.
-   * Progress queries are read-only and user-scoped, so there are no domain errors to map.
-   *
-   * @param {Error} _error - The error to handle.
-   * @returns {ApiErrorResponse | null} Always null; callers fall back to a generic error.
-   */
-  handleProgressError(_error: Error): ApiErrorResponse | null {
-    return null;
-  }
 }

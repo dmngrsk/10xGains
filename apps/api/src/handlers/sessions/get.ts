@@ -36,6 +36,6 @@ export async function handleGetSessions(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to fetch training sessions';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetSessions.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetSessions.name, fallbackMessage);
   }
 }

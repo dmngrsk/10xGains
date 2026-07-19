@@ -28,6 +28,6 @@ export async function handleGetPlanExerciseProgressionById(c: Context<AppContext
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to get plan progression';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetPlanExerciseProgressionById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleGetPlanExerciseProgressionById.name, fallbackMessage);
   }
 }

@@ -20,6 +20,6 @@ export async function handleDeletePlanById(c: Context<AppContext>) {
     return c.body(null, 204);
   } catch (e) {
     const fallbackMessage = 'Failed to delete plan';
-    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handleDeletePlanById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleDeletePlanById.name, fallbackMessage);
   }
 }

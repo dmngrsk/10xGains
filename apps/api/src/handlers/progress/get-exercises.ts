@@ -30,6 +30,6 @@ export async function handleGetExerciseProgress(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to fetch exercise progress';
-    return handleRepositoryError(c, e as Error, progressRepository.handleProgressError, handleGetExerciseProgress.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetExerciseProgress.name, fallbackMessage);
   }
 }

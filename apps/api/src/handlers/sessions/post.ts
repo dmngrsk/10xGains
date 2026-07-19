@@ -23,7 +23,6 @@ export async function handleCreateSession(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (e) {
     const fallbackMessage = 'Failed to create training session';
-    const mergedErrorHandler = (error: Error) => sessionRepository.handlePlanNotFoundError(error) || sessionRepository.handlePlanDayNotFoundError(error) || sessionRepository.handleSessionOwnershipError(error);
-    return handleRepositoryError(c, e as Error, mergedErrorHandler, handleCreateSession.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleCreateSession.name, fallbackMessage);
   }
 }

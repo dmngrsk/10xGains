@@ -1,6 +1,7 @@
 import { Context } from "hono";
 import { AppContext } from "../context";
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
+import { isDomainError } from "./errors";
 
 /**
  * Standard API error response
@@ -179,32 +180,56 @@ export function createSuccessData<T>(
 }
 
 /**
+ * Maps a thrown value to an API error response when it carries its own HTTP semantics.
+ *
+ * This is the single place domain errors become responses. Anything that is not a `DomainError`
+ * is an unexpected fault and returns null so the caller can fall back to a 500.
+ *
+ * @param {unknown} error - The caught error.
+ * @returns {ApiErrorResponse | null} The mapped response, or null if the error is not a domain error.
+ */
+export function mapDomainError(error: unknown): ApiErrorResponse | null {
+  if (!isDomainError(error)) {
+    return null;
+  }
+
+  // 5xx domain errors indicate inconsistent stored data, which is worth a log line; 4xx ones are
+  // ordinary client outcomes and would only add noise.
+  if (error.status >= 500) {
+    return createErrorDataWithLogging(error.status, error.message, { type: error.type }, error.code, error);
+  }
+
+  return createErrorData(error.status, error.message, { type: error.type }, error.code);
+}
+
+/**
  * Generic handler for repository errors with fallback to general server error.
  *
+ * Domain errors carry their own status and code, so no per-repository matcher is needed; anything
+ * else is genuinely unexpected and becomes a 500.
+ *
  * @param {Context<AppContext>} c - Hono context
- * @param {Error} error - The caught error
- * @param {(error: Error) => T | null} repositoryErrorHandler - Function to handle repository-specific errors (e.g., planRepository.handlePlanError)
+ * @param {unknown} error - The caught error
  * @param {string} operationName - Name of the operation for logging purposes
  * @param {string} fallbackMessage - Message to use for the generic 500 error
  * @returns {Response} A JSON response containing the error details.
  */
-export function handleRepositoryError<T extends { status: ContentfulStatusCode }>(
+export function handleRepositoryError(
   c: Context<AppContext>,
-  error: Error,
-  repositoryErrorHandler: (error: Error) => T | null,
+  error: unknown,
   operationName: string,
   fallbackMessage: string
 ) {
-  const repositoryError = repositoryErrorHandler(error);
-  if (repositoryError) {
-    return c.json(repositoryError, repositoryError.status);
+  const domainError = mapDomainError(error);
+  if (domainError) {
+    return c.json(domainError, domainError.status);
   }
 
   console.error(`Unexpected error in ${operationName}:`, error);
   const errorData = createErrorDataWithLogging(
     500,
     fallbackMessage,
-    { details: (error as Error).message },
+    { details: (error as Error)?.message },
     undefined,
     error
   );

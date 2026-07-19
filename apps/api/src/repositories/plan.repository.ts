@@ -19,7 +19,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
 import {
   createEntityInCollection,
   updateEntityInCollection,
@@ -57,7 +57,7 @@ export class PlanRepository {
   async findAll(options: PlanQueryOptions): Promise<PlanListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
     if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new Error('Invalid sort direction');
+      throw new ConflictError('Invalid sort direction.', 'INVALID_SORT', 'invalid_sort_error');
     }
 
     const { data, count, error } = await this.supabase
@@ -318,7 +318,7 @@ export class PlanRepository {
 
     const createdDay = updatedDays.find(d => d.id === newDay.id);
     if (!createdDay) {
-      throw new Error('Failed to create plan day');
+      throw new DataIntegrityError('Failed to create plan day.');
     }
 
     return createdDay;
@@ -486,7 +486,7 @@ export class PlanRepository {
 
     const createdExercise = updatedExercises.find(e => e.id === newExercise.id);
     if (!createdExercise) {
-      throw new Error('Failed to create plan exercise');
+      throw new DataIntegrityError('Failed to create plan exercise.');
     }
 
     return createdExercise;
@@ -656,7 +656,7 @@ export class PlanRepository {
 
     const createdSet = updatedSets.find(s => s.id === newSet.id);
     if (!createdSet) {
-      throw new Error('Failed to create plan exercise set');
+      throw new DataIntegrityError('Failed to create plan exercise set.');
     }
 
     return createdSet;
@@ -834,39 +834,7 @@ export class PlanRepository {
     return data as PlanExerciseProgressionDto;
   }
 
-  /**
-   * Handles errors related to plan ownership, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handlePlanOwnershipError(error: Error): ApiErrorResponse | null {
-    const ownershipErrorMessages = [
-      'Plan not found or user does not have access',
-      'Plan day not found or user does not have access',
-      'Plan exercise not found or user does not have access',
-      'Plan exercise set not found or user does not have access'
-    ];
 
-    if (ownershipErrorMessages.some(msg => error?.message?.includes(msg))) {
-      return createErrorData(400, error.message, { type: 'ownership_verification_error' }, 'PLAN_OWNERSHIP_ERROR');
-    }
-
-    return null;
-  }
-
-  /**
-   * Handles errors when an exercise is not found, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleExerciseNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Exercise not found')) {
-      const errorData = createErrorData(400, error.message, { type: 'exercise_not_found_error' }, 'EXERCISE_NOT_FOUND_ERROR');
-      return errorData;
-    }
-
-    return null;
-  }
 
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
     const { data, error }  = await this.supabase
@@ -881,25 +849,25 @@ export class PlanRepository {
     }
 
     if (!data) {
-      throw new Error('Plan not found or user does not have access');
+      throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
     }
 
     if (dayId) {
       const day = data.days?.find(d => d.id === dayId);
       if (!day) {
-        throw new Error('Plan day not found or user does not have access');
+        throw new NotFoundError('Plan day not found.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
       }
 
       if (exerciseId) {
         const exercise = day.exercises?.find(e => e.id === exerciseId);
         if (!exercise) {
-          throw new Error('Plan exercise not found or user does not have access');
+          throw new NotFoundError('Plan exercise not found.', 'PLAN_EXERCISE_NOT_FOUND', 'plan_exercise_not_found_error');
         }
 
         if (setId) {
           const set = exercise.sets?.find(s => s.id === setId);
           if (!set) {
-            throw new Error('Plan exercise set not found or user does not have access');
+            throw new NotFoundError('Plan exercise set not found.', 'PLAN_EXERCISE_SET_NOT_FOUND', 'plan_exercise_set_not_found_error');
           }
         }
       }

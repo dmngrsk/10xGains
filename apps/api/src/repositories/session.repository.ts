@@ -11,7 +11,6 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData, createErrorDataWithLogging } from "../utils/api-helpers";
 import { resolveExerciseProgressions } from '../services/exercise-progressions/exercise-progressions';
 import { buildSessionSets, cancelOutstandingSessions, resolveNextPlanDayId } from '../services/session-creation/session-creation';
 import {
@@ -22,6 +21,7 @@ import {
 } from '../services/session-completion/session-completion';
 import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase';
+import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
 
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
   status?: SessionDto['status'][];
@@ -152,7 +152,7 @@ export class SessionRepository {
       .single();
 
     if (planError || !plan) {
-      throw new Error('Plan not found.');
+      throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
     }
 
     // Step 2: Fetch existing sessions to determine next day
@@ -173,7 +173,7 @@ export class SessionRepository {
 
     const currentDay = plan.days.find(d => d.id === currentDayId);
     if (!currentDay) {
-      throw new Error('Plan day not found in the specified plan.');
+      throw new NotFoundError('Plan day not found in the specified plan.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
     }
 
     // Step 3: Build records to upsert
@@ -504,7 +504,7 @@ export class SessionRepository {
 
     const createdSet = updatedSets.find((s: SessionSetDto) => s.id === newSetId);
     if (!createdSet) {
-      throw new Error('Failed to create session set');
+      throw new DataIntegrityError('Failed to create session set.');
     }
 
     return createdSet;
@@ -621,11 +621,11 @@ export class SessionRepository {
       .single();
 
     if (sessionError || !sessionData) {
-      throw new Error('Session not found.');
+      throw new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
     }
 
     if (sessionData.status === 'COMPLETED') {
-      throw new Error(`Session ${sessionId} is completed. Cannot update set.`);
+      throw new ConflictError(`Session ${sessionId} is completed. Cannot update set.`, 'SESSION_COMPLETED', 'session_completed_error');
     }
 
     const { data: currentSet, error: fetchError } = await this.supabase
@@ -636,7 +636,7 @@ export class SessionRepository {
       .single();
 
     if (fetchError || !currentSet) {
-      throw new Error('Session set not found.');
+      throw new NotFoundError('Session set not found.', 'SESSION_SET_NOT_FOUND', 'session_set_not_found_error');
     }
 
     // Update session status if needed
@@ -670,88 +670,11 @@ export class SessionRepository {
     return updatedSet as SessionSetDto;
   }
 
-  /**
-   * Handles errors related to session ownership, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleSessionOwnershipError(error: Error): ApiErrorResponse | null {
-    const ownershipErrorMessages = [
-      'Session not found or user does not have access',
-      'Session set not found or user does not have access'
-    ];
 
-    if (ownershipErrorMessages.some(msg => error?.message?.includes(msg))) {
-      return createErrorData(400, error.message, { type: 'ownership_verification_error' }, 'SESSION_OWNERSHIP_ERROR');
-    }
 
-    return null;
-  }
 
-  /**
-   * Handles errors when a session is not found, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleSessionNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Session not found') || error?.message?.includes('Session set not found')) {
-      return createErrorData(404, error.message, { type: 'session_not_found_error' }, 'SESSION_NOT_FOUND_ERROR');
-    }
 
-    return null;
-  }
 
-  /**
-   * Handles errors when a plan is not found, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handlePlanNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Plan not found')) {
-      return createErrorData(400, 'Plan not found.', { type: 'plan_not_found_error' }, 'PLAN_NOT_FOUND_ERROR');
-    }
-
-    return null;
-  }
-
-  /**
-   * Handles errors when a plan day is not found in the plan, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handlePlanDayNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Plan day not found')) {
-      return createErrorData(400, 'Plan day not found in the specified plan.', { type: 'plan_day_not_found_error' }, 'PLAN_DAY_NOT_FOUND_ERROR');
-    }
-
-    return null;
-  }
-
-  /**
-   * Handles errors during session completion, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleSessionCompletionError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Session cannot be completed')) {
-      return createErrorDataWithLogging(400, error.message, { type: 'session_completion_error' }, 'SESSION_COMPLETION_ERROR', error);
-    }
-
-    return null;
-  }
-
-  /**
-   * Handles errors when a required plan is missing, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handlePlanMissingError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Plan ID missing')) {
-      return createErrorDataWithLogging(500, 'Plan ID missing from the session. Cannot calculate progressions.', { type: 'plan_missing_error' }, 'PLAN_MISSING_ERROR', error);
-    }
-
-    return null;
-  }
 
   private async verifySessionOwnership(sessionId: string): Promise<void> {
     const { data, error } = await this.supabase
@@ -766,7 +689,7 @@ export class SessionRepository {
     }
 
     if (!data) {
-      throw new Error('Session not found or user does not have access');
+      throw new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
     }
   }
 }

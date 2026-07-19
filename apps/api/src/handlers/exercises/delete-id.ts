@@ -20,6 +20,6 @@ export async function handleDeleteExerciseById(c: Context<AppContext>) {
     return c.body(null, 204);
   } catch (e) {
     const fallbackMessage = 'Failed to delete exercise';
-    return handleRepositoryError(c, e as Error, exerciseRepository.handleExerciseError, handleDeleteExerciseById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleDeleteExerciseById.name, fallbackMessage);
   }
 }

@@ -40,6 +40,6 @@ export async function handleUpdateSessionSetById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to update session set';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleUpdateSessionSetById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleUpdateSessionSetById.name, fallbackMessage);
   }
 }

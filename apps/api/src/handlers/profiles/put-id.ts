@@ -32,6 +32,6 @@ export async function handleUpsertProfile(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to create or update user profile';
-    return handleRepositoryError(c, e as Error, profileRepository.handleProfileError, handleUpsertProfile.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleUpsertProfile.name, fallbackMessage);
   }
 }

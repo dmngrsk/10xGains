@@ -1,4 +1,5 @@
 import type { PlanExerciseSetDto, SessionDto, SessionSetDto } from '@txg/shared';
+import { DataIntegrityError } from '../../utils/errors';
 
 /** A plan day, reduced to what creating a session from it requires. */
 export interface PlanDayForSession {
@@ -37,7 +38,7 @@ export function resolveNextPlanDayId(
   }
 
   if (days.length === 0) {
-    throw new Error('Failed to identify next day for plan');
+    throw new DataIntegrityError('Failed to identify the next day for this plan.', 'NEXT_DAY_UNRESOLVED', 'next_day_unresolved_error');
   }
 
   const dayIds = [...days].sort((a, b) => a.order_index - b.order_index).map(d => d.id);
@@ -52,7 +53,7 @@ export function resolveNextPlanDayId(
 
   const lastIndex = dayIds.indexOf(lastCompleted.plan_day_id!);
   if (lastIndex === -1) {
-    throw new Error('Failed to identify next day for plan');
+    throw new DataIntegrityError('Failed to identify the next day for this plan.', 'NEXT_DAY_UNRESOLVED', 'next_day_unresolved_error');
   }
 
   return dayIds[(lastIndex + 1) % dayIds.length];

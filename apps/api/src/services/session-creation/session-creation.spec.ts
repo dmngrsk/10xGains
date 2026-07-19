@@ -120,11 +120,11 @@ describe('resolveNextPlanDayId', () => {
     it('should throw if the last completed session trained a day no longer in the plan', () => {
       const sessions = [completed('day-deleted', '2026-06-01T10:00:00.000Z')];
 
-      expect(() => resolveNextPlanDayId(DAYS, sessions)).toThrow('Failed to identify next day for plan');
+      expect(() => resolveNextPlanDayId(DAYS, sessions)).toThrow('Failed to identify the next day for this plan.');
     });
 
     it('should throw if the plan has no days', () => {
-      expect(() => resolveNextPlanDayId([], [])).toThrow('Failed to identify next day for plan');
+      expect(() => resolveNextPlanDayId([], [])).toThrow('Failed to identify the next day for this plan.');
     });
   });
 });
