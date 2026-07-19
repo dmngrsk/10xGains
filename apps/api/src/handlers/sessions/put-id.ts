@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
-import { SESSION_STATUSES, type SessionDto, type UpdateSessionCommand } from '@txg/shared';
+import type { SessionDto, SessionStatus, UpdateSessionCommand } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { validateCommandBody, validatePathParams } from '../../utils/validation';
 
@@ -9,8 +9,20 @@ const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
 });
 
+/**
+ * The statuses a plain update may set.
+ *
+ * COMPLETED is deliberately excluded. Completing a session is a pipeline - it calculates weight
+ * progressions, skips the sets left pending, and stamps the session atomically - and none of that
+ * runs on a plain PUT. Allowing it here would also let a COMPLETED session be moved back to
+ * IN_PROGRESS and completed a second time, applying its progressions twice.
+ */
+const UPDATABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS', 'CANCELLED'] as const satisfies readonly SessionStatus[];
+
 const COMMAND_SCHEMA = z.object({
-  status: z.enum(SESSION_STATUSES).optional(),
+  status: z.enum(UPDATABLE_SESSION_STATUSES, {
+    message: "Status 'COMPLETED' cannot be set here; use POST /sessions/:sessionId/complete instead",
+  }).optional(),
   notes: z.string().max(5000, 'Notes must not exceed 5000 characters').nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update"
