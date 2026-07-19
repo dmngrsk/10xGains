@@ -27,28 +27,30 @@ export class PlanService {
   private readonly apiService = inject(ApiService);
 
   /**
-   * Get plans for the authenticated user with pagination.
-   * @param limit Maximum number of plans to fetch
+   * Get plans for the authenticated user.
+   *
+   * Called without a `limit`, this returns *every* plan, paging through the endpoint as needed.
+   * Consumers that use the result as a complete list - the plan filters on the history and progress
+   * pages - depend on that; a single request would silently stop at the endpoint's 20-row default.
+   * Pass a `limit` to fetch one page instead, as the paginated plan list does.
+   *
+   * @param limit Maximum number of plans to fetch; omit to fetch all of them
    * @param offset Starting position for pagination
    * @returns Observable with plans data and potential error
    */
   getPlans(limit?: number, offset?: number): Observable<PlanServiceResponse<PlanDto[]>> {
-    const queryParams = new URLSearchParams();
-    let url = '/plans';
-
-    if (limit !== undefined) {
-      queryParams.append('limit', limit.toString());
+    if (limit === undefined) {
+      return this.apiService.getAll<PlanDto>('/plans');
     }
+
+    const queryParams = new URLSearchParams();
+    queryParams.append('limit', limit.toString());
+
     if (offset !== undefined) {
       queryParams.append('offset', offset.toString());
     }
 
-    const queryString = queryParams.toString();
-    if (queryString) {
-      url += `?${queryString}`;
-    }
-
-    return this.apiService.get<PlanDto[]>(url);
+    return this.apiService.get<PlanDto[]>(`/plans?${queryParams.toString()}`);
   }
 
   /**

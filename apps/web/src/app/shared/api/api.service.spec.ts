@@ -154,4 +154,62 @@ describe('ApiService', () => {
 
     await expect(firstValueFrom(service.get('/plans'))).rejects.toThrow('Failed to fetch');
   });
+
+  describe('getAll', () => {
+    const page = (items: unknown[], totalCount: number) =>
+      mockJsonResponse(200, { data: items, totalCount });
+
+    it('should follow pages until totalCount is exhausted', async () => {
+      const firstPage = Array.from({ length: 100 }, (_, i) => ({ id: `${i}` }));
+      const secondPage = Array.from({ length: 20 }, (_, i) => ({ id: `${100 + i}` }));
+      fetchMock
+        .mockResolvedValueOnce(page(firstPage, 120))
+        .mockResolvedValueOnce(page(secondPage, 120));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/exercises?limit=100&offset=0`);
+      expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/exercises?limit=100&offset=100`);
+      expect(result.data).toHaveLength(120);
+      expect(result.totalCount).toBe(120);
+    });
+
+    it('should issue a single request when the first page covers the collection', async () => {
+      fetchMock.mockResolvedValue(page([{ id: '1' }, { id: '2' }], 2));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.data).toEqual([{ id: '1' }, { id: '2' }]);
+    });
+
+    it('should append page params to a URL that already has a query string', async () => {
+      fetchMock.mockResolvedValue(page([], 0));
+
+      await firstValueFrom(service.getAll('/sessions?status=COMPLETED'));
+
+      expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/sessions?status=COMPLETED&limit=100&offset=0`);
+    });
+
+    it('should stop on an empty page even if totalCount overstates the collection', async () => {
+      fetchMock
+        .mockResolvedValueOnce(page([{ id: '1' }], 999))
+        .mockResolvedValueOnce(page([], 999));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.data).toEqual([{ id: '1' }]);
+    });
+
+    it('should treat a response without totalCount as a complete collection', async () => {
+      fetchMock.mockResolvedValue(mockJsonResponse(200, { data: [{ id: '1' }] }));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.data).toEqual([{ id: '1' }]);
+    });
+  });
 });
