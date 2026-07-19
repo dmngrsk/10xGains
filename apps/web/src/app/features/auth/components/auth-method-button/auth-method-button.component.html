@@ -1,0 +1,11 @@
+@if (method === 'google') {
+  <button mat-raised-button type="button" class="w-full h-12" (click)="onClicked()" [attr.data-cy]="dataCy">
+    <txg-google-icon></txg-google-icon>
+    Sign in with Google
+  </button>
+} @else if (method === 'email') {
+  <button mat-raised-button type="button" class="w-full h-12" (click)="onClicked()" [attr.data-cy]="dataCy">
+    <mat-icon>mail</mat-icon>
+    Sign in with email
+  </button>
+}

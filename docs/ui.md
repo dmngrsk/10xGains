@@ -4,42 +4,49 @@
 
 The UI is built with a mobile-first approach using Angular 22, Tailwind CSS 4, and Angular Material. It provides two primary layouts:
 
-- **AuthLayout**: Displays a simple centered card for login, registration and password recovery views. Neither the bottom navigation nor the top app bar are visible.
+- **AuthLayout**: Displays a simple centered card for the welcome, login, registration and password recovery views. Neither the bottom navigation nor the top app bar are visible.
 - **MainLayout**: Shows a top app bar and the bottom navigation bar across the five main tabs (Home, Plans, History, Progress, Settings). When a `backNavigation` target is given instead (Plan Editor, Active Session), the top app bar shows a back button and the bottom navigation is hidden.
 
 Global services (AuthGuard, HttpInterceptor, shared state services) manage authentication, error handling, and data caching.
 
 ## 2. List of Views
 
-### 2.1 Login View
+### 2.1 Welcome View
+- **Route**: `/auth`
+- **Main Goal**: Auth entry point for unauthenticated users; let them choose an authentication method.
+- **Key Info**: No form. Two full-width buttons — "Sign in with Google" (starts the Google OAuth/PKCE flow immediately) and "Sign in with email" (navigates to the Login view).
+- **Key Components**: `AuthMethodButtonComponent` (renders the Google or email button by its `method` input), `AuthLayoutComponent`, `noAuthGuard`, `MatSnackBar` for OAuth-initiation errors.
+- **UX/Accessibility/Security**: Uncrowded chooser screen; Google sign-in failures surface via snackbar; keyboard-accessible buttons.
+
+### 2.2 Login View
 - **Route**: `/auth/login`
-- **Main Goal**: Allow users to authenticate.
-- **Key Info**: Email input, Password input, Submit button, Link to Register.
+- **Main Goal**: Allow users to authenticate with email and password (reached from the Welcome view).
+- **Key Info**: Email input, Password input, Submit button, and links to Register, Reset Password, and back to the Welcome view ("Choose authentication method").
 - **Key Components**: `ReactiveForm` with `required`/`email` validators, `EmailInputComponent`, `PasswordInputComponent`, `MatButton`, `noAuthGuard` redirect logic.
 - **UX/Accessibility/Security**: Inline error messages, password show/hide, CSRF and HTTPS enforced.
 
-### 2.2 Register View
+### 2.3 Register View
 - **Route**: `/auth/register`
 - **Main Goal**: Enable new user sign‑up.
 - **Key Info**: Email input, Password input, Confirm password, Submit button.
 - **Key Components**: `ReactiveForm` with the custom `passwordStrength` and `passwordMatch` validators, `EmailInputComponent`, `PasswordInputComponent`, `MatButton`.
 - **UX/Accessibility/Security**: Real‑time validation, feedback snackbars for server errors, secure password requirements.
 
-### 2.3 Reset Password View
+### 2.4 Reset Password View
 - **Route**: `/auth/reset-password`
 - **Main Goal**: Allow users to request a password reset email. The new password is not set here — Supabase sends a magic link, and the callback hands the user off to Settings to complete the change.
 - **Key Info**: Email input, Submit button, link back to Login view.
 - **Key Components**: `ReactiveForm` (required, email), `EmailInputComponent`, `MatButton`.
 - **UX/Accessibility/Security**: Inline error messages and snackbar feedback on success/failure.
 
-### 2.4 Auth Callback View
+### 2.5 Auth Callback View
 - **Route**: `/auth/callback?type=register|reset-password`
 - **Main Goal**: Handle Supabase auth redirects. It renders no UI; it resolves the callback and forwards the user on.
-- **Key Info**: No form. `type=register` creates the default user profile, shows a success snackbar, and redirects to `/auth/login`. `type=reset-password` redirects to `/settings` with a `changePassword` action so the user can set a new password on an authenticated page.
+- **Key Info**: No form. `type=register` creates the default user profile, shows a success snackbar, and redirects to `/auth`. `type=reset-password` redirects to `/settings` with a `changePassword` action so the user can set a new password on an authenticated page.
 - **Key Components**: `CallbackComponent` (empty template), `AuthService`, `ProfileService`, `MatSnackBar`.
-- **UX/Accessibility/Security**: An unrecognized `type` falls back to `/auth/login` with an error snackbar; the password change itself happens only within an authenticated session.
+- **UX/Accessibility/Security**: An unrecognized `type` falls back to `/auth` with an error snackbar; the password change itself happens only within an authenticated session.
 
-### 2.5 Home Dashboard
+### 2.6 Home Dashboard
 - **Route**: `/home`
 - **Main Goal**: Display the next pending or in-progress session and two recent historical sessions.
 - **Key Info**: Three `MatCard` tiles:
@@ -49,42 +56,42 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **Key Components**: `MatCard`, `Flex/Grid` (Tailwind), Skeleton loaders for loading state, inline CTA for empty state.
 - **UX/Accessibility/Security**: High contrast text, swipe or tap navigations.
 
-### 2.6 Plans List
+### 2.7 Plans List
 - **Route**: `/plans`
 - **Main Goal**: List all user training plans with infinite scroll.
 - **Key Info**: Plan title, creation date, description preview.
 - **Key Components**: `cdk-virtual-scroll-viewport` or `IntersectionObserver`, `MatCard` for items, Skeleton loader, `MatButton` to add a new plan.
 - **UX/Accessibility/Security**: Announce loading state, predictable scroll, RLS ensures user sees only own plans.
 
-### 2.7 Plan Editor
+### 2.8 Plan Editor
 - **Route**: `/plans/:planId/edit`
 - **Main Goal**: Create or modify a training plan, reorder days and exercises.
 - **Key Info**: Plan metadata (name, description), list of days (`MatExpansionPanel`), within each day list of exercises.
 - **Key Components**: `MatAccordion`, `MatExpansionPanel`, `CDK DragDrop` for reorder, `MatDialog` for add/edit day/exercise, `MatAutocomplete` with "Add new exercise" option, real-time PATCH calls.
 - **UX/Accessibility/Security**: Drag-and-drop, focus management on dialogs, error snackbar on server failures.
 
-### 2.8 Active Session View
+### 2.9 Active Session View
 - **Route**: `/sessions/:sessionId`
 - **Main Goal**: Track an ongoing workout session.
 - **Key Info**: Fixed order list of exercises; for each exercise a row of set bubbles showing expected sets; "+" icon next to last bubble to add new sets via dialog; floating notes button opening a dialog with the session note and the plan note (shared across sessions of the plan).
 - **Key Components**: `MatButton` for bubbles, `MatDialog` to add set (pre-filled weight/reps), real-time PATCH to update set status, mini-FAB + `MatDialog` for session/plan notes (saved on 'Save' or backdrop click).
 - **UX/Accessibility/Security**: Clear visual feedback for completed/failed sets, confirmation snackbars, offline warning if network drops.
 
-### 2.9 History View
+### 2.10 History View
 - **Route**: `/history`
 - **Main Goal**: Browse past workout sessions with filters and pagination.
 - **Key Info**: Chronological list of sessions (date, status), swipe or icon to open filter panel, pagination controls; sessions with a note show an indicator that opens the session note (plan notes are not shown here).
 - **Key Components**: `MatDrawer` for filters (`debounceTime(100ms)` + `switchMap`), `MatPaginator`, list items with Skeleton loader, notes dialog reused from the session view.
 - **UX/Accessibility/Security**: Secure RLS filter parameters.
 
-### 2.10 Progress View
+### 2.11 Progress View
 - **Route**: `/progress`
 - **Main Goal**: Visualize strength progression as a weight-over-time line chart, with one line per exercise.
 - **Key Info**: Time-scaled chart of the top completed set per session; a scrollable chip row selecting which exercises are plotted; a sticky actions bar summarizing the active filters. Defaults to the user's active plan over the last 3 months, with all of its exercises plotted. Point tooltips show `Exercise: <weight> kg – <reps>` (reps collapse to `5x5` when uniform, else `5/5/4/0/0`), plus the plan name when "All plans" is selected.
 - **Key Components**: Chart.js line chart via `ng2-charts` (`BaseChartDirective`), `MatChipListbox` for the exercise toggles, `MatDialog` filter with plan and date-range-preset `MatSelect`s, `txg-notice` for empty/error states.
 - **UX/Accessibility/Security**: Series are exercise-scoped, so a line spans training plans under the "All plans" filter; empty and error states offer a corrective action; RLS and an explicit `user_id` filter scope all data to the authenticated user.
 
-### 2.11 Settings View
+### 2.12 Settings View
 - **Route**: `/settings`
 - **Main Goal**: Allow profile editing, password changes, and logout.
 - **Key Info**: Email (read-only or editable), First name, Save button, Logout button. Also the destination of the password-reset callback (see 2.4), which arrives with a `changePassword` action to prompt the user for a new password.
@@ -93,9 +100,9 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 
 ## 3. User Journey Map
 
-1. **Onboarding**: `/auth/register` ➔ successful signup ➔ if email verification is enabled, the user verifies via `/auth/callback?type=register` and lands on `/auth/login`; if it is disabled, the user is auto-logged-in to `/home`.
-2. **Authentication**: `/auth/login` ➔ successful login ➔ `/home`.
-3. **Password Recovery**: `/auth/login` ➔ `/auth/reset-password` ➔ magic link ➔ `/auth/callback?type=reset-password` ➔ `/settings` to set the new password.
+1. **Onboarding**: `/auth` ➔ Sign in with email ➔ `/auth/register` ➔ successful signup ➔ if email verification is enabled, the user verifies via `/auth/callback?type=register` and lands on `/auth`; if it is disabled, the user is auto-logged-in to `/home`.
+2. **Authentication**: `/auth` ➔ Sign in with Google (immediate OAuth) or Sign in with email ➔ `/auth/login` ➔ successful login ➔ `/home`.
+3. **Password Recovery**: `/auth` ➔ `/auth/login` ➔ `/auth/reset-password` ➔ magic link ➔ `/auth/callback?type=reset-password` ➔ `/settings` to set the new password.
 4. **Overview**: `/home` (view next session or history snapshot).
 5. **Plan Management**:
    - Tap Plans ➔ `/plans` ➔ tap "+" ➔ open `MatDialog` ➔ create plan ➔ navigate to `/plans/:planId/edit`.
@@ -111,11 +118,11 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 
 ## 4. Layout and Navigation Structure
 
-- **AuthLayout**: Used for the `/auth/*` form routes (login, register, reset-password) — centered card layout, hides bottom navigation and top toolbar. `/auth/callback` renders no layout at all.
+- **AuthLayout**: Used for the `/auth` welcome screen and the `/auth/*` form routes (login, register, reset-password) — centered card layout, hides bottom navigation and top toolbar. `/auth/callback` renders no layout at all.
 - **BottomNavigation**: Visible on the five main tabs: Home, Plans, History, Progress, Settings.
 - **Back navigation**: Views reached from a tab (Plan Editor, Active Session) hide the bottom navigation and show a top `MatToolbar` with a back button that returns to the originating tab.
-- **Router Setup**: Angular Router with `authGuard` on protected routes (Home, Plans, Session, History, Progress, Settings), and `noAuthGuard` on the `/auth/*` form routes to bounce already-authenticated users to `/home`.
-- **HttpInterceptor**: Injects Supabase JWT, handles 401 by redirecting to `/auth/login`, and globally catches errors to show snackbars.
+- **Router Setup**: Angular Router with `authGuard` on protected routes (Home, Plans, Session, History, Progress, Settings), and `noAuthGuard` on `/auth` and the `/auth/*` form routes to bounce already-authenticated users to `/home`. `authGuard` sends unauthenticated users to `/auth`.
+- **HttpInterceptor**: Injects Supabase JWT, handles 401 by redirecting to `/auth`, and globally catches errors to show snackbars.
 
 ## 5. Key Components
 

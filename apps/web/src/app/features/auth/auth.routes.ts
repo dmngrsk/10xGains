@@ -24,7 +24,8 @@ export const AUTH_ROUTES: Routes = [
   },
   {
     path: '',
-    redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    loadComponent: () => import('./pages/welcome/welcome-page.component').then(c => c.WelcomePageComponent),
+    canActivate: [noAuthGuard, authAssetsGuard]
   }
 ];
