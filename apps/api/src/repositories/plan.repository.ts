@@ -316,7 +316,12 @@ export class PlanRepository {
       (d: PlanDayDto, order: number) => ({ ...d, order_index: order })
     );
 
-    return updatedDays.find(d => d.name === newDay.name && d.description === newDay.description) || updatedDays[updatedDays.length - 1];
+    const createdDay = updatedDays.find(d => d.id === newDay.id);
+    if (!createdDay) {
+      throw new Error('Failed to create plan day');
+    }
+
+    return createdDay;
   }
 
   /**
@@ -479,7 +484,12 @@ export class PlanRepository {
       (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
     );
 
-    return updatedExercises.find(e => e.exercise_id === newExercise.exercise_id) || updatedExercises[updatedExercises.length - 1];
+    const createdExercise = updatedExercises.find(e => e.id === newExercise.id);
+    if (!createdExercise) {
+      throw new Error('Failed to create plan exercise');
+    }
+
+    return createdExercise;
   }
 
   /**
@@ -644,7 +654,12 @@ export class PlanRepository {
       (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
     );
 
-    return updatedSets.find(s => s.expected_reps === newSet.expected_reps && s.expected_weight === newSet.expected_weight) || updatedSets[updatedSets.length - 1];
+    const createdSet = updatedSets.find(s => s.id === newSet.id);
+    if (!createdSet) {
+      throw new Error('Failed to create plan exercise set');
+    }
+
+    return createdSet;
   }
 
   /**
