@@ -498,7 +498,8 @@ export class SessionRepository {
       newSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
+      (s: SessionSetDto, newIndex: number) => ({ ...s, set_index: newIndex }),
+      { column: 'session_id', id: sessionId }
     );
 
     const createdSet = updatedSets.find((s: SessionSetDto) => s.id === newSetId);
@@ -552,7 +553,8 @@ export class SessionRepository {
       updatedSetData,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx })
+      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx }),
+      { column: 'session_id', id: sessionId }
     );
 
     return updatedSets.find(s => s.id === setId) || null;
@@ -592,7 +594,8 @@ export class SessionRepository {
       setId,
       (s: SessionSetDto) => s.id,
       (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx })
+      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx }),
+      { column: 'session_id', id: sessionId }
     );
 
     return true;

@@ -373,6 +373,8 @@ export interface Database {
           p_parent_id: string
           p_order_column: string
           p_records: Json
+          p_scope_column?: string
+          p_scope_id?: string
         }
         Returns: Json
       }
