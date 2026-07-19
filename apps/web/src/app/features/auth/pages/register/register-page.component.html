@@ -1,6 +1,10 @@
 <txg-auth-layout [subtitle]="!isRegistered() ? 'Create your account' : 'Registration successful! Check your email for a verification link.'">
   @if (!isRegistered()) {
-    <txg-register-form #registerForm authContent (formSubmitted)="onFormSubmitted($event)"></txg-register-form>
+    <div authContent class="flex flex-col gap-6">
+      <txg-google-button dataCy="register-google-button" (googleClicked)="onGoogleClicked()"></txg-google-button>
+      <txg-auth-divider label="or sign up with email"></txg-auth-divider>
+      <txg-register-form #registerForm (formSubmitted)="onFormSubmitted($event)"></txg-register-form>
+    </div>
   }
   @if (!isRegistered()) {
     <txg-register-actions authActions></txg-register-actions>

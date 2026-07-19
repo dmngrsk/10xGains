@@ -23,6 +23,21 @@ if ! mkdir -p supabase/snippets 2>/dev/null; then
   exit 1
 fi
 
+# Seed .env from the template on first run; thereafter the file is the developer's. This must
+# happen before `supabase start` so the Google credentials below can be read from it.
+if [ ! -f .env ]; then
+  sed 's/\r$//' .env.example > .env
+fi
+
+# config.toml resolves the Google OAuth credentials via env() at `supabase start` time, so
+# export them (from the .env just ensured above) before the stack comes up. Missing values
+# just leave the provider unusable; the stack still starts. Note: `supabase start` is skipped
+# when the stack is already healthy (below), so filling these in later needs a manual
+# `supabase stop && supabase start` to take effect.
+SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=//p' .env | tr -d '\r')"
+SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=//p' .env | tr -d '\r')"
+export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
+
 # `supabase status` exits 0 even when only some services are up, so probe the DB and the
 # REST gateway directly.
 stack_healthy() {
@@ -124,11 +139,6 @@ upsert_env() {
   ' .env > .env.tmp && mv -f .env.tmp .env
 }
 
-# Seed from the template on first run; thereafter the file is the developer's.
-if [ ! -f .env ]; then
-  sed 's/\r$//' .env.example > .env
-fi
-
 # Preserve an existing canary password; generate a random one only when unset or still the
 # placeholder. The e2e run provisions the account from this value, so keeping a stable one
 # avoids a mismatch on later starts against a persistent database.
@@ -175,8 +185,12 @@ echo "Wrote .env, apps/api/local.settings.json and apps/web/src/environments/env
 
 # Seed a known local dev account (dev@10xgains.com) with sample data. Idempotent and local
 # only - it uses the local service-role key that only exists here. Runs after the config
-# block above, since it reads the .env just generated.
-pnpm seed
+# block above, since it reads the .env just generated. Non-fatal: a failed seed only costs
+# the sample data, not the environment, so warn and let the start finish.
+if ! pnpm seed; then
+  echo "Warning: seeding the dev account failed; the environment is still usable." >&2
+  echo "Fix the cause (see the error above), then re-run 'pnpm seed' by hand." >&2
+fi
 
 # Setup complete. Surface the seeded dev login so it is not buried in .env.
 DEV_EMAIL="$(sed -n 's/^APP_DEV_USER_EMAIL=//p' .env | tr -d '\r')"

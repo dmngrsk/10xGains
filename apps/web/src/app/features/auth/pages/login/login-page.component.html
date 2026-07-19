@@ -1,4 +1,8 @@
 <txg-auth-layout subtitle="Sign in to your account">
-  <txg-login-form #loginForm authContent (formSubmitted)="onFormSubmitted($event)"></txg-login-form>
+  <div authContent class="flex flex-col gap-6">
+    <txg-google-button dataCy="login-google-button" (googleClicked)="onGoogleClicked()"></txg-google-button>
+    <txg-auth-divider label="or sign in with email"></txg-auth-divider>
+    <txg-login-form #loginForm (formSubmitted)="onFormSubmitted($event)"></txg-login-form>
+  </div>
   <txg-login-actions authActions></txg-login-actions>
 </txg-auth-layout>

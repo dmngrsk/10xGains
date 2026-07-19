@@ -1,6 +1,6 @@
 /*
   DTO and Command Model Definitions for API
-  Based on database models from ./database.types.ts and API plan (api-plan.md)
+  Based on database models from ./database.types.ts and the API reference (apps/api/README.md)
 
   Each interface directly or indirectly corresponds to a database table:
   - Profiles                      -> Tables<"public", "profiles">

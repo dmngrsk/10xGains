@@ -58,7 +58,8 @@ US-001: Secure User Registration and Login
   - A registration form with necessary fields (e.g., email, password) is provided.
   - Secure authentication is required before accessing personalized content.
   - Proper error messages are displayed for invalid registration or login attempts.
-  - We do not use any third-party login services (such as GitHub or Google).
+  - Signing in with a Google account is possible, both for new users and for existing email/password users (the Google identity is linked to the existing account by verified email, or manually from Settings).
+  - A user can see whether a Google account is connected in Settings, and can connect or disconnect it there; disconnecting the only remaining sign-in method is not possible.
   - Password retrieval via email should be possible.
 
 US-002: Training Plan Creation and Customization

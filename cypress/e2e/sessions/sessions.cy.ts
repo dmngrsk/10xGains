@@ -294,8 +294,8 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
             cy.getBySel(dataCy.sessions.notesButton).should('not.exist');
 
             // Clean up the ephemeral users.
-            cy.task('users:deleteEphemeral', { userId: userId1 });
-            cy.task('users:deleteEphemeral', { userId: userId2 });
+            cy.task('users:delete', { userId: userId1 });
+            cy.task('users:delete', { userId: userId2 });
             cy.wrap(null).as('ephemeralUserId');
           });
         });

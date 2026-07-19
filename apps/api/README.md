@@ -10,6 +10,7 @@ This workspace package (`@txg/api`) contains the main API for the 10xGains appli
   - [Local Development](#local-development)
   - [Testing](#testing)
   - [Deployment](#deployment)
+- [Conventions](#conventions)
 - [API Documentation](#api-documentation)
   - [Profiles API](#profiles-api)
   - [Exercises API](#exercises-api)
@@ -89,6 +90,29 @@ Deployment happens in CI/CD (the `backend-api` job in `.github/workflows/reusabl
 # Bundle and assemble deploy/ (host.json + dist/ + minimal package.json)
 pnpm --filter @txg/api build:deploy
 ```
+
+## Conventions
+
+Behaviors shared across the endpoints below, documented once here rather than repeated per resource.
+
+### List ordering
+
+Ordered child collections — plan days (within a plan), plan exercises (within a day), and plan exercise sets (within an exercise) — keep a **dense, 1-based sequence** in `order_index` (`set_index` for sets), managed entirely by the backend (`src/services/index-order/`):
+
+- **POST** with an `order_index` inserts at that position and shifts the following items up by one; omit it to append to the end.
+- **PUT** that changes an item's `order_index` moves it and re-shifts the rest to keep the sequence gap-free.
+- **DELETE** decrements the `order_index` of every following item to close the gap.
+
+Reads return these collections already ordered — even when embedded in a single-resource response — so clients never need to re-sort.
+
+### Statuses
+
+State values are fixed, and mirrored in `@txg/shared` as `SESSION_STATUSES` / `SESSION_SET_STATUSES`:
+
+- **Session** — `PENDING`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`.
+- **Session set** — `PENDING` (not yet attempted), `COMPLETED` (met the target), `FAILED` (attempted, missed), `SKIPPED` (intentionally not performed).
+
+The progress charts count only `COMPLETED` sets of a `COMPLETED` session (see [Progress API](#progress-api)); completing a session also advances or deloads each exercise's weight progression based on its set outcomes.
 
 ## API Documentation
 
