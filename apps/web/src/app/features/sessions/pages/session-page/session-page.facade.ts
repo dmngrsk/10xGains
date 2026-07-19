@@ -109,18 +109,29 @@ export class SessionPageFacade {
     this.timerStartTimestamp.set(this.serverClock.now());
 
     const setId = setPayload.id;
-    let apiCallProvider: () => Observable<SessionSetDto | null>;
+    let apiCallProvider: () => Observable<SessionSetDto>;
+
+    // A patch can come back with no set: the API answers 404 when the set was deleted in another
+    // tab or the session has since been completed, and `ApiService` resolves that rather than
+    // throwing. For an optimistic update that is a failure - feeding null into the success path
+    // would leave the optimistic state in place and throw while mapping the view model.
+    const requireSet = map((res: { data: SessionSetDto | null } | null): SessionSetDto => {
+      if (!res?.data) {
+        throw new Error('This set no longer exists. Refresh the session to see its current state.');
+      }
+      return res.data;
+    });
 
     switch (setPayload.status) {
       case 'COMPLETED':
-        apiCallProvider = () => this.sessionService.completeSet(currentSessionId, setId).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.completeSet(currentSessionId, setId).pipe(requireSet);
         break;
       case 'FAILED':
-        apiCallProvider = () => this.sessionService.failSet(currentSessionId, setId, setPayload.actualReps ?? 0).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.failSet(currentSessionId, setId, setPayload.actualReps ?? 0).pipe(requireSet);
         break;
       case 'PENDING':
       default:
-        apiCallProvider = () => this.sessionService.resetSet(currentSessionId, setId).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.resetSet(currentSessionId, setId).pipe(requireSet);
         break;
     }
 
@@ -134,7 +145,7 @@ export class SessionPageFacade {
     };
 
     const { successEvent$, failureEvent$ } = this.debouncerService.enqueue<
-      SessionSetDto | null,
+      SessionSetDto,
       SessionSetUpdateSuccessPayload,
       SessionSetUpdateFailurePayload,
       SessionSetUpdateSuccessDataContext,
@@ -145,7 +156,7 @@ export class SessionPageFacade {
       apiCallProvider,
       successContext,
       failureContext,
-      (data, context, key) => ({ data: data!, context, key }),
+      (data, context, key) => ({ data, context, key }),
       (error, context, key) => ({ error, context, key })
     );
 
@@ -190,7 +201,9 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
 
     const operation$ = this.sessionService.deleteSet(currentSessionId, setId).pipe(
-      map(response => !response?.error),
+      // A 404 resolves without an error, so the absence of one is not enough to call the delete a
+      // success - it would report a set that was never there as removed.
+      map(response => !response?.error && response?.status !== 404),
       tapIf(success => success, () =>
         this.updateSessionViewModelWithDeletedSet(setId, exerciseId)
       )

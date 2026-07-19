@@ -8,6 +8,13 @@ export interface ApiServiceResponse<T> {
   data: T | null;
   totalCount?: number;
   error: string | null;
+  /**
+   * The HTTP status, populated for the empty-body responses that resolve successfully (404 and
+   * 204). Callers that must distinguish "the resource is not there" from "the resource is empty"
+   * - a patch against a set deleted in another tab, say - should check for 404 here rather than
+   * inferring it from `data === null`.
+   */
+  status?: number;
 }
 
 /** The largest page size the API accepts (`optionalLimit`'s MAX_LIMIT). */
@@ -112,8 +119,12 @@ export class ApiService {
       body: body !== undefined ? JSON.stringify(body) : undefined,
     });
 
+    // A 404 resolves rather than throwing because a missing resource is an expected, non-error
+    // state for some reads (the home page fetches a profile that may not exist yet). The status is
+    // reported back so call sites that *do* treat it as a failure can tell it apart from an empty
+    // body - see `enqueueSetPatch`, where a 404 must revert the optimistic update.
     if (response.status === 404 || response.status === 204) {
-      return { data: null, error: null };
+      return { data: null, error: null, status: response.status };
     }
 
     if (!response.ok) {

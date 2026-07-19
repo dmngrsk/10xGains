@@ -121,20 +121,22 @@ describe('ApiService', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/plans`);
   });
 
-  it('should resolve 204 responses as { data: null, error: null } without parsing the body', async () => {
+  it('should resolve 204 responses as empty data without parsing the body', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
     const result = await firstValueFrom(service.delete('/plans/some-id/days/day-id'));
 
-    expect(result).toEqual({ data: null, error: null });
+    expect(result).toEqual({ data: null, error: null, status: 204 });
   });
 
-  it('should resolve 404 responses as { data: null, error: null }', async () => {
+  it('should resolve 404 responses as empty data and report the status', async () => {
     fetchMock.mockResolvedValue(mockJsonResponse(404, { error: 'Not found', status: 404 }));
 
     const result = await firstValueFrom(service.get('/plans/missing-id'));
 
-    expect(result).toEqual({ data: null, error: null });
+    // The status lets call sites distinguish a missing resource from an empty body; without it a
+    // 404 is indistinguishable from success and silently flows into optimistic-update handlers.
+    expect(result).toEqual({ data: null, error: null, status: 404 });
   });
 
   it('should throw the envelope error message on non-2xx responses', async () => {
