@@ -36,8 +36,15 @@ export function resolveExerciseProgressions(
     const currentProgression = progressionMap.get(exerciseId);
 
     if (!currentProgression) {
-      throw new Error(`No exercise progression found for exercise_id: ${exerciseId}.`);
-    } else if (currentSets.length === 0) {
+      // Progressions are only created explicitly (PUT /plans/:planId/progressions/:exerciseId), so
+      // an exercise added to an already-active plan has none. Failing here would abort the whole
+      // completion with a 500 on an ordinary user path; instead leave this exercise's targets
+      // untouched and progress the others.
+      console.warn(`No exercise progression found for exercise ${exerciseId}. Leaving its sets unchanged.`);
+      continue;
+    }
+
+    if (currentSets.length === 0) {
       console.warn(`No expected sets found for exercise ${exerciseId}. Skipping progression update.`);
       continue;
     }

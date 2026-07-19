@@ -252,15 +252,33 @@ describe('resolveExerciseProgressions', () => {
     }).toThrow("Unsupported deload strategy: 'UNKNOWN_STRATEGY' for exercise ex1.");
   });
 
-  it('should throw error if no progression found for an exercise', () => {
+  it('should leave an exercise unchanged when it has no progression', () => {
+    // Progressions are created explicitly, so an exercise added to an already-active plan has
+    // none. Completing the session must still succeed rather than failing with a 500.
     const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)];
     const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
     const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 5)];
     const progressions: PlanExerciseProgressionDto[] = [];
 
-    expect(() => {
-      resolveExerciseProgressions(sessionSets, planExercises, progressions);
-    }).toThrow('No exercise progression found for exercise_id: ex1.');
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(result.exerciseSetsToUpdate).toEqual([]);
+    expect(result.exerciseProgressionsToUpdate).toEqual([]);
+  });
+
+  it('should still progress other exercises when one has no progression', () => {
+    const withProgression = mockPlanExercise('tpe1', 'ex1', [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)]);
+    const withoutProgression = mockPlanExercise('tpe2', 'ex2', [mockPlanExerciseSet('set2-1', 'tpe2', 0, 50, 5)]);
+    const sessionSets: SessionSetDto[] = [
+      mockSessionSet('ss1', 'tpe1', 0, 100, 5),
+      mockSessionSet('ss2', 'tpe2', 0, 50, 5),
+    ];
+    const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5)];
+
+    const result = resolveExerciseProgressions(sessionSets, [withProgression, withoutProgression], progressions);
+
+    expect(result.exerciseProgressionsToUpdate.map(p => p.exercise_id)).toEqual(['ex1']);
+    expect(result.exerciseSetsToUpdate.every(s => s.plan_exercise_id === 'tpe1')).toBe(true);
   });
 
    it('should warn and treat exercise as failed if an expected set is missing from actual performed sets', () => {
