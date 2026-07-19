@@ -26,6 +26,15 @@ import {
   deleteEntityFromCollection
 } from '../utils/supabase';
 
+/**
+ * The shape `verifyPlanOwnership` selects: only the ids along the path being verified, with each
+ * level filtered to at most one row.
+ */
+interface PlanOwnershipPath {
+  id: string;
+  days?: { id: string; exercises?: { id: string; sets?: { id: string }[] | null }[] | null }[] | null;
+}
+
 export type PlanQueryOptions = PagingQueryOptions & SortingQueryOptions;
 
 export type PlanListResult = ApiResult<PlanDto[]>;
@@ -836,13 +845,50 @@ export class PlanRepository {
 
 
 
+  /**
+   * Verifies that the given plan belongs to the current user, and that each id below it really sits
+   * on the path implied by the one above.
+   *
+   * Only the requested path is fetched: the embed is built to the depth the caller asked about and
+   * each level is filtered to the single id in question. Selecting the whole tree instead - every
+   * day, exercise and set id of the plan - made a one-set edit walk the entire plan on every
+   * request, before the collection helper had even fetched the sibling rows.
+   *
+   * The embeds are deliberately not `!inner`: a non-matching child leaves the plan row in place with
+   * an empty array, which is what lets the checks below report *which* level was missing rather than
+   * collapsing every failure into "plan not found".
+   *
+   * @param {string} planId - The plan that must belong to the current user.
+   * @param {string} [dayId] - A day that must belong to that plan.
+   * @param {string} [exerciseId] - An exercise that must belong to that day.
+   * @param {string} [setId] - A set that must belong to that exercise.
+   */
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
-    const { data, error }  = await this.supabase
+    let select = 'id';
+    if (dayId) {
+      const exercisesEmbed = exerciseId
+        ? `, exercises:plan_exercises(id${setId ? ', sets:plan_exercise_sets(id)' : ''})`
+        : '';
+      select = `id, days:plan_days(id${exercisesEmbed})`;
+    }
+
+    const query = this.supabase
       .from('plans')
-      .select('id, days:plan_days(id, exercises:plan_exercises(id, sets:plan_exercise_sets(id)))')
+      .select(select)
       .eq('id', planId)
-      .eq('user_id', this.getUserId())
-      .maybeSingle();
+      .eq('user_id', this.getUserId());
+
+    if (dayId) {
+      query.eq('days.id', dayId);
+    }
+    if (exerciseId) {
+      query.eq('days.exercises.id', exerciseId);
+    }
+    if (setId) {
+      query.eq('days.exercises.sets.id', setId);
+    }
+
+    const { data, error } = await query.maybeSingle<PlanOwnershipPath>();
 
     if (error) {
       throw error;
@@ -852,25 +898,30 @@ export class PlanRepository {
       throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
     }
 
-    if (dayId) {
-      const day = data.days?.find(d => d.id === dayId);
-      if (!day) {
-        throw new NotFoundError('Plan day not found.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
-      }
+    if (!dayId) {
+      return;
+    }
 
-      if (exerciseId) {
-        const exercise = day.exercises?.find(e => e.id === exerciseId);
-        if (!exercise) {
-          throw new NotFoundError('Plan exercise not found.', 'PLAN_EXERCISE_NOT_FOUND', 'plan_exercise_not_found_error');
-        }
+    const day = data.days?.[0];
+    if (!day) {
+      throw new NotFoundError('Plan day not found.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
+    }
 
-        if (setId) {
-          const set = exercise.sets?.find(s => s.id === setId);
-          if (!set) {
-            throw new NotFoundError('Plan exercise set not found.', 'PLAN_EXERCISE_SET_NOT_FOUND', 'plan_exercise_set_not_found_error');
-          }
-        }
-      }
+    if (!exerciseId) {
+      return;
+    }
+
+    const exercise = day.exercises?.[0];
+    if (!exercise) {
+      throw new NotFoundError('Plan exercise not found.', 'PLAN_EXERCISE_NOT_FOUND', 'plan_exercise_not_found_error');
+    }
+
+    if (!setId) {
+      return;
+    }
+
+    if (!exercise.sets?.[0]) {
+      throw new NotFoundError('Plan exercise set not found.', 'PLAN_EXERCISE_SET_NOT_FOUND', 'plan_exercise_set_not_found_error');
     }
   }
 
