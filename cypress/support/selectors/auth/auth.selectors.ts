@@ -1,4 +1,8 @@
 export const authSelectors = {
+  welcome: {
+    googleButton: 'welcome-google-auth-button',
+    emailButton: 'welcome-email-auth-button',
+  },
   login: {
     emailInput: 'login-email-input',
     passwordInput: 'login-password-input',
@@ -6,7 +10,7 @@ export const authSelectors = {
     errorMessage: 'login-error-message',
     signUpButton: 'login-sign-up-button',
     resetPasswordButton: 'login-reset-password-button',
-    googleButton: 'login-google-button',
+    chooseMethodButton: 'login-choose-method-button',
   },
   register: {
     emailInput: 'register-email-input',
@@ -14,7 +18,6 @@ export const authSelectors = {
     confirmPasswordInput: 'register-confirm-password-input',
     signUpButton: 'register-sign-up-button',
     successNotice: 'auth-layout-subtitle',
-    googleButton: 'register-google-button',
   },
   resetPassword: {
     emailInput: 'reset-password-email-input',

@@ -282,7 +282,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
           cy.navigateBack();
           cy.navigateTo('settings');
           cy.getBySel(dataCy.settings.account.signOutButton).click();
-          cy.url().should('include', '/auth/login');
+          cy.url().should('include', '/auth');
 
           // Sign in as the second ephemeral user and try to access the first user's session.
           cy.login();

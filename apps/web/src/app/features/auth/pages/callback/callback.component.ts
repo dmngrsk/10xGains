@@ -31,7 +31,7 @@ export class CallbackComponent implements OnInit {
         if (type === 'register') {
           this.profileService.createDefaultProfile(auth.userId!).subscribe(() => {
             this.snackBar.open('Verification successful! Welcome to 10xGains.', 'Close', { duration: 5000 });
-            this.router.navigate(['/auth/login']);
+            this.router.navigate(['/auth']);
           });
         } else if (type === 'reset-password') {
           this.router.navigate(['/settings'], { state: { action: 'changePassword' } });
@@ -39,7 +39,7 @@ export class CallbackComponent implements OnInit {
           // An abandoned or failed OAuth dance still lands here, just without a session.
           if (!auth.isAuthenticated) {
             this.snackBar.open('Google sign-in was not completed. Please try again.', 'Close', { duration: 5000 });
-            this.router.navigate(['/auth/login']);
+            this.router.navigate(['/auth']);
             return;
           }
 
@@ -74,7 +74,7 @@ export class CallbackComponent implements OnInit {
           });
         } else {
           this.snackBar.open('Invalid callback type.', 'Close', { duration: 5000 });
-          this.router.navigate(['/auth/login']);
+          this.router.navigate(['/auth']);
         }
       });
   }

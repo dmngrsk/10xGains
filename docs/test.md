@@ -30,8 +30,11 @@ The primary objectives of the testing process are to:
 The following features and components are within the scope of testing:
 
 *   **User Authentication:**
-    *   User Registration
-    *   User Login
+    *   Welcome screen (auth entry point at `/auth`, choosing between Google and email sign-in)
+    *   User Registration (email/password)
+    *   User Login (email/password)
+    *   Password recovery (request reset link, then change the password from Settings)
+    *   Google OAuth sign-in (initiated from the welcome screen) and account linking in Settings
     *   Session Management (including token handling via `auth.interceptor.ts`)
     *   Route Protection (`auth.guard.ts`, `no-auth.guard.ts`)
 *   **Plan Management (Full CRUD):**
@@ -78,7 +81,6 @@ The following features and components are within the scope of testing:
 
 **2.2. Out-of-Scope Features**
 
-*   **Password Reset / Forgot Password:** This functionality is commented out in the codebase and is considered out of scope until implemented.
 *   **AI-Suggested Training Plans:** While types exist in `api.types.ts`, no implementation is present.
 *   **Underlying Frameworks/Libraries:** Testing of Angular, Vitest, Supabase, or other third-party libraries themselves. We will only test our implementation and integration with them.
 *   **Exhaustive Performance/Load Testing:** While basic performance benchmarks will be monitored, large-scale load and stress testing is not in the initial scope.
@@ -120,25 +122,21 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Feature Area | Scenario ID | Scenario Description | Priority | **Smoke Test** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Authentication** | AUTH-01 | A user can register and sign in when email verification is disabled. | Critical | No |
-| | AUTH-02 | A user sees a pending verification notice when email verification is enabled. | High | No |
-| | AUTH-03 | A user can confirm their account with an activation link. | Critical | No |
-| | AUTH-04 | A user can sign in with valid credentials. | Critical | **Yes** |
-| | AUTH-05 | A user cannot sign in with invalid credentials. | High | No |
-| | AUTH-06 | An unauthenticated user is redirected to the login page from a protected page. | Critical | No |
-| | AUTH-07 | A user can request a magiclink to sign in. | High | No |
-| | AUTH-08 | A user can sign in via the magiclink, and is automatically moved to the password change section. | High | No |
-| | AUTH-09 | An authenticated user is redirected to the home page from the login page. | High | No |
-| | AUTH-10 | An authenticated user can sign out. | High | No |
-| | AUTH-11 | A user cannot access another user's data (RLS check). | Critical | No |
-| | AUTH-12 | A user is redirected to the login page when the session expires. | Critical | No
-| | AUTH-13 | A user can start the Google OAuth flow from the login page. | High | No |
-| | AUTH-14 | A user can start the Google OAuth flow from the register page. | High | No |
-| | AUTH-15 | A profile is created for a first-time Google user on the OAuth callback. | Critical | No |
-| | AUTH-16 | The existing profile of an auto-linked user is preserved on the OAuth callback. | Critical | No |
-| | AUTH-17 | Google is shown as not connected for a password-only account. | Medium | No |
-| | AUTH-18 | Google can be disconnected when another sign-in method exists. | Medium | No |
-| | AUTH-19 | Disconnecting Google is disabled when it is the only sign-in method. | High | No |
+| **Authentication** | AUTH-01 | Choosing "Sign in with email" on the welcome screen opens the login form. | High | No |
+| | AUTH-02 | A new user can register via the email form and is signed in when email verification is disabled. | Critical | No |
+| | AUTH-03 | A user sees a pending verification notice when email verification is enabled. | High | No |
+| | AUTH-04 | A user can confirm their account via the activation-link callback and lands on Home. | Critical | No |
+| | AUTH-05 | A user can sign in with valid email credentials. | Critical | **Yes** |
+| | AUTH-06 | A user cannot sign in with invalid credentials and sees an error. | High | No |
+| | AUTH-07 | A user can request a password reset link from the login form. | High | No |
+| | AUTH-08 | A user can change their password after following the reset link and sign back in. | High | No |
+| | AUTH-09 | A user without a valid session (never signed in, or session expired mid-use) is redirected to the welcome screen. | Critical | No |
+| | AUTH-10 | An authenticated user visiting the welcome or login screens is redirected to Home. | High | No |
+| | AUTH-11 | An authenticated user can sign out and is returned to the welcome screen. | High | No |
+| | AUTH-12 | A user cannot access another user's data (RLS check). | Critical | No |
+| | AUTH-13 | A user can start the Google OAuth flow from the welcome screen. | High | No |
+| | AUTH-14 | A profile is created for a first-time Google user on the OAuth callback. | Critical | No |
+| | AUTH-15 | The existing profile of an auto-linked user is preserved on the OAuth callback. | Critical | No |
 | **Plan Management**| PLAN-01 | An authenticated user can create a new plan. | Critical | No |
 | | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
 | | PLAN-03 | In the plan editor, a user can add, edit and delete a new day. | High | No |

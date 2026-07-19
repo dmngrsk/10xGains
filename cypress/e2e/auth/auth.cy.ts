@@ -3,21 +3,32 @@ import { dataCy } from '../../support/selectors';
 describe('Authentication', { tags: ['@auth'] }, () => {
   beforeEach(() => {
     cy.wrap(null).as('ephemeralUserId');
-    cy.visit('/auth/login');
+    cy.visit('/auth');
   });
 
   afterEach(() => {
     cy.teardown();
   });
 
-  describe('when a user is unauthenticated', () => {
-    it('allows a user to register and sign in when email verification is disabled', { tags: ['AUTH-01'] }, () => {
+  describe('Welcome screen', () => {
+    it('opens the email sign-in form when the user chooses email', { tags: ['AUTH-01'] }, () => {
+      cy.getBySel(dataCy.auth.welcome.emailButton).click();
+
+      cy.url().should('include', '/auth/login');
+      cy.getBySel(dataCy.auth.login.emailInput).should('be.visible');
+      cy.getBySel(dataCy.auth.login.passwordInput).should('be.visible');
+    });
+  });
+
+  describe('Registration', () => {
+    it('registers a new user and signs them in when email verification is disabled', { tags: ['AUTH-02'] }, () => {
       // This test assumes that email verification is DISABLED on the staging Supabase instance.
       // If it fails, please check your Supabase sign in provider settings.
       cy.intercept('POST', '/auth/v1/signup*').as('signup');
 
+      cy.getBySel(dataCy.auth.welcome.emailButton).click();
       cy.getBySel(dataCy.auth.login.signUpButton).click();
-      cy.getBySel(dataCy.auth.register.emailInput).type(`auth01-${Date.now()}@example.com`);
+      cy.getBySel(dataCy.auth.register.emailInput).type(`auth02-${Date.now()}@example.com`);
       cy.getBySel(dataCy.auth.register.passwordInput).type('Password123!');
       cy.getBySel(dataCy.auth.register.confirmPasswordInput).type('Password123!');
       cy.getBySel(dataCy.auth.register.signUpButton).click();
@@ -30,11 +41,12 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       });
     });
 
-    it('allows a user to register and shows a pending verification notice when email verification is enabled', { tags: ['AUTH-02'] }, () => {
+    it('shows a pending verification notice when email verification is enabled', { tags: ['AUTH-03'] }, () => {
       cy.intercept('POST', '/auth/v1/signup*', { fixture: 'auth/supabase-signup-user-unverified-email.json' }).as('signup');
 
+      cy.getBySel(dataCy.auth.welcome.emailButton).click();
       cy.getBySel(dataCy.auth.login.signUpButton).click();
-      cy.getBySel(dataCy.auth.register.emailInput).type(`auth02-${Date.now()}@example.com`);
+      cy.getBySel(dataCy.auth.register.emailInput).type(`auth03-${Date.now()}@example.com`);
       cy.getBySel(dataCy.auth.register.passwordInput).type('Password123!');
       cy.getBySel(dataCy.auth.register.confirmPasswordInput).type('Password123!');
       cy.getBySel(dataCy.auth.register.signUpButton).click();
@@ -42,33 +54,39 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.auth.register.successNotice).should('be.visible');
     });
 
-    it('allows a user to confirm their account with an activation link', { tags: ['AUTH-03'] }, () => {
-      // User confirmation is handled directly by the Supabase auth service, so we can't test it here.
-      // Instead, we can test that the user is redirected to the login page and that the snack bar message is displayed.
+    it('confirms a new account via the activation link', { tags: ['AUTH-04'] }, () => {
+      // Supabase handles the confirmation link itself, so we assert the app's callback behaviour:
+      // the user is signed in, and the success snackbar is shown.
       cy.login();
       cy.visit('auth/callback?type=register');
 
       cy.url().should('include', '/home');
       cy.getMatSnackBar().should('contain.text', 'Verification successful! Welcome to 10xGains.');
     });
+  });
 
-    it('allows a user to sign in with valid credentials', { tags: ['@smoke', 'AUTH-04'] }, () => {
+  describe('Email sign-in', () => {
+    it('signs in with valid credentials', { tags: ['@smoke', 'AUTH-05'] }, () => {
       cy.login({ forceCanary: true });
 
       cy.url().should('include', '/home');
     });
 
-    it('disallows a user to sign in with invalid credentials', { tags: ['AUTH-05'] }, () => {
-      cy.getBySel(dataCy.auth.login.emailInput).type('auth05-invalid@10xgains.com');
+    it('rejects invalid credentials with an error message', { tags: ['AUTH-06'] }, () => {
+      cy.getBySel(dataCy.auth.welcome.emailButton).click();
+      cy.getBySel(dataCy.auth.login.emailInput).type('auth06-invalid@10xgains.com');
       cy.getBySel(dataCy.auth.login.passwordInput).type('invalidpassword');
       cy.getBySel(dataCy.auth.login.signInButton).click();
 
       cy.getBySel(dataCy.auth.login.errorMessage).should('contain.text', 'Invalid login credentials');
     });
+  });
 
-    it('allows a user to request a password reset', { tags: ['AUTH-06'] }, () => {
+  describe('Password recovery', () => {
+    it('requests a password reset link', { tags: ['AUTH-07'] }, () => {
       cy.intercept('POST', '/auth/v1/recover*').as('recover');
 
+      cy.getBySel(dataCy.auth.welcome.emailButton).click();
       cy.getBySel(dataCy.auth.login.resetPasswordButton).click();
       cy.env<{ CANARY_USER_EMAIL?: string }>(['CANARY_USER_EMAIL']).then(({ CANARY_USER_EMAIL }) => {
         if (!CANARY_USER_EMAIL) {
@@ -84,7 +102,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       });
     });
 
-    it('allows a user to change their password after clicking the password reset link', { tags: ['AUTH-07'] }, () => {
+    it('changes the password after following the reset link', { tags: ['AUTH-08'] }, () => {
       // User automatic sign-in is handled directly by the Supabase auth service, so we can't test it here.
       // Instead, we can test that the user is redirected to the settings page and that the password change flow works.
       cy.login();
@@ -100,6 +118,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.settings.account.signOutButton).click();
 
       cy.get('@email').then((userEmail) => {
+        cy.getBySel(dataCy.auth.welcome.emailButton).click();
         cy.getBySel(dataCy.auth.login.emailInput).type(userEmail as unknown as string);
         cy.getBySel(dataCy.auth.login.passwordInput).type('Password123!');
         cy.getBySel(dataCy.auth.login.signInButton).click();
@@ -107,31 +126,40 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         cy.url().should('include', '/home');
       });
     });
-
-    it('redirects an unauthenticated user to the login page when visiting a protected page', { tags: ['AUTH-08'] }, () => {
-      cy.visit('/home');
-
-      cy.url().should('include', '/auth/login');
-    });
   });
 
-  describe('when a user is authenticated', () => {
-    it('redirects an authenticated user to the home page when visiting the login page', { tags: ['AUTH-09'] }, () => {
-      cy.login();
-      cy.visit('/auth/login');
+  describe('Route protection and session lifecycle', () => {
+    it('redirects to the welcome screen when there is no valid session', { tags: ['AUTH-09'] }, () => {
+      cy.visit('/home');
+      cy.url().should('include', '/auth');
+      cy.getBySel(dataCy.auth.welcome.googleButton).should('be.visible');
 
+      cy.login();
+      cy.window().then((win) => win.localStorage.clear());
+      cy.navigateTo('plans');
+      cy.url().should('include', '/auth');
+    });
+
+    it('redirects an authenticated user away from the welcome and login screens', { tags: ['AUTH-10'] }, () => {
+      cy.login();
+
+      cy.visit('/auth');
+      cy.url().should('include', '/home');
+
+      cy.visit('/auth/login');
       cy.url().should('include', '/home');
     });
 
-    it('allows a user to sign out and redirects to the login page', { tags: ['AUTH-10'] }, () => {
+    it('signs a user out and returns them to the welcome screen', { tags: ['AUTH-11'] }, () => {
       cy.login();
       cy.navigateTo('settings');
       cy.getBySel(dataCy.settings.account.signOutButton).click();
 
-      cy.url().should('include', '/auth/login');
+      cy.url().should('include', '/auth');
+      cy.getBySel(dataCy.auth.welcome.googleButton).should('be.visible');
     });
 
-    it('prevents unauthorized data access via API or direct URL manipulation (RLS check)', { tags: ['AUTH-11'] }, () => {
+    it('prevents unauthorized data access via API or direct URL manipulation (RLS check)', { tags: ['AUTH-12'] }, () => {
       let userId1: string;
       let userId2: string;
 
@@ -148,7 +176,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
           cy.navigateBack();
           cy.navigateTo('settings');
           cy.getBySel(dataCy.settings.account.signOutButton).click();
-          cy.url().should('include', '/auth/login');
+          cy.url().should('include', '/auth');
 
           // Sign in as the second ephemeral user and try to access the first user's plan.
           cy.login();
@@ -166,53 +194,25 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         });
       });
     });
-
-    it('redirects the user to login page when session is expired', { tags: ['AUTH-12'] }, () => {
-      cy.login();
-
-      // Clear localStorage to simulate session expiration
-      cy.window().then((win) => win.localStorage.clear());
-      cy.navigateTo('plans');
-
-      cy.url().should('include', '/auth/login');
-    });
   });
 
   describe('Google authentication', () => {
     // The real Google leg of the OAuth dance cannot be automated (Google blocks automated
-    // sign-ins), so these tests stub the authorize redirect, fabricate the post-OAuth state
-    // that the app's callback handles, or mock the identities Supabase reports.
-    const mockGoogleIdentity = (userId: string) => ({
-      identity_id: '00000000-0000-4000-8000-000000000000',
-      id: userId,
-      user_id: userId,
-      identity_data: { email: 'mock-google-user@gmail.com', email_verified: true, sub: 'mock-google-sub' },
-      provider: 'google',
-      last_sign_in_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
-
-    it('starts the Google OAuth flow from the login page', { tags: ['AUTH-13'] }, () => {
+    // sign-ins), so these tests stub the authorize redirect or fabricate the post-OAuth state
+    // that the app's callback handles. The Settings connect/disconnect states are covered by the
+    // account-settings-card component unit tests.
+    it('starts the Google OAuth flow from the welcome screen', { tags: ['AUTH-13'] }, () => {
       cy.intercept('GET', '**/auth/v1/authorize?provider=google*', { statusCode: 200, body: '<html>Google sign-in stub</html>' }).as('authorize');
 
-      cy.getBySel(dataCy.auth.login.googleButton).click();
+      cy.getBySel(dataCy.auth.welcome.googleButton).click();
 
       cy.wait('@authorize');
     });
 
-    it('starts the Google OAuth flow from the register page', { tags: ['AUTH-14'] }, () => {
-      cy.intercept('GET', '**/auth/v1/authorize?provider=google*', { statusCode: 200, body: '<html>Google sign-in stub</html>' }).as('authorize');
-
-      cy.getBySel(dataCy.auth.login.signUpButton).click();
-      cy.getBySel(dataCy.auth.register.googleButton).click();
-
-      cy.wait('@authorize');
-    });
-
-    it('creates a profile seeded with the Google name on the oauth callback', { tags: ['AUTH-15'] }, () => {
-      cy.task<{ userId: string; email: string; password: string }>('users:create', { prefix: 'auth15', scaffold: false, userMetadata: { given_name: 'Ada' } })
+    it('creates a profile seeded with the Google name on the oauth callback', { tags: ['AUTH-14'] }, () => {
+      cy.task<{ userId: string; email: string; password: string }>('users:create', { prefix: 'auth14', scaffold: false, userMetadata: { given_name: 'Ada' } })
         .then(({ userId, email, password }) => {
+          cy.getBySel(dataCy.auth.welcome.emailButton).click();
           cy.getBySel(dataCy.auth.login.emailInput).type(email);
           cy.getBySel(dataCy.auth.login.passwordInput).type(password);
           cy.getBySel(dataCy.auth.login.signInButton).click();
@@ -230,7 +230,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         });
     });
 
-    it('preserves the existing profile of an auto-linked user on the oauth callback', { tags: ['AUTH-16'] }, () => {
+    it('preserves the existing profile of an auto-linked user on the oauth callback', { tags: ['AUTH-15'] }, () => {
       cy.login();
       cy.navigateTo('settings');
       cy.getBySel(dataCy.settings.profile.nameInput).invoke('val').should('not.be.empty').then((firstName) => {
@@ -240,39 +240,6 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         cy.navigateTo('settings');
         cy.getBySel(dataCy.settings.profile.nameInput).should('have.value', firstName as unknown as string);
       });
-    });
-
-    it('shows Google as not connected for a password-only account', { tags: ['AUTH-17'] }, () => {
-      cy.login();
-      cy.navigateTo('settings');
-
-      cy.getBySel(dataCy.settings.account.connectGoogleButton).should('be.visible');
-      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('not.exist');
-    });
-
-    it('shows Google as connected with an enabled disconnect for a linked account', { tags: ['AUTH-18'] }, () => {
-      cy.login();
-      cy.intercept('GET', '**/auth/v1/user*', (req) => {
-        req.continue((res) => {
-          res.body.identities = [...(res.body.identities ?? []), mockGoogleIdentity(res.body.id)];
-        });
-      });
-      cy.navigateTo('settings');
-
-      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('be.enabled');
-      cy.getBySel(dataCy.settings.account.connectGoogleButton).should('not.exist');
-    });
-
-    it('disables disconnecting Google when it is the only sign-in method', { tags: ['AUTH-19'] }, () => {
-      cy.login();
-      cy.intercept('GET', '**/auth/v1/user*', (req) => {
-        req.continue((res) => {
-          res.body.identities = [mockGoogleIdentity(res.body.id)];
-        });
-      });
-      cy.navigateTo('settings');
-
-      cy.getBySel(dataCy.settings.account.disconnectGoogleButton).should('be.disabled');
     });
   });
 });

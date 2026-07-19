@@ -97,7 +97,7 @@ export class SettingsPageComponent implements OnInit {
       take(1),
       tapIf(success => success, () => {
         this.snackBar.open('Signed out successfully.', 'Close', { duration: 3000 });
-        this.router.navigate(['/auth/login']);
+        this.router.navigate(['/auth']);
       }),
       tapIf(success => !success, () => this.snackBar.open('Failed to sign out.', 'Close', { duration: 3000 }))
     ).subscribe();

@@ -102,7 +102,7 @@ describe('CallbackComponent', () => {
   });
 
   describe('without a session (abandoned or failed OAuth dance)', () => {
-    it('should redirect type=oauth to the login page with an error message', () => {
+    it('should redirect type=oauth to the welcome screen with an error message', () => {
       authenticatedResponse = { isAuthenticated: false, userId: undefined };
       const fixture = createComponent('oauth');
 
@@ -110,28 +110,28 @@ describe('CallbackComponent', () => {
 
       expect(getProfileMock).not.toHaveBeenCalled();
       expect(snackBarOpenMock).toHaveBeenCalledWith('Google sign-in was not completed. Please try again.', 'Close', { duration: 5000 });
-      expect(navigateMock).toHaveBeenCalledWith(['/auth/login']);
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
     });
 
-    it('should redirect type=oauth-link to the login page with an error message', () => {
+    it('should redirect type=oauth-link to the welcome screen with an error message', () => {
       authenticatedResponse = { isAuthenticated: false, userId: undefined };
       const fixture = createComponent('oauth-link');
 
       fixture.detectChanges();
 
       expect(snackBarOpenMock).toHaveBeenCalledWith('Google sign-in was not completed. Please try again.', 'Close', { duration: 5000 });
-      expect(navigateMock).toHaveBeenCalledWith(['/auth/login']);
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
     });
   });
 
   describe('unknown type', () => {
-    it('should show an error and navigate to the login page', () => {
+    it('should show an error and navigate to the welcome screen', () => {
       const fixture = createComponent('bogus');
 
       fixture.detectChanges();
 
       expect(snackBarOpenMock).toHaveBeenCalledWith('Invalid callback type.', 'Close', { duration: 5000 });
-      expect(navigateMock).toHaveBeenCalledWith(['/auth/login']);
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
     });
   });
 });
