@@ -95,28 +95,10 @@ export class ExerciseRepository {
    * @param {UpdateExerciseCommand} _command - The command with the updated data.
    * @returns {Promise<ExerciseDto | null>} A promise that resolves to the updated exercise.
    */
-  async update(_exerciseId: string, _command: UpdateExerciseCommand): Promise<ExerciseDto | null> {
-    // TODO: Add admin role check, disable for now
-    await new Promise(resolve => setTimeout(resolve, 10));
+  update(_exerciseId: string, _command: UpdateExerciseCommand): Promise<ExerciseDto | null> {
+    // The catalog is shared between all users, so editing an entry is an administrative action.
+    // There is no admin role yet; RLS denies the update as well, so this is not the only guard.
     throw new Error('Forbidden: You cannot update this exercise');
-
-    /*
-    const { data, error } = await this.supabase
-      .from('exercises')
-      .update(command)
-      .eq('id', exerciseId)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      throw error;
-    }
-
-    return data as ExerciseDto;
-    */
   }
 
   /**
@@ -125,23 +107,9 @@ export class ExerciseRepository {
    * @param {string} _exerciseId - The ID of the exercise to delete.
    * @returns {Promise<boolean>} A promise that resolves to true if deletion was successful.
    */
-  async delete(_exerciseId: string): Promise<boolean> {
-    // TODO: Add admin role check, disable for now
-    await new Promise(resolve => setTimeout(resolve, 10));
+  delete(_exerciseId: string): Promise<boolean> {
+    // See `update`: removing a shared catalog entry is an administrative action, denied by RLS too.
     throw new Error('Forbidden: You cannot delete this exercise');
-
-    /*
-    const { error } = await this.supabase
-      .from('exercises')
-      .delete()
-      .eq('id', exerciseId);
-
-    if (error) {
-      throw error;
-    }
-
-    return true;
-    */
   }
 
   /**
