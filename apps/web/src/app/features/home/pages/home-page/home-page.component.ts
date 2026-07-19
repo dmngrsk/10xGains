@@ -54,7 +54,7 @@ export class HomePageComponent implements OnInit {
     this.router.navigate(['/sessions', sessionId]);
   }
 
-  onSessionAbandoned(sessionId: string): void {
-    this.facade.abandonSession(sessionId);
+  onSessionAbandoned(): void {
+    this.facade.abandonSession();
   }
 }

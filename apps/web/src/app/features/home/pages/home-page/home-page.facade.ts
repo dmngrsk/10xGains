@@ -135,23 +135,16 @@ export class HomePageFacade {
     ).subscribe();
   }
 
-  abandonSession(sessionId: string) {
-    const currentViewModel = this.viewModel();
-    if (!currentViewModel.activePlanId) {
-      console.error('Cannot create session without an active plan.');
-      this.viewModel.update(state => ({ ...state, error: 'Active plan is required to create a session.', isLoading: false }));
-      return;
-    }
-
-    this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
-
-    this.sessionService.completeSession(sessionId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.createSession()),
-      catchError((error: Error) => {
-        this.viewModel.update(state => ({ ...state, isLoading: false, error: error.message }));
-        return EMPTY;
-      })
-    ).subscribe();
+  /**
+   * Abandons the outstanding session and starts a fresh one in its place.
+   *
+   * Creating a session cancels any outstanding one server-side (`cancelOutstandingSessions`), so
+   * abandoning is just a create. It must not go through `completeSession`: that would mark a
+   * half-finished workout COMPLETED, skip its pending sets and apply weight progressions and
+   * deloads from it - the opposite of abandoning - and for a PENDING session the API rejects
+   * completion outright, leaving the user stuck with an error and no new session.
+   */
+  abandonSession() {
+    this.createSession();
   }
 }
