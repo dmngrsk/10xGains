@@ -46,7 +46,7 @@ import { handleCompleteSessionSet } from '../handlers/session-sets/patch-complet
 import { handleFailSessionSet } from '../handlers/session-sets/patch-fail';
 import { handleResetSessionSet } from '../handlers/session-sets/patch-reset';
 import type { AppContext } from '../context';
-import { createErrorDataWithLogging } from "../utils/api-helpers";
+import { createErrorDataWithLogging, createServerErrorData } from "../utils/api-helpers";
 
 // /api/exercises
 function createExerciseRoutes(): Hono<AppContext> {
@@ -162,7 +162,7 @@ function handleNotFound(c: Context) {
 // Handles any unhandled error
 function handleOnError(err: Error, c: Context) {
   console.error('Unhandled error:', err);
-  const errorData = createErrorDataWithLogging(500, 'Internal Server Error', { details: err.message });
+  const errorData = createServerErrorData('Internal Server Error', err);
   return c.json(errorData, 500);
 }
 

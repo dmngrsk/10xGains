@@ -7,7 +7,7 @@ import {
   NotFoundError,
   isDomainError
 } from './errors';
-import { mapDomainError } from './api-helpers';
+import { createServerErrorData, mapDomainError } from './api-helpers';
 
 describe('domain errors', () => {
   it.each([
@@ -78,5 +78,31 @@ describe('mapDomainError', () => {
     const response = mapDomainError(new DataIntegrityError('Plan ID missing from the session.'));
 
     expect(response?.status).toBe(500);
+  });
+});
+
+describe('createServerErrorData', () => {
+  it('should not disclose the underlying error to the client', () => {
+    const response = createServerErrorData(
+      'Failed to get sessions',
+      new Error('duplicate key value violates unique constraint "sessions_pkey"')
+    );
+
+    expect(JSON.stringify(response)).not.toContain('sessions_pkey');
+    expect(response.error).toBe('Failed to get sessions');
+  });
+
+  it('should return a correlation id so a report can be matched to a log line', () => {
+    const response = createServerErrorData('Failed to get sessions', new Error('boom'));
+
+    expect(response.details?.['correlationId']).toMatch(/^[0-9a-f-]{36}$/);
+    expect(response.code).toBe('INTERNAL_ERROR');
+  });
+
+  it('should give each fault its own correlation id', () => {
+    const first = createServerErrorData('Failed', new Error('boom'));
+    const second = createServerErrorData('Failed', new Error('boom'));
+
+    expect(first.details?.['correlationId']).not.toBe(second.details?.['correlationId']);
   });
 });

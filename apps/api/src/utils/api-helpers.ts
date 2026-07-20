@@ -180,6 +180,43 @@ export function createSuccessData<T>(
 }
 
 /**
+ * Creates the response for an unexpected server fault, without disclosing its cause.
+ *
+ * Raw Supabase and Postgres messages name tables, columns and constraints, so forwarding them to
+ * clients hands out a partial schema map and can leak row contents through constraint text. The
+ * message is logged in full instead, tagged with a correlation id that is the only detail the
+ * client receives - enough to match a user's report to a log line, useless to anyone else.
+ *
+ * @param {string} message - The generic, client-safe message.
+ * @param {unknown} [originalError] - The underlying error, logged but never returned.
+ * @param {ErrorDetails['request']} [requestInfo] - The request information for logging.
+ * @returns {ApiErrorResponse} The structured error response object.
+ */
+export function createServerErrorData(
+  message: string,
+  originalError?: unknown,
+  requestInfo?: ErrorDetails['request']
+): ApiErrorResponse {
+  const correlationId = crypto.randomUUID();
+
+  logError({
+    statusCode: 500,
+    message,
+    code: 'INTERNAL_ERROR',
+    context: { correlationId },
+    originalError,
+    request: requestInfo,
+  });
+
+  return {
+    error: message,
+    status: 500,
+    code: 'INTERNAL_ERROR',
+    details: { correlationId },
+  };
+}
+
+/**
  * Maps a thrown value to an API error response when it carries its own HTTP semantics.
  *
  * This is the single place domain errors become responses. Anything that is not a `DomainError`
@@ -226,12 +263,6 @@ export function handleRepositoryError(
   }
 
   console.error(`Unexpected error in ${operationName}:`, error);
-  const errorData = createErrorDataWithLogging(
-    500,
-    fallbackMessage,
-    { details: (error as Error)?.message },
-    undefined,
-    error
-  );
+  const errorData = createServerErrorData(fallbackMessage, error);
   return c.json(errorData, 500);
 }
