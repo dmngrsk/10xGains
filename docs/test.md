@@ -160,6 +160,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
 | | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
 | | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
+| | SESS-14 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
 | **History (Calendar)** | HIST-01 | Days holding completed sessions are marked with dots in the calendar. | High | No |
 | | HIST-02 | Tapping a day with a single session navigates to that session's detail page. | High | No |
 | | HIST-03 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |

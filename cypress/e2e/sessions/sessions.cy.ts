@@ -150,7 +150,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-11'] }, () => {
+    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-14'] }, () => {
       // Session sets are grouped by plan_exercise_id, which every session trained from the same
       // plan day shares. Editing a set used to pull in the sets of previous sessions of that day,
       // renumber the merged list and write it back - silently rewriting, and deleting, history.
