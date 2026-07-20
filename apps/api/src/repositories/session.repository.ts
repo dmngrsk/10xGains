@@ -483,15 +483,49 @@ export class SessionRepository {
       }
     ];
 
-    const { error: batchError } = await this.supabase.rpc('replace_collections_batch', {
+    // Applied through `complete_session` rather than the batch RPC directly: it re-takes the
+    // session row lock and re-checks the status inside the transaction. Everything above - the
+    // status assertion, the progression maths - happened outside any lock, so a competing
+    // completion could have finished the session in the meantime and would otherwise have its
+    // progressions applied a second time.
+    const { error: batchError } = await this.supabase.rpc('complete_session', {
+      p_session_id: sessionId,
       p_operations: batchOperations.filter(op => op.records.length > 0) as Json
     });
 
     if (batchError) {
-      throw batchError;
+      throw this.toCompleteSessionError(batchError.message);
     }
 
     return completedSession as SessionDto;
+  }
+
+  /**
+   * Translates the sentinel conditions raised by `complete_session` into domain errors.
+   *
+   * The function signals its outcomes with fixed sentinel messages rather than prose, so the
+   * mapping here does not depend on wording that might be reworded later.
+   *
+   * @param {string} message - The message from the Postgres error.
+   * @returns {Error} The domain error to throw, or the original condition if it is unrecognised.
+   */
+  private toCompleteSessionError(message: string): Error {
+    if (message.includes('SESSION_NOT_FOUND')) {
+      return new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
+    }
+
+    // Raised when a concurrent request completed the session first. The status was IN_PROGRESS
+    // when this request checked it, so the same condition maps to the same conflict the
+    // pre-flight assertion would have produced.
+    if (message.includes('SESSION_NOT_IN_PROGRESS')) {
+      return new ConflictError(
+        'Session cannot be completed. Current status: COMPLETED. Expected: IN_PROGRESS.',
+        'SESSION_NOT_COMPLETABLE',
+        'session_completion_error'
+      );
+    }
+
+    return new Error(message);
   }
 
   /**
