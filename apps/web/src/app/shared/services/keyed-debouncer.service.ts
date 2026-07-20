@@ -194,11 +194,18 @@ export class KeyedDebouncerService implements OnDestroy {
   }
 
   /**
-   * Immediately executes the operation currently waiting out its debounce window.
+   * Settles the operation currently in flight or waiting out its debounce window.
+   *
+   * Both states have to be covered. Looking only at `pending` misses an operation whose debounce
+   * has already elapsed and whose request is on the wire - callers that treat this as "all my
+   * writes have landed" then race it. Completing a session that way let the server read the last
+   * set as still PENDING, mark it SKIPPED over the completion arriving mid-flight, and score the
+   * exercise as failed.
+   *
    * @returns An Observable that completes once that operation has settled, or immediately if there is none.
    */
   public flushCurrentActiveDebounce(): Observable<void> {
-    const key = this.pending?.key ?? null;
+    const key = this.pending?.key ?? this._processingKey$.value;
     return key ? this.flush(key) : of(undefined);
   }
 

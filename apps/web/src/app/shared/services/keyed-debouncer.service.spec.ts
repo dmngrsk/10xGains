@@ -313,6 +313,33 @@ describe('KeyedDebouncerService', () => {
       await vi.advanceTimersByTimeAsync(0);
       expect(flushCompleted).toBe(true);
     });
+
+    it('flushCurrentActiveDebounce should wait for an operation already in flight', async () => {
+      // Once the debounce elapses the operation leaves `pending` and the request goes out.
+      // Reporting completion at that point tells the caller its write has landed when it has
+      // not - completing a session that way raced the set patch still on the wire.
+      const key = 'inFlight';
+      const apiDurationMs = 200;
+      const response: TestApiResponse = { id: key, value: 'inFlightData' };
+      const factory = mockApiCall(response, undefined, apiDurationMs);
+      let receivedResponse: TestApiResponse | undefined;
+
+      service.enqueue(key, factory, defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure).response$.subscribe((r: TestApiResponse) => receivedResponse = r);
+
+      // Let the debounce elapse so the call starts, but not long enough for it to return.
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS);
+      expect(receivedResponse, 'the request is still in flight').toBeUndefined();
+      expect(service.getCurrentlyDebouncingKey(), 'nothing is waiting out a debounce any more').toBeNull();
+
+      let flushCompleted = false;
+      service.flushCurrentActiveDebounce().subscribe({ complete: () => flushCompleted = true });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(flushCompleted, 'flush must not report completion while the call is outstanding').toBe(false);
+
+      await vi.advanceTimersByTimeAsync(apiDurationMs);
+      expect(receivedResponse).toEqual(response);
+      expect(flushCompleted).toBe(true);
+    });
   });
 
   describe('setDebounceTime', () => {
