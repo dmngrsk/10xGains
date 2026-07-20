@@ -1,10 +1,24 @@
-import type { SupabaseClient, User } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@txg/shared';
 import type { PlanRepository } from './repositories/plan.repository';
 import type { ExerciseRepository } from './repositories/exercise.repository';
 import type { ProfileRepository } from './repositories/profile.repository';
 import type { ProgressRepository } from './repositories/progress.repository';
 import type { SessionRepository } from './repositories/session.repository';
+
+/**
+ * The authenticated caller, as established from the verified JWT claims.
+ *
+ * Deliberately narrower than supabase-js's `User`: the API only ever needs the subject id, and
+ * modelling it this way keeps the auth middleware free to verify the token locally instead of
+ * fetching the full user record from the Auth server on every request.
+ */
+export interface AuthenticatedUser {
+  /** The user's id (the JWT `sub` claim). */
+  id: string;
+  email?: string;
+  role?: string;
+}
 
 /**
  * Placeholder for TelemetryClient - can be expanded later
@@ -25,7 +39,7 @@ export interface TelemetryClient {
 export type AppContext = {
   Variables: {
     supabase: SupabaseClient<Database>;
-    user: User;
+    user: AuthenticatedUser;
     telemetry: TelemetryClient;
     startTime: number;
     planRepository: PlanRepository;
