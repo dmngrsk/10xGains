@@ -33,16 +33,6 @@ import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/error
  */
 const TRANSITIONABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS'] as const satisfies readonly SessionDto['status'][];
 
-/**
- * How many times a session creation may be re-attempted after losing a race.
- *
- * Each attempt that loses has already been beaten by one that won, so the invariant holds either
- * way; the retry exists so the loser still ends up with a session rather than an error. Two is
- * enough for the realistic case of a double submit - beyond that, something is wrong that
- * retrying will not fix.
- */
-const CREATE_SESSION_ATTEMPTS = 2;
-
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
   status?: SessionDto['status'][];
   date_from?: string;
@@ -86,10 +76,6 @@ export class SessionRepository {
       supabaseQuery = supabaseQuery.eq('plan_id', options.plan_id);
     }
 
-    // `optionalSort` has already validated both halves against this endpoint's whitelist and
-    // applied its default, so there is no unsorted case to fall back on. The fallback that used to
-    // sit here defaulted to descending while the handler defaults to ascending, which made it look
-    // as though the two disagreed.
     const [sortColumn, sortDirection] = options.sort.split('.');
     supabaseQuery = supabaseQuery.order(sortColumn, { ascending: sortDirection === 'asc' });
 
@@ -156,6 +142,8 @@ export class SessionRepository {
     // refuses the write instead of applying stale decisions. Retrying re-reads the world the winner
     // left behind and produces what the two calls would have produced had they arrived in sequence:
     // the second cancels the first's session and opens its own.
+    const CREATE_SESSION_ATTEMPTS = 2;
+    
     for (let attempt = 1; attempt <= CREATE_SESSION_ATTEMPTS; attempt++) {
       try {
         return await this.attemptCreate(command);
@@ -169,158 +157,6 @@ export class SessionRepository {
 
     // Unreachable: the loop either returns or rethrows on its final attempt.
     throw new Error('Failed to create a training session.');
-  }
-
-  /**
-   * Performs one attempt at creating a session.
-   *
-   * @param {CreateSessionCommand} command - The command containing the details for the new session.
-   * @returns {Promise<SessionDto>} A promise that resolves to the newly created session.
-   * @throws {Error} Carrying SESSION_CREATE_CONFLICT if a concurrent create invalidated this one.
-   */
-  private async attemptCreate(command: CreateSessionCommand): Promise<SessionDto> {
-    const userId = this.getUserId();
-
-    // Step 1: Fetch the plan and its days.
-    //
-    // The embeds are not `!inner`: that dropped any day whose exercises had no sets, so a day that
-    // later lost its sets vanished from the rotation. If it happened to be the most recently
-    // completed one, `resolveNextPlanDayId` could no longer find it and threw; and a plan with days
-    // but no sets anywhere came back as "Plan not found", which is simply wrong. Days are now
-    // fetched as they are, and the empty-plan case is reported for what it is.
-    const { data: plan, error: planError } = await this.supabase
-      .from('plans')
-      .select(`
-        days:plan_days(
-          id,
-          order_index,
-          exercises:plan_exercises(
-            sets:plan_exercise_sets(
-              *
-            )
-          )
-        )
-      `)
-      .eq('user_id', userId)
-      .eq('id', command.plan_id as string)
-      .single();
-
-    if (planError || !plan) {
-      throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
-    }
-
-    if (!plan.days?.length) {
-      throw new ConflictError(
-        'This plan has no training days yet. Add a day before starting a session.',
-        'PLAN_HAS_NO_DAYS',
-        'plan_has_no_days_error'
-      );
-    }
-
-    // Step 2: Fetch the sessions that matter, in two queries with different needs.
-    //
-    // Outstanding sessions are fetched without a limit: every one of them has to be cancelled to
-    // preserve the "only one open session" invariant, and they cannot be ordered by session_date
-    // because PENDING sessions have none. A single `.limit(10)` ordered by session_date served both
-    // purposes before, which let outstanding sessions past the tenth row escape cancellation
-    // entirely - the query meant to maintain the invariant could silently break it.
-    const { data: outstandingSessions, error: outstandingError } = await this.supabase
-      .from('sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('plan_id', command.plan_id as string)
-      .in('status', ['PENDING', 'IN_PROGRESS']);
-
-    if (outstandingError) {
-      throw outstandingError;
-    }
-
-    // Only the most recent completed session decides which day comes next.
-    const { data: lastCompletedSessions, error: completedError } = await this.supabase
-      .from('sessions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('plan_id', command.plan_id as string)
-      .eq('status', 'COMPLETED')
-      .not('session_date', 'is', null)
-      .order('session_date', { ascending: false })
-      .limit(1);
-
-    if (completedError) {
-      throw completedError;
-    }
-
-    const sessions = [...(outstandingSessions ?? []), ...(lastCompletedSessions ?? [])];
-
-    const currentDayId = resolveNextPlanDayId(plan.days, sessions, command.plan_day_id);
-
-    const currentDay = plan.days.find(d => d.id === currentDayId);
-    if (!currentDay) {
-      throw new NotFoundError('Plan day not found in the specified plan.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
-    }
-
-    // Step 3: Build records to upsert
-    const newSessionId = crypto.randomUUID();
-    const recordsToUpsert: SessionDto[] = [
-      ...cancelOutstandingSessions(outstandingSessions ?? []),
-      {
-        id: newSessionId,
-        user_id: userId,
-        plan_id: command.plan_id,
-        plan_day_id: currentDayId,
-        status: 'PENDING',
-        session_date: null,
-        notes: null
-      }
-    ];
-
-    const newSessionSets = buildSessionSets(currentDay, newSessionId);
-
-    // Step 4: Use batch operations to atomically create session and sets
-    const batchOperations = [
-      {
-        table_name: 'sessions',
-        records: recordsToUpsert
-      },
-      {
-        table_name: 'session_sets',
-        parent_column: 'session_id',
-        parent_id: newSessionId,
-        records: newSessionSets
-      }
-    ];
-
-    // Applied through `create_session` rather than the batch RPC directly: it serialises on the
-    // user and plan, and re-checks that the outstanding sessions read above are still the whole
-    // set. Anything else means a concurrent create got there first and the day chosen and the
-    // cancellations built here no longer describe reality.
-    const { error: batchError } = await this.supabase.rpc('create_session', {
-      p_plan_id: command.plan_id as string,
-      p_outstanding_session_ids: (outstandingSessions ?? []).map(session => session.id),
-      p_operations: batchOperations.filter(op => op.records.length > 0) as Json
-    });
-
-    if (batchError) {
-      throw new Error(batchError.message);
-    }
-
-    const { data: createdSession, error: fetchError } = await this.supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', newSessionId)
-      .eq('user_id', userId)
-      .single();
-
-    if (fetchError || !createdSession) {
-      throw fetchError || new Error('Failed to fetch newly created session');
-    }
-
-    const newlyCreatedSession = {
-      ...createdSession,
-      sets: newSessionSets
-    };
-
-    return newlyCreatedSession as SessionDto;
   }
 
   /**
@@ -340,14 +176,6 @@ export class SessionRepository {
       .eq('id', sessionId)
       .eq('user_id', this.getUserId());
 
-    // A status change is legal only out of a status that has not finished yet, and the predicate
-    // has to be part of the write: checking first and updating after leaves a window where a
-    // concurrent complete lands in between. The handler already refuses COMPLETED as a *target*,
-    // but without this a COMPLETED session could be moved back to IN_PROGRESS and completed
-    // again, applying its weight progressions and deloads a second time.
-    //
-    // Only a status change is restricted. Notes stay editable on a finished session, which is
-    // how the history page annotates past workouts.
     if (command.status) {
       query = query.in('status', TRANSITIONABLE_SESSION_STATUSES);
     }
@@ -462,10 +290,6 @@ export class SessionRepository {
       throw planDataError;
     }
 
-    // Progressions are keyed by (plan_id, exercise_id) and must be read scoped to this session's
-    // plan. Reaching them through the global exercise instead returns a row per plan that trains
-    // it, and the caller keys them by exercise_id alone - an arbitrary plan's rules would win and
-    // then be written back onto that plan's row.
     const { data: progressionData, error: progressionError } = await this.supabase
       .from('plan_exercise_progressions')
       .select('*')
@@ -527,11 +351,6 @@ export class SessionRepository {
       }
     ];
 
-    // Applied through `complete_session` rather than the batch RPC directly: it re-takes the
-    // session row lock and re-checks the status inside the transaction. Everything above - the
-    // status assertion, the progression maths - happened outside any lock, so a competing
-    // completion could have finished the session in the meantime and would otherwise have its
-    // progressions applied a second time.
     const { error: batchError } = await this.supabase.rpc('complete_session', {
       p_session_id: sessionId,
       p_operations: batchOperations.filter(op => op.records.length > 0) as Json
@@ -542,34 +361,6 @@ export class SessionRepository {
     }
 
     return completedSession as SessionDto;
-  }
-
-  /**
-   * Translates the sentinel conditions raised by `complete_session` into domain errors.
-   *
-   * The function signals its outcomes with fixed sentinel messages rather than prose, so the
-   * mapping here does not depend on wording that might be reworded later.
-   *
-   * @param {string} message - The message from the Postgres error.
-   * @returns {Error} The domain error to throw, or the original condition if it is unrecognised.
-   */
-  private toCompleteSessionError(message: string): Error {
-    if (message.includes('SESSION_NOT_FOUND')) {
-      return new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
-    }
-
-    // Raised when a concurrent request completed the session first. The status was IN_PROGRESS
-    // when this request checked it, so the same condition maps to the same conflict the
-    // pre-flight assertion would have produced.
-    if (message.includes('SESSION_NOT_IN_PROGRESS')) {
-      return new ConflictError(
-        'Session cannot be completed. Current status: COMPLETED. Expected: IN_PROGRESS.',
-        'SESSION_NOT_COMPLETABLE',
-        'session_completion_error'
-      );
-    }
-
-    return new Error(message);
   }
 
   /**
@@ -733,11 +524,6 @@ export class SessionRepository {
    * @returns {Promise<SessionSetDto | null>} A promise that resolves to the patched session set.
    */
   async patchSet(sessionId: string, setId: string, getUpdateData: (set: SessionSetDto) => Partial<SessionSetDto>): Promise<SessionSetDto | null> {
-    // The caller derives the new values from the current set (completing one records its expected
-    // reps as actual), so the set still has to be read first. Only immutable-during-a-session
-    // fields are used for that, so reading outside the transaction is safe; everything that
-    // actually decides the outcome - the session's status, the promotion to IN_PROGRESS and the
-    // write itself - happens inside `patch_session_set` under a lock on the session row.
     const currentSet = await this.findSetById(sessionId, setId);
 
     if (!currentSet) {
@@ -759,6 +545,170 @@ export class SessionRepository {
     }
 
     return updatedSet as SessionSetDto;
+  }
+
+  /**
+   * Performs one attempt at creating a session.
+   *
+   * @param {CreateSessionCommand} command - The command containing the details for the new session.
+   * @returns {Promise<SessionDto>} A promise that resolves to the newly created session.
+   * @throws {Error} Carrying SESSION_CREATE_CONFLICT if a concurrent create invalidated this one.
+   */
+  private async attemptCreate(command: CreateSessionCommand): Promise<SessionDto> {
+    const userId = this.getUserId();
+
+    // Step 1: Fetch the plan and its days
+    const { data: plan, error: planError } = await this.supabase
+      .from('plans')
+      .select(`
+        days:plan_days(
+          id,
+          order_index,
+          exercises:plan_exercises(
+            sets:plan_exercise_sets(
+              *
+            )
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .eq('id', command.plan_id as string)
+      .single();
+
+    if (planError || !plan) {
+      throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
+    }
+
+    if (!plan.days?.length) {
+      throw new ConflictError(
+        'This plan has no training days yet. Add a day before starting a session.',
+        'PLAN_HAS_NO_DAYS',
+        'plan_has_no_days_error'
+      );
+    }
+
+    // Step 2: Fetch the sessions that matter, in two queries with different needs
+    const { data: outstandingSessions, error: outstandingError } = await this.supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('plan_id', command.plan_id as string)
+      .in('status', ['PENDING', 'IN_PROGRESS']);
+
+    if (outstandingError) {
+      throw outstandingError;
+    }
+
+    // Only the most recent completed session decides which day comes next
+    const { data: lastCompletedSessions, error: completedError } = await this.supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('plan_id', command.plan_id as string)
+      .eq('status', 'COMPLETED')
+      .not('session_date', 'is', null)
+      .order('session_date', { ascending: false })
+      .limit(1);
+
+    if (completedError) {
+      throw completedError;
+    }
+
+    const sessions = [...(outstandingSessions ?? []), ...(lastCompletedSessions ?? [])];
+
+    const currentDayId = resolveNextPlanDayId(plan.days, sessions, command.plan_day_id);
+
+    const currentDay = plan.days.find(d => d.id === currentDayId);
+    if (!currentDay) {
+      throw new NotFoundError('Plan day not found in the specified plan.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
+    }
+
+    // Step 3: Build records to upsert
+    const newSessionId = crypto.randomUUID();
+    const recordsToUpsert: SessionDto[] = [
+      ...cancelOutstandingSessions(outstandingSessions ?? []),
+      {
+        id: newSessionId,
+        user_id: userId,
+        plan_id: command.plan_id,
+        plan_day_id: currentDayId,
+        status: 'PENDING',
+        session_date: null,
+        notes: null
+      }
+    ];
+
+    const newSessionSets = buildSessionSets(currentDay, newSessionId);
+
+    // Step 4: Use batch operations to atomically create session and sets
+    const batchOperations = [
+      {
+        table_name: 'sessions',
+        records: recordsToUpsert
+      },
+      {
+        table_name: 'session_sets',
+        parent_column: 'session_id',
+        parent_id: newSessionId,
+        records: newSessionSets
+      }
+    ];
+
+    const { error: batchError } = await this.supabase.rpc('create_session', {
+      p_plan_id: command.plan_id as string,
+      p_outstanding_session_ids: (outstandingSessions ?? []).map(session => session.id),
+      p_operations: batchOperations.filter(op => op.records.length > 0) as Json
+    });
+
+    if (batchError) {
+      throw new Error(batchError.message);
+    }
+
+    const { data: createdSession, error: fetchError } = await this.supabase
+      .from('sessions')
+      .select('*')
+      .eq('id', newSessionId)
+      .eq('user_id', userId)
+      .single();
+
+    if (fetchError || !createdSession) {
+      throw fetchError || new Error('Failed to fetch newly created session');
+    }
+
+    const newlyCreatedSession = {
+      ...createdSession,
+      sets: newSessionSets
+    };
+
+    return newlyCreatedSession as SessionDto;
+  }
+
+  /**
+   * Translates the sentinel conditions raised by `complete_session` into domain errors.
+   *
+   * The function signals its outcomes with fixed sentinel messages rather than prose, so the
+   * mapping here does not depend on wording that might be reworded later.
+   *
+   * @param {string} message - The message from the Postgres error.
+   * @returns {Error} The domain error to throw, or the original condition if it is unrecognised.
+   */
+  private toCompleteSessionError(message: string): Error {
+    if (message.includes('SESSION_NOT_FOUND')) {
+      return new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
+    }
+
+    // Raised when a concurrent request completed the session first. The status was IN_PROGRESS
+    // when this request checked it, so the same condition maps to the same conflict the
+    // pre-flight assertion would have produced.
+    if (message.includes('SESSION_NOT_IN_PROGRESS')) {
+      return new ConflictError(
+        'Session cannot be completed. Current status: COMPLETED. Expected: IN_PROGRESS.',
+        'SESSION_NOT_COMPLETABLE',
+        'session_completion_error'
+      );
+    }
+
+    return new Error(message);
   }
 
   /**
