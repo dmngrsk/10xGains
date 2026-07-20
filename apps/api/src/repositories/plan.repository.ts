@@ -753,26 +753,6 @@ export class PlanRepository {
     return data as PlanExerciseProgressionDto;
   }
 
-
-
-  /**
-   * Verifies that the given plan belongs to the current user, and that each id below it really sits
-   * on the path implied by the one above.
-   *
-   * Only the requested path is fetched: the embed is built to the depth the caller asked about and
-   * each level is filtered to the single id in question. Selecting the whole tree instead - every
-   * day, exercise and set id of the plan - made a one-set edit walk the entire plan on every
-   * request, before the collection helper had even fetched the sibling rows.
-   *
-   * The embeds are deliberately not `!inner`: a non-matching child leaves the plan row in place with
-   * an empty array, which is what lets the checks below report *which* level was missing rather than
-   * collapsing every failure into "plan not found".
-   *
-   * @param {string} planId - The plan that must belong to the current user.
-   * @param {string} [dayId] - A day that must belong to that plan.
-   * @param {string} [exerciseId] - An exercise that must belong to that day.
-   * @param {string} [setId] - A set that must belong to that exercise.
-   */
   /**
    * The ordered collection of a plan's training days.
    *
@@ -827,6 +807,24 @@ export class PlanRepository {
     };
   }
 
+  /**
+   * Verifies that the given plan belongs to the current user, and that each id below it really sits
+   * on the path implied by the one above.
+   *
+   * Only the requested path is fetched: the embed is built to the depth the caller asked about and
+   * each level is filtered to the single id in question. Selecting the whole tree instead - every
+   * day, exercise and set id of the plan - made a one-set edit walk the entire plan on every
+   * request, before the collection helper had even fetched the sibling rows.
+   *
+   * The embeds are deliberately not `!inner`: a non-matching child leaves the plan row in place with
+   * an empty array, which is what lets the checks below report *which* level was missing rather than
+   * collapsing every failure into "plan not found".
+   *
+   * @param {string} planId - The plan that must belong to the current user.
+   * @param {string} [dayId] - A day that must belong to that plan.
+   * @param {string} [exerciseId] - An exercise that must belong to that day.
+   * @param {string} [setId] - A set that must belong to that exercise.
+   */
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
     let select = 'id';
     if (dayId) {
@@ -888,6 +886,5 @@ export class PlanRepository {
       throw new NotFoundError('Plan exercise set not found.', 'PLAN_EXERCISE_SET_NOT_FOUND', 'plan_exercise_set_not_found_error');
     }
   }
-
 
 }

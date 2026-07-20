@@ -787,12 +787,6 @@ export class SessionRepository {
     return new Error(message);
   }
 
-
-
-
-
-
-
   /**
    * The ordered collection of one session's sets for one plan exercise.
    *
