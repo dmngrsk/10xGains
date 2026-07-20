@@ -51,9 +51,6 @@ import { createErrorDataWithLogging, createServerErrorData } from "../utils/api-
 // /api/exercises
 function createExerciseRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    // The exercise catalog is shared reference data that anon may read (see the exercises_anon_select
-    // policy), and neither read handler looks at the caller. Attaching auth here implied a
-    // user-scoping that does not exist, and cost a token verification per request for nothing.
     .get('/', handleGetExercises)
     .post('/', requiredAuthMiddleware, handleCreateExercise)
     .get('/:exerciseId', handleGetExerciseById)
@@ -120,12 +117,6 @@ function createPlanExerciseProgressionRoutes(): Hono<AppContext> {
     .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseProgressionById);
 }
 
-// /api/progress
-function createProgressRoutes(): Hono<AppContext> {
-  return new Hono<AppContext>()
-    .get('/exercises', requiredAuthMiddleware, handleGetExerciseProgress);
-}
-
 // /api/sessions
 function createSessionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
@@ -149,6 +140,12 @@ function createSessionSetRoutes(): Hono<AppContext> {
     .patch('/:setId/complete', requiredAuthMiddleware, handleCompleteSessionSet)
     .patch('/:setId/fail', requiredAuthMiddleware, handleFailSessionSet)
     .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);
+}
+
+// /api/progress
+function createProgressRoutes(): Hono<AppContext> {
+  return new Hono<AppContext>()
+    .get('/exercises', requiredAuthMiddleware, handleGetExerciseProgress);
 }
 
 // Handles health check endpoint
