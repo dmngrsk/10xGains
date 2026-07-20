@@ -12,13 +12,8 @@ export async function patch(
   const sessionRepository = c.get('sessionRepository');
 
   try {
-    const currentSet = await sessionRepository.findSetById(sessionId, setId);
-
-    if (!currentSet) {
-      const errorData = createErrorDataWithLogging(404, 'Session set not found.');
-      return c.json(errorData, 404);
-    }
-
+    // `patchSet` reads the set itself and raises a NotFoundError when it is missing, so fetching it
+    // here as well only doubled the queries behind a single PATCH.
     const updatedSet = await sessionRepository.patchSet(sessionId, setId, getUpdateSetData);
 
     if (!updatedSet) {

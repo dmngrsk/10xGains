@@ -648,61 +648,58 @@ export class SessionRepository {
    * @returns {Promise<SessionSetDto | null>} A promise that resolves to the patched session set.
    */
   async patchSet(sessionId: string, setId: string, getUpdateData: (set: SessionSetDto) => Partial<SessionSetDto>): Promise<SessionSetDto | null> {
-    const { data: sessionData, error: sessionError } = await this.supabase
-      .from('sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .eq('user_id', this.getUserId())
-      .single();
+    // The caller derives the new values from the current set (completing one records its expected
+    // reps as actual), so the set still has to be read first. Only immutable-during-a-session
+    // fields are used for that, so reading outside the transaction is safe; everything that
+    // actually decides the outcome - the session's status, the promotion to IN_PROGRESS and the
+    // write itself - happens inside `patch_session_set` under a lock on the session row.
+    const currentSet = await this.findSetById(sessionId, setId);
 
-    if (sessionError || !sessionData) {
-      throw new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
-    }
-
-    if (sessionData.status === 'COMPLETED') {
-      throw new ConflictError(`Session ${sessionId} is completed. Cannot update set.`, 'SESSION_COMPLETED', 'session_completed_error');
-    }
-
-    const { data: currentSet, error: fetchError } = await this.supabase
-      .from('session_sets')
-      .select(`*`)
-      .eq('id', setId)
-      .eq('session_id', sessionId)
-      .single();
-
-    if (fetchError || !currentSet) {
+    if (!currentSet) {
       throw new NotFoundError('Session set not found.', 'SESSION_SET_NOT_FOUND', 'session_set_not_found_error');
     }
 
-    // Update session status if needed
-    if (sessionData.status === 'PENDING') {
-      const { error: updateError } = await this.supabase
-        .from('sessions')
-        .update({ status: 'IN_PROGRESS', session_date: new Date().toISOString() })
-        .eq('id', sessionId)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw updateError;
-      }
-    }
-
-    const updateData = getUpdateData(currentSet as SessionSetDto);
+    const updateData = getUpdateData(currentSet);
 
     const { data: updatedSet, error: updateError } = await this.supabase
-      .from('session_sets')
-      .update(updateData as SessionSetDto)
-      .eq('id', setId)
-      .eq('session_id', sessionId)
-      .select(`*`)
+      .rpc('patch_session_set', {
+        p_session_id: sessionId,
+        p_set_id: setId,
+        p_updates: updateData as Json
+      })
       .single();
 
     if (updateError) {
-      throw updateError;
+      throw this.toPatchSetError(updateError.message, sessionId);
     }
 
     return updatedSet as SessionSetDto;
+  }
+
+  /**
+   * Translates the sentinel conditions raised by `patch_session_set` into domain errors.
+   *
+   * The function signals its outcomes with fixed sentinel messages rather than prose, so the
+   * mapping here does not depend on wording that might be reworded later.
+   *
+   * @param {string} message - The message from the Postgres error.
+   * @param {string} sessionId - The session being patched, for the conflict message.
+   * @returns {Error} The domain error to throw, or the original condition if it is unrecognised.
+   */
+  private toPatchSetError(message: string, sessionId: string): Error {
+    if (message.includes('SESSION_SET_NOT_FOUND')) {
+      return new NotFoundError('Session set not found.', 'SESSION_SET_NOT_FOUND', 'session_set_not_found_error');
+    }
+
+    if (message.includes('SESSION_NOT_FOUND')) {
+      return new NotFoundError('Session not found.', 'SESSION_NOT_FOUND', 'session_not_found_error');
+    }
+
+    if (message.includes('SESSION_COMPLETED')) {
+      return new ConflictError(`Session ${sessionId} is completed. Cannot update set.`, 'SESSION_COMPLETED', 'session_completed_error');
+    }
+
+    return new Error(message);
   }
 
 

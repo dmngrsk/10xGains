@@ -378,6 +378,14 @@ export interface Database {
         }
         Returns: Json
       }
+      patch_session_set: {
+        Args: {
+          p_session_id: string
+          p_set_id: string
+          p_updates: Json
+        }
+        Returns: Json
+      }
       replace_collections_batch: {
         Args: {
           p_operations: Json
