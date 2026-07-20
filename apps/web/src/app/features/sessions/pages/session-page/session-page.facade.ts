@@ -7,6 +7,7 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
@@ -42,6 +43,22 @@ export class SessionPageFacade {
   // The instant the rest timer counts up from. Seeded on load from the latest completed set so it
   // survives app freezes and view re-entry, then bumped to "now" on every set interaction.
   readonly timerStartTimestamp = signal<number | null>(null);
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+  }
+
+  /**
+   * Drops the session currently held for the user who was signed in.
+   *
+   * The view model survives navigation because this facade is a root singleton, so without this a
+   * second user in the same tab briefly sees the previous user's workout before the load for their
+   * own session resolves - or keeps seeing it if that load fails.
+   */
+  private clearUserScopedState(): void {
+    this.viewModel.set(initialState);
+    this.timerStartTimestamp.set(null);
+  }
 
   loadSessionData(sessionId: string | null): void {
     if (!sessionId) {

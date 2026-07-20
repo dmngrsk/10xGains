@@ -8,6 +8,7 @@ import { ProgressFiltersViewModel, ProgressPageViewModel } from '@features/progr
 import { mapToExerciseSeriesViewModels } from '@features/progress/models/progress.mapping';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { presetToRange } from '@shared/utils/dates/date-range-presets';
 
 const initialProgressPageViewModel: ProgressPageViewModel = {
@@ -33,6 +34,16 @@ export class ProgressPageFacade {
   readonly viewModel = signal<ProgressPageViewModel>(initialProgressPageViewModel);
   private readonly internalPlans = signal<PlanDto[]>([]);
   private readonly currentUser = computed(() => this.authService.currentUser());
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+  }
+
+  /** Drops the charted history and plan list cached for the user who was signed in. */
+  private clearUserScopedState(): void {
+    this.internalPlans.set([]);
+    this.viewModel.set(initialProgressPageViewModel);
+  }
 
   loadProgressPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));

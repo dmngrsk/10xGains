@@ -33,7 +33,7 @@ describe('HomePageFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         HomePageFacade,
-        { provide: AuthService, useValue: { currentUser: signal(USER) } },
+        { provide: AuthService, useValue: { currentUser: signal(USER), currentUser$: of(USER) } },
         { provide: ProfileService, useValue: { getProfile: vi.fn().mockReturnValue(of({ data: profile, error: null })) } },
         { provide: PlanService, useValue: { getPlan: vi.fn().mockReturnValue(of({ data: null, error: null })) } },
         { provide: ExerciseService, useValue: { getExercises: vi.fn().mockReturnValue(of({ data: [], error: null })) } },

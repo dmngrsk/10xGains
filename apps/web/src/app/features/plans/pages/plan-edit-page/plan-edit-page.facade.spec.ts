@@ -46,7 +46,7 @@ describe('PlanEditPageFacade', () => {
     TestBed.configureTestingModule({
       providers: [
         PlanEditPageFacade,
-        { provide: AuthService, useValue: { currentUser: signal(USER) } },
+        { provide: AuthService, useValue: { currentUser: signal(USER), currentUser$: of(USER) } },
         { provide: PlanService, useValue: planService },
         { provide: ProfileService, useValue: profileService },
         { provide: ExerciseService, useValue: { getExercises: vi.fn().mockReturnValue(of({ data: EXERCISES, error: null })) } },

@@ -10,6 +10,7 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { HomePageViewModel } from '../../models/home-page.viewmodel';
 
 const initialState: HomePageViewModel = {
@@ -33,6 +34,10 @@ export class HomePageFacade {
 
   readonly viewModel = signal<HomePageViewModel>(initialState);
   private readonly currentUser = computed(() => this.authService.currentUser());
+
+  constructor() {
+    resetOnUserChange(() => this.viewModel.set(initialState));
+  }
 
   loadHomePageData(): void {
     this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));

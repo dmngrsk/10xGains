@@ -11,6 +11,7 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 
 const CALENDAR_PAGE_SIZE = 100;
 const CALENDAR_PREFETCH_RADIUS = 3;
@@ -52,6 +53,25 @@ export class HistoryPageFacade {
   private readonly pendingCalendarMonths = new Set<string>();
 
   private listNeedsReload = false;
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+  }
+
+  /**
+   * Drops everything cached for the user who was signed in.
+   *
+   * The calendar cache is otherwise only cleared when the plan *filter* changes, so without this
+   * a second user in the same tab would see the first one's sessions for any month already
+   * fetched.
+   */
+  private clearUserScopedState(): void {
+    this.clearCalendarCache();
+    this.internalPlans.set([]);
+    this.internalExercises.set([]);
+    this.listNeedsReload = true;
+    this.viewModel.set(initialHistoryPageViewModel);
+  }
 
   loadHistoryPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));

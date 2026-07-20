@@ -4,6 +4,7 @@ import { SessionSetDto, SessionSetStatus } from '@txg/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
+import { AuthService } from '@shared/services/auth.service';
 import { KeyedDebouncerService } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionPageFacade } from './session-page.facade';
@@ -62,6 +63,7 @@ describe('SessionPageFacade', () => {
         { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn(), updateSession: vi.fn() } },
         { provide: KeyedDebouncerService, useValue: { enqueue: enqueueMock, flushCurrentActiveDebounce: () => of(undefined) } },
         { provide: ServerClockService, useValue: { now: () => SERVER_NOW } },
+        { provide: AuthService, useValue: { currentUser$: of({ id: 'user1' }) } },
       ],
     });
     facade = TestBed.inject(SessionPageFacade);

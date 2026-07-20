@@ -40,7 +40,7 @@ describe('HistoryPageFacade', () => {
         { provide: ExerciseService, useValue: { getExercises: () => of({ data: [], error: null }) } },
         { provide: ProfileService, useValue: { getProfile: getProfileMock } },
         { provide: SessionService, useValue: { getSessions: getSessionsMock } },
-        { provide: AuthService, useValue: { currentUser: () => user } },
+        { provide: AuthService, useValue: { currentUser: () => user, currentUser$: of(user) } },
       ],
     });
     facade = TestBed.inject(HistoryPageFacade);

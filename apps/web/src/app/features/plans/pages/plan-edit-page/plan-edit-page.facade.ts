@@ -24,6 +24,7 @@ import { SessionService } from '@features/sessions/api/session.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { PlanService, PlanServiceResponse } from '../../api/plan.service';
 import { PlanEditPageViewModel, initialPlanEditPageViewModel } from '../../models/plan-edit-page.viewmodel';
@@ -47,6 +48,25 @@ export class PlanEditPageFacade {
   private internalProfile: ProfileDto | null = null;
   private internalExercises: ExerciseDto[] = [];
   private internalSessionCount: number | null = null;
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+  }
+
+  /**
+   * Drops everything cached for the user who was signed in.
+   *
+   * The caches below are otherwise only invalidated when the plan *id* changes, so a second user
+   * opening the same plan id in the same tab would be served the first user's profile - which is
+   * what decides whether the plan is their active one and therefore read-only.
+   */
+  private clearUserScopedState(): void {
+    this.internalPlanId = null;
+    this.internalProfile = null;
+    this.internalExercises = [];
+    this.internalSessionCount = null;
+    this.viewModelSignal.set(initialPlanEditPageViewModel);
+  }
 
   loadPlanData(planId: string | null): void {
     if (!planId) {
