@@ -113,7 +113,13 @@ describe('HistoryFilterDialogComponent', () => {
       const component = createComponent(calendarData);
       const picker = { close: vi.fn() } as unknown as MatDatepicker<Date>;
 
-      component.onMonthSelected(new Date(2026, 7, 1), picker);
+      vi.useFakeTimers();
+      try {
+        component.onMonthSelected(new Date(2026, 7, 1), picker);
+        vi.runOnlyPendingTimers();
+      } finally {
+        vi.useRealTimers();
+      }
       component.onFiltersApplied();
 
       expect(picker.close).toHaveBeenCalledOnce();

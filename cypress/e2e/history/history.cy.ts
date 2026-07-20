@@ -120,6 +120,7 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.get('mat-datepicker-toggle button').click();
         cy.get('.mat-calendar-body-cell-content').contains('2025').click();
         cy.get('.mat-calendar-body-cell-content').contains('JUN').click();
+        cy.get('.mat-datepicker-content').should('not.exist');
         cy.getBySel(dataCy.history.filterDialog.applyFiltersButton).click();
 
         cy.location('search').should('contain', `month=${SESSIONS_MONTH}`);
