@@ -11,10 +11,20 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { LocalStorageService } from '@shared/services/local-storage.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 const CALENDAR_PAGE_SIZE = 100;
 const CALENDAR_PREFETCH_RADIUS = 3;
+
+const FILTERS_STORAGE_KEY = 'txg.history.filters';
+
+interface PersistedHistoryFilters {
+  selectedPlanId: string;
+  dateRange: DateRangeValue;
+  pageSize: number;
+}
 
 const initialHistoryPageViewModel: HistoryPageViewModel = {
   sessions: [],
@@ -43,6 +53,7 @@ export class HistoryPageFacade {
   private readonly profileService = inject(ProfileService);
   private readonly sessionService = inject(SessionService);
   private readonly authService = inject(AuthService);
+  private readonly localStorage = inject(LocalStorageService);
 
   readonly viewModel = signal<HistoryPageViewModel>(initialHistoryPageViewModel);
   private readonly internalPlans = signal<PlanDto[]>([]);
@@ -56,6 +67,11 @@ export class HistoryPageFacade {
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
+
+    const persisted = this.readPersistedFilters();
+    if (persisted) {
+      this.viewModel.update(vm => ({ ...vm, filters: { ...vm.filters, ...persisted } }));
+    }
   }
 
   loadHistoryPageData(): void {
@@ -83,9 +99,12 @@ export class HistoryPageFacade {
         const availablePlansForFilter = plans.map(p => ({ id: p.id, name: p.name }));
         const activePlanId = profile?.active_plan_id;
 
-        const selectedPlanId = activePlanId && plans.some(p => p.id === activePlanId)
-          ? activePlanId
-          : (availablePlansForFilter[0]?.id ?? '');
+        const restoredPlanId = this.viewModel().filters.selectedPlanId;
+        const selectedPlanId = restoredPlanId && plans.some(p => p.id === restoredPlanId)
+          ? restoredPlanId
+          : activePlanId && plans.some(p => p.id === activePlanId)
+            ? activePlanId
+            : (availablePlansForFilter[0]?.id ?? '');
 
         this.viewModel.update(vm => ({
           ...vm,
@@ -237,6 +256,7 @@ export class HistoryPageFacade {
       this.clearCalendarCache();
     }
 
+    this.persistFilters();
     this.loadCalendarSessions();
   }
 
@@ -271,6 +291,7 @@ export class HistoryPageFacade {
       this.clearCalendarCache();
     }
 
+    this.persistFilters();
     this.loadSessions();
   }
 
@@ -283,6 +304,7 @@ export class HistoryPageFacade {
       currentPage,
       filters: { ...vm.filters, pageSize }
     }));
+    this.persistFilters();
     this.loadSessions();
   }
 
@@ -384,6 +406,25 @@ export class HistoryPageFacade {
     this.calendarMonthSessions.clear();
     this.pendingCalendarMonths.clear();
     this.viewModel.update(vm => ({ ...vm, calendarSessions: [] }));
+  }
+
+  private persistFilters(): void {
+    const { selectedPlanId, dateRange, pageSize } = this.viewModel().filters;
+    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange, pageSize };
+    this.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toPersist));
+  }
+
+  private readPersistedFilters(): PersistedHistoryFilters | null {
+    const raw = this.localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as PersistedHistoryFilters;
+    } catch {
+      return null;
+    }
   }
 
   private clearUserScopedState(): void {
