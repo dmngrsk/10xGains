@@ -19,7 +19,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
+import { DataIntegrityError, NotFoundError } from '../utils/errors';
 import {
   createEntityInCollection,
   updateEntityInCollection,
@@ -64,10 +64,8 @@ export class PlanRepository {
    * @returns {Promise<PlanListResult>} A promise that resolves to the list of plans and the total count.
    */
   async findAll(options: PlanQueryOptions): Promise<PlanListResult> {
+    // `optionalSort` has already validated both halves against this endpoint's whitelist.
     const [sortColumn, sortDirection] = options.sort.split('.');
-    if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new ConflictError('Invalid sort direction.', 'INVALID_SORT', 'invalid_sort_error');
-    }
 
     const { data, count, error } = await this.supabase
       .from('plans')

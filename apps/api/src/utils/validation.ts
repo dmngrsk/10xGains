@@ -52,16 +52,33 @@ export function optionalOffset(defaultOffset: number = DEFAULT_OFFSET) {
 /**
  * The `sort` query parameter, in `column_name.(asc|desc)` form.
  *
- * @param {string} defaultColumn - The column sorted on when the parameter is absent.
+ * The column is checked against an explicit whitelist. Accepting any identifier meant an unknown
+ * column reached PostgREST, which rejected it with an error the API surfaced as a 500 - a client
+ * mistake reported as a server fault. Restricting it here also keeps the sort surface deliberate
+ * rather than "whatever columns the table happens to have".
+ *
+ * @param {string} defaultColumn - The column sorted on when the parameter is absent. Always allowed.
  * @param {'asc' | 'desc'} [defaultDirection] - The direction used with that column.
+ * @param {readonly string[]} [additionalColumns] - Other columns clients may sort by.
  * @returns A schema producing a validated sort expression.
  */
-export function optionalSort(defaultColumn: string, defaultDirection: 'asc' | 'desc' = 'asc') {
+export function optionalSort(
+  defaultColumn: string,
+  defaultDirection: 'asc' | 'desc' = 'asc',
+  additionalColumns: readonly string[] = []
+) {
   const fallback = `${defaultColumn}.${defaultDirection}`;
+  const allowedColumns = new Set([defaultColumn, ...additionalColumns]);
 
   return z.preprocess(
     (val) => (isAbsent(val) ? fallback : String(val)),
-    z.string().regex(SORT_PATTERN, 'Sort parameter must be in format column_name.(asc|desc)').default(fallback)
+    z.string()
+      .regex(SORT_PATTERN, 'Sort parameter must be in format column_name.(asc|desc)')
+      .refine(
+        (value) => allowedColumns.has(value.split('.')[0]!),
+        `Sort column must be one of: ${[...allowedColumns].sort().join(', ')}`
+      )
+      .default(fallback)
   );
 }
 

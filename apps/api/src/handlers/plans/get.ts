@@ -8,7 +8,7 @@ import { optionalLimit, optionalOffset, optionalSort, validateQueryParams } from
 export const QUERY_SCHEMA = z.object({
   limit: optionalLimit(),
   offset: optionalOffset(),
-  sort: optionalSort('created_at', 'desc')
+  sort: optionalSort('created_at', 'desc', ['name'])
 });
 
 export async function handleGetPlans(c: Context<AppContext>) {

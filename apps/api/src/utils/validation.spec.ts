@@ -57,10 +57,26 @@ describe('optionalOffset', () => {
 });
 
 describe('optionalSort', () => {
-  const schema = z.object({ sort: optionalSort('session_date', 'asc') });
+  const schema = z.object({ sort: optionalSort('session_date', 'asc', ['status']) });
 
-  it('should accept a well-formed sort expression', () => {
-    expect(schema.parse({ sort: 'created_at.desc' }).sort).toBe('created_at.desc');
+  it('should accept a well-formed sort expression on the default column', () => {
+    expect(schema.parse({ sort: 'session_date.desc' }).sort).toBe('session_date.desc');
+  });
+
+  it('should accept a whitelisted column', () => {
+    expect(schema.parse({ sort: 'status.asc' }).sort).toBe('status.asc');
+  });
+
+  it('should reject a column that is not whitelisted', () => {
+    // An unknown column used to reach PostgREST and come back as a 500; it is a 400 now.
+    const result = schema.safeParse({ sort: 'nonexistent.asc' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('Sort column must be one of');
+  });
+
+  it('should reject a column of another endpoint even when it exists on some table', () => {
+    expect(schema.safeParse({ sort: 'created_at.desc' }).success).toBe(false);
   });
 
   it.each([undefined, ''])('should fall back to the default column and direction for %p', (value) => {

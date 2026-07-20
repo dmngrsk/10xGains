@@ -8,7 +8,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ConflictError, ForbiddenError } from '../utils/errors';
+import { ForbiddenError } from '../utils/errors';
 
 export type ExerciseQueryOptions = PagingQueryOptions & SortingQueryOptions;
 
@@ -24,10 +24,8 @@ export class ExerciseRepository {
    * @returns {Promise<ExerciseListResult>} A promise that resolves to the list of exercises and the total count.
    */
   async findAll(options: ExerciseQueryOptions): Promise<ExerciseListResult> {
+    // `optionalSort` has already validated both halves against this endpoint's whitelist.
     const [sortColumn, sortDirection] = options.sort.split('.');
-    if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new ConflictError('Invalid sort direction. Must be "asc" or "desc".', 'INVALID_SORT', 'invalid_sort_error');
-    }
 
     const { data, count, error } = await this.supabase
       .from('exercises')

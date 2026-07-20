@@ -8,7 +8,7 @@ import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, option
 const QUERY_SCHEMA = withCoherentDateRange(z.object({
   limit: optionalLimit(),
   offset: optionalOffset(),
-  sort: optionalSort('session_date', 'asc'),
+  sort: optionalSort('session_date', 'asc', ['status']),
   status: optionalCsvList(z.enum(SESSION_STATUSES)),
   date_from: optionalIsoDate(),
   date_to: optionalIsoDate(),
