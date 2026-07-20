@@ -1,6 +1,5 @@
 import { handleProportionalDeload } from './deload-strategies/proportional-deload';
 import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanExerciseSetDto } from '@txg/shared';
-import { groupBy } from "../../utils/collections";
 
 /**
  * Resolves exercise progressions based on completed session sets and current progression rules.
@@ -27,11 +26,14 @@ export function resolveExerciseProgressions(
   const exerciseSetsToUpdate: PlanExerciseSetDto[] = [];
   const exerciseProgressionsToUpdate: PlanExerciseProgressionDto[] = [];
 
-  const exerciseMap = groupBy(planExercises, 'exercise_id');
+  const exerciseMap = Object.groupBy(planExercises, (planExercise) => planExercise.exercise_id);
   const progressionMap = new Map(exerciseProgressions.map(p => [p.exercise_id, p]));
   const actualPerformedExercises = new Set(sessionSets.map(ss => ss.plan_exercise_id));
 
-  for (const [exerciseId, scopedPlanExercises] of Object.entries(exerciseMap)) {
+  // `Object.groupBy` types its values as possibly absent, since it cannot know which keys exist.
+  // A key only exists here because something was grouped under it, so the fallback never runs.
+  for (const [exerciseId, group] of Object.entries(exerciseMap)) {
+    const scopedPlanExercises = group ?? [];
     const currentSets = scopedPlanExercises.map(pe => pe.sets).flat().filter(s => !!s);
     const currentProgression = progressionMap.get(exerciseId);
 

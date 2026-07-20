@@ -2,6 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
+    // The API runs on Node 24, so it can use the standard library up to ES2024 even though the
+    // shared base target stays at ES2022 for the browser build.
+    "lib": ["ES2024"],
     "types": ["node"],
     "paths": {
       "@txg/shared": ["../../packages/shared/src/index.ts"]
