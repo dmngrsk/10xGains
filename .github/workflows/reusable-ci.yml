@@ -196,9 +196,15 @@ jobs:
             -e "s|__SUPABASE_PUBLISHABLE_KEY__|${{ secrets.SUPABASE_PUBLISHABLE_KEY }}|g" \
             "$OUTPUT_FILE"
 
-          echo "Generated ${OUTPUT_FILE}:"
-          echo ""
-          cat "${OUTPUT_FILE}"
+          # Deliberately not printing the file. The publishable key in it is public by design, but
+          # it is sourced from a secret, and echoing secret-derived config into build logs is a
+          # habit worth not having. Confirm the substitutions landed instead.
+          echo "Generated ${OUTPUT_FILE}."
+          if grep -q '__[A-Z_]*__' "$OUTPUT_FILE"; then
+            echo "::error::Unsubstituted placeholders remain in ${OUTPUT_FILE}."
+            grep -o '__[A-Z_]*__' "$OUTPUT_FILE" | sort -u
+            exit 1
+          fi
 
       - name: Generate webmanifest file
         run: |

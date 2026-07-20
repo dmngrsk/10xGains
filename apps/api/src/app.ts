@@ -10,7 +10,10 @@ import type { AppContext } from './context';
 const corsOptions = {
   origin: resolveAllowedOrigins(),
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['content-type', 'authorization', 'apikey', 'x-client-info'],
+  // Only what the web app actually sends. `apikey` and `x-client-info` are supabase-js headers,
+  // and the browser talks to Supabase directly rather than through this API, so allowing them here
+  // only widened the preflight response for no caller.
+  allowHeaders: ['content-type', 'authorization'],
   credentials: true,
 };
 
