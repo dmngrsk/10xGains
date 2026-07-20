@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import type { SessionSetDto } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { patch } from './helpers/patch-base';
-import { validatePathParams, validateQueryParams } from "../../utils/validation";
+import { optionalCount, validatePathParams, validateQueryParams } from "../../utils/validation";
 
 const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
@@ -11,10 +11,7 @@ const PATH_SCHEMA = z.object({
 });
 
 const QUERY_SCHEMA = z.object({
-  reps: z.preprocess(
-    (val) => (val ? Number(val) : undefined),
-    z.number().nonnegative('Rep count must be positive').optional()
-  ),
+  reps: optionalCount('Rep count'),
 });
 
 export async function handleFailSessionSet(c: Context<AppContext>) {

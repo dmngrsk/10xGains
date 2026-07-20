@@ -119,6 +119,28 @@ export function optionalIsoDate(boundary: 'start' | 'end' = 'start') {
 }
 
 /**
+ * An optional query parameter holding a whole, non-negative count.
+ *
+ * Rep counts are whole numbers everywhere else in the schema, and zero is a meaningful value - it
+ * is what a failed set with no completed reps records - so the floor is zero rather than one.
+ *
+ * Coerces with `Number`, so a non-numeric value becomes NaN and is rejected with a 400 rather
+ * than being silently truncated the way `parseInt('12abc')` would be.
+ *
+ * @param {string} label - How the value is named in the validation message, e.g. 'Rep count'.
+ * @returns A schema accepting an optional non-negative integer.
+ */
+export function optionalCount(label: string) {
+  return z.preprocess(
+    (val) => (isAbsent(val) ? undefined : Number(val)),
+    z.number()
+      .int(`${label} must be a whole number`)
+      .nonnegative(`${label} cannot be negative`)
+      .optional()
+  );
+}
+
+/**
  * An optional query parameter holding a comma-separated list, validated item by item.
  *
  * Blank entries are dropped, so a trailing comma or stray whitespace does not fail the

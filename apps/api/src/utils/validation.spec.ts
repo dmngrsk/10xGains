@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
-import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
+import { optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
 
 const UUID_A = '1f6a2c3e-9b4d-4e8f-a1b2-c3d4e5f6a7b8';
 const UUID_B = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -53,6 +53,40 @@ describe('optionalOffset', () => {
 
   it.each(['-1', 'abc'])('should reject %p', (value) => {
     expect(schema.safeParse({ offset: value }).success).toBe(false);
+  });
+});
+
+describe('optionalCount', () => {
+  const schema = z.object({ reps: optionalCount('Rep count') });
+
+  it('should parse a whole count', () => {
+    expect(schema.parse({ reps: '8' }).reps).toBe(8);
+  });
+
+  it('should allow zero, which is what a failed set with no completed reps records', () => {
+    expect(schema.parse({ reps: '0' }).reps).toBe(0);
+  });
+
+  it.each([undefined, null, ''])('should treat %p as absent rather than zero', (value) => {
+    expect(schema.parse({ reps: value }).reps).toBeUndefined();
+  });
+
+  it('should reject a fractional count, as reps are whole everywhere else in the schema', () => {
+    const result = schema.safeParse({ reps: '2.5' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Rep count must be a whole number');
+  });
+
+  it('should reject a negative count with a message that matches the rule', () => {
+    const result = schema.safeParse({ reps: '-1' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Rep count cannot be negative');
+  });
+
+  it('should reject a non-numeric value rather than truncating it', () => {
+    expect(schema.safeParse({ reps: '12abc' }).success).toBe(false);
   });
 });
 
