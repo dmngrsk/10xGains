@@ -11,6 +11,15 @@
 --   Special consideration: `security invoker`, so RLS decides which session and set the caller can
 --   see - the function adds atomicity, not privilege. The lock is taken on the session row, which is
 --   the resource both this function and session completion contend for.
+--
+--   Timestamp handling: `completed_at` and `session_date` are `timestamp without time zone` columns
+--   that the application reads back as UTC. The client sends `completed_at` as an ISO instant with an
+--   offset (e.g. `...Z`), so it is cast with `::timestamptz at time zone 'utc'`: the `::timestamptz`
+--   parses the offset that is in the string, and `at time zone 'utc'` reduces it to the UTC wall
+--   clock the column stores - independent of the database session's timezone. (A bare `::timestamp`
+--   would silently drop the offset, and a bare `::timestamptz` assigned to a naive column would be
+--   re-interpreted in the session timezone; both are only correct while the server happens to run at
+--   UTC.) `session_date` is written the same way via `timezone('utc', now())`.
 -- Author: AI Assistant
 -- Created: 2026-07-20
 
@@ -60,7 +69,8 @@ begin
         actual_weight = case when p_updates ? 'actual_weight' then (p_updates->>'actual_weight')::numeric else t.actual_weight end,
         expected_reps = case when p_updates ? 'expected_reps' then (p_updates->>'expected_reps')::integer else t.expected_reps end,
         set_index = case when p_updates ? 'set_index' then (p_updates->>'set_index')::smallint else t.set_index end,
-        completed_at = case when p_updates ? 'completed_at' then (p_updates->>'completed_at')::timestamp else t.completed_at end
+        -- Parse the offset the client sent, then reduce to the UTC wall clock the naive column stores.
+        completed_at = case when p_updates ? 'completed_at' then (p_updates->>'completed_at')::timestamptz at time zone 'utc' else t.completed_at end
     where t.id = p_set_id
       and t.session_id = p_session_id
     returning to_jsonb(t.*) into updated_set;

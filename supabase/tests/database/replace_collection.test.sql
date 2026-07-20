@@ -11,7 +11,24 @@
 begin;
 
 -- Plan the total number of tests to run
-select plan(28);
+select plan(30);
+
+-- ============================================================================
+-- TEST SUITE 0: The managed-collection whitelist (real function)
+-- ============================================================================
+
+-- These run against the production `is_managed_collection` before the SETUP below overrides it, so
+-- they pin down the real whitelist. The rest of the suite drives ephemeral `test_*` tables and so
+-- relies on the override; keeping these first is what still exercises the shipped list.
+select ok(
+    public.is_managed_collection('plan_days'),
+    'is_managed_collection should accept a real managed table'
+);
+
+select ok(
+    not public.is_managed_collection('pg_class'),
+    'is_managed_collection should reject a table that is not a managed collection'
+);
 
 -- ============================================================================
 -- SETUP: Create test tables and data
@@ -55,6 +72,20 @@ insert into public.test_plan_days (id, plan_id, name, description, order_index) 
     ('550e8400-e29b-41d4-a716-446655440011', '550e8400-e29b-41d4-a716-446655440001', 'Day 1', 'Upper body', 1),
     ('550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440001', 'Day 2', 'Lower body', 2);
 
+-- `replace_collection` only accepts whitelisted tables (see is_managed_collection). The ephemeral
+-- `test_*` tables above are deliberately not on that list, so the collection-mechanism tests below
+-- would all be rejected. Override the whitelist for the duration of this transaction to admit them;
+-- the surrounding `rollback` restores the shipped definition (DDL is transactional in Postgres). The
+-- real whitelist is asserted separately in TEST SUITE 0, before this override is installed.
+create or replace function public.is_managed_collection(p_table_name text)
+returns boolean
+language sql
+immutable
+set search_path = ''
+as $$
+    select p_table_name in ('test_plans', 'test_plan_days', 'test_plan_exercises');
+$$;
+
 -- ============================================================================
 -- TEST SUITE 1: Function Existence and Signatures
 -- ============================================================================
@@ -63,7 +94,7 @@ insert into public.test_plan_days (id, plan_id, name, description, order_index) 
 select has_function(
     'public',
     'replace_collection',
-    array['text', 'text', 'uuid', 'text', 'jsonb'],
+    array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid'],
     'replace_collection function should exist with correct parameter types'
 );
 
@@ -77,7 +108,7 @@ select has_function(
 
 -- Test return types
 select function_returns(
-    'public', 'replace_collection', array['text', 'text', 'uuid', 'text', 'jsonb'],
+    'public', 'replace_collection', array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid'],
     'jsonb',
     'replace_collection should return jsonb'
 );
