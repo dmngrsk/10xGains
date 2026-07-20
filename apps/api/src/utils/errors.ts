@@ -1,6 +1,15 @@
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 
 /**
+ * Brands the errors this module defines.
+ *
+ * `Symbol.for` rather than `Symbol()`: a bundling seam that loads this module twice would
+ * otherwise mint two different symbols, and an error branded by one copy would go unrecognised by
+ * the other - the very failure the structural check was there to tolerate.
+ */
+const DOMAIN_ERROR_BRAND = Symbol.for('@txg/api.DomainError');
+
+/**
  * Base class for errors that carry their own HTTP semantics.
  *
  * Error identity used to live in the prose of the message, matched with `error.message.includes()`
@@ -11,6 +20,17 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
  * lets a single mapper (`mapDomainError`) turn any of them into a response.
  */
 export class DomainError extends Error {
+  /**
+   * Marks this error as one whose message was written for the client.
+   *
+   * A structural check cannot carry that guarantee. `status: number` plus `code: string` is a
+   * shape plenty of library errors happen to have - Supabase's `AuthError` among them - and
+   * matching one of those forwarded its raw message and status straight to the caller, which is
+   * exactly what `createServerErrorData` exists to prevent. A brand nothing else sets closes that
+   * hole while still working across module boundaries, where `instanceof` does not.
+   */
+  readonly [DOMAIN_ERROR_BRAND] = true;
+
   constructor(
     message: string,
     /** The HTTP status this condition should produce. */
@@ -77,12 +97,10 @@ export class DataIntegrityError extends DomainError {
 /**
  * Narrows an unknown thrown value to a {@link DomainError}.
  *
- * Uses a duck-typed check rather than `instanceof` so that an error crossing a module boundary
- * (or a bundling seam that duplicates the class) is still recognised.
+ * Checks the brand rather than the shape, so an error crossing a module boundary (or a bundling
+ * seam that duplicates the class) is still recognised without admitting any foreign error that
+ * happens to carry a `status` and a `code`.
  */
 export function isDomainError(error: unknown): error is DomainError {
-  return error instanceof DomainError
-    || (error instanceof Error
-      && typeof (error as Partial<DomainError>).status === 'number'
-      && typeof (error as Partial<DomainError>).code === 'string');
+  return error instanceof Error && (error as Partial<DomainError>)[DOMAIN_ERROR_BRAND] === true;
 }

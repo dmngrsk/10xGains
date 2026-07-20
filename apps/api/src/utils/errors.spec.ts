@@ -41,10 +41,30 @@ describe('domain errors', () => {
       expect(isDomainError(new ConflictError('nope'))).toBe(true);
     });
 
-    it('should recognise a structurally compatible error across a module boundary', () => {
-      const crossBoundary = Object.assign(new Error('nope'), { status: 404, code: 'NOT_FOUND', type: 'x' });
+    it('should recognise an error branded by another copy of this module', () => {
+      // A bundling seam can load this module twice, making `instanceof` fail across the seam.
+      // The brand is a registry symbol, so both copies agree on it.
+      const crossBoundary = Object.assign(new Error('nope'), {
+        [Symbol.for('@txg/api.DomainError')]: true,
+        status: 404,
+        code: 'NOT_FOUND',
+        type: 'x',
+      });
 
       expect(isDomainError(crossBoundary)).toBe(true);
+    });
+
+    it('should reject a foreign error that merely has the same shape', () => {
+      // Supabase's AuthError carries a numeric `status` and a string `code`. Treating it as a
+      // domain error forwarded its raw message and status to the client, defeating the policy
+      // that server faults never disclose their internals.
+      const authError = Object.assign(new Error('Invalid Refresh Token: Already Used'), {
+        name: 'AuthApiError',
+        status: 400,
+        code: 'refresh_token_already_used',
+      });
+
+      expect(isDomainError(authError)).toBe(false);
     });
 
     it.each([
@@ -72,6 +92,16 @@ describe('mapDomainError', () => {
 
   it('should return null for an unexpected error so the caller falls back to a 500', () => {
     expect(mapDomainError(new Error('connection reset'))).toBeNull();
+  });
+
+  it('should not forward a library error that happens to carry a status and a code', () => {
+    const authError = Object.assign(new Error('Invalid Refresh Token: Already Used'), {
+      name: 'AuthApiError',
+      status: 400,
+      code: 'refresh_token_already_used',
+    });
+
+    expect(mapDomainError(authError)).toBeNull();
   });
 
   it('should map a 5xx domain error without losing its status', () => {
