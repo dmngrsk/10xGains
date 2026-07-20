@@ -225,6 +225,30 @@ jobs:
           echo ""
           cat "${WEBMANIFEST_FILE}"
 
+      - name: Generate Static Web Apps config
+        run: |
+          SWA_CONFIG_FILE="apps/web/src/staticwebapp.config.json"
+
+          # The Content-Security-Policy has to name the exact origins this build talks to, and
+          # those differ per environment, so connect-src carries the same placeholders the
+          # environment file uses.
+          sed -i \
+            -e "s|__API_URL__|${{ vars.API_URL }}|g" \
+            -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
+            "$SWA_CONFIG_FILE"
+
+          echo "Generated ${SWA_CONFIG_FILE}:"
+          echo ""
+          cat "$SWA_CONFIG_FILE"
+
+          # An unsubstituted placeholder would ship a CSP that blocks the API and Supabase, and
+          # the app would fail at runtime with no build-time signal at all.
+          if grep -q '__[A-Z_]*__' "$SWA_CONFIG_FILE"; then
+            echo "::error::Unsubstituted placeholders remain in ${SWA_CONFIG_FILE}."
+            grep -o '__[A-Z_]*__' "$SWA_CONFIG_FILE" | sort -u
+            exit 1
+          fi
+
       - name: Build web app
         run: |
           pnpm build:${{ inputs.environment }}
