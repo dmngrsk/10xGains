@@ -10,7 +10,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     cy.teardown();
   });
 
-  describe('Welcome screen', () => {
+  describe('when on the welcome screen', () => {
     it('opens the email sign-in form when the user chooses email', { tags: ['AUTH-01'] }, () => {
       cy.getBySel(dataCy.auth.welcome.emailButton).click();
 
@@ -20,7 +20,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
   });
 
-  describe('Registration', () => {
+  describe('when registering a new account', () => {
     it('registers a new user and signs them in when email verification is disabled', { tags: ['AUTH-02'] }, () => {
       // This test assumes that email verification is DISABLED on the staging Supabase instance.
       // If it fails, please check your Supabase sign in provider settings.
@@ -65,7 +65,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
   });
 
-  describe('Email sign-in', () => {
+  describe('when signing in with email', () => {
     it('signs in with valid credentials', { tags: ['@smoke', 'AUTH-05'] }, () => {
       cy.login({ forceCanary: true });
 
@@ -82,7 +82,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
   });
 
-  describe('Password recovery', () => {
+  describe('when recovering a password', () => {
     it('requests a password reset link', { tags: ['AUTH-07'] }, () => {
       cy.intercept('POST', '/auth/v1/recover*').as('recover');
 
@@ -128,7 +128,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
   });
 
-  describe('Route protection and session lifecycle', () => {
+  describe('when navigating protected routes', () => {
     it('redirects to the welcome screen when there is no valid session', { tags: ['AUTH-09'] }, () => {
       cy.visit('/home');
       cy.url().should('include', '/auth');
@@ -196,7 +196,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     });
   });
 
-  describe('Google authentication', () => {
+  describe('when authenticating with Google', () => {
     // The real Google leg of the OAuth dance cannot be automated (Google blocks automated
     // sign-ins), so these tests stub the authorize redirect or fabricate the post-OAuth state
     // that the app's callback handles. The Settings connect/disconnect states are covered by the
