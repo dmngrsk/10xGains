@@ -133,15 +133,21 @@ export class SessionRepository {
   async create(command: CreateSessionCommand): Promise<SessionDto> {
     const userId = this.getUserId();
 
-    // Step 1: Fetch the plan and its days
+    // Step 1: Fetch the plan and its days.
+    //
+    // The embeds are not `!inner`: that dropped any day whose exercises had no sets, so a day that
+    // later lost its sets vanished from the rotation. If it happened to be the most recently
+    // completed one, `resolveNextPlanDayId` could no longer find it and threw; and a plan with days
+    // but no sets anywhere came back as "Plan not found", which is simply wrong. Days are now
+    // fetched as they are, and the empty-plan case is reported for what it is.
     const { data: plan, error: planError } = await this.supabase
       .from('plans')
       .select(`
-        days:plan_days!inner(
+        days:plan_days(
           id,
           order_index,
-          exercises:plan_exercises!inner(
-            sets:plan_exercise_sets!inner(
+          exercises:plan_exercises(
+            sets:plan_exercise_sets(
               *
             )
           )
@@ -153,6 +159,14 @@ export class SessionRepository {
 
     if (planError || !plan) {
       throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
+    }
+
+    if (!plan.days?.length) {
+      throw new ConflictError(
+        'This plan has no training days yet. Add a day before starting a session.',
+        'PLAN_HAS_NO_DAYS',
+        'plan_has_no_days_error'
+      );
     }
 
     // Step 2: Fetch the sessions that matter, in two queries with different needs.
