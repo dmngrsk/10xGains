@@ -63,6 +63,11 @@ export class HistoryPageComponent implements OnInit {
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
 
+  readonly calendarPlanName = computed(() => {
+    const { selectedPlanId, availablePlans } = this.viewModel().filters;
+    return availablePlans?.find(plan => plan.id === selectedPlanId)?.name ?? '';
+  });
+
   readonly pageRecentlyChanged = signal(false);
   private readonly pageChangedSubject = new Subject<PageEvent>();
 

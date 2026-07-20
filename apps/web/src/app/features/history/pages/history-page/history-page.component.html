@@ -39,6 +39,7 @@
     [pageSize]="viewModel().filters.pageSize"
     [pageIndex]="viewModel().currentPage"
     [pageSizeOptions]="viewModel().filters.pageSizeOptions"
+    [planName]="calendarPlanName()"
     [viewMode]="viewModel().viewMode"
     (pageChanged)="onPageChanged($event)"
     (filterButtonClicked)="onFilterButtonClicked()"
