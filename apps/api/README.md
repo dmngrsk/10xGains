@@ -50,7 +50,7 @@ The request lifecycle is as follows:
 2. The adapter translates the request, and root-level middleware for CORS, Supabase, and telemetry are applied.
 3. The request is passed to the main router defined in `middleware/routes.ts`.
 4. Hono matches the request path (e.g., `GET /api/exercises/:exerciseId`) to a registered route.
-5. Authentication middleware (`requiredAuthMiddleware` or `optionalAuthMiddleware`) is executed.
+5. Authentication middleware (`requiredAuthMiddleware`) is executed on protected routes.
 6. The corresponding handler function from the `handlers/` directory is executed.
 7. The handler may call a function from the `services/` directory to perform complex business logic.
 8. The handler calls one or more functions from a repository in the `repositories/` directory to fetch or persist data.

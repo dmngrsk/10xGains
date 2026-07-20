@@ -1,5 +1,5 @@
 import { Context, Hono } from 'hono';
-import { requiredAuthMiddleware, optionalAuthMiddleware } from './auth';
+import { requiredAuthMiddleware } from './auth';
 import { handleGetExercises } from '../handlers/exercises/get';
 import { handleCreateExercise } from '../handlers/exercises/post';
 import { handleGetExerciseById } from '../handlers/exercises/get-id';
@@ -51,9 +51,12 @@ import { createErrorDataWithLogging, createServerErrorData } from "../utils/api-
 // /api/exercises
 function createExerciseRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', optionalAuthMiddleware, handleGetExercises)
+    // The exercise catalog is shared reference data that anon may read (see the exercises_anon_select
+    // policy), and neither read handler looks at the caller. Attaching auth here implied a
+    // user-scoping that does not exist, and cost a token verification per request for nothing.
+    .get('/', handleGetExercises)
     .post('/', requiredAuthMiddleware, handleCreateExercise)
-    .get('/:exerciseId', optionalAuthMiddleware, handleGetExerciseById)
+    .get('/:exerciseId', handleGetExerciseById)
     .put('/:exerciseId', requiredAuthMiddleware, handlePutExerciseById)
     .delete('/:exerciseId', requiredAuthMiddleware, handleDeleteExerciseById);
 }

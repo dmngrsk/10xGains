@@ -78,8 +78,6 @@ export const authMiddleware = (requireAuth = true) => async (c: Context<AppConte
  */
 export const requiredAuthMiddleware = authMiddleware(true);
 
-/**
- * Middleware that treats authentication as optional.
- * If a user is authenticated, their info is set in the context; otherwise, the request proceeds without a user.
- */
-export const optionalAuthMiddleware = authMiddleware(false);
+// `authMiddleware(false)` builds an optional-auth variant, which attaches the user when a token is
+// present and lets the request through when it is not. Nothing needs it today: every authenticated
+// route requires a user, and the exercise catalog is public reference data no handler scopes.

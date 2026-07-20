@@ -10,7 +10,7 @@ See `README.md` in this directory for the full architecture and endpoint documen
 - `src/app.ts` - Initializes the Hono app, applies root-level middleware (CORS, Supabase client, telemetry), and mounts the main router at `/api`.
 - `src/context.ts` - TypeScript types for the Hono application context (Supabase client, authenticated user, telemetry data).
 - `src/middleware/routes.ts` - The heart of the routing: defines all API endpoints and maps them to handlers. Follow the established modular routing patterns (`/api/profiles`, `/api/exercises`, `/api/plans`, `/api/sessions`, `/api/health`).
-- `src/middleware/` - `auth.ts` (`requiredAuthMiddleware`, `optionalAuthMiddleware`), `supabase.ts`, `telemetry.ts`.
+- `src/middleware/` - `auth.ts` (`requiredAuthMiddleware`, and the `authMiddleware` factory it is built from), `supabase.ts`, `telemetry.ts`.
 - `src/handlers/` - Business logic per endpoint, named `{resource}/{method}-{modifier}.ts` (e.g. `exercises/get.ts`, `plans/get-id.ts`).
 - `src/repositories/` - Data access logic abstracted from handlers (e.g. `plan.repository.ts`). Repositories hold I/O only: they build the Supabase query and hand the rows to a service. Keep decision logic out of them — mocking Supabase's fluent builder tests the mock, not the code.
 - `src/services/` - Pure, dependency-free domain logic, one folder per concern (`session-creation/`, `session-completion/`, `exercise-progressions/`, `exercise-progress/`, `index-order/`). This is where branching business rules belong, because it is the only layer that can be meaningfully unit tested. When a repository grows a real decision (which day to train next, how to seed a session's sets, how to aggregate rows), extract it here rather than testing around the database.
