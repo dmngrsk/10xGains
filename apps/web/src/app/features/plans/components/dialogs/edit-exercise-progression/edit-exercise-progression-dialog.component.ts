@@ -77,23 +77,6 @@ export class EditExerciseProgressionDialogComponent implements OnInit, OnDestroy
     this.destroy$.complete();
   }
 
-  private updateReferenceSetIndexValidators(strategy: string | null): void {
-    const referenceSetIndexControl = this.progressionForm.get('referenceSetIndex');
-    if (!referenceSetIndexControl) return;
-
-    if (strategy === 'REFERENCE_SET') {
-      referenceSetIndexControl.setValidators([Validators.required, Validators.min(1), integerValidator()]);
-    } else {
-      referenceSetIndexControl.setValidators(null);
-      referenceSetIndexControl.setValue(null);
-    }
-    referenceSetIndexControl.updateValueAndValidity();
-  }
-
-  get showReferenceSetIndexField(): boolean {
-    return this.progressionForm.get('deloadStrategy')?.value === 'REFERENCE_SET';
-  }
-
   onSave(): void {
     if (this.progressionForm.valid) {
       const formValue = this.progressionForm.value;
@@ -110,7 +93,24 @@ export class EditExerciseProgressionDialogComponent implements OnInit, OnDestroy
     }
   }
 
+  get showReferenceSetIndexField(): boolean {
+    return this.progressionForm.get('deloadStrategy')?.value === 'REFERENCE_SET';
+  }
+
   onCancel(): void {
     this.dialogRef.close();
+  }
+
+  private updateReferenceSetIndexValidators(strategy: string | null): void {
+    const referenceSetIndexControl = this.progressionForm.get('referenceSetIndex');
+    if (!referenceSetIndexControl) return;
+
+    if (strategy === 'REFERENCE_SET') {
+      referenceSetIndexControl.setValidators([Validators.required, Validators.min(1), integerValidator()]);
+    } else {
+      referenceSetIndexControl.setValidators(null);
+      referenceSetIndexControl.setValue(null);
+    }
+    referenceSetIndexControl.updateValueAndValidity();
   }
 }

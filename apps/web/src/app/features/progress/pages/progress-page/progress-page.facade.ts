@@ -39,12 +39,6 @@ export class ProgressPageFacade {
     resetOnUserChange(() => this.clearUserScopedState());
   }
 
-  /** Drops the charted history and plan list cached for the user who was signed in. */
-  private clearUserScopedState(): void {
-    this.internalPlans.set([]);
-    this.viewModel.set(initialProgressPageViewModel);
-  }
-
   loadProgressPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
 
@@ -145,5 +139,10 @@ export class ProgressPageFacade {
       ...vm,
       series: vm.series.map(s => s.exerciseId === exerciseId ? { ...s, selected: !s.selected } : s)
     }));
+  }
+
+  private clearUserScopedState(): void {
+    this.internalPlans.set([]);
+    this.viewModel.set(initialProgressPageViewModel);
   }
 }

@@ -53,21 +53,6 @@ export class PlanEditPageFacade {
     resetOnUserChange(() => this.clearUserScopedState());
   }
 
-  /**
-   * Drops everything cached for the user who was signed in.
-   *
-   * The caches below are otherwise only invalidated when the plan *id* changes, so a second user
-   * opening the same plan id in the same tab would be served the first user's profile - which is
-   * what decides whether the plan is their active one and therefore read-only.
-   */
-  private clearUserScopedState(): void {
-    this.internalPlanId = null;
-    this.internalProfile = null;
-    this.internalExercises = [];
-    this.internalSessionCount = null;
-    this.viewModelSignal.set(initialPlanEditPageViewModel);
-  }
-
   loadPlanData(planId: string | null): void {
     if (!planId) {
       this.internalPlanId = null;
@@ -114,11 +99,6 @@ export class PlanEditPageFacade {
       ? of(this.internalSessionCount)
       : this.sessionService.getSessions({ limit: 0, plan_id: planId, status: ['IN_PROGRESS', 'COMPLETED'] }).pipe(
           map(response => response.totalCount!),
-          // Deliberately only cached once non-zero. The count decides whether the plan is read-only,
-          // and zero is the one value that can still change in a way the editor must notice: train
-          // the plan and it becomes one, which locks editing. Caching a zero made that transition
-          // invisible until a full page reload. Any non-zero count is safe to keep, since a plan
-          // that has been used never becomes unused.
           tapIf(count => !!count, count => this.internalSessionCount = count),
           catchError(err => this.handleError<number>(err))
         );
@@ -160,7 +140,6 @@ export class PlanEditPageFacade {
   }
 
   deletePlan(): Observable<PlanServiceResponse<null>> {
-    // The one mutation that must not reload afterwards: the plan is gone, so it clears it instead.
     return this.mutate(
       planId => this.planService.deletePlan(planId),
       () => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, plan: null }))
@@ -271,18 +250,27 @@ export class PlanEditPageFacade {
     return this.mutate(planId => this.planService.deletePlanExerciseSet(planId, dayId, exerciseId, setId));
   }
 
-  /**
-   * Runs a plan mutation, keeping the view model's loading and error state consistent.
-   *
-   * Every mutation on this page follows the same shape - require a plan context, flag loading,
-   * refresh on success, surface the message on failure - which was written out in full eight times
-   * over. Centralising it means a fix to that flow (such as no longer discarding the loaded plan on
-   * error) applies everywhere at once.
-   *
-   * @param operation Builds the request from the current plan id.
-   * @param onSuccess What to do once the mutation succeeds; reloads the plan by default.
-   * @returns The mutation response, or a context error if no plan is loaded.
-   */
+  togglePreviewMode(): void {
+    this.viewModelSignal.update(s => ({ ...s, isPreview: !s.isPreview }));
+  }
+
+  getAvailableExercises(): ExerciseDto[] {
+    return this.internalExercises;
+  }
+
+  private handleError<T>(err: unknown, defaultMessage: string = 'An unexpected error occurred.'): Observable<T> {
+    let message = defaultMessage;
+
+    if (err instanceof Error && err.message) message = err.message;
+    if (typeof err === 'string') message = err;
+    if (typeof err === 'object' && err !== null && 'error' in err && typeof (err as { error: unknown }).error === 'string') {
+      message = (err as { error: string }).error;
+    }
+
+    this.viewModelSignal.update(s => ({ ...s, isLoading: false, error: message }));
+    return of({ error: message } as T);
+  }
+
   private mutate<T>(
     operation: (planId: string) => Observable<PlanServiceResponse<T>>,
     onSuccess: (planId: string) => void = (planId) => this.loadPlanData(planId)
@@ -302,28 +290,11 @@ export class PlanEditPageFacade {
     );
   }
 
-  togglePreviewMode(): void {
-    this.viewModelSignal.update(s => ({ ...s, isPreview: !s.isPreview }));
-  }
-
-  getAvailableExercises(): ExerciseDto[] {
-    return this.internalExercises;
-  }
-
-  private handleError<T>(err: unknown, defaultMessage: string = 'An unexpected error occurred.'): Observable<T> {
-    let message = defaultMessage;
-
-    if (err instanceof Error && err.message) message = err.message;
-    if (typeof err === 'string') message = err;
-    if (typeof err === 'object' && err !== null && 'error' in err && typeof (err as { error: unknown }).error === 'string') {
-      message = (err as { error: string }).error;
-    }
-
-    // The view model's field is `error`; writing `message` set a property nothing reads, so every
-    // failure - a profile fetch, any plan mutation - showed the user nothing at all. The plan is
-    // left in place too: discarding it blanked the whole editor when a single mutation failed,
-    // and on an initial load failure there is no plan to discard anyway.
-    this.viewModelSignal.update(s => ({ ...s, isLoading: false, error: message }));
-    return of({ error: message } as T);
+  private clearUserScopedState(): void {
+    this.internalPlanId = null;
+    this.internalProfile = null;
+    this.internalExercises = [];
+    this.internalSessionCount = null;
+    this.viewModelSignal.set(initialPlanEditPageViewModel);
   }
 }

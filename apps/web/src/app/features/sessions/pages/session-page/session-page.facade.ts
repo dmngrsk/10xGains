@@ -39,25 +39,10 @@ export class SessionPageFacade {
   private readonly serverClock = inject(ServerClockService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
-
-  // The instant the rest timer counts up from. Seeded on load from the latest completed set so it
-  // survives app freezes and view re-entry, then bumped to "now" on every set interaction.
   readonly timerStartTimestamp = signal<number | null>(null);
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
-  }
-
-  /**
-   * Drops the session currently held for the user who was signed in.
-   *
-   * The view model survives navigation because this facade is a root singleton, so without this a
-   * second user in the same tab briefly sees the previous user's workout before the load for their
-   * own session resolves - or keeps seeing it if that load fails.
-   */
-  private clearUserScopedState(): void {
-    this.viewModel.set(initialState);
-    this.timerStartTimestamp.set(null);
   }
 
   loadSessionData(sessionId: string | null): void {
@@ -111,8 +96,6 @@ export class SessionPageFacade {
         return EMPTY;
       })
     ).subscribe(updatedViewModel => {
-      // The map above returns null when it could not build a view model, having already reported
-      // that on the existing one, so a value here means the mapping succeeded.
       if (updatedViewModel) {
         this.viewModel.set(updatedViewModel);
         this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel));
@@ -124,16 +107,11 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
 
-    // Every set interaction (complete, fail or reset) restarts the rest timer from now.
     this.timerStartTimestamp.set(this.serverClock.now());
 
     const setId = setPayload.id;
     let apiCallProvider: () => Observable<SessionSetDto>;
 
-    // A patch can come back with no set: the API answers 404 when the set was deleted in another
-    // tab or the session has since been completed, and `ApiService` resolves that rather than
-    // throwing. For an optimistic update that is a failure - feeding null into the success path
-    // would leave the optimistic state in place and throw while mapping the view model.
     const requireSet = map((res: { data: SessionSetDto | null } | null): SessionSetDto => {
       if (!res?.data) {
         throw new Error('This set no longer exists. Refresh the session to see its current state.');
@@ -220,8 +198,6 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
 
     const operation$ = this.sessionService.deleteSet(currentSessionId, setId).pipe(
-      // A 404 resolves without an error, so the absence of one is not enough to call the delete a
-      // success - it would report a set that was never there as removed.
       map(response => !response?.error && response?.status !== 404),
       tapIf(success => success, () =>
         this.updateSessionViewModelWithDeletedSet(setId, exerciseId)
@@ -350,6 +326,31 @@ export class SessionPageFacade {
     return latest;
   }
 
+  private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
+    this.viewModel.update(session => {
+      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
+      const updatedSessionDate = session.metadata?.date ?? new Date();
+      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
+
+      const updatedExercises = session.exercises.map(ex => {
+        if (ex.planExerciseId === exerciseId) {
+          const setIndex = ex.sets.findIndex(s => s.id === set.id);
+          let updatedSets;
+          if (setIndex > -1) {
+            updatedSets = ex.sets.map(s => s.id === set.id ? set : s);
+          } else {
+            updatedSets = [...ex.sets, set];
+            updatedSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          }
+          return { ...ex, sets: updatedSets };
+        }
+        return ex;
+      });
+
+      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
+    });
+  }
+
   private handleSessionOperation<T>(
     operation$: Observable<T>,
     errorMessagePrefix: string,
@@ -376,31 +377,6 @@ export class SessionPageFacade {
     );
   }
 
-  private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
-    this.viewModel.update(session => {
-      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
-      const updatedSessionDate = session.metadata?.date ?? new Date();
-      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
-
-      const updatedExercises = session.exercises.map(ex => {
-        if (ex.planExerciseId === exerciseId) {
-          const setIndex = ex.sets.findIndex(s => s.id === set.id);
-          let updatedSets;
-          if (setIndex > -1) {
-            updatedSets = ex.sets.map(s => s.id === set.id ? set : s);
-          } else {
-            updatedSets = [...ex.sets, set];
-            updatedSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          }
-          return { ...ex, sets: updatedSets };
-        }
-        return ex;
-      });
-
-      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
-    });
-  }
-
   private updateSessionViewModelWithDeletedSet(setId: string, planExerciseId: string): void {
     this.viewModel.update(session => {
       const updatedExercises = session.exercises.map(ex => {
@@ -413,5 +389,10 @@ export class SessionPageFacade {
       });
       return { ...session, exercises: updatedExercises };
     });
+  }
+
+  private clearUserScopedState(): void {
+    this.viewModel.set(initialState);
+    this.timerStartTimestamp.set(null);
   }
 }

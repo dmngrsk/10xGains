@@ -147,6 +147,10 @@ export class LongPressDirective implements OnDestroy {
     }
   }
 
+  ngOnDestroy(): void {
+    this.clearPressTimeout();
+  }
+
   private clearPressTimeout(): void {
     if (this.pressTimeout) {
       clearTimeout(this.pressTimeout);
@@ -159,9 +163,5 @@ export class LongPressDirective implements OnDestroy {
     this.isLongPressTriggered = false;
     this.initialX = undefined;
     this.initialY = undefined;
-  }
-
-  ngOnDestroy(): void {
-    this.clearPressTimeout();
   }
 }
