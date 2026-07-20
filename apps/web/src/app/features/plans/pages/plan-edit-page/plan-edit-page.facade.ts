@@ -94,7 +94,9 @@ export class PlanEditPageFacade {
       ? of(this.internalSessionCount)
       : this.sessionService.getSessions({ limit: 0, plan_id: planId, status: ['IN_PROGRESS', 'COMPLETED'] }).pipe(
           map(response => response.totalCount!),
-          tapIf(count => !!count, count => this.internalSessionCount = count),
+          // Cache any count, including zero. Guarding on truthiness meant a plan with no sessions
+          // re-fetched its count after every single edit, since 0 never satisfied the cache check.
+          tapIf(count => count !== null && count !== undefined, count => this.internalSessionCount = count),
           catchError(err => this.handleError<number>(err))
         );
 
@@ -131,32 +133,14 @@ export class PlanEditPageFacade {
   }
 
   updatePlan(command: UpdatePlanCommand): Observable<PlanServiceResponse<PlanDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.updatePlan(this.internalPlanId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error && !!this.internalPlanId, () => this.loadPlanData(this.internalPlanId)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanDto>>(err))
-    );
+    return this.mutate(planId => this.planService.updatePlan(planId, command));
   }
 
   deletePlan(): Observable<PlanServiceResponse<null>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<null>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.deletePlan(this.internalPlanId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, plan: null }))),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<null>>(err))
+    // The one mutation that must not reload afterwards: the plan is gone, so it clears it instead.
+    return this.mutate(
+      planId => this.planService.deletePlan(planId),
+      () => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, plan: null }))
     );
   }
 
@@ -196,63 +180,19 @@ export class PlanEditPageFacade {
   }
 
   createPlanDay(command: CreatePlanDayCommand): Observable<PlanServiceResponse<PlanDayDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDayDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.createPlanDay(this.internalPlanId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanDayDto>>(err))
-    );
+    return this.mutate(planId => this.planService.createPlanDay(planId, command));
   }
 
   updatePlanDay(dayId: string, command: UpdatePlanDayCommand): Observable<PlanServiceResponse<PlanDayDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanDayDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.updatePlanDay(this.internalPlanId, dayId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanDayDto>>(err))
-    );
+    return this.mutate(planId => this.planService.updatePlanDay(planId, dayId, command));
   }
 
   deletePlanDay(dayId: string): Observable<PlanServiceResponse<null>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<null>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.deletePlanDay(this.internalPlanId, dayId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<null>>(err))
-    );
+    return this.mutate(planId => this.planService.deletePlanDay(planId, dayId));
   }
 
   createPlanExercise(dayId: string, command: CreatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.createPlanExercise(this.internalPlanId, dayId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseDto>>(err))
-    );
+    return this.mutate(planId => this.planService.createPlanExercise(planId, dayId, command));
   }
 
   createGlobalExerciseAndPlanExercise(dayId: string, exerciseCommand: CreateExerciseCommand, planCommand: CreatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
@@ -285,92 +225,57 @@ export class PlanEditPageFacade {
   }
 
   updatePlanExercise(dayId: string, exerciseId: string, command: UpdatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.updatePlanExercise(this.internalPlanId, dayId, exerciseId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseDto>>(err))
-    );
+    return this.mutate(planId => this.planService.updatePlanExercise(planId, dayId, exerciseId, command));
   }
 
   deletePlanExercise(dayId: string, exerciseId: string): Observable<PlanServiceResponse<null>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<null>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.deletePlanExercise(this.internalPlanId, dayId, exerciseId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<null>>(err))
-    );
+    return this.mutate(planId => this.planService.deletePlanExercise(planId, dayId, exerciseId));
   }
 
   upsertExerciseProgression(exerciseId: string, command: UpsertPlanExerciseProgressionCommand): Observable<PlanServiceResponse<PlanExerciseProgressionDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseProgressionDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.upsertExerciseProgression(this.internalPlanId, exerciseId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseProgressionDto>>(err))
-    );
+    return this.mutate(planId => this.planService.upsertExerciseProgression(planId, exerciseId, command));
   }
 
   addPlanExerciseSet(dayId: string, exerciseId: string, command: CreatePlanExerciseSetCommand): Observable<PlanServiceResponse<PlanExerciseSetDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseSetDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.createPlanExerciseSet(this.internalPlanId, dayId, exerciseId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseSetDto>>(err))
-    );
+    return this.mutate(planId => this.planService.createPlanExerciseSet(planId, dayId, exerciseId, command));
   }
 
   updatePlanExerciseSet(dayId: string, exerciseId: string, setId: string, command: UpdatePlanExerciseSetCommand): Observable<PlanServiceResponse<PlanExerciseSetDto>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<PlanExerciseSetDto>);
-    }
-
-    this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
-
-    return this.planService.updatePlanExerciseSet(this.internalPlanId, dayId, exerciseId, setId, command).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
-      tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<PlanExerciseSetDto>>(err))
-    );
+    return this.mutate(planId => this.planService.updatePlanExerciseSet(planId, dayId, exerciseId, setId, command));
   }
 
   deletePlanExerciseSet(dayId: string, exerciseId: string, setId: string): Observable<PlanServiceResponse<null>> {
-    if (!this.internalPlanId) {
-      return of({ error: 'No active plan context' } as PlanServiceResponse<null>);
+    return this.mutate(planId => this.planService.deletePlanExerciseSet(planId, dayId, exerciseId, setId));
+  }
+
+  /**
+   * Runs a plan mutation, keeping the view model's loading and error state consistent.
+   *
+   * Every mutation on this page follows the same shape - require a plan context, flag loading,
+   * refresh on success, surface the message on failure - which was written out in full eight times
+   * over. Centralising it means a fix to that flow (such as no longer discarding the loaded plan on
+   * error) applies everywhere at once.
+   *
+   * @param operation Builds the request from the current plan id.
+   * @param onSuccess What to do once the mutation succeeds; reloads the plan by default.
+   * @returns The mutation response, or a context error if no plan is loaded.
+   */
+  private mutate<T>(
+    operation: (planId: string) => Observable<PlanServiceResponse<T>>,
+    onSuccess: (planId: string) => void = (planId) => this.loadPlanData(planId)
+  ): Observable<PlanServiceResponse<T>> {
+    const planId = this.internalPlanId;
+    if (!planId) {
+      return of({ error: 'No active plan context' } as PlanServiceResponse<T>);
     }
 
     this.viewModelSignal.update(vm => ({ ...vm, isLoading: true, error: null }));
 
-    return this.planService.deletePlanExerciseSet(this.internalPlanId, dayId, exerciseId, setId).pipe(
+    return operation(planId).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tapIf(response => !response.error, () => this.loadPlanData(this.internalPlanId!)),
+      tapIf(response => !response.error, () => onSuccess(planId)),
       tapIf(response => !!response.error, response => this.viewModelSignal.update(vm => ({ ...vm, isLoading: false, error: response.error }))),
-      catchError(err => this.handleError<PlanServiceResponse<null>>(err))
+      catchError(err => this.handleError<PlanServiceResponse<T>>(err))
     );
   }
 
