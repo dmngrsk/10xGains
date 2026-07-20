@@ -164,4 +164,34 @@ describe('AuthService (Google OAuth)', () => {
       expect(result.error).toContain('do not match an account');
     });
   });
+
+  describe('isAuthenticated', () => {
+    const client = () => (service as unknown as { supabase: { auth: { getSession: ReturnType<typeof vi.fn>; getUser?: ReturnType<typeof vi.fn> } } }).supabase;
+
+    it('should report the user from the locally stored session', async () => {
+      client().auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
+
+      const result = await firstValueFrom(service.isAuthenticated());
+
+      expect(result).toEqual({ isAuthenticated: true, userId: 'user-1' });
+    });
+
+    it('should report an absent session as unauthenticated', async () => {
+      client().auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      const result = await firstValueFrom(service.isAuthenticated());
+
+      expect(result).toEqual({ isAuthenticated: false, userId: undefined });
+    });
+
+    it('should not call the Auth server, since the route guard runs this on every navigation', async () => {
+      const getUserMock = vi.fn();
+      client().auth.getUser = getUserMock;
+      client().auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
+
+      await firstValueFrom(service.isAuthenticated());
+
+      expect(getUserMock).not.toHaveBeenCalled();
+    });
+  });
 });
