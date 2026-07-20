@@ -222,6 +222,49 @@ describe('KeyedDebouncerService', () => {
     });
   });
 
+  describe('operations that resolve without a value', () => {
+    it('should still report success when the API resolves undefined', async () => {
+      // The previous implementation detected success by `apiResponse !== undefined`, so an API that
+      // legitimately resolved undefined matched neither branch and the caller's observables
+      // completed empty - the operation silently vanished.
+      const key = 'undefined-key';
+      let successEvent: unknown = 'not-called';
+
+      const { successEvent$ } = service.enqueue(
+        key,
+        () => of(undefined as unknown as TestApiResponse),
+        defaultSuccessContext,
+        defaultFailureContext,
+        buildSuccess,
+        buildFailure
+      );
+      successEvent$.subscribe(event => (successEvent = event));
+
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS + 1);
+
+      expect(successEvent).toMatchObject({ key, data: undefined });
+    });
+
+    it('should complete a superseded operation without emitting anything', async () => {
+      const key = 'superseded-key';
+      let firstEmitted = false;
+      let firstCompleted = false;
+
+      const first = service.enqueue(key, mockApiCall({ id: '1', value: 'a' }), defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure);
+      first.successEvent$.subscribe({ next: () => (firstEmitted = true), complete: () => (firstCompleted = true) });
+
+      const second = service.enqueue(key, mockApiCall({ id: '2', value: 'b' }), defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure);
+      let secondEvent: TestSuccessEvent | undefined;
+      second.successEvent$.subscribe(event => (secondEvent = event));
+
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS + 1);
+
+      expect(firstEmitted).toBe(false);
+      expect(firstCompleted).toBe(true);
+      expect(secondEvent?.data).toEqual({ id: '2', value: 'b' });
+    });
+  });
+
   describe('flush', () => {
     it('flush(key) should execute a pending operation for that key immediately', async () => {
       const key = 'flushKey';
