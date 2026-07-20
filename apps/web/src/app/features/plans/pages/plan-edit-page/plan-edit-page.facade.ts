@@ -94,9 +94,12 @@ export class PlanEditPageFacade {
       ? of(this.internalSessionCount)
       : this.sessionService.getSessions({ limit: 0, plan_id: planId, status: ['IN_PROGRESS', 'COMPLETED'] }).pipe(
           map(response => response.totalCount!),
-          // Cache any count, including zero. Guarding on truthiness meant a plan with no sessions
-          // re-fetched its count after every single edit, since 0 never satisfied the cache check.
-          tapIf(count => count !== null && count !== undefined, count => this.internalSessionCount = count),
+          // Deliberately only cached once non-zero. The count decides whether the plan is read-only,
+          // and zero is the one value that can still change in a way the editor must notice: train
+          // the plan and it becomes one, which locks editing. Caching a zero made that transition
+          // invisible until a full page reload. Any non-zero count is safe to keep, since a plan
+          // that has been used never becomes unused.
+          tapIf(count => !!count, count => this.internalSessionCount = count),
           catchError(err => this.handleError<number>(err))
         );
 
