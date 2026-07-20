@@ -26,8 +26,6 @@ export function resetOnUserChange(reset: () => void): void {
     .pipe(
       map(user => user?.id ?? null),
       distinctUntilChanged(),
-      // The first emission reports who is already signed in, and nothing has been cached under
-      // them yet - resetting on it would throw away state the caller just loaded.
       skip(1),
       takeUntilDestroyed(destroyRef)
     )

@@ -20,9 +20,6 @@ export class ProfileRepository {
    * @throws {NotFoundError} If the id is not the caller's own.
    */
   async findById(userId: string): Promise<ProfileDto | null> {
-    // 404, not 403. The caller's own id is the only one this endpoint accepts, so answering
-    // "forbidden" for any other confirms that the profile exists - exactly the disclosure the
-    // project's "404 for anything that is not yours" convention avoids everywhere else.
     if (userId !== this.getUserId()) {
       throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
@@ -52,8 +49,6 @@ export class ProfileRepository {
    * @throws {NotFoundError} If the id is not the caller's own.
    */
   async upsert(userId: string, command: UpsertProfileCommand): Promise<ProfileDto> {
-    // 404 for the same reason as findById: a 403 here would distinguish an existing profile from
-    // an absent one for an id the caller may not read.
     if (userId !== this.getUserId()) {
       throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
@@ -68,9 +63,6 @@ export class ProfileRepository {
       throw existingProfileError;
     }
 
-    // The foreign key only proves the plan exists, not that it is this user's, so a profile could
-    // be pointed at someone else's plan. The home page then fetches that plan, gets a 404 under
-    // RLS, and reports "Failed to load some home page data" permanently.
     if (command.active_plan_id) {
       const { data: plan, error: planError } = await this.supabase
         .from('plans')

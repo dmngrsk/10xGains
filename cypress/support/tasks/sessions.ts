@@ -1,6 +1,5 @@
 import { supabase } from './supabase';
 
-/** A session set, reduced to the fields a test asserts on. */
 export interface SessionSetSnapshot {
   id: string;
   session_id: string;
@@ -12,13 +11,6 @@ export interface SessionSetSnapshot {
 }
 
 export const sessionsTasks = {
-  /**
-   * Reads a user's completed sessions, newest first, with their sets.
-   *
-   * Used to assert that recorded history stays exactly as it was left. Reading through the database
-   * rather than the history UI keeps the assertion on the stored rows themselves, which is where
-   * cross-session corruption would show up first.
-   */
   async 'sessions:getCompletedWithSets'({ userId }: { userId: string }): Promise<SessionSetSnapshot[][]> {
     const { data, error } = await supabase!
       .from('sessions')

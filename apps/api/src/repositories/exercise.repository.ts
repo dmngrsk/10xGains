@@ -24,7 +24,6 @@ export class ExerciseRepository {
    * @returns {Promise<ExerciseListResult>} A promise that resolves to the list of exercises and the total count.
    */
   async findAll(options: ExerciseQueryOptions): Promise<ExerciseListResult> {
-    // `optionalSort` has already validated both halves against this endpoint's whitelist.
     const [sortColumn, sortDirection] = options.sort.split('.');
 
     const { data, count, error } = await this.supabase

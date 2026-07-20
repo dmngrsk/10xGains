@@ -1,15 +1,6 @@
 import { supabase } from './supabase';
 
 export const plansTasks = {
-  /**
-   * Clears the user's active plan and removes the sessions that belonged to it.
-   *
-   * The three statements are sequenced rather than issued together: the delete needs the plan id
-   * the profile is about to lose, and when there is no active plan there is nothing to delete at
-   * all. Running them unconditionally meant `.eq('plan_id', null)` was issued whenever the profile
-   * had no active plan, which does not mean "sessions with no plan" in PostgREST and matched
-   * nothing useful.
-   */
   async 'plans:resetActive'({ userId }: { userId: string }): Promise<null> {
     const { data: profile, error: profileError } = await supabase!
       .from('profiles')

@@ -78,7 +78,6 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.auth.login.passwordInput).type('invalidpassword');
       cy.getBySel(dataCy.auth.login.signInButton).click();
 
-      // Supabase's own wording ("Invalid login credentials") is mapped to user-facing copy.
       cy.getBySel(dataCy.auth.login.errorMessage).should('contain.text', 'do not match an account');
     });
   });

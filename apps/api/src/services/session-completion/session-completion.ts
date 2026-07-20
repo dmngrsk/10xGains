@@ -72,12 +72,6 @@ export function extractSessionSetContext(rows: SessionSetWithExerciseRow[]): { s
  * de-duplicating entries that the join repeats because the same exercise can appear on
  * several days of a plan.
  *
- * Progression rules are deliberately *not* read from this join. They are keyed by
- * `(plan_id, exercise_id)`, so reaching them through the global exercise returns the rules of
- * every plan that trains it. `resolveExerciseProgressions` maps them by `exercise_id` alone,
- * which silently picked an arbitrary plan's rules and then wrote the result back onto that
- * other plan's row. They are fetched separately, scoped to the session's plan.
- *
  * @param {PlanDayWithExercisesRow[]} rows - The joined plan day rows.
  * @returns {PlanExerciseDto[]} The plan's exercises, each unique by id.
  */

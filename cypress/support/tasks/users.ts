@@ -6,7 +6,6 @@ import { supabase, supabaseUrl, supabasePublishableKey, supabaseSecretKey } from
 const CANARY_AUTO_CREATE_ENVIRONMENTS = ['staging', 'development'];
 const CANARY_PASSWORD_PLACEHOLDER = '<canary user password>';
 let canaryScaffoldVerified = false;
-/** Cached so the short-circuit above can still report which user the canary run is using. */
 let canaryUserId: string | null = null;
 
 export const usersTasks = {

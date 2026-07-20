@@ -19,16 +19,6 @@ function readBearerToken(c: Context<AppContext>): string | null {
  * This middleware checks for a valid Supabase user session. It can be configured
  * to either require authentication or treat it as optional.
  *
- * Verification goes through `getClaims`, which validates the JWT against the project's signing keys
- * rather than asking the Auth server who the caller is. With asymmetric signing keys that is a
- * local WebCrypto check against a cached JWKS, so the common path costs no network round trip and
- * reads no longer depend on Auth being reachable. (With a symmetric secret it still calls the
- * server, exactly as `getUser` did, so behaviour is unchanged there.)
- *
- * The trade-off is revocation freshness: a token revoked mid-lifetime stays valid here until it
- * expires. That is acceptable for these endpoints, which only ever read and write the caller's own
- * rows under RLS; anything needing immediate revocation should call `getUser` explicitly.
- *
  * @param {boolean} [requireAuth=true] - If true, the middleware will return a 401 Unauthorized error if the user is not authenticated.
  * @returns {Function} The Hono middleware function.
  */
@@ -77,7 +67,3 @@ export const authMiddleware = (requireAuth = true) => async (c: Context<AppConte
  * If authentication fails, it returns a 401 Unauthorized error.
  */
 export const requiredAuthMiddleware = authMiddleware(true);
-
-// `authMiddleware(false)` builds an optional-auth variant, which attaches the user when a token is
-// present and lets the request through when it is not. Nothing needs it today: every authenticated
-// route requires a user, and the exercise catalog is public reference data no handler scopes.

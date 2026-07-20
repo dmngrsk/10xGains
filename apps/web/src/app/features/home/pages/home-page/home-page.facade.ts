@@ -140,15 +140,6 @@ export class HomePageFacade {
     ).subscribe();
   }
 
-  /**
-   * Abandons the outstanding session and starts a fresh one in its place.
-   *
-   * Creating a session cancels any outstanding one server-side (`cancelOutstandingSessions`), so
-   * abandoning is just a create. It must not go through `completeSession`: that would mark a
-   * half-finished workout COMPLETED, skip its pending sets and apply weight progressions and
-   * deloads from it - the opposite of abandoning - and for a PENDING session the API rejects
-   * completion outright, leaving the user stuck with an error and no new session.
-   */
   abandonSession() {
     this.createSession();
   }

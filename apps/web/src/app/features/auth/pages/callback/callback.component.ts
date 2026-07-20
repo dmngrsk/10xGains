@@ -29,9 +29,6 @@ export class CallbackComponent implements OnInit {
       .subscribe(({ auth, params }) => {
         const type = params['type'];
         if (type === 'register') {
-          // An expired or already-used verification link lands here with no session, so there is no
-          // user id to create a profile for. Without this guard the call went out as
-          // `PUT /profiles/undefined`, came back 400, and the user was told nothing at all.
           if (!auth.isAuthenticated || !auth.userId) {
             this.snackBar.open('This verification link has expired or has already been used. Please sign in or request a new one.', 'Close', { duration: 8000 });
             this.router.navigate(['/auth']);

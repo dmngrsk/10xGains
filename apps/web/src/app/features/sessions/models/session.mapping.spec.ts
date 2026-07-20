@@ -203,8 +203,6 @@ describe('Session Mapping Functions', () => {
     });
 
     it('should leave sessionDate null when the session has no date', () => {
-      // A PENDING session has no session_date because training has not started. Substituting the
-      // current time made the card display "now" as though the session had happened then.
       const sessionWithoutDate = { ...mockSessionDto, session_date: null };
 
       const result = mapToSessionCardViewModel(sessionWithoutDate, mockPlanDto, mockAllExercises);

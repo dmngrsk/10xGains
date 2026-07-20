@@ -9,17 +9,6 @@ const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
 });
 
-/**
- * The statuses a plain update may set.
- *
- * COMPLETED is deliberately excluded. Completing a session is a pipeline - it calculates weight
- * progressions, skips the sets left pending, and stamps the session atomically - and none of that
- * runs on a plain PUT.
- *
- * This only constrains the status being moved *to*. The repository separately refuses to move a
- * session out of a finished status, which is what stops a COMPLETED session being reopened as
- * IN_PROGRESS and then completed a second time.
- */
 const UPDATABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS', 'CANCELLED'] as const satisfies readonly SessionStatus[];
 
 const COMMAND_SCHEMA = z.object({

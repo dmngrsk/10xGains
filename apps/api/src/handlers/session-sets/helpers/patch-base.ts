@@ -12,8 +12,6 @@ export async function patch(
   const sessionRepository = c.get('sessionRepository');
 
   try {
-    // `patchSet` reads the set itself and raises a NotFoundError when it is missing, so fetching it
-    // here as well only doubled the queries behind a single PATCH.
     const updatedSet = await sessionRepository.patchSet(sessionId, setId, getUpdateSetData);
 
     if (!updatedSet) {
@@ -24,9 +22,6 @@ export async function patch(
     const successData = createSuccessData(updatedSet, { message: 'Session set updated successfully.' });
     return c.json(successData, 200);
   } catch (e) {
-    // `patchSet` raises a ConflictError for a completed session and a NotFoundError for a missing
-    // session or set; `handleRepositoryError` maps both from their type, so the status no longer
-    // depends on matching words in the message.
     const fallbackMessage = 'Failed to update training session set';
     return handleRepositoryError(c, e as Error, 'patch', fallbackMessage);
   }

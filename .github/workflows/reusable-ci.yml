@@ -196,9 +196,6 @@ jobs:
             -e "s|__SUPABASE_PUBLISHABLE_KEY__|${{ secrets.SUPABASE_PUBLISHABLE_KEY }}|g" \
             "$OUTPUT_FILE"
 
-          # Deliberately not printing the file. The publishable key in it is public by design, but
-          # it is sourced from a secret, and echoing secret-derived config into build logs is a
-          # habit worth not having. Confirm the substitutions landed instead.
           echo "Generated ${OUTPUT_FILE}."
           if grep -q '__[A-Z_]*__' "$OUTPUT_FILE"; then
             echo "::error::Unsubstituted placeholders remain in ${OUTPUT_FILE}."
@@ -229,9 +226,6 @@ jobs:
         run: |
           SWA_CONFIG_FILE="apps/web/src/staticwebapp.config.json"
 
-          # The Content-Security-Policy has to name the exact origins this build talks to, and
-          # those differ per environment, so connect-src carries the same placeholders the
-          # environment file uses.
           sed -i \
             -e "s|__API_URL__|${{ vars.API_URL }}|g" \
             -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
@@ -241,8 +235,6 @@ jobs:
           echo ""
           cat "$SWA_CONFIG_FILE"
 
-          # An unsubstituted placeholder would ship a CSP that blocks the API and Supabase, and
-          # the app would fail at runtime with no build-time signal at all.
           if grep -q '__[A-Z_]*__' "$SWA_CONFIG_FILE"; then
             echo "::error::Unsubstituted placeholders remain in ${SWA_CONFIG_FILE}."
             grep -o '__[A-Z_]*__' "$SWA_CONFIG_FILE" | sort -u

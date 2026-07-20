@@ -25,9 +25,6 @@ export class ProgressRepository {
    * @returns {Promise<ExerciseProgressDto[]>} A promise that resolves to the aggregated series.
    */
   async findExerciseProgress(options: ExerciseProgressQueryOptions): Promise<ExerciseProgressDto[]> {
-    // Every set of a completed session is fetched, not just the completed ones: failed
-    // sets carry the reps the user actually managed, which the chart tooltip reports.
-    // The sessions embed names its foreign key explicitly, as session_sets has two.
     let supabaseQuery = this.supabase
       .from('session_sets')
       .select(`
@@ -50,8 +47,6 @@ export class ProgressRepository {
       supabaseQuery = supabaseQuery.in('plan_exercise.exercise_id', options.exercise_ids);
     }
 
-    // Always bounded below, defaulting when the caller gives no start date - otherwise this reads
-    // every set of every completed session the account has ever recorded.
     supabaseQuery = supabaseQuery.gte('session.session_date', resolveProgressWindowStart(options.date_from));
 
     if (options.date_to) {

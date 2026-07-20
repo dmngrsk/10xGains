@@ -190,13 +190,6 @@ export class AuthService {
   /**
    * Checks if a user is currently authenticated.
    *
-   * Reads the locally stored session rather than calling `getUser()`, which asks the Auth server on
-   * every invocation. The route guard runs this on every navigation into a guarded area, so that
-   * put a network round-trip in front of each one and made the app unusable offline even with a
-   * valid, unexpired session. `getSession()` is local and refreshes the token itself when it is
-   * close to expiring, and nothing here depends on the server's answer being authoritative - the
-   * API verifies the JWT on every request regardless, which is where access is actually decided.
-   *
    * @returns An `Observable<boolean>` that emits `true` if a user is authenticated, otherwise `false`.
    */
   isAuthenticated(): Observable<AuthenticationStatusResponse> {
@@ -207,11 +200,6 @@ export class AuthService {
 
   /**
    * Rewrites the Supabase auth errors users actually hit into copy written for them.
-   *
-   * Supabase's messages are written for developers - "Invalid login credentials" does not tell
-   * someone which of the two was wrong or what to do next, and the rate-limit message leaks its
-   * internal phrasing. Anything unrecognised falls through unchanged, so a new or unusual failure
-   * still says something rather than being flattened into a generic apology.
    *
    * @param message The message Supabase returned.
    * @returns The message to show the user.
