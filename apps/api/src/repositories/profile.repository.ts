@@ -4,7 +4,7 @@ import type {
   ProfileDto,
   UpsertProfileCommand
 } from '@txg/shared';
-import { ForbiddenError } from '../utils/errors';
+import { ForbiddenError, NotFoundError } from '../utils/errors';
 
 export class ProfileRepository {
   constructor(
@@ -61,6 +61,26 @@ export class ProfileRepository {
 
     if (existingProfileError) {
       throw existingProfileError;
+    }
+
+    // The foreign key only proves the plan exists, not that it is this user's, so a profile could
+    // be pointed at someone else's plan. The home page then fetches that plan, gets a 404 under
+    // RLS, and reports "Failed to load some home page data" permanently.
+    if (command.active_plan_id) {
+      const { data: plan, error: planError } = await this.supabase
+        .from('plans')
+        .select('id')
+        .eq('id', command.active_plan_id)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (planError) {
+        throw planError;
+      }
+
+      if (!plan) {
+        throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
+      }
     }
 
     // Build the data to upsert with defaults
