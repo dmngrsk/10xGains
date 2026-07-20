@@ -21,6 +21,7 @@ import {
 } from '../services/session-completion/session-completion';
 import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase';
+import type { CollectionConfig } from '../utils/supabase';
 import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
 
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
@@ -524,18 +525,7 @@ export class SessionRepository {
       completed_at: command.completed_at || null,
     } as SessionSetDto;
 
-    const updatedSets = await createEntityInCollection<SessionSetDto>(
-      this.supabase,
-      'session_sets',
-      'plan_exercise_id',
-      command.plan_exercise_id,
-      'set_index',
-      newSetData,
-      (s: SessionSetDto) => s.id,
-      (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIndex: number) => ({ ...s, set_index: newIndex }),
-      { column: 'session_id', id: sessionId }
-    );
+    const updatedSets = await createEntityInCollection(this.supabase, this.sessionSetCollection(sessionId, command.plan_exercise_id), newSetData);
 
     const createdSet = updatedSets.find((s: SessionSetDto) => s.id === newSetId);
     if (!createdSet) {
@@ -579,18 +569,7 @@ export class SessionRepository {
       completed_at: command.completed_at !== undefined ? command.completed_at : existingSet.completed_at,
     };
 
-    const updatedSets = await updateEntityInCollection<SessionSetDto>(
-      this.supabase,
-      'session_sets',
-      'plan_exercise_id',
-      existingSet.plan_exercise_id,
-      'set_index',
-      updatedSetData,
-      (s: SessionSetDto) => s.id,
-      (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx }),
-      { column: 'session_id', id: sessionId }
-    );
+    const updatedSets = await updateEntityInCollection(this.supabase, this.sessionSetCollection(sessionId, existingSet.plan_exercise_id), updatedSetData);
 
     return updatedSets.find(s => s.id === setId) || null;
   }
@@ -620,18 +599,7 @@ export class SessionRepository {
       return false;
     }
 
-    await deleteEntityFromCollection<SessionSetDto>(
-      this.supabase,
-      'session_sets',
-      'plan_exercise_id',
-      existingSet.plan_exercise_id,
-      'set_index',
-      setId,
-      (s: SessionSetDto) => s.id,
-      (s: SessionSetDto) => s.set_index,
-      (s: SessionSetDto, newIdx: number) => ({ ...s, set_index: newIdx }),
-      { column: 'session_id', id: sessionId }
-    );
+    await deleteEntityFromCollection(this.supabase, this.sessionSetCollection(sessionId, existingSet.plan_exercise_id), setId);
 
     return true;
   }
@@ -707,6 +675,30 @@ export class SessionRepository {
 
 
 
+
+  /**
+   * The ordered collection of one session's sets for one plan exercise.
+   *
+   * The session scope is essential rather than optional: `plan_exercise_id` alone is shared by every
+   * session ever trained from the same plan day, so without it the collection would span - and
+   * renumber, and delete from - historical sessions.
+   *
+   * @param {string} sessionId - The session the sets belong to.
+   * @param {string} planExerciseId - The plan exercise the sets belong to.
+   * @returns {CollectionConfig<SessionSetDto>} The collection descriptor.
+   */
+  private sessionSetCollection(sessionId: string, planExerciseId: string): CollectionConfig<SessionSetDto> {
+    return {
+      table: 'session_sets',
+      parentColumn: 'plan_exercise_id',
+      parentId: planExerciseId,
+      orderColumn: 'set_index',
+      getId: (s) => s.id,
+      getOrder: (s) => s.set_index,
+      setOrder: (s, index) => ({ ...s, set_index: index }),
+      scope: { column: 'session_id', id: sessionId },
+    };
+  }
 
   private async verifySessionOwnership(sessionId: string): Promise<void> {
     const { data, error } = await this.supabase

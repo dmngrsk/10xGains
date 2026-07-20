@@ -25,6 +25,7 @@ import {
   updateEntityInCollection,
   deleteEntityFromCollection
 } from '../utils/supabase';
+import type { CollectionConfig } from '../utils/supabase';
 
 /**
  * The shape `verifyPlanOwnership` selects: only the ids along the path being verified, with each
@@ -311,17 +312,7 @@ export class PlanRepository {
       order_index: command.order_index || 1,
     };
 
-    const updatedDays = await createEntityInCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      newDay,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, order: number) => ({ ...d, order_index: order })
-    );
+    const updatedDays = await createEntityInCollection(this.supabase, this.dayCollection(planId), newDay);
 
     const createdDay = updatedDays.find(d => d.id === newDay.id);
     if (!createdDay) {
@@ -363,17 +354,7 @@ export class PlanRepository {
       order_index: command.order_index !== undefined ? command.order_index : existingDay.order_index,
     };
 
-    const updatedDays = await updateEntityInCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      updatedDay,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
-    );
+    const updatedDays = await updateEntityInCollection(this.supabase, this.dayCollection(planId), updatedDay);
 
     return updatedDays.find(d => d.id === dayId) || null;
   }
@@ -388,17 +369,7 @@ export class PlanRepository {
   async deleteDay(planId: string, dayId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    await deleteEntityFromCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      dayId,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.dayCollection(planId), dayId);
 
     return true;
   }
@@ -479,17 +450,7 @@ export class PlanRepository {
       order_index: command.order_index || 1,
     };
 
-    const updatedExercises = await createEntityInCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      newExercise,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    const updatedExercises = await createEntityInCollection(this.supabase, this.exerciseCollection(dayId), newExercise);
 
     const createdExercise = updatedExercises.find(e => e.id === newExercise.id);
     if (!createdExercise) {
@@ -530,17 +491,7 @@ export class PlanRepository {
       order_index: command.order_index !== undefined ? command.order_index : existingExercise.order_index,
     };
 
-    const updatedExercises = await updateEntityInCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      updatedExercise,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    const updatedExercises = await updateEntityInCollection(this.supabase, this.exerciseCollection(dayId), updatedExercise);
 
     return updatedExercises.find(e => e.id === exerciseId) || null;
   }
@@ -556,17 +507,7 @@ export class PlanRepository {
   async deleteExercise(planId: string, dayId: string, exerciseId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    await deleteEntityFromCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      exerciseId,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.exerciseCollection(dayId), exerciseId);
 
     return true;
   }
@@ -649,17 +590,7 @@ export class PlanRepository {
       set_index: command.set_index || 1,
     };
 
-    const updatedSets = await createEntityInCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      newSet,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    const updatedSets = await createEntityInCollection(this.supabase, this.planSetCollection(exerciseId), newSet);
 
     const createdSet = updatedSets.find(s => s.id === newSet.id);
     if (!createdSet) {
@@ -703,17 +634,7 @@ export class PlanRepository {
       set_index: command.set_index !== undefined ? command.set_index : existingSet.set_index,
     };
 
-    const updatedSets = await updateEntityInCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      updatedSet,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    const updatedSets = await updateEntityInCollection(this.supabase, this.planSetCollection(exerciseId), updatedSet);
 
     return updatedSets.find(s => s.id === setId) || null;
   }
@@ -730,17 +651,7 @@ export class PlanRepository {
   async deleteSet(planId: string, dayId: string, exerciseId: string, setId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
-    await deleteEntityFromCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      setId,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.planSetCollection(exerciseId), setId);
 
     return true;
   }
@@ -861,6 +772,60 @@ export class PlanRepository {
    * @param {string} [exerciseId] - An exercise that must belong to that day.
    * @param {string} [setId] - A set that must belong to that exercise.
    */
+  /**
+   * The ordered collection of a plan's training days.
+   *
+   * @param {string} planId - The plan whose days form the collection.
+   * @returns {CollectionConfig<PlanDayDto>} The collection descriptor.
+   */
+  private dayCollection(planId: string): CollectionConfig<PlanDayDto> {
+    return {
+      table: 'plan_days',
+      parentColumn: 'plan_id',
+      parentId: planId,
+      orderColumn: 'order_index',
+      getId: (d) => d.id,
+      getOrder: (d) => d.order_index,
+      setOrder: (d, order) => ({ ...d, order_index: order }),
+    };
+  }
+
+  /**
+   * The ordered collection of a training day's exercises.
+   *
+   * @param {string} dayId - The day whose exercises form the collection.
+   * @returns {CollectionConfig<PlanExerciseDto>} The collection descriptor.
+   */
+  private exerciseCollection(dayId: string): CollectionConfig<PlanExerciseDto> {
+    return {
+      table: 'plan_exercises',
+      parentColumn: 'plan_day_id',
+      parentId: dayId,
+      orderColumn: 'order_index',
+      getId: (e) => e.id,
+      getOrder: (e) => e.order_index,
+      setOrder: (e, order) => ({ ...e, order_index: order }),
+    };
+  }
+
+  /**
+   * The ordered collection of a plan exercise's sets.
+   *
+   * @param {string} exerciseId - The exercise whose sets form the collection.
+   * @returns {CollectionConfig<PlanExerciseSetDto>} The collection descriptor.
+   */
+  private planSetCollection(exerciseId: string): CollectionConfig<PlanExerciseSetDto> {
+    return {
+      table: 'plan_exercise_sets',
+      parentColumn: 'plan_exercise_id',
+      parentId: exerciseId,
+      orderColumn: 'set_index',
+      getId: (s) => s.id,
+      getOrder: (s) => s.set_index,
+      setOrder: (s, index) => ({ ...s, set_index: index }),
+    };
+  }
+
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
     let select = 'id';
     if (dayId) {

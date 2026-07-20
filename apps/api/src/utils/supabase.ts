@@ -20,52 +20,52 @@ export interface CollectionScope {
 }
 
 /**
- * Creates a new entity within a collection with normalized ordering.
+ * Identifies an ordered collection and how to read and write its ordering.
  *
- * This function handles the creation of new entities within collections while maintaining
- * proper ordering through client-side normalization and database-side transactional updates.
- *
- * @template T - The type of the entities being managed
- * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client
- * @param {string} tableName - The name of the database table
- * @param {string} parentColumn - The name of the foreign key column
- * @param {string} parentId - The ID of the parent record
- * @param {T} newEntity - The new entity data
- * @param {(entity: T) => string} getId - Function to extract the ID from an entity
- * @param {(entity: T) => number | undefined | null} getOrder - Function to extract the order index from an entity
- * @param {(entity: T, newOrder: number) => T} setOrder - Function to set a new order index on an entity
- * @param {CollectionScope} [scope] - Optional secondary filter for collections with a compound key
- * @returns {Promise<T[]>} A promise that resolves to the updated collection
- *
- * @example
- * ```typescript
- * const updatedDays = await createEntityInCollection<PlanDayDto>(
- *   supabaseClient,
- *   'plan_days',
- *   'plan_id',
- *   planId,
- *   'order_index',
- *   newDayData,
- *   (d) => d.id,
- *   (d) => d.order_index,
- *   (d, order) => ({ ...d, order_index: order })
- * );
- * ```
+ * @template T - The type of the entities in the collection.
  */
-export async function createEntityInCollection<T>(
+export interface CollectionConfig<T> {
+  /** The database table holding the collection. */
+  table: string;
+  /** The foreign key column that groups the collection. */
+  parentColumn: string;
+  /** The value of that column for this collection. */
+  parentId: string;
+  /** The column holding the 1-based position within the collection. */
+  orderColumn: string;
+  /** Extracts an entity's id. */
+  getId: (entity: T) => string;
+  /** Extracts an entity's current position. */
+  getOrder: (entity: T) => number | undefined | null;
+  /** Returns a copy of the entity at a new position. */
+  setOrder: (entity: T, newOrder: number) => T;
+  /** An optional second filter, for collections with a compound key. */
+  scope?: CollectionScope;
+}
+
+/**
+ * Replaces an ordered collection, applying a mutation and renormalizing the ordering.
+ *
+ * All three collection operations - create, update and delete - are the same transaction with a
+ * different mutation in the middle: read the current members, produce the new membership, then
+ * write it back atomically with positions renumbered 1..N. Only that middle step differs, so it is
+ * the only thing the callers below supply.
+ *
+ * @template T - The type of the entities being managed.
+ * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client.
+ * @param {CollectionConfig<T>} config - The collection to operate on.
+ * @param {(existing: T[]) => T[]} mutate - Produces the new membership from the current one.
+ * @returns {Promise<T[]>} A promise that resolves to the updated collection.
+ */
+async function replaceCollection<T>(
   supabase: SupabaseClient<Database>,
-  tableName: string,
-  parentColumn: string,
-  parentId: string,
-  orderColumn: string,
-  newEntity: T,
-  getId: (entity: T) => string,
-  getOrder: (entity: T) => number | undefined | null,
-  setOrder: (entity: T, newOrder: number) => T,
-  scope?: CollectionScope
+  config: CollectionConfig<T>,
+  mutate: (existing: T[]) => T[]
 ): Promise<T[]> {
+  const { table, parentColumn, parentId, orderColumn, scope } = config;
+
   const collectionQuery = supabase
-    .from(tableName)
+    .from(table)
     .select('*')
     .eq(parentColumn, parentId);
 
@@ -80,17 +80,10 @@ export async function createEntityInCollection<T>(
     throw fetchError;
   }
 
-  const typedExistingEntities = existingEntities as unknown as T[];
-  const normalizedEntities = insertAndNormalizeOrder(
-    typedExistingEntities || [],
-    newEntity,
-    getId,
-    getOrder,
-    setOrder
-  );
+  const normalizedEntities = mutate((existingEntities ?? []) as unknown as T[]);
 
   const { data: result, error } = await supabase.rpc('replace_collection', {
-    p_table_name: tableName,
+    p_table_name: table,
     p_parent_column: parentColumn,
     p_parent_id: parentId,
     p_order_column: orderColumn,
@@ -103,178 +96,86 @@ export async function createEntityInCollection<T>(
   }
 
   return (Array.isArray(result) ? result : [result]) as T[];
+}
+
+/**
+ * Creates a new entity within a collection with normalized ordering.
+ *
+ * The entity's requested position is honoured: an absent order appends, `<= 0` prepends, and any
+ * other value inserts at that 1-based index, with the rest of the collection shifted around it.
+ *
+ * @template T - The type of the entities being managed.
+ * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client.
+ * @param {CollectionConfig<T>} config - The collection to insert into.
+ * @param {T} newEntity - The new entity data.
+ * @returns {Promise<T[]>} A promise that resolves to the updated collection.
+ *
+ * @example
+ * ```typescript
+ * const updatedDays = await createEntityInCollection<PlanDayDto>(supabaseClient, {
+ *   table: 'plan_days',
+ *   parentColumn: 'plan_id',
+ *   parentId: planId,
+ *   orderColumn: 'order_index',
+ *   getId: (d) => d.id,
+ *   getOrder: (d) => d.order_index,
+ *   setOrder: (d, order) => ({ ...d, order_index: order }),
+ * }, newDayData);
+ * ```
+ */
+export function createEntityInCollection<T>(
+  supabase: SupabaseClient<Database>,
+  config: CollectionConfig<T>,
+  newEntity: T
+): Promise<T[]> {
+  return replaceCollection(supabase, config, existing =>
+    insertAndNormalizeOrder(existing, newEntity, config.getId, config.getOrder, config.setOrder)
+  );
 }
 
 /**
  * Updates an entity within a collection with normalized ordering.
  *
- * This function handles updating entities within collections while maintaining
- * proper ordering through client-side normalization and database-side transactional updates.
+ * Changing the entity's order value moves it, and the surrounding entities are renumbered to close
+ * the gap it left and open one where it lands.
  *
- * @template T - The type of the entities being managed
- * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client
- * @param {string} tableName - The name of the database table
- * @param {string} parentColumn - The name of the foreign key column
- * @param {string} parentId - The ID of the parent record
- * @param {T} updatedEntity - The updated entity data
- * @param {(entity: T) => string} getId - Function to extract the ID from an entity
- * @param {(entity: T) => number | undefined | null} getOrder - Function to extract the order index from an entity
- * @param {(entity: T, newOrder: number) => T} setOrder - Function to set a new order index on an entity
- * @param {CollectionScope} [scope] - Optional secondary filter for collections with a compound key
- * @returns {Promise<T[]>} A promise that resolves to the updated collection
- *
- * @example
- * ```typescript
- * const updatedDays = await updateEntityInCollection<PlanDayDto>(
- *   supabaseClient,
- *   'plan_days',
- *   'plan_id',
- *   planId,
- *   'order_index',
- *   updatedDayData,
- *   (d) => d.id,
- *   (d) => d.order_index,
- *   (d, order) => ({ ...d, order_index: order })
- * );
- * ```
+ * @template T - The type of the entities being managed.
+ * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client.
+ * @param {CollectionConfig<T>} config - The collection to update within.
+ * @param {T} updatedEntity - The updated entity data.
+ * @returns {Promise<T[]>} A promise that resolves to the updated collection.
  */
-export async function updateEntityInCollection<T>(
+export function updateEntityInCollection<T>(
   supabase: SupabaseClient<Database>,
-  tableName: string,
-  parentColumn: string,
-  parentId: string,
-  orderColumn: string,
-  updatedEntity: T,
-  getId: (entity: T) => string,
-  getOrder: (entity: T) => number | undefined | null,
-  setOrder: (entity: T, newOrder: number) => T,
-  scope?: CollectionScope
+  config: CollectionConfig<T>,
+  updatedEntity: T
 ): Promise<T[]> {
-  const collectionQuery = supabase
-    .from(tableName)
-    .select('*')
-    .eq(parentColumn, parentId);
-
-  if (scope) {
-    collectionQuery.eq(scope.column, scope.id);
-  }
-
-  const { data: existingEntities, error: fetchError } = await collectionQuery
-    .order(orderColumn, { ascending: true });
-
-  if (fetchError) {
-    throw fetchError;
-  }
-
-  const typedExistingEntities = existingEntities as unknown as T[];
-  const normalizedEntities = insertAndNormalizeOrder(
-    typedExistingEntities || [],
-    updatedEntity,
-    getId,
-    getOrder,
-    setOrder
+  return replaceCollection(supabase, config, existing =>
+    insertAndNormalizeOrder(existing, updatedEntity, config.getId, config.getOrder, config.setOrder)
   );
-
-  const { data: result, error } = await supabase.rpc('replace_collection', {
-    p_table_name: tableName,
-    p_parent_column: parentColumn,
-    p_parent_id: parentId,
-    p_order_column: orderColumn,
-    p_records: normalizedEntities as Json,
-    ...(scope ? { p_scope_column: scope.column, p_scope_id: scope.id } : {})
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return (Array.isArray(result) ? result : [result]) as T[];
 }
 
 /**
- * Deletes an entity from a collection with normalized ordering.
+ * Deletes an entity from a collection, closing the gap it leaves in the ordering.
  *
- * This function handles deleting entities from collections while maintaining
- * proper ordering through client-side normalization and database-side transactional updates.
- *
- * @template T - The type of the entities being managed
- * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client
- * @param {string} tableName - The name of the database table
- * @param {string} parentColumn - The name of the foreign key column
- * @param {string} parentId - The ID of the parent record
- * @param {string} entityId - The ID of the entity to delete
- * @param {(entity: T) => string} getId - Function to extract the ID from an entity
- * @param {(entity: T) => number | undefined | null} getOrder - Function to extract the order index from an entity
- * @param {(entity: T, newOrder: number) => T} setOrder - Function to set a new order index on an entity
- * @param {CollectionScope} [scope] - Optional secondary filter for collections with a compound key
- * @returns {Promise<T[]>} A promise that resolves to the updated collection
- *
- * @example
- * ```typescript
- * const updatedDays = await deleteEntityFromCollection<PlanDayDto>(
- *   supabaseClient,
- *   'plan_days',
- *   'plan_id',
- *   planId,
- *   'order_index',
- *   dayId,
- *   (d) => d.id,
- *   (d) => d.order_index,
- *   (d, order) => ({ ...d, order_index: order })
- * );
- * ```
+ * @template T - The type of the entities being managed.
+ * @param {SupabaseClient<Database>} supabase - The authenticated Supabase client.
+ * @param {CollectionConfig<T>} config - The collection to delete from.
+ * @param {string} entityId - The ID of the entity to delete.
+ * @returns {Promise<T[]>} A promise that resolves to the updated collection.
  */
-export async function deleteEntityFromCollection<T>(
+export function deleteEntityFromCollection<T>(
   supabase: SupabaseClient<Database>,
-  tableName: string,
-  parentColumn: string,
-  parentId: string,
-  orderColumn: string,
-  entityId: string,
-  getId: (entity: T) => string,
-  getOrder: (entity: T) => number | undefined | null,
-  setOrder: (entity: T, newOrder: number) => T,
-  scope?: CollectionScope
+  config: CollectionConfig<T>,
+  entityId: string
 ): Promise<T[]> {
-  const collectionQuery = supabase
-    .from(tableName)
-    .select('*')
-    .eq(parentColumn, parentId);
-
-  if (scope) {
-    collectionQuery.eq(scope.column, scope.id);
-  }
-
-  const { data: existingEntities, error: fetchError } = await collectionQuery
-    .order(orderColumn, { ascending: true });
-
-  if (fetchError) {
-    throw fetchError;
-  }
-
-  const typedExistingEntities = existingEntities as unknown as T[];
-  const filteredEntities = (typedExistingEntities || []).filter(entity => getId(entity) !== entityId);
-
-  const normalizedEntities = insertAndNormalizeOrder(
-    filteredEntities,
-    null,
-    getId,
-    getOrder,
-    setOrder
+  return replaceCollection(supabase, config, existing =>
+    insertAndNormalizeOrder(
+      existing.filter(entity => config.getId(entity) !== entityId),
+      null,
+      config.getId,
+      config.getOrder,
+      config.setOrder
+    )
   );
-
-  const { data: result, error } = await supabase.rpc('replace_collection', {
-    p_table_name: tableName,
-    p_parent_column: parentColumn,
-    p_parent_id: parentId,
-    p_order_column: orderColumn,
-    p_records: normalizedEntities as Json,
-    ...(scope ? { p_scope_column: scope.column, p_scope_id: scope.id } : {})
-  });
-
-  if (error) {
-    throw error;
-  }
-
-  return (Array.isArray(result) ? result : [result]) as T[];
 }
