@@ -13,6 +13,11 @@ export default tseslint.config(
       ...angular.configs.tsRecommended,
       importPlugin.flatConfigs.recommended,
     ],
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
     processor: angular.processInlineTemplates,
     settings: {
       'import/resolver': {
@@ -45,6 +50,12 @@ export default tseslint.config(
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
+        },
+      ],
+      '@typescript-eslint/member-ordering': [
+        'error',
+        {
+          default: { memberTypes: ['public-method', 'protected-method', 'private-method'] },
         },
       ],
       'import/order': [
