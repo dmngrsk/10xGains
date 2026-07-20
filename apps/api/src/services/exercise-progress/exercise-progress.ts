@@ -25,6 +25,37 @@ export interface ExerciseProgressRow {
 }
 
 /**
+ * How far back progress reaches when the caller asks for no start date.
+ *
+ * Long enough to cover a year of training at a glance, which is more than any chart in the app
+ * shows by default.
+ */
+export const DEFAULT_PROGRESS_WINDOW_MONTHS = 12;
+
+/**
+ * Resolves the start of the window a progress query should cover.
+ *
+ * Without a floor this query reads every set of every completed session the user has ever
+ * recorded, and aggregates them in the API process. That cost grows with the age of the account
+ * for a chart that never plots most of it, so an unbounded request gets a default window rather
+ * than the user's whole history.
+ *
+ * @param {string | undefined} dateFrom - The start date the caller asked for, if any.
+ * @param {Date} now - The current instant, injected so the default is testable.
+ * @returns {string} The ISO start date to filter on.
+ */
+export function resolveProgressWindowStart(dateFrom: string | undefined, now: Date = new Date()): string {
+  if (dateFrom) {
+    return dateFrom;
+  }
+
+  const start = new Date(now);
+  start.setUTCMonth(start.getUTCMonth() - DEFAULT_PROGRESS_WINDOW_MONTHS);
+
+  return start.toISOString();
+}
+
+/**
  * Aggregates the sets of completed sessions into per-exercise progress series.
  *
  * For every (exercise, session) pair one point is produced, carrying:

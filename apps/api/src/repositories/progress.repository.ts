@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@txg/shared';
 import type { ExerciseProgressDto } from '@txg/shared';
-import { aggregateExerciseProgress } from '../services/exercise-progress/exercise-progress';
+import { aggregateExerciseProgress, resolveProgressWindowStart } from '../services/exercise-progress/exercise-progress';
 import type { ExerciseProgressRow } from '../services/exercise-progress/exercise-progress';
 
 export interface ExerciseProgressQueryOptions {
@@ -50,9 +50,9 @@ export class ProgressRepository {
       supabaseQuery = supabaseQuery.in('plan_exercise.exercise_id', options.exercise_ids);
     }
 
-    if (options.date_from) {
-      supabaseQuery = supabaseQuery.gte('session.session_date', options.date_from);
-    }
+    // Always bounded below, defaulting when the caller gives no start date - otherwise this reads
+    // every set of every completed session the account has ever recorded.
+    supabaseQuery = supabaseQuery.gte('session.session_date', resolveProgressWindowStart(options.date_from));
 
     if (options.date_to) {
       supabaseQuery = supabaseQuery.lte('session.session_date', options.date_to);

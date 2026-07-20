@@ -68,6 +68,10 @@ export class PlanRepository {
     // `optionalSort` has already validated both halves against this endpoint's whitelist.
     const [sortColumn, sortDirection] = options.sort.split('.');
 
+    // Progression rules are deliberately absent from the list. Nothing that renders a list of
+    // plans reads them - the cards show each day's exercises and their expected sets, and the
+    // editor fetches the plan it is opening through `findById`, which still returns the full tree.
+    // Sending a progression row per exercise per plan only made the payload bigger.
     const { data, count, error } = await this.supabase
       .from('plans')
       .select(`
@@ -80,9 +84,6 @@ export class PlanRepository {
               *
             )
           )
-        ),
-        progressions:plan_exercise_progressions (
-          *
         )
       `, { count: 'exact' })
       .eq('user_id', this.getUserId())

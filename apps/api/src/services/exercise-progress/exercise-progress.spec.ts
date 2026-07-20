@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateExerciseProgress } from './exercise-progress';
+import { DEFAULT_PROGRESS_WINDOW_MONTHS, aggregateExerciseProgress, resolveProgressWindowStart } from './exercise-progress';
 import type { ExerciseProgressRow } from './exercise-progress';
 
 const SQUAT_ID = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -174,5 +174,30 @@ describe('aggregateExerciseProgress', () => {
     const result = aggregateExerciseProgress(rows);
 
     expect(result[0].points.map(p => p.plan_id)).toEqual([PLAN_ID, otherPlanId]);
+  });
+});
+
+describe('resolveProgressWindowStart', () => {
+  const NOW = new Date('2026-07-20T12:00:00.000Z');
+
+  it('should use the start date the caller asked for', () => {
+    expect(resolveProgressWindowStart('2020-01-01T00:00:00.000Z', NOW)).toBe('2020-01-01T00:00:00.000Z');
+  });
+
+  it('should default to a bounded window rather than the whole training history', () => {
+    // Without a floor the query reads every set of every completed session ever recorded, and
+    // aggregates them in the API process - a cost that grows with the age of the account.
+    expect(resolveProgressWindowStart(undefined, NOW)).toBe('2025-07-20T12:00:00.000Z');
+  });
+
+  it('should place the default window exactly DEFAULT_PROGRESS_WINDOW_MONTHS back', () => {
+    const start = new Date(resolveProgressWindowStart(undefined, NOW));
+    const monthsBack = (NOW.getUTCFullYear() - start.getUTCFullYear()) * 12 + (NOW.getUTCMonth() - start.getUTCMonth());
+
+    expect(monthsBack).toBe(DEFAULT_PROGRESS_WINDOW_MONTHS);
+  });
+
+  it('should roll the year back correctly from early January', () => {
+    expect(resolveProgressWindowStart(undefined, new Date('2026-01-05T00:00:00.000Z'))).toBe('2025-01-05T00:00:00.000Z');
   });
 });
