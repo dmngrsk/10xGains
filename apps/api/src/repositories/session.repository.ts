@@ -24,6 +24,15 @@ import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCol
 import type { CollectionConfig } from '../utils/supabase';
 import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
 
+/**
+ * The statuses a session may be moved *out of*.
+ *
+ * COMPLETED and CANCELLED are terminal: a completed session has already applied its weight
+ * progressions, and a cancelled one was superseded by a newer session. Reopening either would
+ * put it back in a state the completion pipeline accepts.
+ */
+const TRANSITIONABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS'] as const satisfies readonly SessionDto['status'][];
+
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
   status?: SessionDto['status'][];
   date_from?: string;
@@ -276,20 +285,42 @@ export class SessionRepository {
    * @param {string} sessionId - The ID of the session to update.
    * @param {UpdateSessionCommand} command - The command with the updated data.
    * @returns {Promise<SessionDto | null>} A promise that resolves to the updated session or null if not found.
+   * @throws {ConflictError} If the command changes the status of a session that has already finished.
    */
   async update(sessionId: string, command: UpdateSessionCommand): Promise<SessionDto | null> {
     await this.verifySessionOwnership(sessionId);
 
-    const { data, error } = await this.supabase
+    let query = this.supabase
       .from('sessions')
       .update(command)
       .eq('id', sessionId)
-      .eq('user_id', this.getUserId())
-      .select()
-      .single();
+      .eq('user_id', this.getUserId());
+
+    // A status change is legal only out of a status that has not finished yet, and the predicate
+    // has to be part of the write: checking first and updating after leaves a window where a
+    // concurrent complete lands in between. The handler already refuses COMPLETED as a *target*,
+    // but without this a COMPLETED session could be moved back to IN_PROGRESS and completed
+    // again, applying its weight progressions and deloads a second time.
+    //
+    // Only a status change is restricted. Notes stay editable on a finished session, which is
+    // how the history page annotates past workouts.
+    if (command.status) {
+      query = query.in('status', TRANSITIONABLE_SESSION_STATUSES);
+    }
+
+    const { data, error } = await query.select().single();
 
     if (error) {
       if (error.code === 'PGRST116') {
+        // Ownership is already verified, so no matching row means the status predicate rejected
+        // the transition rather than the session being missing.
+        if (command.status) {
+          throw new ConflictError(
+            'Session status cannot be changed once the session has finished.',
+            'SESSION_NOT_TRANSITIONABLE',
+            'session_transition_error'
+          );
+        }
         return null;
       }
       throw error;

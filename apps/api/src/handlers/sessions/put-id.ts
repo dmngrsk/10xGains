@@ -14,8 +14,11 @@ const PATH_SCHEMA = z.object({
  *
  * COMPLETED is deliberately excluded. Completing a session is a pipeline - it calculates weight
  * progressions, skips the sets left pending, and stamps the session atomically - and none of that
- * runs on a plain PUT. Allowing it here would also let a COMPLETED session be moved back to
- * IN_PROGRESS and completed a second time, applying its progressions twice.
+ * runs on a plain PUT.
+ *
+ * This only constrains the status being moved *to*. The repository separately refuses to move a
+ * session out of a finished status, which is what stops a COMPLETED session being reopened as
+ * IN_PROGRESS and then completed a second time.
  */
 const UPDATABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS', 'CANCELLED'] as const satisfies readonly SessionStatus[];
 
