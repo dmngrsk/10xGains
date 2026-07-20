@@ -86,12 +86,12 @@ export class SessionRepository {
       supabaseQuery = supabaseQuery.eq('plan_id', options.plan_id);
     }
 
-    if (options.sort) {
-      const [field, direction] = options.sort.split('.');
-      supabaseQuery = supabaseQuery.order(field, { ascending: direction === 'asc' });
-    } else {
-      supabaseQuery = supabaseQuery.order('session_date', { ascending: false });
-    }
+    // `optionalSort` has already validated both halves against this endpoint's whitelist and
+    // applied its default, so there is no unsorted case to fall back on. The fallback that used to
+    // sit here defaulted to descending while the handler defaults to ascending, which made it look
+    // as though the two disagreed.
+    const [sortColumn, sortDirection] = options.sort.split('.');
+    supabaseQuery = supabaseQuery.order(sortColumn, { ascending: sortDirection === 'asc' });
 
     supabaseQuery = supabaseQuery
       .order('plan_exercise_id', { referencedTable: 'sets', ascending: true })
