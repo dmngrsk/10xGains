@@ -121,19 +121,6 @@ export class LongPressDirective implements OnDestroy {
         if (deltaX <= this.txgLongPressMovementThreshold && deltaY <= this.txgLongPressMovementThreshold) {
           this.txgClick.emit(event);
         }
-      } else {
-        // If initialX/Y is not set (should not happen if onPointerDown was called and not reset),
-        // or if we want to be lenient and consider it a tap anyway if no movement check was done.
-        // For safety, and to handle extremely short taps where pointermove might not fire,
-        // we can emit tap if not a long press.
-        // However, the previous delta check should cover most valid taps.
-        // This specific else branch might be redundant if initialX/Y are always set on pointerdown.
-        // For now, let's assume a tap if we got here without a long press and within bounds.
-        // This was: this.txgClick.emit(event);
-        // Re-evaluating: The outer `if (this.initialX !== undefined ...)` should handle all valid tap emission.
-        // An `else` here means `initialX` or `initialY` was undefined, which implies an inconsistent state or
-        // a press that started outside the element and ended inside, which this directive isn't designed for.
-        // For robustness, only emit if we have initial coordinates to compare against.
       }
     }
     this.resetState();
@@ -148,7 +135,11 @@ export class LongPressDirective implements OnDestroy {
     this.txgClick.emit(event);
   }
 
+  // `pointercancel` fires when the browser takes the pointer over - a scroll or pinch taking over
+  // the gesture, or the touch being interrupted - without any `pointerleave`, so it needs the same
+  // treatment or the press would stay armed after the gesture is gone.
   @HostListener('pointerleave')
+  @HostListener('pointercancel')
   onPointerLeave(): void {
     if (this.isPressing) {
       this.clearPressTimeout();

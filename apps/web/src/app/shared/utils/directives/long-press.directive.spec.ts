@@ -102,6 +102,10 @@ describe('LongPressDirective', () => {
     el.triggerEventHandler('pointerleave', createPointerEvent('pointerleave', 0, 0));
   }
 
+  function dispatchPointerCancel(el: DebugElement) {
+    el.triggerEventHandler('pointercancel', createPointerEvent('pointercancel', 0, 0));
+  }
+
   it('should create an instance', () => {
     const directive = directiveElement.injector.get(LongPressDirective);
     expect(directive).toBeTruthy();
@@ -235,6 +239,22 @@ describe('LongPressDirective', () => {
   });
 
   describe('Cancellation by Pointer Leave', () => {
+    it('should cancel long press and tap if the pointer is cancelled during press', () => {
+      // A scroll or pinch taking over the gesture fires pointercancel with no pointerleave, so
+      // without handling it the press stayed armed and fired after the gesture was already gone.
+      dispatchPointerDown(directiveElement, 10, 10);
+      vi.advanceTimersByTime(component.duration() / 2);
+      dispatchPointerCancel(directiveElement);
+      vi.advanceTimersByTime(component.duration());
+
+      expect(component.longPressEvent).toBeNull();
+      expect(component.clickEvent).toBeNull();
+
+      dispatchPointerUp(directiveElement, 10, 10);
+      expect(component.longPressEvent).toBeNull();
+      expect(component.clickEvent).toBeNull();
+    });
+
     it('should cancel long press and tap if pointer leaves during press', () => {
       dispatchPointerDown(directiveElement, 10, 10);
       vi.advanceTimersByTime(component.duration() / 2);
