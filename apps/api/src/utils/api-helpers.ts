@@ -70,6 +70,19 @@ export interface ErrorDetails {
  * @param {ErrorDetails} error - The error details object to log.
  */
 export function logError(error: ErrorDetails): void {
+  // An Error is unpacked into its useful parts; anything else is logged whole. Both are folded in
+  // with conditional spreads so the entry carries only the keys that actually apply, rather than
+  // being pre-declared with four undefined fields and patched afterwards.
+  const originalErrorFields = !error.originalError
+    ? {}
+    : error.originalError instanceof Error
+      ? {
+          errorName: error.originalError.name,
+          errorMessage: error.originalError.message,
+          stackTrace: error.originalError.stack,
+        }
+      : { originalError: error.originalError };
+
   const logEntry = {
     timestamp: new Date().toISOString(),
     level: 'error',
@@ -78,23 +91,8 @@ export function logError(error: ErrorDetails): void {
     ...(error.code && { code: error.code }),
     ...(error.context && { context: error.context }),
     ...(error.request && { request: error.request }),
-    errorName: undefined as string | undefined,
-    errorMessage: undefined as string | undefined,
-    stackTrace: undefined as string | undefined,
-    originalError: undefined as unknown | undefined,
+    ...originalErrorFields,
   };
-
-  if (error.originalError) {
-    // For original Error objects, extract useful properties
-    if (error.originalError instanceof Error) {
-      logEntry.errorName = error.originalError.name;
-      logEntry.errorMessage = error.originalError.message;
-      logEntry.stackTrace = error.originalError.stack;
-    } else {
-      // For non-Error objects, include the entire object
-      logEntry.originalError = error.originalError;
-    }
-  }
 
   // TODO: Add telemetry
   console.error(JSON.stringify(logEntry));
@@ -173,8 +171,8 @@ export function createSuccessData<T>(
 ): ApiSuccessResponse<T> {
   return {
     data,
-    totalCount: metadata?.totalCount ?? undefined,
-    message: metadata?.message ?? undefined,
+    ...(metadata?.totalCount !== undefined && { totalCount: metadata.totalCount }),
+    ...(metadata?.message !== undefined && { message: metadata.message }),
     timestamp: new Date().toISOString(),
   };
 }
