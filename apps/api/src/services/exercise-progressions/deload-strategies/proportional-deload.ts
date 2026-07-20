@@ -26,8 +26,17 @@ export function handleProportionalDeload(
   const deloadPercentage = progression.deload_percentage / 100;
   const targetUnroundedWeight = currentWeight * (1 - deloadPercentage);
 
-  // Round down to the nearest multiple of weight_increment
-  const newExpectedWeight = Math.floor(targetUnroundedWeight / progression.weight_increment) * progression.weight_increment;
+  // Round down to the nearest multiple of weight_increment, doing the division in integer space.
+  // Binary floating point cannot represent the fractional increments gyms actually use, so
+  // `target / increment` can land a hair below a whole number and `Math.floor` then drops an entire
+  // increment - 0.1 kg plates being the obvious case. Scaling by 1000 (a milligram-level precision
+  // no plate needs) makes both operands exact integers before the division.
+  const SCALE = 1000;
+  const scaledTarget = Math.round(targetUnroundedWeight * SCALE);
+  const scaledIncrement = Math.round(progression.weight_increment * SCALE);
+  // Multiplying back out reintroduces representation noise (0.7 becoming 0.7000000000000001), so
+  // the result is rounded to the precision the weight column stores anyway.
+  const newExpectedWeight = Math.round(Math.floor(scaledTarget / scaledIncrement) * scaledIncrement) / SCALE;
 
   // Ensure weight doesn't go below a minimum (e.g., 0)
   return { ...set, expected_weight: Math.max(0, newExpectedWeight) };
