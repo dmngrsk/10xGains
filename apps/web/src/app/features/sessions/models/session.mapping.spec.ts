@@ -202,12 +202,14 @@ describe('Session Mapping Functions', () => {
       expect(result.exercises).toHaveLength(0);
     });
 
-    it('should use current date for sessionDate if session_date is null', () => {
+    it('should leave sessionDate null when the session has no date', () => {
+      // A PENDING session has no session_date because training has not started. Substituting the
+      // current time made the card display "now" as though the session had happened then.
       const sessionWithoutDate = { ...mockSessionDto, session_date: null };
+
       const result = mapToSessionCardViewModel(sessionWithoutDate, mockPlanDto, mockAllExercises);
-      const now = new Date();
-      const diff = now.getTime() - (result.sessionDate?.getTime() || 0);
-      expect(diff).toBeLessThan(5000);
+
+      expect(result.sessionDate).toBeNull();
     });
 
     it('should map session notes onto the card view model', () => {

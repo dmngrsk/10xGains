@@ -20,7 +20,7 @@ export function mapToSessionCardViewModel(
           actualReps: dto.actual_reps,
           actualWeight: dto.actual_weight,
           status: dto.status as SessionSetStatus,
-          completedAt: dto.completed_at ? new Date(ensureUtc(dto.completed_at)) : null,
+          completedAt: toUtcDate(dto.completed_at),
         }));
         sessionExercises.push({
           name: exerciseDetail.name,
@@ -33,7 +33,7 @@ export function mapToSessionCardViewModel(
   return {
     id: session.id,
     title: planDay?.name || 'N/A',
-    sessionDate: new Date(ensureUtc(session.session_date)),
+    sessionDate: toUtcDate(session.session_date),
     status: session.status as SessionStatus,
     notes: session.notes ?? null,
     exercises: sessionExercises,
@@ -92,7 +92,7 @@ export function mapToSessionPageViewModel(
           expectedReps: correspondingPlannedSet?.expected_reps ?? actualSet.expected_reps ?? 0,
           actualReps: actualSet.actual_reps,
           weight: actualSet.actual_weight,
-          completedAt: actualSet.completed_at ? new Date(ensureUtc(actualSet.completed_at)) : null,
+          completedAt: toUtcDate(actualSet.completed_at),
         };
         return viewModelSet;
       })
@@ -115,7 +115,7 @@ export function mapToSessionPageViewModel(
       planId: currentSession.plan_id ?? undefined,
       dayName: planDay.name,
       planName: plan.name,
-      date: currentSession.session_date ? new Date(ensureUtc(currentSession.session_date)) : undefined,
+      date: toUtcDate(currentSession.session_date) ?? undefined,
       status: currentSession.status as SessionStatus,
       notes: currentSession.notes ?? null,
       planNotes: plan.notes ?? null
@@ -135,16 +135,25 @@ export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpected
     actualReps: setDto.actual_reps,
     weight: setDto.actual_weight,
     planExerciseId: setDto.plan_exercise_id,
-    completedAt: setDto.completed_at ? new Date(ensureUtc(setDto.completed_at)) : null,
+    completedAt: toUtcDate(setDto.completed_at),
   };
 }
 
-function ensureUtc(dateString: string | null | undefined): string {
+/**
+ * Parses a timestamp the API returned, treating a naive one as UTC.
+ *
+ * Returns null when there is no timestamp. A PENDING session has no `session_date` - training has
+ * not started - and substituting "now" for it, as this used to, displayed the current time as if it
+ * were the session's date. Callers render a placeholder for null instead.
+ */
+function toUtcDate(dateString: string | null | undefined): Date | null {
   if (!dateString) {
-    return new Date().toISOString();
+    return null;
   }
-  if (dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)) {
-    return dateString;
-  }
-  return dateString + 'Z';
+
+  const isoString = dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)
+    ? dateString
+    : dateString + 'Z';
+
+  return new Date(isoString);
 }
