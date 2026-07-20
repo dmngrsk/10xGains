@@ -4,7 +4,7 @@ import type {
   ProfileDto,
   UpsertProfileCommand
 } from '@txg/shared';
-import { ForbiddenError, NotFoundError } from '../utils/errors';
+import { NotFoundError } from '../utils/errors';
 
 export class ProfileRepository {
   constructor(
@@ -17,11 +17,14 @@ export class ProfileRepository {
    *
    * @param {string} userId - The ID of the user profile to find.
    * @returns {Promise<ProfileDto | null>} A promise that resolves to the user profile or null if not found.
-   * @throws {Error} If the user attempts to access another user's profile.
+   * @throws {NotFoundError} If the id is not the caller's own.
    */
   async findById(userId: string): Promise<ProfileDto | null> {
+    // 404, not 403. The caller's own id is the only one this endpoint accepts, so answering
+    // "forbidden" for any other confirms that the profile exists - exactly the disclosure the
+    // project's "404 for anything that is not yours" convention avoids everywhere else.
     if (userId !== this.getUserId()) {
-      throw new ForbiddenError('You can only access your own profile.', 'PROFILE_FORBIDDEN', 'profile_forbidden_error');
+      throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
 
     const { data, error } = await this.supabase
@@ -46,11 +49,13 @@ export class ProfileRepository {
    * @param {string} userId - The ID of the user profile to upsert.
    * @param {UpsertProfileCommand} command - The command with the profile data.
    * @returns {Promise<ProfileDto>} A promise that resolves to the created or updated user profile.
-   * @throws {Error} If the user attempts to modify another user's profile.
+   * @throws {NotFoundError} If the id is not the caller's own.
    */
   async upsert(userId: string, command: UpsertProfileCommand): Promise<ProfileDto> {
+    // 404 for the same reason as findById: a 403 here would distinguish an existing profile from
+    // an absent one for an id the caller may not read.
     if (userId !== this.getUserId()) {
-      throw new ForbiddenError('You can only update your own profile.', 'PROFILE_FORBIDDEN', 'profile_forbidden_error');
+      throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
 
     const { data: existingProfile, error: existingProfileError } = await this.supabase

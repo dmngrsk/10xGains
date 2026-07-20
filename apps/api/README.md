@@ -142,8 +142,7 @@ Retrieves the profile information for the authenticated user.
     ```
 -   **Responses (Error)**:
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
-    -   `403 Forbidden`: If the requested `{userId}` does not match the authenticated user's ID.
-    -   `404 Not Found`: If the user's profile is not found.
+    -   `404 Not Found`: If the user's profile is not found, or the requested `{userId}` is not the authenticated user's own. Both share one status so the response cannot be used to probe which profiles exist.
 
 #### PUT /api/profiles/{userId}
 
@@ -175,7 +174,7 @@ Creates or updates the profile information for the authenticated user (upsert be
 -   **Responses (Error)**:
     -   `400 Bad Request`: If the request body is invalid (e.g., missing both fields, invalid UUID format).
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
-    -   `403 Forbidden`: If the requested `{userId}` does not match the authenticated user's ID.
+    -   `404 Not Found`: If the requested `{userId}` is not the authenticated user's own, or the referenced `active_plan_id` does not belong to them.
     -   `500 Internal Server Error`: For other server-side issues during the upsert operation.
 
 ### Exercises API
