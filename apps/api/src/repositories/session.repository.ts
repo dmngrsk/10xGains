@@ -15,11 +15,11 @@ import { resolveExerciseProgressions } from '../services/exercise-progressions/e
 import { buildSessionSets, cancelOutstandingSessions, resolveNextPlanDayId } from '../services/session-creation/session-creation';
 import {
   assertSessionCompletable,
-  extractPlanProgressionContext,
+  extractPlanExercises,
   extractSessionSetContext,
   skipPendingSets
 } from '../services/session-completion/session-completion';
-import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
+import type { PlanDayWithExercisesRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase';
 import type { CollectionConfig } from '../utils/supabase';
 import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
@@ -377,11 +377,6 @@ export class SessionRepository {
           *,
           sets:plan_exercise_sets!inner (
             *
-          ),
-          global_exercises:exercises!exercise_id!inner (
-            progression:plan_exercise_progressions!exercise_id (
-              *
-            )
           )
         )
       `)
@@ -392,10 +387,23 @@ export class SessionRepository {
       throw planDataError;
     }
 
+    // Progressions are keyed by (plan_id, exercise_id) and must be read scoped to this session's
+    // plan. Reaching them through the global exercise instead returns a row per plan that trains
+    // it, and the caller keys them by exercise_id alone - an arbitrary plan's rules would win and
+    // then be written back onto that plan's row.
+    const { data: progressionData, error: progressionError } = await this.supabase
+      .from('plan_exercise_progressions')
+      .select('*')
+      .eq('plan_id', existingSession.plan_id)
+      .in('exercise_id', exerciseIds);
+
+    if (progressionError) {
+      throw progressionError;
+    }
+
     // Step 3: Recalculate weight and progression rules for each exercise
-    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(
-      planData as unknown as PlanDayWithProgressionsRow[]
-    );
+    const planExercises = extractPlanExercises(planData as unknown as PlanDayWithExercisesRow[]);
+    const planExerciseProgressions = progressionData ?? [];
 
     const { exerciseSetsToUpdate, exerciseProgressionsToUpdate } = resolveExerciseProgressions(
       sessionSets,

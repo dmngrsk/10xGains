@@ -302,4 +302,27 @@ describe('resolveExerciseProgressions', () => {
       expect(set.expected_weight).toBe(100);
     });
   });
+
+  it('should key progressions by exercise alone, so callers must pass only one plan\'s rules', () => {
+    // Progressions are unique per (plan_id, exercise_id), but this function maps them by
+    // exercise_id, so two plans' rules for the same exercise collide and the last one wins -
+    // applying the wrong increment and writing the result back onto the wrong plan's row.
+    // The caller guarantees the input is scoped to a single plan; this pins down why it must.
+    const planExercises: PlanExerciseDto[] = [
+      mockPlanExercise('tpe1', 'ex1', [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)]),
+    ];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 5)];
+
+    const thisPlan = { ...mockExerciseProgression('ex1', 2.5), id: 'prog-this', plan_id: 'tp1' };
+    const otherPlan = { ...mockExerciseProgression('ex1', 10), id: 'prog-other', plan_id: 'tp2' };
+
+    const scoped = resolveExerciseProgressions(sessionSets, planExercises, [thisPlan]);
+    const unscoped = resolveExerciseProgressions(sessionSets, planExercises, [thisPlan, otherPlan]);
+
+    expect(scoped.exerciseSetsToUpdate[0].expected_weight).toBe(102.5);
+    expect(scoped.exerciseProgressionsToUpdate[0].id).toBe('prog-this');
+
+    expect(unscoped.exerciseSetsToUpdate[0].expected_weight).toBe(110);
+    expect(unscoped.exerciseProgressionsToUpdate[0].id).toBe('prog-other');
+  });
 });

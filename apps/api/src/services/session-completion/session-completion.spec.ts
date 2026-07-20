@@ -1,12 +1,12 @@
-import type { PlanExerciseProgressionDto, SessionSetDto } from '@txg/shared';
+import type { SessionSetDto } from '@txg/shared';
 import { describe, it, expect } from 'vitest';
 import {
   assertSessionCompletable,
-  extractPlanProgressionContext,
+  extractPlanExercises,
   extractSessionSetContext,
   skipPendingSets
 } from './session-completion';
-import type { PlanDayWithProgressionsRow, SessionSetWithExerciseRow } from './session-completion';
+import type { PlanDayWithExercisesRow, SessionSetWithExerciseRow } from './session-completion';
 
 const SQUAT_ID = 'exercise-squat';
 const BENCH_ID = 'exercise-bench';
@@ -23,21 +23,6 @@ function makeSet(overrides: Partial<SessionSetDto> = {}): SessionSetDto {
     status: 'COMPLETED',
     completed_at: '2026-06-01T10:00:00.000Z',
     ...overrides,
-  };
-}
-
-function makeProgression(id: string, exerciseId: string): PlanExerciseProgressionDto {
-  return {
-    id,
-    plan_id: 'plan-1',
-    exercise_id: exerciseId,
-    weight_increment: 2.5,
-    failure_count_for_deload: 3,
-    deload_percentage: 10,
-    deload_strategy: 'PROPORTIONAL',
-    consecutive_failures: 0,
-    reference_set_index: null,
-    last_updated: '2026-06-01T10:00:00.000Z',
   };
 }
 
@@ -110,67 +95,45 @@ describe('extractSessionSetContext', () => {
   });
 });
 
-describe('extractPlanProgressionContext', () => {
-  it('should flatten the days into plan exercises, stripped of their embed', () => {
+describe('extractPlanExercises', () => {
+  it('should flatten the days into plan exercises', () => {
     const rows = [
       {
         exercises: [
-          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } },
+          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 },
         ],
       },
-    ] as unknown as PlanDayWithProgressionsRow[];
+    ] as unknown as PlanDayWithExercisesRow[];
 
-    const { planExercises } = extractPlanProgressionContext(rows);
-
-    expect(planExercises).toEqual([{ id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 }]);
-    expect(planExercises[0]).not.toHaveProperty('global_exercises');
+    expect(extractPlanExercises(rows)).toEqual([{ id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 }]);
   });
 
   it('should de-duplicate an exercise that the join repeats across days', () => {
-    const squat = { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } };
+    const squat = { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 };
     const rows = [
       { exercises: [squat] },
       { exercises: [squat] },
-    ] as unknown as PlanDayWithProgressionsRow[];
+    ] as unknown as PlanDayWithExercisesRow[];
 
-    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(rows);
-
-    expect(planExercises).toHaveLength(1);
-    expect(planExerciseProgressions).toHaveLength(1);
+    expect(extractPlanExercises(rows)).toHaveLength(1);
   });
 
-  it('should collect the progression rules, unique by id', () => {
+  it('should read an embed that arrives as a single object just like an array', () => {
     const rows = [
-      {
-        exercises: [
-          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: makeProgression('prog-1', SQUAT_ID) } },
-          { id: 'pe-2', plan_day_id: 'day-1', exercise_id: BENCH_ID, order_index: 2, global_exercises: { progression: [makeProgression('prog-2', BENCH_ID)] } },
-        ],
-      },
-    ] as unknown as PlanDayWithProgressionsRow[];
+      { exercises: { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1 } },
+    ] as unknown as PlanDayWithExercisesRow[];
 
-    const { planExerciseProgressions } = extractPlanProgressionContext(rows);
-
-    expect(planExerciseProgressions.map(p => p.id)).toEqual(['prog-1', 'prog-2']);
+    expect(extractPlanExercises(rows).map(e => e.id)).toEqual(['pe-1']);
   });
 
-  it('should tolerate an exercise that has no progression rule yet', () => {
-    const rows = [
-      {
-        exercises: [
-          { id: 'pe-1', plan_day_id: 'day-1', exercise_id: SQUAT_ID, order_index: 1, global_exercises: { progression: null } },
-        ],
-      },
-    ] as unknown as PlanDayWithProgressionsRow[];
+  it('should tolerate a day with no exercises', () => {
+    const rows = [{ exercises: null }] as unknown as PlanDayWithExercisesRow[];
 
-    const { planExercises, planExerciseProgressions } = extractPlanProgressionContext(rows);
-
-    expect(planExercises).toHaveLength(1);
-    expect(planExerciseProgressions).toEqual([]);
+    expect(extractPlanExercises(rows)).toEqual([]);
   });
 
   it('should return empty results for no rows', () => {
-    expect(extractPlanProgressionContext([])).toEqual({ planExercises: [], planExerciseProgressions: [] });
+    expect(extractPlanExercises([])).toEqual([]);
   });
 });
 
