@@ -111,9 +111,11 @@ export class SessionPageFacade {
         return EMPTY;
       })
     ).subscribe(updatedViewModel => {
-      if (updatedViewModel && typeof updatedViewModel.isLoading !== 'undefined') {
-        this.viewModel.set(updatedViewModel as SessionPageViewModel);
-        this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel as SessionPageViewModel));
+      // The map above returns null when it could not build a view model, having already reported
+      // that on the existing one, so a value here means the mapping succeeded.
+      if (updatedViewModel) {
+        this.viewModel.set(updatedViewModel);
+        this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel));
       }
     });
   }
