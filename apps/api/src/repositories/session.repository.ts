@@ -33,6 +33,16 @@ import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/error
  */
 const TRANSITIONABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS'] as const satisfies readonly SessionDto['status'][];
 
+/**
+ * How many times a session creation may be re-attempted after losing a race.
+ *
+ * Each attempt that loses has already been beaten by one that won, so the invariant holds either
+ * way; the retry exists so the loser still ends up with a session rather than an error. Two is
+ * enough for the realistic case of a double submit - beyond that, something is wrong that
+ * retrying will not fix.
+ */
+const CREATE_SESSION_ATTEMPTS = 2;
+
 export interface SessionQueryOptions extends PagingQueryOptions, SortingQueryOptions {
   status?: SessionDto['status'][];
   date_from?: string;
@@ -141,6 +151,34 @@ export class SessionRepository {
    * @returns {Promise<SessionDto>} A promise that resolves to the newly created session.
    */
   async create(command: CreateSessionCommand): Promise<SessionDto> {
+    // A create that lands concurrently for the same plan invalidates everything this one decided
+    // from its own read - which plan day comes next, which sessions to cancel - so `create_session`
+    // refuses the write instead of applying stale decisions. Retrying re-reads the world the winner
+    // left behind and produces what the two calls would have produced had they arrived in sequence:
+    // the second cancels the first's session and opens its own.
+    for (let attempt = 1; attempt <= CREATE_SESSION_ATTEMPTS; attempt++) {
+      try {
+        return await this.attemptCreate(command);
+      } catch (error) {
+        const isLastAttempt = attempt === CREATE_SESSION_ATTEMPTS;
+        if (isLastAttempt || !(error instanceof Error) || !error.message.includes('SESSION_CREATE_CONFLICT')) {
+          throw error;
+        }
+      }
+    }
+
+    // Unreachable: the loop either returns or rethrows on its final attempt.
+    throw new Error('Failed to create a training session.');
+  }
+
+  /**
+   * Performs one attempt at creating a session.
+   *
+   * @param {CreateSessionCommand} command - The command containing the details for the new session.
+   * @returns {Promise<SessionDto>} A promise that resolves to the newly created session.
+   * @throws {Error} Carrying SESSION_CREATE_CONFLICT if a concurrent create invalidated this one.
+   */
+  private async attemptCreate(command: CreateSessionCommand): Promise<SessionDto> {
     const userId = this.getUserId();
 
     // Step 1: Fetch the plan and its days.
@@ -252,12 +290,18 @@ export class SessionRepository {
       }
     ];
 
-    const { error: batchError } = await this.supabase.rpc('replace_collections_batch', {
+    // Applied through `create_session` rather than the batch RPC directly: it serialises on the
+    // user and plan, and re-checks that the outstanding sessions read above are still the whole
+    // set. Anything else means a concurrent create got there first and the day chosen and the
+    // cancellations built here no longer describe reality.
+    const { error: batchError } = await this.supabase.rpc('create_session', {
+      p_plan_id: command.plan_id as string,
+      p_outstanding_session_ids: (outstandingSessions ?? []).map(session => session.id),
       p_operations: batchOperations.filter(op => op.records.length > 0) as Json
     });
 
     if (batchError) {
-      throw batchError;
+      throw new Error(batchError.message);
     }
 
     const { data: createdSession, error: fetchError } = await this.supabase

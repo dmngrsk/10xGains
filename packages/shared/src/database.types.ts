@@ -399,6 +399,14 @@ export interface Database {
         }
         Returns: undefined
       }
+      create_session: {
+        Args: {
+          p_plan_id: string
+          p_outstanding_session_ids: string[]
+          p_operations: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
