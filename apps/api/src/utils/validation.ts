@@ -82,6 +82,9 @@ export function optionalSort(
   );
 }
 
+/** A date-only query value, with no time component. */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
 /**
  * An optional query parameter holding an ISO 8601 datetime.
  *
@@ -90,15 +93,28 @@ export function optionalSort(
  * so that Zod rejects it (400 Bad Request); calling `toISOString()` on an Invalid Date would
  * instead throw a RangeError straight out of `safeParse`, surfacing as a 500.
  *
+ * Which end of the day a date-only value widens to matters for range filters. `2026-04-13`
+ * naturally reads as midnight, which is right for an inclusive lower bound but wrong for an upper
+ * one: as `lte midnight` it excluded everything that happened *during* the named day, so asking for
+ * sessions up to the 13th returned nothing from the 13th. Pass `'end'` for upper bounds so the
+ * named day is included, as a reader of the query would expect.
+ *
+ * @param {'start' | 'end'} [boundary] - Which end of the day a date-only value widens to.
  * @returns A schema accepting an optional ISO datetime string.
  */
-export function optionalIsoDate() {
+export function optionalIsoDate(boundary: 'start' | 'end' = 'start') {
   return z.preprocess((val) => {
     if (val === undefined || val === null || val === '') {
       return undefined;
     }
-    const date = new Date(String(val));
-    return isNaN(date.getTime()) ? String(val) : date.toISOString();
+
+    const raw = String(val);
+    if (boundary === 'end' && DATE_ONLY_PATTERN.test(raw)) {
+      return `${raw}T23:59:59.999Z`;
+    }
+
+    const date = new Date(raw);
+    return isNaN(date.getTime()) ? raw : date.toISOString();
   }, z.string().datetime().optional());
 }
 

@@ -11,7 +11,7 @@ const QUERY_SCHEMA = withCoherentDateRange(z.object({
   sort: optionalSort('session_date', 'asc', ['status']),
   status: optionalCsvList(z.enum(SESSION_STATUSES)),
   date_from: optionalIsoDate(),
-  date_to: optionalIsoDate(),
+  date_to: optionalIsoDate('end'),
   plan_id: z.string().uuid().optional(),
 }));
 

@@ -127,6 +127,30 @@ describe('optionalIsoDate', () => {
     expect(() => { result = schema.safeParse({ date: value }); }).not.toThrow();
     expect(result!.success).toBe(false);
   });
+
+  describe('as an upper bound', () => {
+    const endSchema = z.object({ date: optionalIsoDate('end') });
+
+    it('should widen a date-only value to the end of that day', () => {
+      // As `lte midnight`, `date_to=2026-04-13` excluded everything that happened during the 13th,
+      // so a range ending on a day returned nothing from that day.
+      const result = endSchema.safeParse({ date: '2026-04-13' });
+
+      expect(result.success).toBe(true);
+      expect(result.data!.date).toBe('2026-04-13T23:59:59.999Z');
+    });
+
+    it('should leave an explicit datetime alone', () => {
+      const result = endSchema.safeParse({ date: '2026-04-13T08:30:00.000Z' });
+
+      expect(result.success).toBe(true);
+      expect(result.data!.date).toBe('2026-04-13T08:30:00.000Z');
+    });
+
+    it('should still reject an unparseable value', () => {
+      expect(endSchema.safeParse({ date: 'not-a-date' }).success).toBe(false);
+    });
+  });
 });
 
 describe('optionalCsvList', () => {
