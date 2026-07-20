@@ -366,17 +366,20 @@ export interface Database {
     }
     Views: Record<string, never>
     Functions: {
-      replace_collection: {
+      complete_session: {
         Args: {
-          p_table_name: string
-          p_parent_column: string
-          p_parent_id: string
-          p_order_column: string
-          p_records: Json
-          p_scope_column?: string
-          p_scope_id?: string
+          p_operations: Json
+          p_session_id: string
         }
-        Returns: Json
+        Returns: undefined
+      }
+      create_session: {
+        Args: {
+          p_operations: Json
+          p_outstanding_session_ids: string[]
+          p_plan_id: string
+        }
+        Returns: undefined
       }
       patch_session_set: {
         Args: {
@@ -386,23 +389,20 @@ export interface Database {
         }
         Returns: Json
       }
+      replace_collection: {
+        Args: {
+          p_order_column: string
+          p_parent_column: string
+          p_parent_id: string
+          p_records: Json
+          p_scope_column?: string
+          p_scope_id?: string
+          p_table_name: string
+        }
+        Returns: Json
+      }
       replace_collections_batch: {
         Args: {
-          p_operations: Json
-        }
-        Returns: undefined
-      }
-      complete_session: {
-        Args: {
-          p_session_id: string
-          p_operations: Json
-        }
-        Returns: undefined
-      }
-      create_session: {
-        Args: {
-          p_plan_id: string
-          p_outstanding_session_ids: string[]
           p_operations: Json
         }
         Returns: undefined
