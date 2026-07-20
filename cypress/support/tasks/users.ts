@@ -6,6 +6,8 @@ import { supabase, supabaseUrl, supabasePublishableKey, supabaseSecretKey } from
 const CANARY_AUTO_CREATE_ENVIRONMENTS = ['staging', 'development'];
 const CANARY_PASSWORD_PLACEHOLDER = '<canary user password>';
 let canaryScaffoldVerified = false;
+/** Cached so the short-circuit above can still report which user the canary run is using. */
+let canaryUserId: string | null = null;
 
 export const usersTasks = {
   async 'users:create'({ prefix, scaffold = false, userMetadata }: { prefix: string; scaffold?: boolean; userMetadata?: Record<string, unknown> }): Promise<{ userId: string; email: string; password: string }> {
@@ -54,9 +56,9 @@ export const usersTasks = {
     return null;
   },
 
-  async 'users:ensureCanaryScaffolded'({ email, password }: { email: string; password: string }): Promise<{ scaffolded: boolean }> {
-    if (canaryScaffoldVerified) {
-      return { scaffolded: false };
+  async 'users:ensureCanaryScaffolded'({ email, password }: { email: string; password: string }): Promise<{ scaffolded: boolean; userId: string }> {
+    if (canaryScaffoldVerified && canaryUserId) {
+      return { scaffolded: false, userId: canaryUserId };
     }
 
     if (!supabaseUrl || !supabasePublishableKey) {
@@ -115,7 +117,8 @@ export const usersTasks = {
 
     if (hasTestData) {
       canaryScaffoldVerified = true;
-      return { scaffolded: false };
+      canaryUserId = userId;
+      return { scaffolded: false, userId };
     }
 
     if (!supabase) {
@@ -134,6 +137,7 @@ export const usersTasks = {
     }
 
     canaryScaffoldVerified = true;
-    return { scaffolded: true };
+    canaryUserId = userId;
+    return { scaffolded: true, userId };
   }
 };

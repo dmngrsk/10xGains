@@ -150,6 +150,46 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
+    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-11'] }, () => {
+      // Session sets are grouped by plan_exercise_id, which every session trained from the same
+      // plan day shares. Editing a set used to pull in the sets of previous sessions of that day,
+      // renumber the merged list and write it back - silently rewriting, and deleting, history.
+      // The rotation is A -> B -> A, so completing two sessions brings Workout A round again with
+      // the very same plan exercises as the first.
+      const completeCurrentSession = () => {
+        cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click());
+        cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
+        cy.getBySel(dataCy.sessions.completeButton).click();
+        cy.url().should('include', '/home');
+      };
+
+      completeCurrentSession();                                             // Workout A, now history
+      cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
+      completeCurrentSession();                                             // Workout B
+      cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Workout A');
+
+      cy.get('@currentUserId').then((userId) => {
+        cy.task<unknown[][]>('sessions:getCompletedWithSets', { userId }).then((before) => {
+          // The canary user accumulates history across runs, so the count is not fixed - only that
+          // there *is* history, which is what the edit below must leave alone.
+          expect(before, 'the two sessions just completed are recorded').to.have.length.greaterThan(1);
+
+          // Edit a set in the third session, which shares its plan exercises with the first.
+          cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
+          cy.getBySel(dataCy.sessions.set.bubble).first().longPress();
+          cy.getBySel(dataCy.sessions.dialogs.sets.repsInput).clear().type('9');
+          cy.getBySel(dataCy.sessions.dialogs.sets.saveButton).click();
+          cy.getBySel(dataCy.sessions.dialogs.sets.content).should('not.exist');
+          cy.getBySel(dataCy.sessions.set.bubbleText).first().should('contain.text', '9');
+
+          cy.task<unknown[][]>('sessions:getCompletedWithSets', { userId }).then((after) => {
+            expect(after, 'no completed session was deleted').to.have.length(before.length);
+            expect(after, 'recorded history is byte-for-byte unchanged').to.deep.equal(before);
+          });
+        });
+      });
+    });
+
     it('allows a user to complete a session', { tags: ['SESS-07'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
