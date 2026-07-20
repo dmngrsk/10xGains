@@ -1,4 +1,5 @@
 import { PlanDto, PlanDayDto, PlanExerciseDto, PlanExerciseSetDto, ExerciseDto, ProfileDto, PlanExerciseProgressionDto } from '@txg/shared';
+import { toUtcDate } from '@shared/utils/dates/utc-date';
 import { PlanViewModel, PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, PlanExerciseProgressionViewModel } from './plan.viewmodel';
 
 export function mapToPlanViewModel(
@@ -60,7 +61,7 @@ export function mapToPlanViewModel(
       deloadStrategy: progressionDto.deload_strategy ?? null,
       consecutiveFailures: progressionDto.consecutive_failures ?? null,
       referenceSetIndex: progressionDto.reference_set_index ?? null,
-      lastUpdated: progressionDto.last_updated ? new Date(progressionDto.last_updated) : null,
+      lastUpdated: toUtcDate(progressionDto.last_updated),
     };
   });
 
@@ -70,7 +71,7 @@ export function mapToPlanViewModel(
     name: dto.name,
     description: dto.description,
     notes: dto.notes ?? null,
-    createdAt: dto.created_at ? new Date(dto.created_at) : null,
+    createdAt: toUtcDate(dto.created_at),
     isActive: profile ? dto.id === profile.active_plan_id : false,
     days: trainingDays.sort((a,b) => a.orderIndex - b.orderIndex),
     progressions,

@@ -19,6 +19,7 @@ import {
 import { startOfDay } from 'date-fns';
 import { BaseChartDirective, provideCharts } from 'ng2-charts';
 import { ExerciseSeriesViewModel } from '@features/progress/models/progress-page.viewmodel';
+import { toUtcDate } from '@shared/utils/dates/utc-date';
 
 const FALLBACK_SERIES_COLOR = '#49454f';
 
@@ -91,7 +92,7 @@ export class ProgressChartComponent implements OnChanges {
         return {
           label: s.exerciseName,
           data: s.points.map(p => ({
-            x: startOfDay(new Date(p.date)).getTime(),
+            x: startOfDay(toUtcDate(p.date)!).getTime(),
             y: p.weight,
             repsLabel: p.repsLabel,
             planName: p.planName,

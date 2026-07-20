@@ -1,4 +1,5 @@
 import { ExerciseDto, PlanDto, PlanExerciseSetDto, SessionDto, SessionSetDto, SessionStatus, SessionSetStatus } from '@txg/shared';
+import { toUtcDate } from '@shared/utils/dates/utc-date';
 import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from "./session-card.viewmodel";
 import { SessionPageViewModel, SessionExerciseViewModel, SessionSetViewModel } from "./session-page.viewmodel";
 
@@ -137,23 +138,4 @@ export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpected
     planExerciseId: setDto.plan_exercise_id,
     completedAt: toUtcDate(setDto.completed_at),
   };
-}
-
-/**
- * Parses a timestamp the API returned, treating a naive one as UTC.
- *
- * Returns null when there is no timestamp. A PENDING session has no `session_date` - training has
- * not started - and substituting "now" for it, as this used to, displayed the current time as if it
- * were the session's date. Callers render a placeholder for null instead.
- */
-function toUtcDate(dateString: string | null | undefined): Date | null {
-  if (!dateString) {
-    return null;
-  }
-
-  const isoString = dateString.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(dateString)
-    ? dateString
-    : dateString + 'Z';
-
-  return new Date(isoString);
 }
