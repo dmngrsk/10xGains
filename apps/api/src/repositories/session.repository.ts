@@ -155,21 +155,42 @@ export class SessionRepository {
       throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
     }
 
-    // Step 2: Fetch existing sessions to determine next day
-    const { data: sessions, error: sessionsError } = await this.supabase
+    // Step 2: Fetch the sessions that matter, in two queries with different needs.
+    //
+    // Outstanding sessions are fetched without a limit: every one of them has to be cancelled to
+    // preserve the "only one open session" invariant, and they cannot be ordered by session_date
+    // because PENDING sessions have none. A single `.limit(10)` ordered by session_date served both
+    // purposes before, which let outstanding sessions past the tenth row escape cancellation
+    // entirely - the query meant to maintain the invariant could silently break it.
+    const { data: outstandingSessions, error: outstandingError } = await this.supabase
       .from('sessions')
       .select('*')
       .eq('user_id', userId)
       .eq('plan_id', command.plan_id as string)
-      .in('status', ['COMPLETED', 'PENDING', 'IN_PROGRESS'])
-      .order('session_date', { ascending: false })
-      .limit(10);
+      .in('status', ['PENDING', 'IN_PROGRESS']);
 
-    if (sessionsError) {
-      throw sessionsError;
+    if (outstandingError) {
+      throw outstandingError;
     }
 
-    const currentDayId = resolveNextPlanDayId(plan.days, sessions!, command.plan_day_id);
+    // Only the most recent completed session decides which day comes next.
+    const { data: lastCompletedSessions, error: completedError } = await this.supabase
+      .from('sessions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('plan_id', command.plan_id as string)
+      .eq('status', 'COMPLETED')
+      .not('session_date', 'is', null)
+      .order('session_date', { ascending: false })
+      .limit(1);
+
+    if (completedError) {
+      throw completedError;
+    }
+
+    const sessions = [...(outstandingSessions ?? []), ...(lastCompletedSessions ?? [])];
+
+    const currentDayId = resolveNextPlanDayId(plan.days, sessions, command.plan_day_id);
 
     const currentDay = plan.days.find(d => d.id === currentDayId);
     if (!currentDay) {
@@ -179,7 +200,7 @@ export class SessionRepository {
     // Step 3: Build records to upsert
     const newSessionId = crypto.randomUUID();
     const recordsToUpsert: SessionDto[] = [
-      ...cancelOutstandingSessions(sessions!),
+      ...cancelOutstandingSessions(outstandingSessions ?? []),
       {
         id: newSessionId,
         user_id: userId,
