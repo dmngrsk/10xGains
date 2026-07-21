@@ -1,4 +1,5 @@
-import type { PlanExerciseDto, PlanExerciseProgressionDto, SessionDto, SessionSetDto } from '@txg/shared';
+import type { PlanExerciseDto, SessionDto, SessionSetDto } from '@txg/shared';
+import { ConflictError, DataIntegrityError } from '../../utils/errors';
 
 /**
  * PostgREST returns an embedded relation as an object for a to-one join and as an array
@@ -25,17 +26,9 @@ export type SessionSetWithExerciseRow = SessionSetDto & {
   plan_exercises: PlanExerciseJoin | PlanExerciseJoin[] | null;
 };
 
-interface ProgressionJoin {
-  progression: PlanExerciseProgressionDto | PlanExerciseProgressionDto[] | null;
-}
-
-type PlanExerciseWithProgressionRow = PlanExerciseDto & {
-  global_exercises: ProgressionJoin | ProgressionJoin[] | null;
-};
-
-/** A plan day joined with its exercises and their progression rules. */
-export interface PlanDayWithProgressionsRow {
-  exercises: PlanExerciseWithProgressionRow | PlanExerciseWithProgressionRow[] | null;
+/** A plan day joined with its exercises and their expected sets. */
+export interface PlanDayWithExercisesRow {
+  exercises: PlanExerciseDto | PlanExerciseDto[] | null;
 }
 
 /**
@@ -46,11 +39,11 @@ export interface PlanDayWithProgressionsRow {
  */
 export function assertSessionCompletable(session: Pick<SessionDto, 'status' | 'plan_id'>): void {
   if (session.status !== 'IN_PROGRESS') {
-    throw new Error(`Session cannot be completed. Current status: ${session.status}. Expected: IN_PROGRESS.`);
+    throw new ConflictError(`Session cannot be completed. Current status: ${session.status}. Expected: IN_PROGRESS.`, 'SESSION_NOT_COMPLETABLE', 'session_completion_error');
   }
 
   if (!session.plan_id) {
-    throw new Error('Plan ID missing from the session. Cannot calculate progressions.');
+    throw new DataIntegrityError('Plan ID missing from the session. Cannot calculate progressions.', 'PLAN_MISSING', 'plan_missing_error');
   }
 }
 
@@ -75,28 +68,19 @@ export function extractSessionSetContext(rows: SessionSetWithExerciseRow[]): { s
 }
 
 /**
- * Flattens the plan days into the exercises and progression rules that
- * `resolveExerciseProgressions` needs, de-duplicating entries that the join repeats
- * because the same exercise can appear on several days of a plan.
+ * Flattens the plan days into the exercises `resolveExerciseProgressions` needs,
+ * de-duplicating entries that the join repeats because the same exercise can appear on
+ * several days of a plan.
  *
- * @param {PlanDayWithProgressionsRow[]} rows - The joined plan day rows.
- * @returns The plan's exercises and their progression rules, each unique by id.
+ * @param {PlanDayWithExercisesRow[]} rows - The joined plan day rows.
+ * @returns {PlanExerciseDto[]} The plan's exercises, each unique by id.
  */
-export function extractPlanProgressionContext(rows: PlanDayWithProgressionsRow[]): { planExercises: PlanExerciseDto[]; planExerciseProgressions: PlanExerciseProgressionDto[] } {
+export function extractPlanExercises(rows: PlanDayWithExercisesRow[]): PlanExerciseDto[] {
   const exerciseRows = rows.flatMap(row => toArray(row.exercises));
 
-  const planExercises = [...new Map(
-    exerciseRows.map(({ global_exercises: _globalExercises, ...planExercise }) => [planExercise.id, planExercise as PlanExerciseDto])
+  return [...new Map(
+    exerciseRows.map(planExercise => [planExercise.id, planExercise])
   ).values()];
-
-  const planExerciseProgressions = [...new Map(
-    exerciseRows
-      .flatMap(planExercise => toArray(planExercise.global_exercises))
-      .flatMap(globalExercise => toArray(globalExercise.progression))
-      .map(progression => [progression.id, progression])
-  ).values()];
-
-  return { planExercises, planExerciseProgressions };
 }
 
 /**

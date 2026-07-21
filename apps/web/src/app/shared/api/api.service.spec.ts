@@ -121,20 +121,22 @@ describe('ApiService', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/plans`);
   });
 
-  it('should resolve 204 responses as { data: null, error: null } without parsing the body', async () => {
+  it('should resolve 204 responses as empty data without parsing the body', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
     const result = await firstValueFrom(service.delete('/plans/some-id/days/day-id'));
 
-    expect(result).toEqual({ data: null, error: null });
+    expect(result).toEqual({ data: null, error: null, status: 204 });
   });
 
-  it('should resolve 404 responses as { data: null, error: null }', async () => {
+  it('should resolve 404 responses as empty data and report the status', async () => {
     fetchMock.mockResolvedValue(mockJsonResponse(404, { error: 'Not found', status: 404 }));
 
     const result = await firstValueFrom(service.get('/plans/missing-id'));
 
-    expect(result).toEqual({ data: null, error: null });
+    // The status lets call sites distinguish a missing resource from an empty body; without it a
+    // 404 is indistinguishable from success and silently flows into optimistic-update handlers.
+    expect(result).toEqual({ data: null, error: null, status: 404 });
   });
 
   it('should throw the envelope error message on non-2xx responses', async () => {
@@ -153,5 +155,63 @@ describe('ApiService', () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
     await expect(firstValueFrom(service.get('/plans'))).rejects.toThrow('Failed to fetch');
+  });
+
+  describe('getAll', () => {
+    const page = (items: unknown[], totalCount: number) =>
+      mockJsonResponse(200, { data: items, totalCount });
+
+    it('should follow pages until totalCount is exhausted', async () => {
+      const firstPage = Array.from({ length: 100 }, (_, i) => ({ id: `${i}` }));
+      const secondPage = Array.from({ length: 20 }, (_, i) => ({ id: `${100 + i}` }));
+      fetchMock
+        .mockResolvedValueOnce(page(firstPage, 120))
+        .mockResolvedValueOnce(page(secondPage, 120));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/exercises?limit=100&offset=0`);
+      expect(fetchMock.mock.calls[1][0]).toBe(`${API_URL}/api/exercises?limit=100&offset=100`);
+      expect(result.data).toHaveLength(120);
+      expect(result.totalCount).toBe(120);
+    });
+
+    it('should issue a single request when the first page covers the collection', async () => {
+      fetchMock.mockResolvedValue(page([{ id: '1' }, { id: '2' }], 2));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.data).toEqual([{ id: '1' }, { id: '2' }]);
+    });
+
+    it('should append page params to a URL that already has a query string', async () => {
+      fetchMock.mockResolvedValue(page([], 0));
+
+      await firstValueFrom(service.getAll('/sessions?status=COMPLETED'));
+
+      expect(fetchMock.mock.calls[0][0]).toBe(`${API_URL}/api/sessions?status=COMPLETED&limit=100&offset=0`);
+    });
+
+    it('should stop on an empty page even if totalCount overstates the collection', async () => {
+      fetchMock
+        .mockResolvedValueOnce(page([{ id: '1' }], 999))
+        .mockResolvedValueOnce(page([], 999));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.data).toEqual([{ id: '1' }]);
+    });
+
+    it('should treat a response without totalCount as a complete collection', async () => {
+      fetchMock.mockResolvedValue(mockJsonResponse(200, { data: [{ id: '1' }] }));
+
+      const result = await firstValueFrom(service.getAll<{ id: string }>('/exercises'));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(result.data).toEqual([{ id: '1' }]);
+    });
   });
 });

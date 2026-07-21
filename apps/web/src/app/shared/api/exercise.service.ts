@@ -16,11 +16,12 @@ export class ExerciseService {
 
   /**
    * Retrieves all exercises from the database.
+   *
    * @returns An Observable emitting a `ExerciseServiceResponse` containing an array of `ExerciseDto`.
    */
   public getExercises(): Observable<ExerciseServiceResponse<ExerciseDto[]>> {
     const url = '/exercises';
-    return this.apiService.get<ExerciseDto[]>(url);
+    return this.apiService.getAll<ExerciseDto>(url);
   }
 
   /**

@@ -9,7 +9,7 @@ const QUERY_SCHEMA = withCoherentDateRange(z.object({
   plan_id: z.string().uuid().optional(),
   exercise_ids: optionalCsvList(z.string().uuid()),
   date_from: optionalIsoDate(),
-  date_to: optionalIsoDate(),
+  date_to: optionalIsoDate('end'),
 }));
 
 export async function handleGetExerciseProgress(c: Context<AppContext>) {
@@ -30,6 +30,6 @@ export async function handleGetExerciseProgress(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to fetch exercise progress';
-    return handleRepositoryError(c, e as Error, progressRepository.handleProgressError, handleGetExerciseProgress.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetExerciseProgress.name, fallbackMessage);
   }
 }

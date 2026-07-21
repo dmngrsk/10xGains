@@ -23,6 +23,6 @@ export async function handleGetSessionSets(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to fetch session sets';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetSessionSets.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetSessionSets.name, fallbackMessage);
   }
 }

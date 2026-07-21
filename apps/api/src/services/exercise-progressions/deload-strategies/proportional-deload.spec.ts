@@ -97,4 +97,20 @@ describe('handleProportionalDeload', () => {
     const newSet = handleProportionalDeload(set, progression);
     expect(newSet.expected_weight).toBe(0);
   });
+
+  it('should not lose a whole increment to floating-point error on fractional increments', () => {
+    // 2 kg at 5% is exactly 1.9, but `1.9 / 0.1` evaluates just below 19 in binary floating point,
+    // so flooring dropped a full 0.1 increment and returned 1.8.
+    const set = { ...baseSet, expected_weight: 2 };
+    const progression = { ...baseProgression, deload_percentage: 5, weight_increment: 0.1 };
+
+    expect(handleProportionalDeload(set, progression).expected_weight).toBe(1.9);
+  });
+
+  it('should return a weight free of floating-point representation noise', () => {
+    const set = { ...baseSet, expected_weight: 1 };
+    const progression = { ...baseProgression, deload_percentage: 30, weight_increment: 0.1 };
+
+    expect(handleProportionalDeload(set, progression).expected_weight).toBe(0.7);
+  });
 });

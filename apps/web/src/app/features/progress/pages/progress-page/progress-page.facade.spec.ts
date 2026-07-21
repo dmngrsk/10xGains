@@ -42,7 +42,7 @@ describe('ProgressPageFacade', () => {
         { provide: ProgressService, useValue: { getExerciseProgress: getExerciseProgressMock } },
         { provide: PlanService, useValue: { getPlans: () => of({ data: PLANS, error: null }) } },
         { provide: ProfileService, useValue: { getProfile: getProfileMock } },
-        { provide: AuthService, useValue: { currentUser: () => user } },
+        { provide: AuthService, useValue: { currentUser: () => user, currentUser$: of(user) } },
       ],
     });
     facade = TestBed.inject(ProgressPageFacade);

@@ -17,12 +17,14 @@ describe('CallbackComponent', () => {
   let snackBarOpenMock: ReturnType<typeof vi.fn>;
   let getProfileMock: ReturnType<typeof vi.fn>;
   let upsertProfileMock: ReturnType<typeof vi.fn>;
+  let createDefaultProfileMock: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     navigateMock = vi.fn();
     snackBarOpenMock = vi.fn();
     getProfileMock = vi.fn();
     upsertProfileMock = vi.fn();
+    createDefaultProfileMock = vi.fn().mockReturnValue(of({ data: null, error: null }));
     authenticatedResponse = { isAuthenticated: true, userId: USER_ID };
     currentUserValue = { user_metadata: {} };
   });
@@ -35,7 +37,7 @@ describe('CallbackComponent', () => {
         { provide: Router, useValue: { navigate: navigateMock } },
         { provide: MatSnackBar, useValue: { open: snackBarOpenMock } },
         { provide: AuthService, useValue: { isAuthenticated: () => of(authenticatedResponse), currentUser$: of(currentUserValue) } },
-        { provide: ProfileService, useValue: { getProfile: getProfileMock, upsertProfile: upsertProfileMock } },
+        { provide: ProfileService, useValue: { getProfile: getProfileMock, upsertProfile: upsertProfileMock, createDefaultProfile: createDefaultProfileMock } },
       ]
     });
 
@@ -120,6 +122,36 @@ describe('CallbackComponent', () => {
       fixture.detectChanges();
 
       expect(snackBarOpenMock).toHaveBeenCalledWith('Google sign-in was not completed. Please try again.', 'Close', { duration: 5000 });
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
+    });
+  });
+
+  describe('type=register', () => {
+    it('should create the default profile for the verified user', () => {
+      createComponent('register').detectChanges();
+
+      expect(createDefaultProfileMock).toHaveBeenCalledWith(USER_ID);
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
+    });
+
+    it('should report an expired link instead of calling the API without a user id', () => {
+      // An expired or reused verification link arrives with no session. Dereferencing the absent id
+      // sent `PUT /profiles/undefined`, which 400d with no feedback to the user.
+      authenticatedResponse = { isAuthenticated: false, userId: undefined };
+
+      createComponent('register').detectChanges();
+
+      expect(createDefaultProfileMock).not.toHaveBeenCalled();
+      expect(snackBarOpenMock.mock.calls[0][0]).toContain('expired');
+      expect(navigateMock).toHaveBeenCalledWith(['/auth']);
+    });
+
+    it('should surface a failure to create the profile', () => {
+      createDefaultProfileMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      createComponent('register').detectChanges();
+
+      expect(snackBarOpenMock.mock.calls[0][0]).toContain('could not finish setting up');
       expect(navigateMock).toHaveBeenCalledWith(['/auth']);
     });
   });

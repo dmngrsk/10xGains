@@ -26,6 +26,6 @@ export async function handleDeleteSessionSetById(c: Context<AppContext>) {
     return c.body(null, 204);
   } catch (e) {
     const fallbackMessage = 'Failed to delete session set';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleDeleteSessionSetById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleDeleteSessionSetById.name, fallbackMessage);
   }
 }

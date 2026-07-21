@@ -24,6 +24,6 @@ export async function handleCreatePlan(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (e) {
     const fallbackMessage = 'Failed to create plan';
-    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handleCreatePlan.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleCreatePlan.name, fallbackMessage);
   }
 }

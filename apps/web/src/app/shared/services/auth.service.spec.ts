@@ -131,4 +131,67 @@ describe('AuthService (Google OAuth)', () => {
       await expect(firstValueFrom(service.getIdentities())).rejects.toThrow('not authenticated');
     });
   });
+
+  describe('user-facing error messages', () => {
+    const friendly = (message: string): string =>
+      (service as unknown as { toFriendlyError(m: string): string }).toFriendlyError(message);
+
+    it.each([
+      ['Invalid login credentials', 'do not match an account'],
+      ['Email not confirmed', 'confirm your email address'],
+      ['User already registered', 'already exists'],
+      ['Password should be at least 6 characters', 'at least 6 characters'],
+      ['For security purposes, you can only request this after 45 seconds', 'wait a moment'],
+      ['Failed to fetch', 'check your connection'],
+    ])('should rewrite %p into copy written for the user', (raw, expected) => {
+      const result = friendly(raw);
+
+      expect(result).toContain(expected);
+      expect(result).not.toBe(raw);
+    });
+
+    it('should pass an unrecognised message through unchanged', () => {
+      // Better an unfamiliar but specific message than a generic apology that says nothing.
+      expect(friendly('provider is not enabled')).toBe('provider is not enabled');
+    });
+
+    it('should surface the mapped message through an auth response', async () => {
+      getUserIdentitiesMock.mockResolvedValue({ data: null, error: { message: 'Invalid login credentials' } });
+
+      const result = await firstValueFrom(service.unlinkGoogleIdentity());
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('do not match an account');
+    });
+  });
+
+  describe('isAuthenticated', () => {
+    const client = () => (service as unknown as { supabase: { auth: { getSession: ReturnType<typeof vi.fn>; getUser?: ReturnType<typeof vi.fn> } } }).supabase;
+
+    it('should report the user from the locally stored session', async () => {
+      client().auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
+
+      const result = await firstValueFrom(service.isAuthenticated());
+
+      expect(result).toEqual({ isAuthenticated: true, userId: 'user-1' });
+    });
+
+    it('should report an absent session as unauthenticated', async () => {
+      client().auth.getSession.mockResolvedValue({ data: { session: null } });
+
+      const result = await firstValueFrom(service.isAuthenticated());
+
+      expect(result).toEqual({ isAuthenticated: false, userId: undefined });
+    });
+
+    it('should not call the Auth server, since the route guard runs this on every navigation', async () => {
+      const getUserMock = vi.fn();
+      client().auth.getUser = getUserMock;
+      client().auth.getSession.mockResolvedValue({ data: { session: { user: { id: 'user-1' } } } });
+
+      await firstValueFrom(service.isAuthenticated());
+
+      expect(getUserMock).not.toHaveBeenCalled();
+    });
+  });
 });

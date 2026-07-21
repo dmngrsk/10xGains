@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
 import { createErrorDataWithLogging, createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
-import { SESSION_STATUSES, type SessionDto, type UpdateSessionCommand } from '@txg/shared';
+import type { SessionDto, SessionStatus, UpdateSessionCommand } from '@txg/shared';
 import type { AppContext } from '../../context';
 import { validateCommandBody, validatePathParams } from '../../utils/validation';
 
@@ -9,8 +9,12 @@ const PATH_SCHEMA = z.object({
   sessionId: z.string().uuid('Invalid sessionId format'),
 });
 
+const UPDATABLE_SESSION_STATUSES = ['PENDING', 'IN_PROGRESS', 'CANCELLED'] as const satisfies readonly SessionStatus[];
+
 const COMMAND_SCHEMA = z.object({
-  status: z.enum(SESSION_STATUSES).optional(),
+  status: z.enum(UPDATABLE_SESSION_STATUSES, {
+    message: "Status 'COMPLETED' cannot be set here; use POST /sessions/:sessionId/complete instead",
+  }).optional(),
   notes: z.string().max(5000, 'Notes must not exceed 5000 characters').nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update"
@@ -38,6 +42,6 @@ export async function handlePutSessionById(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to update training session';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handlePutSessionById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handlePutSessionById.name, fallbackMessage);
   }
 }

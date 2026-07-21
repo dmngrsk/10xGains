@@ -11,9 +11,20 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { LocalStorageService } from '@shared/services/local-storage.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
+import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 const CALENDAR_PAGE_SIZE = 100;
 const CALENDAR_PREFETCH_RADIUS = 3;
+
+const FILTERS_STORAGE_KEY = 'txg.history.filters';
+
+interface PersistedHistoryFilters {
+  selectedPlanId: string;
+  dateRange: DateRangeValue;
+  pageSize: number;
+}
 
 const initialHistoryPageViewModel: HistoryPageViewModel = {
   sessions: [],
@@ -42,6 +53,7 @@ export class HistoryPageFacade {
   private readonly profileService = inject(ProfileService);
   private readonly sessionService = inject(SessionService);
   private readonly authService = inject(AuthService);
+  private readonly localStorage = inject(LocalStorageService);
 
   readonly viewModel = signal<HistoryPageViewModel>(initialHistoryPageViewModel);
   private readonly internalPlans = signal<PlanDto[]>([]);
@@ -52,6 +64,15 @@ export class HistoryPageFacade {
   private readonly pendingCalendarMonths = new Set<string>();
 
   private listNeedsReload = false;
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+
+    const persisted = this.readPersistedFilters();
+    if (persisted) {
+      this.viewModel.update(vm => ({ ...vm, filters: { ...vm.filters, ...persisted } }));
+    }
+  }
 
   loadHistoryPageData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
@@ -78,9 +99,12 @@ export class HistoryPageFacade {
         const availablePlansForFilter = plans.map(p => ({ id: p.id, name: p.name }));
         const activePlanId = profile?.active_plan_id;
 
-        const selectedPlanId = activePlanId && plans.some(p => p.id === activePlanId)
-          ? activePlanId
-          : (availablePlansForFilter[0]?.id ?? '');
+        const restoredPlanId = this.viewModel().filters.selectedPlanId;
+        const selectedPlanId = restoredPlanId && plans.some(p => p.id === restoredPlanId)
+          ? restoredPlanId
+          : activePlanId && plans.some(p => p.id === activePlanId)
+            ? activePlanId
+            : (availablePlansForFilter[0]?.id ?? '');
 
         this.viewModel.update(vm => ({
           ...vm,
@@ -177,89 +201,6 @@ export class HistoryPageFacade {
     }
   }
 
-  private loadCalendarBatch(months: string[], planId: string | undefined, isInitialLoad: boolean): void {
-    const queryParams: GetSessionsParams = {
-      limit: CALENDAR_PAGE_SIZE,
-      offset: 0,
-      sort: 'session_date.asc',
-      status: ['COMPLETED'],
-      date_from: startOfMonth(parse(months[0], 'yyyy-MM', new Date())).toISOString(),
-      date_to: endOfMonth(parse(months[months.length - 1], 'yyyy-MM', new Date())).toISOString(),
-      plan_id: planId,
-    };
-
-    // Page through the whole run so a dense window never silently drops sessions (and, with the
-    // ascending sort, never drops the most recent - and most likely on-screen - months).
-    this.loadAllCalendarPages(queryParams, 0, []).pipe(
-      map(response => this.mapSessionsResponse(response.data, response.totalCount)),
-      catchError((error: Error) => {
-        console.error('Error loading calendar sessions:', error);
-        months.forEach(month => this.pendingCalendarMonths.delete(month));
-        // A background prefetch failure only logs - it retries on the next scroll; failing the
-        // whole view is reserved for the initial load, where there is nothing to show instead.
-        if (isInitialLoad) {
-          this.viewModel.update(vm => ({
-            ...vm,
-            isLoading: false,
-            error: 'Failed to load sessions. Please try again later.',
-            calendarSessions: []
-          }));
-        }
-        return EMPTY;
-      })
-    ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
-      months.forEach(month => {
-        this.pendingCalendarMonths.delete(month);
-        this.calendarMonthSessions.set(month, []);
-      });
-      for (const session of result.sessions) {
-        if (!session.sessionDate) continue;
-        const month = format(session.sessionDate, 'yyyy-MM');
-        // Bucket strictly into the requested months - anything else would duplicate sessions
-        // already cached by an earlier batch.
-        if (!months.includes(month)) continue;
-        this.calendarMonthSessions.set(month, [...(this.calendarMonthSessions.get(month) ?? []), session]);
-      }
-
-      this.viewModel.update(vm => ({
-        ...vm,
-        calendarSessions: this.flattenCalendarCache(),
-        isLoading: isInitialLoad ? false : vm.isLoading,
-        error: null
-      }));
-    });
-  }
-
-  private loadAllCalendarPages(base: GetSessionsParams, offset: number, acc: SessionDto[]): Observable<{ data: SessionDto[], totalCount: number }> {
-    return this.sessionService.getSessions({ ...base, offset }).pipe(
-      switchMap(response => {
-        const page = response.data ?? [];
-        const combined = offset === 0 ? page : [...acc, ...page];
-        if (page.length < CALENDAR_PAGE_SIZE) {
-          return of({ data: combined, totalCount: response.totalCount ?? combined.length });
-        }
-        return this.loadAllCalendarPages(base, offset + CALENDAR_PAGE_SIZE, combined);
-      })
-    );
-  }
-
-  private toContiguousRuns(months: string[]): string[][] {
-    const runs: string[][] = [];
-    for (const month of months) {
-      const run = runs[runs.length - 1];
-      if (run && this.addToMonth(run[run.length - 1], 1) === month) {
-        run.push(month);
-        continue;
-      }
-      runs.push([month]);
-    }
-    return runs;
-  }
-
-  private addToMonth(month: string, months: number): string {
-    return format(addMonths(parse(month, 'yyyy-MM', new Date()), months), 'yyyy-MM');
-  }
-
   seedViewState(viewMode: HistoryViewMode, calendarMonth: string): void {
     this.viewModel.update(vm => ({ ...vm, viewMode, calendarMonth }));
   }
@@ -315,6 +256,7 @@ export class HistoryPageFacade {
       this.clearCalendarCache();
     }
 
+    this.persistFilters();
     this.loadCalendarSessions();
   }
 
@@ -349,15 +291,20 @@ export class HistoryPageFacade {
       this.clearCalendarCache();
     }
 
+    this.persistFilters();
     this.loadSessions();
   }
 
   updatePagination(currentPage: number, pageSize: number): void {
+    // `pageSize` lives on `filters`, which is what `loadSessions` reads. Writing it to the
+    // view-model root instead left the request limit pinned at its initial value, so the
+    // paginator's page-size selector had no effect.
     this.viewModel.update(vm => ({
       ...vm,
       currentPage,
-      pageSize
+      filters: { ...vm.filters, pageSize }
     }));
+    this.persistFilters();
     this.loadSessions();
   }
 
@@ -374,18 +321,6 @@ export class HistoryPageFacade {
     }
   }
 
-  private clearCalendarCache(): void {
-    this.calendarMonthSessions.clear();
-    this.pendingCalendarMonths.clear();
-    this.viewModel.update(vm => ({ ...vm, calendarSessions: [] }));
-  }
-
-  private flattenCalendarCache(): SessionCardViewModel[] {
-    return [...this.calendarMonthSessions.keys()]
-      .sort()
-      .flatMap(month => this.calendarMonthSessions.get(month)!);
-  }
-
   private mapSessionsResponse(data: SessionDto[] | null, totalCount: number | undefined): { sessions: SessionCardViewModel[], totalCount: number } {
     if (!data) {
       return { sessions: [], totalCount: 0 };
@@ -399,5 +334,127 @@ export class HistoryPageFacade {
     });
 
     return { sessions, totalCount: totalCount || 0 };
+  }
+
+  private toContiguousRuns(months: string[]): string[][] {
+    const runs: string[][] = [];
+    for (const month of months) {
+      const run = runs[runs.length - 1];
+      if (run && this.addToMonth(run[run.length - 1], 1) === month) {
+        run.push(month);
+        continue;
+      }
+      runs.push([month]);
+    }
+    return runs;
+  }
+
+  private loadCalendarBatch(months: string[], planId: string | undefined, isInitialLoad: boolean): void {
+    const queryParams: GetSessionsParams = {
+      limit: CALENDAR_PAGE_SIZE,
+      offset: 0,
+      sort: 'session_date.asc',
+      status: ['COMPLETED'],
+      date_from: startOfMonth(parse(months[0], 'yyyy-MM', new Date())).toISOString(),
+      date_to: endOfMonth(parse(months[months.length - 1], 'yyyy-MM', new Date())).toISOString(),
+      plan_id: planId,
+    };
+
+    // Page through the whole run so a dense window never silently drops sessions (and, with the
+    // ascending sort, never drops the most recent - and most likely on-screen - months).
+    this.loadAllCalendarPages(queryParams, 0, []).pipe(
+      map(response => this.mapSessionsResponse(response.data, response.totalCount)),
+      catchError((error: Error) => {
+        console.error('Error loading calendar sessions:', error);
+        months.forEach(month => this.pendingCalendarMonths.delete(month));
+        // A background prefetch failure only logs - it retries on the next scroll; failing the
+        // whole view is reserved for the initial load, where there is nothing to show instead.
+        if (isInitialLoad) {
+          this.viewModel.update(vm => ({
+            ...vm,
+            isLoading: false,
+            error: 'Failed to load sessions. Please try again later.',
+            calendarSessions: []
+          }));
+        }
+        return EMPTY;
+      })
+    ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
+      months.forEach(month => {
+        this.pendingCalendarMonths.delete(month);
+        this.calendarMonthSessions.set(month, []);
+      });
+      for (const session of result.sessions) {
+        if (!session.sessionDate) continue;
+        const month = format(session.sessionDate, 'yyyy-MM');
+        // Bucket strictly into the requested months - anything else would duplicate sessions
+        // already cached by an earlier batch.
+        if (!months.includes(month)) continue;
+        this.calendarMonthSessions.set(month, [...(this.calendarMonthSessions.get(month) ?? []), session]);
+      }
+
+      this.viewModel.update(vm => ({
+        ...vm,
+        calendarSessions: this.flattenCalendarCache(),
+        isLoading: isInitialLoad ? false : vm.isLoading,
+        error: null
+      }));
+    });
+  }
+
+  private clearCalendarCache(): void {
+    this.calendarMonthSessions.clear();
+    this.pendingCalendarMonths.clear();
+    this.viewModel.update(vm => ({ ...vm, calendarSessions: [] }));
+  }
+
+  private persistFilters(): void {
+    const { selectedPlanId, dateRange, pageSize } = this.viewModel().filters;
+    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange, pageSize };
+    this.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toPersist));
+  }
+
+  private readPersistedFilters(): PersistedHistoryFilters | null {
+    const raw = this.localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(raw) as PersistedHistoryFilters;
+    } catch {
+      return null;
+    }
+  }
+
+  private clearUserScopedState(): void {
+    this.clearCalendarCache();
+    this.internalPlans.set([]);
+    this.internalExercises.set([]);
+    this.listNeedsReload = true;
+    this.viewModel.set(initialHistoryPageViewModel);
+  }
+
+  private loadAllCalendarPages(base: GetSessionsParams, offset: number, acc: SessionDto[]): Observable<{ data: SessionDto[], totalCount: number }> {
+    return this.sessionService.getSessions({ ...base, offset }).pipe(
+      switchMap(response => {
+        const page = response.data ?? [];
+        const combined = offset === 0 ? page : [...acc, ...page];
+        if (page.length < CALENDAR_PAGE_SIZE) {
+          return of({ data: combined, totalCount: response.totalCount ?? combined.length });
+        }
+        return this.loadAllCalendarPages(base, offset + CALENDAR_PAGE_SIZE, combined);
+      })
+    );
+  }
+
+  private addToMonth(month: string, months: number): string {
+    return format(addMonths(parse(month, 'yyyy-MM', new Date()), months), 'yyyy-MM');
+  }
+
+  private flattenCalendarCache(): SessionCardViewModel[] {
+    return [...this.calendarMonthSessions.keys()]
+      .sort()
+      .flatMap(month => this.calendarMonthSessions.get(month)!);
   }
 }

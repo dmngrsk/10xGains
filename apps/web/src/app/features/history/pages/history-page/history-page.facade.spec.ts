@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService } from '@features/sessions/api/session.service';
 import { ExerciseService } from '@shared/api/exercise.service';
@@ -40,13 +40,17 @@ describe('HistoryPageFacade', () => {
         { provide: ExerciseService, useValue: { getExercises: () => of({ data: [], error: null }) } },
         { provide: ProfileService, useValue: { getProfile: getProfileMock } },
         { provide: SessionService, useValue: { getSessions: getSessionsMock } },
-        { provide: AuthService, useValue: { currentUser: () => user } },
+        { provide: AuthService, useValue: { currentUser: () => user, currentUser$: of(user) } },
       ],
     });
     facade = TestBed.inject(HistoryPageFacade);
   };
 
   const lastQuery = () => getSessionsMock.mock.calls[getSessionsMock.mock.calls.length - 1][0];
+
+  // The facade persists filter choices to localStorage; start each test from a clean slate so one
+  // test's persisted filters do not leak into the next facade's construction.
+  beforeEach(() => window.localStorage.clear());
 
   describe('loadHistoryPageData', () => {
     it('should default the plan filter to the active plan from the profile', () => {
@@ -100,6 +104,29 @@ describe('HistoryPageFacade', () => {
       expect(facade.viewModel().isLoading).toBe(false);
       expect(getProfileMock).not.toHaveBeenCalled();
       expect(getSessionsMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updatePagination', () => {
+    beforeEach(() => {
+      configure('plan-1');
+      facade.loadHistoryPageData();
+    });
+
+    it('should request the selected page size', () => {
+      // The paginator's page-size selector is only wired up if the new size reaches the request:
+      // writing it to the view-model root instead of `filters` left the limit pinned at 10.
+      facade.updatePagination(0, 25);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 0 }));
+      expect(facade.viewModel().filters.pageSize).toBe(25);
+    });
+
+    it('should offset by the selected page size when paging forward', () => {
+      facade.updatePagination(2, 25);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 50 }));
+      expect(facade.viewModel().currentPage).toBe(2);
     });
   });
 
@@ -331,6 +358,39 @@ describe('HistoryPageFacade', () => {
         facade.setViewMode('list');
         expect(lastQuery().limit).toBe(10); // the never-loaded list loads on activation
       });
+    });
+  });
+
+  describe('filter persistence across navigation', () => {
+    it('restores the last chosen filters when the facade is rebuilt', () => {
+      // First visit: move the plan and page size away from their defaults.
+      configure('plan-1');
+      facade.loadHistoryPageData();
+      facade.updateFilters({ selectedPlanId: 'plan-2', pageSize: 25 });
+      expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
+
+      // Returning from a session opened out of the history view rebuilds the component-scoped
+      // facade from scratch. The chosen filters must come back rather than resetting to the
+      // active-plan default.
+      TestBed.resetTestingModule();
+      configure('plan-1');
+      facade.loadHistoryPageData();
+
+      expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
+      expect(facade.viewModel().filters.pageSize).toBe(25);
+      expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2', limit: 25 }));
+    });
+
+    it('falls back to the active plan when the persisted plan no longer exists', () => {
+      window.localStorage.setItem(
+        'txg.history.filters',
+        JSON.stringify({ selectedPlanId: 'deleted-plan', dateRange: { preset: null, dateFrom: null, dateTo: null }, pageSize: 10 })
+      );
+
+      configure('plan-2');
+      facade.loadHistoryPageData();
+
+      expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
     });
   });
 });

@@ -137,7 +137,7 @@ export class AuthService {
     return from(this.supabase.auth.getUserIdentities()).pipe(
       switchMap(({ data, error }) => {
         if (error) {
-          return of({ success: false, error: error.message });
+          return of({ success: false, error: this.toFriendlyError(error.message) });
         }
 
         const googleIdentity = data?.identities.find(identity => identity.provider === 'google');
@@ -147,7 +147,7 @@ export class AuthService {
 
         return from(this.supabase.auth.unlinkIdentity(googleIdentity)).pipe(this.toAuthResponse());
       }),
-      catchError((error: Error) => of({ success: false, error: error.message }))
+      catchError((error: Error) => of({ success: false, error: this.toFriendlyError(error.message) }))
     );
   }
 
@@ -189,22 +189,47 @@ export class AuthService {
 
   /**
    * Checks if a user is currently authenticated.
+   *
    * @returns An `Observable<boolean>` that emits `true` if a user is authenticated, otherwise `false`.
    */
   isAuthenticated(): Observable<AuthenticationStatusResponse> {
-    return from(this.supabase.auth.getUser()).pipe(map(({ data }) => ({ isAuthenticated: !!data.user, userId: data.user?.id })));
+    return from(this.supabase.auth.getSession()).pipe(
+      map(({ data }) => ({ isAuthenticated: !!data.session?.user, userId: data.session?.user?.id }))
+    );
+  }
+
+  /**
+   * Rewrites the Supabase auth errors users actually hit into copy written for them.
+   *
+   * @param message The message Supabase returned.
+   * @returns The message to show the user.
+   */
+  private toFriendlyError(message: string): string {
+    const friendlyMessages: [RegExp, string][] = [
+      [/invalid login credentials/i, 'That email and password do not match an account. Please check both and try again.'],
+      [/email not confirmed/i, 'Please confirm your email address first - check your inbox for the verification link.'],
+      [/user already registered|already been registered/i, 'An account with this email already exists. Try signing in instead.'],
+      [/password should be at least/i, 'Please choose a longer password - it must be at least 6 characters.'],
+      [/new password should be different/i, 'Your new password must be different from your current one.'],
+      [/unable to validate email address/i, 'That email address does not look valid. Please check it and try again.'],
+      [/for security purposes.*after (\d+) seconds?/i, 'Too many attempts just now. Please wait a moment and try again.'],
+      [/email rate limit exceeded|over_email_send_rate_limit/i, 'Too many emails requested. Please wait a few minutes before trying again.'],
+      [/failed to fetch|network ?error/i, 'Could not reach the server. Please check your connection and try again.'],
+    ];
+
+    return friendlyMessages.find(([pattern]) => pattern.test(message))?.[1] ?? message;
   }
 
   private mapSupabaseResponse<T, R extends AuthResponse>(mapper: (value: T) => R): OperatorFunction<T, R> {
     return (source: Observable<T>) => source.pipe(
       map(mapper),
-      catchError((error: Error) => of({ success: false, error: error.message } as R)));
+      catchError((error: Error) => of({ success: false, error: this.toFriendlyError(error.message) } as R)));
   }
 
   private toAuthResponse(): OperatorFunction<{ error: AuthError | null }, AuthResponse> {
     return this.mapSupabaseResponse(({ error }) => {
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: this.toFriendlyError(error.message) };
       }
       return { success: true };
     });
@@ -213,7 +238,7 @@ export class AuthService {
   private toRegisterResponse(): OperatorFunction<SupabaseAuthResponse, RegisterResponse> {
     return this.mapSupabaseResponse(({ data, error }) => {
       if (error) {
-        return { success: false, error: error.message };
+        return { success: false, error: this.toFriendlyError(error.message) };
       }
       if (!data.user) {
         return { success: false, error: 'Registration failed - no user data returned' };

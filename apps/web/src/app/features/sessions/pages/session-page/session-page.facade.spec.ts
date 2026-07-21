@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject, of } from 'rxjs';
+import { Subject, firstValueFrom, of } from 'rxjs';
 import { SessionSetDto, SessionSetStatus } from '@txg/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
+import { AuthService } from '@shared/services/auth.service';
 import { KeyedDebouncerService } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionPageFacade } from './session-page.facade';
@@ -11,7 +12,7 @@ import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type CapturedEnqueue = { successSubject: Subject<any>; failureSubject: Subject<any>; context: any; buildSuccess: any };
+type CapturedEnqueue = { successSubject: Subject<any>; failureSubject: Subject<any>; context: any; buildSuccess: any; apiCall: () => any };
 
 const SERVER_NOW = new Date('2023-01-01T10:00:00.000Z').getTime();
 
@@ -43,10 +44,10 @@ describe('SessionPageFacade', () => {
   };
 
   beforeEach(() => {
-    const enqueueMock = vi.fn((_key, _apiCall, successContext, _failureContext, buildSuccess) => {
+    const enqueueMock = vi.fn((_key, apiCall, successContext, _failureContext, buildSuccess) => {
       const successSubject = new Subject();
       const failureSubject = new Subject();
-      captured = { successSubject, failureSubject, context: successContext, buildSuccess };
+      captured = { successSubject, failureSubject, context: successContext, buildSuccess, apiCall };
       return {
         response$: of(null),
         successEvent$: successSubject.asObservable(),
@@ -62,6 +63,7 @@ describe('SessionPageFacade', () => {
         { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn(), updateSession: vi.fn() } },
         { provide: KeyedDebouncerService, useValue: { enqueue: enqueueMock, flushCurrentActiveDebounce: () => of(undefined) } },
         { provide: ServerClockService, useValue: { now: () => SERVER_NOW } },
+        { provide: AuthService, useValue: { currentUser$: of({ id: 'user1' }) } },
       ],
     });
     facade = TestBed.inject(SessionPageFacade);
@@ -176,6 +178,36 @@ describe('SessionPageFacade', () => {
 
       expect(result).toBe(false);
       expect(facade.viewModel().metadata?.notes).toBe('old note');
+    });
+  });
+
+  describe('enqueueSetPatch missing set handling', () => {
+    it.each<[SessionSetStatus, string]>([
+      ['COMPLETED', 'completeSet'],
+      ['FAILED', 'failSet'],
+      ['PENDING', 'resetSet'],
+    ])('should fail the queued %s patch when the set no longer exists', async (status, method) => {
+      // The API answers 404 when the set was deleted elsewhere or the session is already
+      // complete, and ApiService resolves that as { data: null }. The patch must be treated as a
+      // failure so the optimistic update is reverted, not fed into the success path.
+      const sessionService = TestBed.inject(SessionService) as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      sessionService[method].mockReturnValue(of({ data: null, error: null, status: 404 }));
+      seedViewModel([buildSet()]);
+
+      facade.enqueueSetPatch(buildSet({ status, actualReps: 0 }), 'tpe1', buildSet());
+
+      await expect(firstValueFrom(captured.apiCall())).rejects.toThrow(/no longer exists/);
+    });
+
+    it('should pass the set through when the patch succeeds', async () => {
+      const updated = { id: 'set1', status: 'COMPLETED' } as SessionSetDto;
+      const sessionService = TestBed.inject(SessionService) as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      sessionService['completeSet'].mockReturnValue(of({ data: updated, error: null }));
+      seedViewModel([buildSet()]);
+
+      facade.enqueueSetPatch(buildSet({ status: 'COMPLETED', actualReps: 10 }), 'tpe1', buildSet());
+
+      await expect(firstValueFrom(captured.apiCall())).resolves.toEqual(updated);
     });
   });
 

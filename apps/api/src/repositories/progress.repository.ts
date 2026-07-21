@@ -1,8 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@txg/shared';
 import type { ExerciseProgressDto } from '@txg/shared';
-import { ApiErrorResponse } from '../utils/api-helpers';
-import { aggregateExerciseProgress } from '../services/exercise-progress/exercise-progress';
+import { aggregateExerciseProgress, resolveProgressWindowStart } from '../services/exercise-progress/exercise-progress';
 import type { ExerciseProgressRow } from '../services/exercise-progress/exercise-progress';
 
 export interface ExerciseProgressQueryOptions {
@@ -26,9 +25,6 @@ export class ProgressRepository {
    * @returns {Promise<ExerciseProgressDto[]>} A promise that resolves to the aggregated series.
    */
   async findExerciseProgress(options: ExerciseProgressQueryOptions): Promise<ExerciseProgressDto[]> {
-    // Every set of a completed session is fetched, not just the completed ones: failed
-    // sets carry the reps the user actually managed, which the chart tooltip reports.
-    // The sessions embed names its foreign key explicitly, as session_sets has two.
     let supabaseQuery = this.supabase
       .from('session_sets')
       .select(`
@@ -51,9 +47,7 @@ export class ProgressRepository {
       supabaseQuery = supabaseQuery.in('plan_exercise.exercise_id', options.exercise_ids);
     }
 
-    if (options.date_from) {
-      supabaseQuery = supabaseQuery.gte('session.session_date', options.date_from);
-    }
+    supabaseQuery = supabaseQuery.gte('session.session_date', resolveProgressWindowStart(options.date_from));
 
     if (options.date_to) {
       supabaseQuery = supabaseQuery.lte('session.session_date', options.date_to);
@@ -68,14 +62,4 @@ export class ProgressRepository {
     return aggregateExerciseProgress((data ?? []) as unknown as ExerciseProgressRow[]);
   }
 
-  /**
-   * Handles progress-specific repository errors, returning a formatted API error response.
-   * Progress queries are read-only and user-scoped, so there are no domain errors to map.
-   *
-   * @param {Error} _error - The error to handle.
-   * @returns {ApiErrorResponse | null} Always null; callers fall back to a generic error.
-   */
-  handleProgressError(_error: Error): ApiErrorResponse | null {
-    return null;
-  }
 }

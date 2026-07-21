@@ -37,6 +37,6 @@ export async function handlePutExerciseById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to update exercise';
-    return handleRepositoryError(c, e as Error, exerciseRepository.handleExerciseError, handlePutExerciseById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handlePutExerciseById.name, fallbackMessage);
   }
 }

@@ -26,6 +26,6 @@ export async function handleDeleteSessionById(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to delete training session';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleDeleteSessionById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleDeleteSessionById.name, fallbackMessage);
   }
 }

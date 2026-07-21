@@ -7,6 +7,7 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
@@ -38,10 +39,11 @@ export class SessionPageFacade {
   private readonly serverClock = inject(ServerClockService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
-
-  // The instant the rest timer counts up from. Seeded on load from the latest completed set so it
-  // survives app freezes and view re-entry, then bumped to "now" on every set interaction.
   readonly timerStartTimestamp = signal<number | null>(null);
+
+  constructor() {
+    resetOnUserChange(() => this.clearUserScopedState());
+  }
 
   loadSessionData(sessionId: string | null): void {
     if (!sessionId) {
@@ -94,9 +96,9 @@ export class SessionPageFacade {
         return EMPTY;
       })
     ).subscribe(updatedViewModel => {
-      if (updatedViewModel && typeof updatedViewModel.isLoading !== 'undefined') {
-        this.viewModel.set(updatedViewModel as SessionPageViewModel);
-        this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel as SessionPageViewModel));
+      if (updatedViewModel) {
+        this.viewModel.set(updatedViewModel);
+        this.timerStartTimestamp.set(this.getLatestCompletionTime(updatedViewModel));
       }
     });
   }
@@ -105,22 +107,28 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
 
-    // Every set interaction (complete, fail or reset) restarts the rest timer from now.
     this.timerStartTimestamp.set(this.serverClock.now());
 
     const setId = setPayload.id;
-    let apiCallProvider: () => Observable<SessionSetDto | null>;
+    let apiCallProvider: () => Observable<SessionSetDto>;
+
+    const requireSet = map((res: { data: SessionSetDto | null } | null): SessionSetDto => {
+      if (!res?.data) {
+        throw new Error('This set no longer exists. Refresh the session to see its current state.');
+      }
+      return res.data;
+    });
 
     switch (setPayload.status) {
       case 'COMPLETED':
-        apiCallProvider = () => this.sessionService.completeSet(currentSessionId, setId).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.completeSet(currentSessionId, setId).pipe(requireSet);
         break;
       case 'FAILED':
-        apiCallProvider = () => this.sessionService.failSet(currentSessionId, setId, setPayload.actualReps ?? 0).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.failSet(currentSessionId, setId, setPayload.actualReps ?? 0).pipe(requireSet);
         break;
       case 'PENDING':
       default:
-        apiCallProvider = () => this.sessionService.resetSet(currentSessionId, setId).pipe(map(res => res?.data ?? null));
+        apiCallProvider = () => this.sessionService.resetSet(currentSessionId, setId).pipe(requireSet);
         break;
     }
 
@@ -134,7 +142,7 @@ export class SessionPageFacade {
     };
 
     const { successEvent$, failureEvent$ } = this.debouncerService.enqueue<
-      SessionSetDto | null,
+      SessionSetDto,
       SessionSetUpdateSuccessPayload,
       SessionSetUpdateFailurePayload,
       SessionSetUpdateSuccessDataContext,
@@ -145,7 +153,7 @@ export class SessionPageFacade {
       apiCallProvider,
       successContext,
       failureContext,
-      (data, context, key) => ({ data: data!, context, key }),
+      (data, context, key) => ({ data, context, key }),
       (error, context, key) => ({ error, context, key })
     );
 
@@ -190,7 +198,7 @@ export class SessionPageFacade {
     const currentSessionId = this.viewModel().id!;
 
     const operation$ = this.sessionService.deleteSet(currentSessionId, setId).pipe(
-      map(response => !response?.error),
+      map(response => !response?.error && response?.status !== 404),
       tapIf(success => success, () =>
         this.updateSessionViewModelWithDeletedSet(setId, exerciseId)
       )
@@ -318,6 +326,31 @@ export class SessionPageFacade {
     return latest;
   }
 
+  private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
+    this.viewModel.update(session => {
+      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
+      const updatedSessionDate = session.metadata?.date ?? new Date();
+      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
+
+      const updatedExercises = session.exercises.map(ex => {
+        if (ex.planExerciseId === exerciseId) {
+          const setIndex = ex.sets.findIndex(s => s.id === set.id);
+          let updatedSets;
+          if (setIndex > -1) {
+            updatedSets = ex.sets.map(s => s.id === set.id ? set : s);
+          } else {
+            updatedSets = [...ex.sets, set];
+            updatedSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+          }
+          return { ...ex, sets: updatedSets };
+        }
+        return ex;
+      });
+
+      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
+    });
+  }
+
   private handleSessionOperation<T>(
     operation$: Observable<T>,
     errorMessagePrefix: string,
@@ -344,31 +377,6 @@ export class SessionPageFacade {
     );
   }
 
-  private updateSessionViewModelWithUpsertedSet(set: SessionSetViewModel, exerciseId: string): void {
-    this.viewModel.update(session => {
-      const updatedSessionStatus = session.metadata?.status === 'PENDING' ? 'IN_PROGRESS' as SessionStatus : session.metadata?.status;
-      const updatedSessionDate = session.metadata?.date ?? new Date();
-      const updatedMetadata = { ...session.metadata, status: updatedSessionStatus, date: updatedSessionDate };
-
-      const updatedExercises = session.exercises.map(ex => {
-        if (ex.planExerciseId === exerciseId) {
-          const setIndex = ex.sets.findIndex(s => s.id === set.id);
-          let updatedSets;
-          if (setIndex > -1) {
-            updatedSets = ex.sets.map(s => s.id === set.id ? set : s);
-          } else {
-            updatedSets = [...ex.sets, set];
-            updatedSets.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-          }
-          return { ...ex, sets: updatedSets };
-        }
-        return ex;
-      });
-
-      return { ...session, metadata: updatedMetadata, exercises: updatedExercises, error: null };
-    });
-  }
-
   private updateSessionViewModelWithDeletedSet(setId: string, planExerciseId: string): void {
     this.viewModel.update(session => {
       const updatedExercises = session.exercises.map(ex => {
@@ -381,5 +389,10 @@ export class SessionPageFacade {
       });
       return { ...session, exercises: updatedExercises };
     });
+  }
+
+  private clearUserScopedState(): void {
+    this.viewModel.set(initialState);
+    this.timerStartTimestamp.set(null);
   }
 }

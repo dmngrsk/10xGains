@@ -81,25 +81,6 @@ export class AddExerciseDialogComponent implements OnInit {
     );
   }
 
-  private filterExercisesAndAddCreateOption(value: string): Observable<AddExerciseDialogAutocompleteOption[]> {
-    const filterValue = value.toLowerCase();
-    const options: AddExerciseDialogAutocompleteOption[] = this.data.exercises
-      .filter((ex: Pick<ExerciseDto, 'id' | 'name'>) => ex.name.toLowerCase().includes(filterValue))
-      .map((ex: Pick<ExerciseDto, 'id' | 'name'>) => ({ id: ex.id, name: ex.name, isCreateNewOption: false }));
-
-    if (filterValue && !options.some(opt => opt.name.toLowerCase() === filterValue)) {
-      if (!options.some(opt => opt.isCreateNewOption)) {
-         options.push({ id: 'CREATE_NEW_EXERCISE', name: `Create new exercise: "${value}"`, isCreateNewOption: true });
-      }
-    } else {
-      const createIndex = options.findIndex(opt => opt.isCreateNewOption);
-      if (createIndex > -1) {
-        options.splice(createIndex, 1);
-      }
-    }
-    return of(options);
-  }
-
   displayExercise(option: AddExerciseDialogAutocompleteOption | null): string {
     if (typeof option === 'string') return option;
     return option?.name || '';
@@ -179,5 +160,24 @@ export class AddExerciseDialogComponent implements OnInit {
       console.error('Error saving exercise selection:', error);
       this.dialogRef.close();
     }
+  }
+
+  private filterExercisesAndAddCreateOption(value: string): Observable<AddExerciseDialogAutocompleteOption[]> {
+    const filterValue = value.toLowerCase();
+    const options: AddExerciseDialogAutocompleteOption[] = this.data.exercises
+      .filter((ex: Pick<ExerciseDto, 'id' | 'name'>) => ex.name.toLowerCase().includes(filterValue))
+      .map((ex: Pick<ExerciseDto, 'id' | 'name'>) => ({ id: ex.id, name: ex.name, isCreateNewOption: false }));
+
+    if (filterValue && !options.some(opt => opt.name.toLowerCase() === filterValue)) {
+      if (!options.some(opt => opt.isCreateNewOption)) {
+         options.push({ id: 'CREATE_NEW_EXERCISE', name: `Create new exercise: "${value}"`, isCreateNewOption: true });
+      }
+    } else {
+      const createIndex = options.findIndex(opt => opt.isCreateNewOption);
+      if (createIndex > -1) {
+        options.splice(createIndex, 1);
+      }
+    }
+    return of(options);
   }
 }

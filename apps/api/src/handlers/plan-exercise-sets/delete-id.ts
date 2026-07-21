@@ -23,6 +23,6 @@ export async function handleDeletePlanExerciseSetById(c: Context<AppContext>) {
     return c.body(null, 204);
   } catch (error) {
     const fallbackMessage = 'Failed to delete plan exercise set';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleDeletePlanExerciseSetById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleDeletePlanExerciseSetById.name, fallbackMessage);
   }
 }

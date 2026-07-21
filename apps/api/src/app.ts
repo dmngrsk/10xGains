@@ -10,7 +10,7 @@ import type { AppContext } from './context';
 const corsOptions = {
   origin: resolveAllowedOrigins(),
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['content-type', 'authorization', 'apikey', 'x-client-info'],
+  allowHeaders: ['content-type', 'authorization'],
   credentials: true,
 };
 

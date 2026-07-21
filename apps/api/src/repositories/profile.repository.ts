@@ -4,7 +4,7 @@ import type {
   ProfileDto,
   UpsertProfileCommand
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { NotFoundError } from '../utils/errors';
 
 export class ProfileRepository {
   constructor(
@@ -17,11 +17,11 @@ export class ProfileRepository {
    *
    * @param {string} userId - The ID of the user profile to find.
    * @returns {Promise<ProfileDto | null>} A promise that resolves to the user profile or null if not found.
-   * @throws {Error} If the user attempts to access another user's profile.
+   * @throws {NotFoundError} If the id is not the caller's own.
    */
   async findById(userId: string): Promise<ProfileDto | null> {
     if (userId !== this.getUserId()) {
-      throw new Error('Forbidden: You can only access your own profile');
+      throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
 
     const { data, error } = await this.supabase
@@ -46,11 +46,11 @@ export class ProfileRepository {
    * @param {string} userId - The ID of the user profile to upsert.
    * @param {UpsertProfileCommand} command - The command with the profile data.
    * @returns {Promise<ProfileDto>} A promise that resolves to the created or updated user profile.
-   * @throws {Error} If the user attempts to modify another user's profile.
+   * @throws {NotFoundError} If the id is not the caller's own.
    */
   async upsert(userId: string, command: UpsertProfileCommand): Promise<ProfileDto> {
     if (userId !== this.getUserId()) {
-      throw new Error('Forbidden: You can only update your own profile');
+      throw new NotFoundError('Profile not found.', 'PROFILE_NOT_FOUND', 'profile_not_found_error');
     }
 
     const { data: existingProfile, error: existingProfileError } = await this.supabase
@@ -61,6 +61,23 @@ export class ProfileRepository {
 
     if (existingProfileError) {
       throw existingProfileError;
+    }
+
+    if (command.active_plan_id) {
+      const { data: plan, error: planError } = await this.supabase
+        .from('plans')
+        .select('id')
+        .eq('id', command.active_plan_id)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (planError) {
+        throw planError;
+      }
+
+      if (!plan) {
+        throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
+      }
     }
 
     // Build the data to upsert with defaults
@@ -88,23 +105,4 @@ export class ProfileRepository {
     return data as ProfileDto;
   }
 
-  /**
-   * Handles profile-specific errors, returning a formatted API error response.
-   *
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleProfileError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Forbidden: You can only access your own profile') ||
-        error?.message?.includes('Forbidden: You can only update your own profile')) {
-      return createErrorData(
-        403,
-        error.message,
-        { type: 'profile_access_error' },
-        'PROFILE_ACCESS_ERROR'
-      );
-    }
-
-    return null;
-  }
 }

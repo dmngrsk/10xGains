@@ -12,8 +12,8 @@
       </mat-paginator>
     }
     @if (viewMode === 'calendar') {
-      <!-- The calendar scrolls by month instead of paginating; keep the left slot occupied for the layout. -->
-      <div></div>
+      <!-- The calendar scrolls by month instead of paginating; the left slot names the filtered plan. -->
+      <span class="px-2 text-sm text-on-surface-variant truncate" data-cy="history-calendar-plan-name">{{ planName }}</span>
     }
     <div class="flex flex-row items-center">
       <button

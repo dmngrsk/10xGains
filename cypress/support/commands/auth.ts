@@ -52,7 +52,8 @@ function loginAsCanaryUser(): void {
         throw new Error('Canary user credentials not found in environment variables');
       }
 
-      cy.task('users:ensureCanaryScaffolded', { email, password });
+      cy.task<{ scaffolded: boolean; userId: string }>('users:ensureCanaryScaffolded', { email, password })
+        .then(({ userId }) => cy.wrap(userId).as('currentUserId'));
       fillLoginForm(email, password);
     });
 }
@@ -65,6 +66,7 @@ function loginAsEphemeralUser(): void {
   cy.task<{ userId: string; email: string; password: string }>('users:create', { prefix: getProcessedTestTags() || 'test', scaffold: true })
     .then(({ userId, email, password }) => {
       cy.wrap(userId).as('ephemeralUserId');
+      cy.wrap(userId).as('currentUserId');
 
       fillLoginForm(email, password);
     });

@@ -23,6 +23,6 @@ export async function handleCreateExercise(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (e) {
     const fallbackMessage = 'Failed to create exercise';
-    return handleRepositoryError(c, e as Error, exerciseRepository.handleExerciseError, handleCreateExercise.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleCreateExercise.name, fallbackMessage);
   }
 }

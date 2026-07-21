@@ -29,6 +29,6 @@ export async function handleGetSessionSetById(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to fetch session set';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetSessionSetById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetSessionSetById.name, fallbackMessage);
   }
 }

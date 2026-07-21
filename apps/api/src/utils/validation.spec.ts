@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
-import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
+import { optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
 
 const UUID_A = '1f6a2c3e-9b4d-4e8f-a1b2-c3d4e5f6a7b8';
 const UUID_B = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -56,11 +56,61 @@ describe('optionalOffset', () => {
   });
 });
 
-describe('optionalSort', () => {
-  const schema = z.object({ sort: optionalSort('session_date', 'asc') });
+describe('optionalCount', () => {
+  const schema = z.object({ reps: optionalCount('Rep count') });
 
-  it('should accept a well-formed sort expression', () => {
-    expect(schema.parse({ sort: 'created_at.desc' }).sort).toBe('created_at.desc');
+  it('should parse a whole count', () => {
+    expect(schema.parse({ reps: '8' }).reps).toBe(8);
+  });
+
+  it('should allow zero, which is what a failed set with no completed reps records', () => {
+    expect(schema.parse({ reps: '0' }).reps).toBe(0);
+  });
+
+  it.each([undefined, null, ''])('should treat %p as absent rather than zero', (value) => {
+    expect(schema.parse({ reps: value }).reps).toBeUndefined();
+  });
+
+  it('should reject a fractional count, as reps are whole everywhere else in the schema', () => {
+    const result = schema.safeParse({ reps: '2.5' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Rep count must be a whole number');
+  });
+
+  it('should reject a negative count with a message that matches the rule', () => {
+    const result = schema.safeParse({ reps: '-1' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Rep count cannot be negative');
+  });
+
+  it('should reject a non-numeric value rather than truncating it', () => {
+    expect(schema.safeParse({ reps: '12abc' }).success).toBe(false);
+  });
+});
+
+describe('optionalSort', () => {
+  const schema = z.object({ sort: optionalSort('session_date', 'asc', ['status']) });
+
+  it('should accept a well-formed sort expression on the default column', () => {
+    expect(schema.parse({ sort: 'session_date.desc' }).sort).toBe('session_date.desc');
+  });
+
+  it('should accept a whitelisted column', () => {
+    expect(schema.parse({ sort: 'status.asc' }).sort).toBe('status.asc');
+  });
+
+  it('should reject a column that is not whitelisted', () => {
+    // An unknown column used to reach PostgREST and come back as a 500; it is a 400 now.
+    const result = schema.safeParse({ sort: 'nonexistent.asc' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('Sort column must be one of');
+  });
+
+  it('should reject a column of another endpoint even when it exists on some table', () => {
+    expect(schema.safeParse({ sort: 'created_at.desc' }).success).toBe(false);
   });
 
   it.each([undefined, ''])('should fall back to the default column and direction for %p', (value) => {
@@ -110,6 +160,30 @@ describe('optionalIsoDate', () => {
 
     expect(() => { result = schema.safeParse({ date: value }); }).not.toThrow();
     expect(result!.success).toBe(false);
+  });
+
+  describe('as an upper bound', () => {
+    const endSchema = z.object({ date: optionalIsoDate('end') });
+
+    it('should widen a date-only value to the end of that day', () => {
+      // As `lte midnight`, `date_to=2026-04-13` excluded everything that happened during the 13th,
+      // so a range ending on a day returned nothing from that day.
+      const result = endSchema.safeParse({ date: '2026-04-13' });
+
+      expect(result.success).toBe(true);
+      expect(result.data!.date).toBe('2026-04-13T23:59:59.999Z');
+    });
+
+    it('should leave an explicit datetime alone', () => {
+      const result = endSchema.safeParse({ date: '2026-04-13T08:30:00.000Z' });
+
+      expect(result.success).toBe(true);
+      expect(result.data!.date).toBe('2026-04-13T08:30:00.000Z');
+    });
+
+    it('should still reject an unparseable value', () => {
+      expect(endSchema.safeParse({ date: 'not-a-date' }).success).toBe(false);
+    });
   });
 });
 

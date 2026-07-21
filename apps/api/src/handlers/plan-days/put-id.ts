@@ -39,6 +39,6 @@ export async function handlePutPlanDayById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to update plan day';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handlePutPlanDayById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handlePutPlanDayById.name, fallbackMessage);
   }
 }

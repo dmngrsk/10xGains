@@ -27,6 +27,6 @@ export async function handleGetPlanById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to fetch plan';
-    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handleGetPlanById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetPlanById.name, fallbackMessage);
   }
 }

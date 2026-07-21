@@ -36,6 +36,6 @@ export async function handlePutPlanExerciseById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to update plan exercise';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handlePutPlanExerciseById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handlePutPlanExerciseById.name, fallbackMessage);
   }
 }

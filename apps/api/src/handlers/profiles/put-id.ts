@@ -10,7 +10,7 @@ const PATH_SCHEMA = z.object({
 });
 
 const COMMAND_SCHEMA = z.object({
-  first_name: z.string().optional(),
+  first_name: z.string().max(100, 'First name must not exceed 100 characters').optional(),
   active_plan_id: z.string().uuid({ message: 'Invalid UUID format for active plan ID.' }).nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update."
@@ -32,6 +32,6 @@ export async function handleUpsertProfile(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to create or update user profile';
-    return handleRepositoryError(c, e as Error, profileRepository.handleProfileError, handleUpsertProfile.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleUpsertProfile.name, fallbackMessage);
   }
 }

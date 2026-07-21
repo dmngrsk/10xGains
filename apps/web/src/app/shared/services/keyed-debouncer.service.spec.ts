@@ -222,6 +222,49 @@ describe('KeyedDebouncerService', () => {
     });
   });
 
+  describe('operations that resolve without a value', () => {
+    it('should still report success when the API resolves undefined', async () => {
+      // The previous implementation detected success by `apiResponse !== undefined`, so an API that
+      // legitimately resolved undefined matched neither branch and the caller's observables
+      // completed empty - the operation silently vanished.
+      const key = 'undefined-key';
+      let successEvent: unknown = 'not-called';
+
+      const { successEvent$ } = service.enqueue(
+        key,
+        () => of(undefined as unknown as TestApiResponse),
+        defaultSuccessContext,
+        defaultFailureContext,
+        buildSuccess,
+        buildFailure
+      );
+      successEvent$.subscribe(event => (successEvent = event));
+
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS + 1);
+
+      expect(successEvent).toMatchObject({ key, data: undefined });
+    });
+
+    it('should complete a superseded operation without emitting anything', async () => {
+      const key = 'superseded-key';
+      let firstEmitted = false;
+      let firstCompleted = false;
+
+      const first = service.enqueue(key, mockApiCall({ id: '1', value: 'a' }), defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure);
+      first.successEvent$.subscribe({ next: () => (firstEmitted = true), complete: () => (firstCompleted = true) });
+
+      const second = service.enqueue(key, mockApiCall({ id: '2', value: 'b' }), defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure);
+      let secondEvent: TestSuccessEvent | undefined;
+      second.successEvent$.subscribe(event => (secondEvent = event));
+
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS + 1);
+
+      expect(firstEmitted).toBe(false);
+      expect(firstCompleted).toBe(true);
+      expect(secondEvent?.data).toEqual({ id: '2', value: 'b' });
+    });
+  });
+
   describe('flush', () => {
     it('flush(key) should execute a pending operation for that key immediately', async () => {
       const key = 'flushKey';
@@ -268,6 +311,33 @@ describe('KeyedDebouncerService', () => {
       let flushCompleted = false;
       service.flushCurrentActiveDebounce().subscribe({ complete: () => flushCompleted = true });
       await vi.advanceTimersByTimeAsync(0);
+      expect(flushCompleted).toBe(true);
+    });
+
+    it('flushCurrentActiveDebounce should wait for an operation already in flight', async () => {
+      // Once the debounce elapses the operation leaves `pending` and the request goes out.
+      // Reporting completion at that point tells the caller its write has landed when it has
+      // not - completing a session that way raced the set patch still on the wire.
+      const key = 'inFlight';
+      const apiDurationMs = 200;
+      const response: TestApiResponse = { id: key, value: 'inFlightData' };
+      const factory = mockApiCall(response, undefined, apiDurationMs);
+      let receivedResponse: TestApiResponse | undefined;
+
+      service.enqueue(key, factory, defaultSuccessContext, defaultFailureContext, buildSuccess, buildFailure).response$.subscribe((r: TestApiResponse) => receivedResponse = r);
+
+      // Let the debounce elapse so the call starts, but not long enough for it to return.
+      await vi.advanceTimersByTimeAsync(DEFAULT_DEBOUNCE_MS);
+      expect(receivedResponse, 'the request is still in flight').toBeUndefined();
+      expect(service.getCurrentlyDebouncingKey(), 'nothing is waiting out a debounce any more').toBeNull();
+
+      let flushCompleted = false;
+      service.flushCurrentActiveDebounce().subscribe({ complete: () => flushCompleted = true });
+      await vi.advanceTimersByTimeAsync(0);
+      expect(flushCompleted, 'flush must not report completion while the call is outstanding').toBe(false);
+
+      await vi.advanceTimersByTimeAsync(apiDurationMs);
+      expect(receivedResponse).toEqual(response);
       expect(flushCompleted).toBe(true);
     });
   });

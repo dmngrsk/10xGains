@@ -19,12 +19,18 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { DataIntegrityError, NotFoundError } from '../utils/errors';
 import {
   createEntityInCollection,
   updateEntityInCollection,
   deleteEntityFromCollection
 } from '../utils/supabase';
+import type { CollectionConfig } from '../utils/supabase';
+
+interface PlanOwnershipPath {
+  id: string;
+  days?: { id: string; exercises?: { id: string; sets?: { id: string }[] | null }[] | null }[] | null;
+}
 
 export type PlanQueryOptions = PagingQueryOptions & SortingQueryOptions;
 
@@ -56,9 +62,6 @@ export class PlanRepository {
    */
   async findAll(options: PlanQueryOptions): Promise<PlanListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
-    if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new Error('Invalid sort direction');
-    }
 
     const { data, count, error } = await this.supabase
       .from('plans')
@@ -72,9 +75,6 @@ export class PlanRepository {
               *
             )
           )
-        ),
-        progressions:plan_exercise_progressions (
-          *
         )
       `, { count: 'exact' })
       .eq('user_id', this.getUserId())
@@ -304,19 +304,14 @@ export class PlanRepository {
       order_index: command.order_index || 1,
     };
 
-    const updatedDays = await createEntityInCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      newDay,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, order: number) => ({ ...d, order_index: order })
-    );
+    const updatedDays = await createEntityInCollection(this.supabase, this.dayCollection(planId), newDay);
 
-    return updatedDays.find(d => d.name === newDay.name && d.description === newDay.description) || updatedDays[updatedDays.length - 1];
+    const createdDay = updatedDays.find(d => d.id === newDay.id);
+    if (!createdDay) {
+      throw new DataIntegrityError('Failed to create plan day.');
+    }
+
+    return createdDay;
   }
 
   /**
@@ -351,17 +346,7 @@ export class PlanRepository {
       order_index: command.order_index !== undefined ? command.order_index : existingDay.order_index,
     };
 
-    const updatedDays = await updateEntityInCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      updatedDay,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
-    );
+    const updatedDays = await updateEntityInCollection(this.supabase, this.dayCollection(planId), updatedDay);
 
     return updatedDays.find(d => d.id === dayId) || null;
   }
@@ -376,17 +361,7 @@ export class PlanRepository {
   async deleteDay(planId: string, dayId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    await deleteEntityFromCollection<PlanDayDto>(
-      this.supabase,
-      'plan_days',
-      'plan_id',
-      planId,
-      'order_index',
-      dayId,
-      (d: PlanDayDto) => d.id,
-      (d: PlanDayDto) => d.order_index,
-      (d: PlanDayDto, newIndex: number) => ({ ...d, order_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.dayCollection(planId), dayId);
 
     return true;
   }
@@ -467,19 +442,14 @@ export class PlanRepository {
       order_index: command.order_index || 1,
     };
 
-    const updatedExercises = await createEntityInCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      newExercise,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    const updatedExercises = await createEntityInCollection(this.supabase, this.exerciseCollection(dayId), newExercise);
 
-    return updatedExercises.find(e => e.exercise_id === newExercise.exercise_id) || updatedExercises[updatedExercises.length - 1];
+    const createdExercise = updatedExercises.find(e => e.id === newExercise.id);
+    if (!createdExercise) {
+      throw new DataIntegrityError('Failed to create plan exercise.');
+    }
+
+    return createdExercise;
   }
 
   /**
@@ -513,17 +483,7 @@ export class PlanRepository {
       order_index: command.order_index !== undefined ? command.order_index : existingExercise.order_index,
     };
 
-    const updatedExercises = await updateEntityInCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      updatedExercise,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    const updatedExercises = await updateEntityInCollection(this.supabase, this.exerciseCollection(dayId), updatedExercise);
 
     return updatedExercises.find(e => e.id === exerciseId) || null;
   }
@@ -539,17 +499,7 @@ export class PlanRepository {
   async deleteExercise(planId: string, dayId: string, exerciseId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
-    await deleteEntityFromCollection<PlanExerciseDto>(
-      this.supabase,
-      'plan_exercises',
-      'plan_day_id',
-      dayId,
-      'order_index',
-      exerciseId,
-      (e: PlanExerciseDto) => e.id,
-      (e: PlanExerciseDto) => e.order_index,
-      (e: PlanExerciseDto, newIndex: number) => ({ ...e, order_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.exerciseCollection(dayId), exerciseId);
 
     return true;
   }
@@ -632,19 +582,14 @@ export class PlanRepository {
       set_index: command.set_index || 1,
     };
 
-    const updatedSets = await createEntityInCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      newSet,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    const updatedSets = await createEntityInCollection(this.supabase, this.planSetCollection(exerciseId), newSet);
 
-    return updatedSets.find(s => s.expected_reps === newSet.expected_reps && s.expected_weight === newSet.expected_weight) || updatedSets[updatedSets.length - 1];
+    const createdSet = updatedSets.find(s => s.id === newSet.id);
+    if (!createdSet) {
+      throw new DataIntegrityError('Failed to create plan exercise set.');
+    }
+
+    return createdSet;
   }
 
   /**
@@ -681,17 +626,7 @@ export class PlanRepository {
       set_index: command.set_index !== undefined ? command.set_index : existingSet.set_index,
     };
 
-    const updatedSets = await updateEntityInCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      updatedSet,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    const updatedSets = await updateEntityInCollection(this.supabase, this.planSetCollection(exerciseId), updatedSet);
 
     return updatedSets.find(s => s.id === setId) || null;
   }
@@ -708,17 +643,7 @@ export class PlanRepository {
   async deleteSet(planId: string, dayId: string, exerciseId: string, setId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
 
-    await deleteEntityFromCollection<PlanExerciseSetDto>(
-      this.supabase,
-      'plan_exercise_sets',
-      'plan_exercise_id',
-      exerciseId,
-      'set_index',
-      setId,
-      (s: PlanExerciseSetDto) => s.id,
-      (s: PlanExerciseSetDto) => s.set_index,
-      (s: PlanExerciseSetDto, newIndex: number) => ({ ...s, set_index: newIndex })
-    );
+    await deleteEntityFromCollection(this.supabase, this.planSetCollection(exerciseId), setId);
 
     return true;
   }
@@ -820,76 +745,137 @@ export class PlanRepository {
   }
 
   /**
-   * Handles errors related to plan ownership, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
+   * The ordered collection of a plan's training days.
+   *
+   * @param {string} planId - The plan whose days form the collection.
+   * @returns {CollectionConfig<PlanDayDto>} The collection descriptor.
    */
-  handlePlanOwnershipError(error: Error): ApiErrorResponse | null {
-    const ownershipErrorMessages = [
-      'Plan not found or user does not have access',
-      'Plan day not found or user does not have access',
-      'Plan exercise not found or user does not have access',
-      'Plan exercise set not found or user does not have access'
-    ];
-
-    if (ownershipErrorMessages.some(msg => error?.message?.includes(msg))) {
-      return createErrorData(400, error.message, { type: 'ownership_verification_error' }, 'PLAN_OWNERSHIP_ERROR');
-    }
-
-    return null;
+  private dayCollection(planId: string): CollectionConfig<PlanDayDto> {
+    return {
+      table: 'plan_days',
+      parentColumn: 'plan_id',
+      parentId: planId,
+      orderColumn: 'order_index',
+      getId: (d) => d.id,
+      getOrder: (d) => d.order_index,
+      setOrder: (d, order) => ({ ...d, order_index: order }),
+    };
   }
 
   /**
-   * Handles errors when an exercise is not found, returning a formatted API error response.
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
+   * The ordered collection of a training day's exercises.
+   *
+   * @param {string} dayId - The day whose exercises form the collection.
+   * @returns {CollectionConfig<PlanExerciseDto>} The collection descriptor.
    */
-  handleExerciseNotFoundError(error: Error): ApiErrorResponse | null {
-    if (error?.message?.includes('Exercise not found')) {
-      const errorData = createErrorData(400, error.message, { type: 'exercise_not_found_error' }, 'EXERCISE_NOT_FOUND_ERROR');
-      return errorData;
-    }
-
-    return null;
+  private exerciseCollection(dayId: string): CollectionConfig<PlanExerciseDto> {
+    return {
+      table: 'plan_exercises',
+      parentColumn: 'plan_day_id',
+      parentId: dayId,
+      orderColumn: 'order_index',
+      getId: (e) => e.id,
+      getOrder: (e) => e.order_index,
+      setOrder: (e, order) => ({ ...e, order_index: order }),
+    };
   }
 
+  /**
+   * The ordered collection of a plan exercise's sets.
+   *
+   * @param {string} exerciseId - The exercise whose sets form the collection.
+   * @returns {CollectionConfig<PlanExerciseSetDto>} The collection descriptor.
+   */
+  private planSetCollection(exerciseId: string): CollectionConfig<PlanExerciseSetDto> {
+    return {
+      table: 'plan_exercise_sets',
+      parentColumn: 'plan_exercise_id',
+      parentId: exerciseId,
+      orderColumn: 'set_index',
+      getId: (s) => s.id,
+      getOrder: (s) => s.set_index,
+      setOrder: (s, index) => ({ ...s, set_index: index }),
+    };
+  }
+
+  /**
+   * Verifies that the given plan belongs to the current user, and that each id below it really sits
+   * on the path implied by the one above.
+   *
+   * Only the requested path is fetched: the embed is built to the depth the caller asked about and
+   * each level is filtered to the single id in question. Selecting the whole tree instead - every
+   * day, exercise and set id of the plan - made a one-set edit walk the entire plan on every
+   * request, before the collection helper had even fetched the sibling rows.
+   *
+   * The embeds are deliberately not `!inner`: a non-matching child leaves the plan row in place with
+   * an empty array, which is what lets the checks below report *which* level was missing rather than
+   * collapsing every failure into "plan not found".
+   *
+   * @param {string} planId - The plan that must belong to the current user.
+   * @param {string} [dayId] - A day that must belong to that plan.
+   * @param {string} [exerciseId] - An exercise that must belong to that day.
+   * @param {string} [setId] - A set that must belong to that exercise.
+   */
   private async verifyPlanOwnership(planId: string, dayId?: string, exerciseId?: string, setId?: string): Promise<void> {
-    const { data, error }  = await this.supabase
+    let select = 'id';
+    if (dayId) {
+      const exercisesEmbed = exerciseId
+        ? `, exercises:plan_exercises(id${setId ? ', sets:plan_exercise_sets(id)' : ''})`
+        : '';
+      select = `id, days:plan_days(id${exercisesEmbed})`;
+    }
+
+    const query = this.supabase
       .from('plans')
-      .select('id, days:plan_days(id, exercises:plan_exercises(id, sets:plan_exercise_sets(id)))')
+      .select(select)
       .eq('id', planId)
-      .eq('user_id', this.getUserId())
-      .maybeSingle();
+      .eq('user_id', this.getUserId());
+
+    if (dayId) {
+      query.eq('days.id', dayId);
+    }
+    if (exerciseId) {
+      query.eq('days.exercises.id', exerciseId);
+    }
+    if (setId) {
+      query.eq('days.exercises.sets.id', setId);
+    }
+
+    const { data, error } = await query.maybeSingle<PlanOwnershipPath>();
 
     if (error) {
       throw error;
     }
 
     if (!data) {
-      throw new Error('Plan not found or user does not have access');
+      throw new NotFoundError('Plan not found.', 'PLAN_NOT_FOUND', 'plan_not_found_error');
     }
 
-    if (dayId) {
-      const day = data.days?.find(d => d.id === dayId);
-      if (!day) {
-        throw new Error('Plan day not found or user does not have access');
-      }
+    if (!dayId) {
+      return;
+    }
 
-      if (exerciseId) {
-        const exercise = day.exercises?.find(e => e.id === exerciseId);
-        if (!exercise) {
-          throw new Error('Plan exercise not found or user does not have access');
-        }
+    const day = data.days?.[0];
+    if (!day) {
+      throw new NotFoundError('Plan day not found.', 'PLAN_DAY_NOT_FOUND', 'plan_day_not_found_error');
+    }
 
-        if (setId) {
-          const set = exercise.sets?.find(s => s.id === setId);
-          if (!set) {
-            throw new Error('Plan exercise set not found or user does not have access');
-          }
-        }
-      }
+    if (!exerciseId) {
+      return;
+    }
+
+    const exercise = day.exercises?.[0];
+    if (!exercise) {
+      throw new NotFoundError('Plan exercise not found.', 'PLAN_EXERCISE_NOT_FOUND', 'plan_exercise_not_found_error');
+    }
+
+    if (!setId) {
+      return;
+    }
+
+    if (!exercise.sets?.[0]) {
+      throw new NotFoundError('Plan exercise set not found.', 'PLAN_EXERCISE_SET_NOT_FOUND', 'plan_exercise_set_not_found_error');
     }
   }
-
 
 }

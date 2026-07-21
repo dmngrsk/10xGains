@@ -1,6 +1,5 @@
 import { handleProportionalDeload } from './deload-strategies/proportional-deload';
 import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanExerciseSetDto } from '@txg/shared';
-import { groupBy } from "../../utils/collections";
 
 /**
  * Resolves exercise progressions based on completed session sets and current progression rules.
@@ -27,17 +26,27 @@ export function resolveExerciseProgressions(
   const exerciseSetsToUpdate: PlanExerciseSetDto[] = [];
   const exerciseProgressionsToUpdate: PlanExerciseProgressionDto[] = [];
 
-  const exerciseMap = groupBy(planExercises, 'exercise_id');
+  const exerciseMap = Object.groupBy(planExercises, (planExercise) => planExercise.exercise_id);
   const progressionMap = new Map(exerciseProgressions.map(p => [p.exercise_id, p]));
   const actualPerformedExercises = new Set(sessionSets.map(ss => ss.plan_exercise_id));
 
-  for (const [exerciseId, scopedPlanExercises] of Object.entries(exerciseMap)) {
+  // `Object.groupBy` types its values as possibly absent, since it cannot know which keys exist.
+  // A key only exists here because something was grouped under it, so the fallback never runs.
+  for (const [exerciseId, group] of Object.entries(exerciseMap)) {
+    const scopedPlanExercises = group ?? [];
     const currentSets = scopedPlanExercises.map(pe => pe.sets).flat().filter(s => !!s);
     const currentProgression = progressionMap.get(exerciseId);
 
     if (!currentProgression) {
-      throw new Error(`No exercise progression found for exercise_id: ${exerciseId}.`);
-    } else if (currentSets.length === 0) {
+      // Progressions are only created explicitly (PUT /plans/:planId/progressions/:exerciseId), so
+      // an exercise added to an already-active plan has none. Failing here would abort the whole
+      // completion with a 500 on an ordinary user path; instead leave this exercise's targets
+      // untouched and progress the others.
+      console.warn(`No exercise progression found for exercise ${exerciseId}. Leaving its sets unchanged.`);
+      continue;
+    }
+
+    if (currentSets.length === 0) {
       console.warn(`No expected sets found for exercise ${exerciseId}. Skipping progression update.`);
       continue;
     }

@@ -113,7 +113,11 @@ export class HistoryFilterDialogComponent implements OnInit {
 
   onMonthSelected(month: Date, picker: MatDatepicker<Date>): void {
     this.filterForm.get('month')!.setValue(month);
-    picker.close();
+    // Close on the next tick, not synchronously. Selecting a month emits monthSelected while the
+    // datepicker is still transitioning to its day view; a synchronous close() races that
+    // transition and is occasionally swallowed, leaving the picker open over the dialog and
+    // blocking the Apply button. Deferring lets the view settle so the close always lands.
+    setTimeout(() => picker.close());
   }
 
   onFiltersApplied(): void {

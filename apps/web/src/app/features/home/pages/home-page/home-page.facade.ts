@@ -10,6 +10,7 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { HomePageViewModel } from '../../models/home-page.viewmodel';
 
 const initialState: HomePageViewModel = {
@@ -33,6 +34,10 @@ export class HomePageFacade {
 
   readonly viewModel = signal<HomePageViewModel>(initialState);
   private readonly currentUser = computed(() => this.authService.currentUser());
+
+  constructor() {
+    resetOnUserChange(() => this.viewModel.set(initialState));
+  }
 
   loadHomePageData(): void {
     this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
@@ -135,23 +140,7 @@ export class HomePageFacade {
     ).subscribe();
   }
 
-  abandonSession(sessionId: string) {
-    const currentViewModel = this.viewModel();
-    if (!currentViewModel.activePlanId) {
-      console.error('Cannot create session without an active plan.');
-      this.viewModel.update(state => ({ ...state, error: 'Active plan is required to create a session.', isLoading: false }));
-      return;
-    }
-
-    this.viewModel.update(state => ({ ...state, isLoading: true, error: null }));
-
-    this.sessionService.completeSession(sessionId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      tap(() => this.createSession()),
-      catchError((error: Error) => {
-        this.viewModel.update(state => ({ ...state, isLoading: false, error: error.message }));
-        return EMPTY;
-      })
-    ).subscribe();
+  abandonSession() {
+    this.createSession();
   }
 }

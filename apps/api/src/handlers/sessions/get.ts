@@ -8,10 +8,10 @@ import { optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, option
 const QUERY_SCHEMA = withCoherentDateRange(z.object({
   limit: optionalLimit(),
   offset: optionalOffset(),
-  sort: optionalSort('session_date', 'asc'),
+  sort: optionalSort('session_date', 'asc', ['status']),
   status: optionalCsvList(z.enum(SESSION_STATUSES)),
   date_from: optionalIsoDate(),
-  date_to: optionalIsoDate(),
+  date_to: optionalIsoDate('end'),
   plan_id: z.string().uuid().optional(),
 }));
 
@@ -36,6 +36,6 @@ export async function handleGetSessions(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to fetch training sessions';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetSessions.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetSessions.name, fallbackMessage);
   }
 }

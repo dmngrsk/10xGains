@@ -33,6 +33,6 @@ export async function handleGetPlanExerciseSets(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to get plan exercise sets';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetPlanExerciseSets.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleGetPlanExerciseSets.name, fallbackMessage);
   }
 }

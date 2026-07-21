@@ -8,7 +8,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { ApiErrorResponse, createErrorData } from "../utils/api-helpers";
+import { ForbiddenError } from '../utils/errors';
 
 export type ExerciseQueryOptions = PagingQueryOptions & SortingQueryOptions;
 
@@ -25,9 +25,6 @@ export class ExerciseRepository {
    */
   async findAll(options: ExerciseQueryOptions): Promise<ExerciseListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
-    if (sortDirection !== 'asc' && sortDirection !== 'desc') {
-      throw new Error('Invalid sort direction. Must be "asc" or "desc".');
-    }
 
     const { data, count, error } = await this.supabase
       .from('exercises')
@@ -95,28 +92,10 @@ export class ExerciseRepository {
    * @param {UpdateExerciseCommand} _command - The command with the updated data.
    * @returns {Promise<ExerciseDto | null>} A promise that resolves to the updated exercise.
    */
-  async update(_exerciseId: string, _command: UpdateExerciseCommand): Promise<ExerciseDto | null> {
-    // TODO: Add admin role check, disable for now
-    await new Promise(resolve => setTimeout(resolve, 10));
-    throw new Error('Forbidden: You cannot update this exercise');
-
-    /*
-    const { data, error } = await this.supabase
-      .from('exercises')
-      .update(command)
-      .eq('id', exerciseId)
-      .select()
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return null;
-      }
-      throw error;
-    }
-
-    return data as ExerciseDto;
-    */
+  update(_exerciseId: string, _command: UpdateExerciseCommand): Promise<ExerciseDto | null> {
+    // The catalog is shared between all users, so editing an entry is an administrative action.
+    // There is no admin role yet; RLS denies the update as well, so this is not the only guard.
+    throw new ForbiddenError('You cannot update this exercise.', 'EXERCISE_FORBIDDEN', 'exercise_forbidden_error');
   }
 
   /**
@@ -125,46 +104,9 @@ export class ExerciseRepository {
    * @param {string} _exerciseId - The ID of the exercise to delete.
    * @returns {Promise<boolean>} A promise that resolves to true if deletion was successful.
    */
-  async delete(_exerciseId: string): Promise<boolean> {
-    // TODO: Add admin role check, disable for now
-    await new Promise(resolve => setTimeout(resolve, 10));
-    throw new Error('Forbidden: You cannot delete this exercise');
-
-    /*
-    const { error } = await this.supabase
-      .from('exercises')
-      .delete()
-      .eq('id', exerciseId);
-
-    if (error) {
-      throw error;
-    }
-
-    return true;
-    */
+  delete(_exerciseId: string): Promise<boolean> {
+    // See `update`: removing a shared catalog entry is an administrative action, denied by RLS too.
+    throw new ForbiddenError('You cannot delete this exercise.', 'EXERCISE_FORBIDDEN', 'exercise_forbidden_error');
   }
 
-  /**
-   * Handles exercise-specific errors, returning a formatted API error response.
-   *
-   * @param {Error} error - The error to handle.
-   * @returns {ApiErrorResponse | null} A formatted error response or null if the error is not applicable.
-   */
-  handleExerciseError(error: Error): ApiErrorResponse | null {
-    const errorMessages = [
-      'Forbidden: You cannot update this exercise',
-      'Forbidden: You cannot delete this exercise'
-    ];
-
-    if (errorMessages.some(msg => error?.message?.includes(msg))) {
-      return createErrorData(
-        403,
-        error.message,
-        { type: 'exercise_access_error' },
-        'EXERCISE_ACCESS_ERROR'
-      );
-    }
-
-    return null;
-  }
 }

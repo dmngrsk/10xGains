@@ -252,15 +252,33 @@ describe('resolveExerciseProgressions', () => {
     }).toThrow("Unsupported deload strategy: 'UNKNOWN_STRATEGY' for exercise ex1.");
   });
 
-  it('should throw error if no progression found for an exercise', () => {
+  it('should leave an exercise unchanged when it has no progression', () => {
+    // Progressions are created explicitly, so an exercise added to an already-active plan has
+    // none. Completing the session must still succeed rather than failing with a 500.
     const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)];
     const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
     const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 5)];
     const progressions: PlanExerciseProgressionDto[] = [];
 
-    expect(() => {
-      resolveExerciseProgressions(sessionSets, planExercises, progressions);
-    }).toThrow('No exercise progression found for exercise_id: ex1.');
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(result.exerciseSetsToUpdate).toEqual([]);
+    expect(result.exerciseProgressionsToUpdate).toEqual([]);
+  });
+
+  it('should still progress other exercises when one has no progression', () => {
+    const withProgression = mockPlanExercise('tpe1', 'ex1', [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)]);
+    const withoutProgression = mockPlanExercise('tpe2', 'ex2', [mockPlanExerciseSet('set2-1', 'tpe2', 0, 50, 5)]);
+    const sessionSets: SessionSetDto[] = [
+      mockSessionSet('ss1', 'tpe1', 0, 100, 5),
+      mockSessionSet('ss2', 'tpe2', 0, 50, 5),
+    ];
+    const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5)];
+
+    const result = resolveExerciseProgressions(sessionSets, [withProgression, withoutProgression], progressions);
+
+    expect(result.exerciseProgressionsToUpdate.map(p => p.exercise_id)).toEqual(['ex1']);
+    expect(result.exerciseSetsToUpdate.every(s => s.plan_exercise_id === 'tpe1')).toBe(true);
   });
 
    it('should warn and treat exercise as failed if an expected set is missing from actual performed sets', () => {
@@ -283,5 +301,28 @@ describe('resolveExerciseProgressions', () => {
     result.exerciseSetsToUpdate.forEach((set: PlanExerciseSetDto) => {
       expect(set.expected_weight).toBe(100);
     });
+  });
+
+  it('should key progressions by exercise alone, so callers must pass only one plan\'s rules', () => {
+    // Progressions are unique per (plan_id, exercise_id), but this function maps them by
+    // exercise_id, so two plans' rules for the same exercise collide and the last one wins -
+    // applying the wrong increment and writing the result back onto the wrong plan's row.
+    // The caller guarantees the input is scoped to a single plan; this pins down why it must.
+    const planExercises: PlanExerciseDto[] = [
+      mockPlanExercise('tpe1', 'ex1', [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)]),
+    ];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 5)];
+
+    const thisPlan = { ...mockExerciseProgression('ex1', 2.5), id: 'prog-this', plan_id: 'tp1' };
+    const otherPlan = { ...mockExerciseProgression('ex1', 10), id: 'prog-other', plan_id: 'tp2' };
+
+    const scoped = resolveExerciseProgressions(sessionSets, planExercises, [thisPlan]);
+    const unscoped = resolveExerciseProgressions(sessionSets, planExercises, [thisPlan, otherPlan]);
+
+    expect(scoped.exerciseSetsToUpdate[0].expected_weight).toBe(102.5);
+    expect(scoped.exerciseProgressionsToUpdate[0].id).toBe('prog-this');
+
+    expect(unscoped.exerciseSetsToUpdate[0].expected_weight).toBe(110);
+    expect(unscoped.exerciseProgressionsToUpdate[0].id).toBe('prog-other');
   });
 });

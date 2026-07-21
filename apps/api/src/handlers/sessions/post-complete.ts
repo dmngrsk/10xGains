@@ -27,10 +27,6 @@ export async function handleCompleteSession(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to complete training session';
-    const mergedErrorHandler = (error: Error) =>
-      sessionRepository.handleSessionCompletionError(error) ||
-      sessionRepository.handlePlanMissingError(error) ||
-      sessionRepository.handleSessionOwnershipError(error);
-    return handleRepositoryError(c, e as Error, mergedErrorHandler, handleCompleteSession.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleCompleteSession.name, fallbackMessage);
   }
 }

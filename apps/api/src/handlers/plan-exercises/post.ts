@@ -31,7 +31,6 @@ export async function handleCreatePlanExercise(c: Context<AppContext>) {
     return c.json(successData, 201);
   } catch (error) {
     const fallbackMessage = 'Failed to add exercise to plan day';
-    const mergedErrorHandler = (error: Error) => planRepository.handleExerciseNotFoundError(error) || planRepository.handlePlanOwnershipError(error);
-    return handleRepositoryError(c, error as Error, mergedErrorHandler, handleCreatePlanExercise.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleCreatePlanExercise.name, fallbackMessage);
   }
 }

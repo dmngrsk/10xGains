@@ -29,9 +29,21 @@ export class CallbackComponent implements OnInit {
       .subscribe(({ auth, params }) => {
         const type = params['type'];
         if (type === 'register') {
-          this.profileService.createDefaultProfile(auth.userId!).subscribe(() => {
-            this.snackBar.open('Verification successful! Welcome to 10xGains.', 'Close', { duration: 5000 });
+          if (!auth.isAuthenticated || !auth.userId) {
+            this.snackBar.open('This verification link has expired or has already been used. Please sign in or request a new one.', 'Close', { duration: 8000 });
             this.router.navigate(['/auth']);
+            return;
+          }
+
+          this.profileService.createDefaultProfile(auth.userId).subscribe({
+            next: () => {
+              this.snackBar.open('Verification successful! Welcome to 10xGains.', 'Close', { duration: 5000 });
+              this.router.navigate(['/auth']);
+            },
+            error: () => {
+              this.snackBar.open('We could not finish setting up your account. Please try signing in.', 'Close', { duration: 5000 });
+              this.router.navigate(['/auth']);
+            }
           });
         } else if (type === 'reset-password') {
           this.router.navigate(['/settings'], { state: { action: 'changePassword' } });

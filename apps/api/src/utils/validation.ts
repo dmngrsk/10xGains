@@ -52,18 +52,38 @@ export function optionalOffset(defaultOffset: number = DEFAULT_OFFSET) {
 /**
  * The `sort` query parameter, in `column_name.(asc|desc)` form.
  *
- * @param {string} defaultColumn - The column sorted on when the parameter is absent.
+ * The column is checked against an explicit whitelist. Accepting any identifier meant an unknown
+ * column reached PostgREST, which rejected it with an error the API surfaced as a 500 - a client
+ * mistake reported as a server fault. Restricting it here also keeps the sort surface deliberate
+ * rather than "whatever columns the table happens to have".
+ *
+ * @param {string} defaultColumn - The column sorted on when the parameter is absent. Always allowed.
  * @param {'asc' | 'desc'} [defaultDirection] - The direction used with that column.
+ * @param {readonly string[]} [additionalColumns] - Other columns clients may sort by.
  * @returns A schema producing a validated sort expression.
  */
-export function optionalSort(defaultColumn: string, defaultDirection: 'asc' | 'desc' = 'asc') {
+export function optionalSort(
+  defaultColumn: string,
+  defaultDirection: 'asc' | 'desc' = 'asc',
+  additionalColumns: readonly string[] = []
+) {
   const fallback = `${defaultColumn}.${defaultDirection}`;
+  const allowedColumns = new Set([defaultColumn, ...additionalColumns]);
 
   return z.preprocess(
     (val) => (isAbsent(val) ? fallback : String(val)),
-    z.string().regex(SORT_PATTERN, 'Sort parameter must be in format column_name.(asc|desc)').default(fallback)
+    z.string()
+      .regex(SORT_PATTERN, 'Sort parameter must be in format column_name.(asc|desc)')
+      .refine(
+        (value) => allowedColumns.has(value.split('.')[0]!),
+        `Sort column must be one of: ${[...allowedColumns].sort().join(', ')}`
+      )
+      .default(fallback)
   );
 }
+
+/** A date-only query value, with no time component. */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * An optional query parameter holding an ISO 8601 datetime.
@@ -73,16 +93,51 @@ export function optionalSort(defaultColumn: string, defaultDirection: 'asc' | 'd
  * so that Zod rejects it (400 Bad Request); calling `toISOString()` on an Invalid Date would
  * instead throw a RangeError straight out of `safeParse`, surfacing as a 500.
  *
+ * Which end of the day a date-only value widens to matters for range filters. `2026-04-13`
+ * naturally reads as midnight, which is right for an inclusive lower bound but wrong for an upper
+ * one: as `lte midnight` it excluded everything that happened *during* the named day, so asking for
+ * sessions up to the 13th returned nothing from the 13th. Pass `'end'` for upper bounds so the
+ * named day is included, as a reader of the query would expect.
+ *
+ * @param {'start' | 'end'} [boundary] - Which end of the day a date-only value widens to.
  * @returns A schema accepting an optional ISO datetime string.
  */
-export function optionalIsoDate() {
+export function optionalIsoDate(boundary: 'start' | 'end' = 'start') {
   return z.preprocess((val) => {
     if (val === undefined || val === null || val === '') {
       return undefined;
     }
-    const date = new Date(String(val));
-    return isNaN(date.getTime()) ? String(val) : date.toISOString();
+
+    const raw = String(val);
+    if (boundary === 'end' && DATE_ONLY_PATTERN.test(raw)) {
+      return `${raw}T23:59:59.999Z`;
+    }
+
+    const date = new Date(raw);
+    return isNaN(date.getTime()) ? raw : date.toISOString();
   }, z.string().datetime().optional());
+}
+
+/**
+ * An optional query parameter holding a whole, non-negative count.
+ *
+ * Rep counts are whole numbers everywhere else in the schema, and zero is a meaningful value - it
+ * is what a failed set with no completed reps records - so the floor is zero rather than one.
+ *
+ * Coerces with `Number`, so a non-numeric value becomes NaN and is rejected with a 400 rather
+ * than being silently truncated the way `parseInt('12abc')` would be.
+ *
+ * @param {string} label - How the value is named in the validation message, e.g. 'Rep count'.
+ * @returns A schema accepting an optional non-negative integer.
+ */
+export function optionalCount(label: string) {
+  return z.preprocess(
+    (val) => (isAbsent(val) ? undefined : Number(val)),
+    z.number()
+      .int(`${label} must be a whole number`)
+      .nonnegative(`${label} cannot be negative`)
+      .optional()
+  );
 }
 
 /**

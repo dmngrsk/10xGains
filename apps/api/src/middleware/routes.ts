@@ -1,5 +1,5 @@
 import { Context, Hono } from 'hono';
-import { requiredAuthMiddleware, optionalAuthMiddleware } from './auth';
+import { requiredAuthMiddleware } from './auth';
 import { handleGetExercises } from '../handlers/exercises/get';
 import { handleCreateExercise } from '../handlers/exercises/post';
 import { handleGetExerciseById } from '../handlers/exercises/get-id';
@@ -46,14 +46,14 @@ import { handleCompleteSessionSet } from '../handlers/session-sets/patch-complet
 import { handleFailSessionSet } from '../handlers/session-sets/patch-fail';
 import { handleResetSessionSet } from '../handlers/session-sets/patch-reset';
 import type { AppContext } from '../context';
-import { createErrorDataWithLogging } from "../utils/api-helpers";
+import { createErrorDataWithLogging, createServerErrorData } from "../utils/api-helpers";
 
 // /api/exercises
 function createExerciseRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
-    .get('/', optionalAuthMiddleware, handleGetExercises)
+    .get('/', handleGetExercises)
     .post('/', requiredAuthMiddleware, handleCreateExercise)
-    .get('/:exerciseId', optionalAuthMiddleware, handleGetExerciseById)
+    .get('/:exerciseId', handleGetExerciseById)
     .put('/:exerciseId', requiredAuthMiddleware, handlePutExerciseById)
     .delete('/:exerciseId', requiredAuthMiddleware, handleDeleteExerciseById);
 }
@@ -117,12 +117,6 @@ function createPlanExerciseProgressionRoutes(): Hono<AppContext> {
     .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseProgressionById);
 }
 
-// /api/progress
-function createProgressRoutes(): Hono<AppContext> {
-  return new Hono<AppContext>()
-    .get('/exercises', requiredAuthMiddleware, handleGetExerciseProgress);
-}
-
 // /api/sessions
 function createSessionRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
@@ -148,6 +142,12 @@ function createSessionSetRoutes(): Hono<AppContext> {
     .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);
 }
 
+// /api/progress
+function createProgressRoutes(): Hono<AppContext> {
+  return new Hono<AppContext>()
+    .get('/exercises', requiredAuthMiddleware, handleGetExerciseProgress);
+}
+
 // Handles health check endpoint
 function handleHealthEndpoint(c: Context) {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -162,7 +162,7 @@ function handleNotFound(c: Context) {
 // Handles any unhandled error
 function handleOnError(err: Error, c: Context) {
   console.error('Unhandled error:', err);
-  const errorData = createErrorDataWithLogging(500, 'Internal Server Error', { details: err.message });
+  const errorData = createServerErrorData('Internal Server Error', err);
   return c.json(errorData, 500);
 }
 

@@ -1,6 +1,17 @@
 import type { Context, Next } from 'hono';
 import { createErrorData, createErrorDataWithLogging } from '../utils/api-helpers';
-import type { AppContext } from '../context';
+import type { AppContext, AuthenticatedUser } from '../context';
+
+/** Extracts the bearer token from an Authorization header, if there is one. */
+function readBearerToken(c: Context<AppContext>): string | null {
+  const authorization = c.req.header('Authorization');
+  if (!authorization) {
+    return null;
+  }
+
+  const [scheme, token] = authorization.split(' ');
+  return scheme?.toLowerCase() === 'bearer' && token ? token : null;
+}
 
 /**
  * Creates an authentication middleware for Hono.
@@ -23,9 +34,17 @@ export const authMiddleware = (requireAuth = true) => async (c: Context<AppConte
     return c.json(errorData, 500);
   }
 
-  const { data: { user: sessionUser }, error: authError } = await supabaseClient.auth.getUser();
+  const token = readBearerToken(c);
+  const { data, error: authError } = token
+    ? await supabaseClient.auth.getClaims(token)
+    : { data: null, error: null };
 
-  if (requireAuth && (authError || !sessionUser)) {
+  const claims = data?.claims;
+  const sessionUser: AuthenticatedUser | null = claims?.sub
+    ? { id: claims.sub, email: claims.email, role: claims.role }
+    : null;
+
+  if (requireAuth && !sessionUser) {
     console.error("Auth error or no user in session:", authError?.message);
     const errorData = createErrorData(
       401,
@@ -48,9 +67,3 @@ export const authMiddleware = (requireAuth = true) => async (c: Context<AppConte
  * If authentication fails, it returns a 401 Unauthorized error.
  */
 export const requiredAuthMiddleware = authMiddleware(true);
-
-/**
- * Middleware that treats authentication as optional.
- * If a user is authenticated, their info is set in the context; otherwise, the request proceeds without a user.
- */
-export const optionalAuthMiddleware = authMiddleware(false);

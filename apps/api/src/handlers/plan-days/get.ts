@@ -31,6 +31,6 @@ export async function handleGetPlanDays(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to get plan days';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetPlanDays.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleGetPlanDays.name, fallbackMessage);
   }
 }

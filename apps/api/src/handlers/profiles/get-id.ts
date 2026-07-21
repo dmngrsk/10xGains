@@ -27,6 +27,6 @@ export async function handleGetProfile(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to get user profile';
-    return handleRepositoryError(c, e as Error, profileRepository.handleProfileError, handleGetProfile.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetProfile.name, fallbackMessage);
   }
 }

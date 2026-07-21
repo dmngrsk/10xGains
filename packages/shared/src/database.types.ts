@@ -366,13 +366,38 @@ export interface Database {
     }
     Views: Record<string, never>
     Functions: {
+      complete_session: {
+        Args: {
+          p_operations: Json
+          p_session_id: string
+        }
+        Returns: undefined
+      }
+      create_session: {
+        Args: {
+          p_operations: Json
+          p_outstanding_session_ids: string[]
+          p_plan_id: string
+        }
+        Returns: undefined
+      }
+      patch_session_set: {
+        Args: {
+          p_session_id: string
+          p_set_id: string
+          p_updates: Json
+        }
+        Returns: Json
+      }
       replace_collection: {
         Args: {
-          p_table_name: string
+          p_order_column: string
           p_parent_column: string
           p_parent_id: string
-          p_order_column: string
           p_records: Json
+          p_scope_column?: string
+          p_scope_id?: string
+          p_table_name: string
         }
         Returns: Json
       }

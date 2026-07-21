@@ -28,6 +28,6 @@ export async function handleGetSessionById(c: Context<AppContext>) {
 
   } catch (e) {
     const fallbackMessage = 'Failed to retrieve training session';
-    return handleRepositoryError(c, e as Error, sessionRepository.handleSessionOwnershipError, handleGetSessionById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handleGetSessionById.name, fallbackMessage);
   }
 }

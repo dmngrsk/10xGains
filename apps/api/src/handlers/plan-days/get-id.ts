@@ -28,6 +28,6 @@ export async function handleGetPlanDayById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (error) {
     const fallbackMessage = 'Failed to get plan day';
-    return handleRepositoryError(c, error as Error, planRepository.handlePlanOwnershipError, handleGetPlanDayById.name, fallbackMessage);
+    return handleRepositoryError(c, error as Error, handleGetPlanDayById.name, fallbackMessage);
   }
 }

@@ -38,6 +38,6 @@ export async function handlePutPlanById(c: Context<AppContext>) {
     return c.json(successData, 200);
   } catch (e) {
     const fallbackMessage = 'Failed to update plan';
-    return handleRepositoryError(c, e as Error, planRepository.handlePlanOwnershipError, handlePutPlanById.name, fallbackMessage);
+    return handleRepositoryError(c, e as Error, handlePutPlanById.name, fallbackMessage);
   }
 }
