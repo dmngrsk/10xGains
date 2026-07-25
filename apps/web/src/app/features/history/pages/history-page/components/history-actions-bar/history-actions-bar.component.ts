@@ -27,8 +27,8 @@ export class HistoryActionsBarComponent {
   @Input() pageSize: number = 10;
   @Input() pageIndex: number = 0;
   @Input() pageSizeOptions: number[] = [5, 10, 25, 100];
-  @Input() viewMode: HistoryViewMode = 'list';
   @Input() planName: string = '';
+  @Input() viewMode: HistoryViewMode = 'list';
 
   @Output() filterButtonClicked = new EventEmitter<void>();
   @Output() pageChanged = new EventEmitter<PageEvent>();
