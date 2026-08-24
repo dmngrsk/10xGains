@@ -11,10 +11,17 @@ import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/
 import { VALIDATION_MESSAGES } from '@shared/ui/messages/validation';
 
 export type AddEditDayDialogValue = Pick<PlanDayDto, 'name' | 'description'>;
-export type AddEditDayDialogData = Partial<AddEditDayDialogValue> & { isEditMode?: boolean; }
+
+export type AddEditDayDialogData = Partial<AddEditDayDialogValue> & {
+  isEditMode?: boolean;
+  canDelete?: boolean;
+  canArchive?: boolean;
+}
+
 export type AddEditDayDialogCloseResult =
   | { save: true; value: AddEditDayDialogValue }
   | { delete: true }
+  | { archive: true }
   | undefined;
 
 @Component({
@@ -69,23 +76,37 @@ export class AddEditDayDialogComponent {
       console.error('Attempted to delete a day but no day data was provided to the dialog.');
       return;
     }
-    const dialogRef = this.dialog.open<ConfirmationDialogComponent, ConfirmationDialogData, boolean>(
-      ConfirmationDialogComponent,
-      {
-        data: {
-          title: 'Delete Day',
-          message: `Are you sure you want to delete the day "${this.data.name || 'this day'}"? All its exercises and sets will also be removed.`,
-          confirmButtonText: 'Delete',
-          cancelButtonText: 'Cancel',
-        }
-      }
-    );
 
-    dialogRef.afterClosed()
+    this.confirm({
+      title: 'Delete Day',
+      message: `Are you sure you want to delete the day "${this.data.name || 'this day'}"? All its exercises and sets will also be removed.`,
+      confirmButtonText: 'Delete',
+      cancelButtonText: 'Cancel',
+    }, { delete: true });
+  }
+
+  onArchiveDay(): void {
+    if (!this.data) {
+      console.error('Attempted to archive a day but no day data was provided to the dialog.');
+      return;
+    }
+
+    this.confirm({
+      title: 'Archive Day',
+      message: `Remove "${this.data.name || 'this day'}" from this plan? Workouts already trained from it stay in your history, and future sessions will skip it.`,
+      confirmButtonText: 'Archive',
+      cancelButtonText: 'Cancel',
+    }, { archive: true });
+  }
+
+  private confirm(data: ConfirmationDialogData, result: AddEditDayDialogCloseResult): void {
+    this.dialog
+      .open<ConfirmationDialogComponent, ConfirmationDialogData, boolean>(ConfirmationDialogComponent, { data })
+      .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(confirmed => {
-        if (confirmed && this.data) {
-          this.dialogRef.close({ delete: true });
+        if (confirmed) {
+          this.dialogRef.close(result);
         }
       });
   }

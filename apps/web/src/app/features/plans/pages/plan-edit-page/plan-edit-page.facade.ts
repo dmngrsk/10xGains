@@ -48,6 +48,7 @@ export class PlanEditPageFacade {
   private internalProfile: ProfileDto | null = null;
   private internalExercises: ExerciseDto[] = [];
   private internalSessionCount: number | null = null;
+  private internalOpenSessionCount: number | null = null;
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
@@ -65,6 +66,7 @@ export class PlanEditPageFacade {
       this.internalProfile = null;
       this.internalExercises = [];
       this.internalSessionCount = null;
+      this.internalOpenSessionCount = null;
     }
 
     this.viewModelSignal.update(s => ({ ...s, isLoading: true, error: null, plan: s.plan?.id === planId ? s.plan : null }));
@@ -103,13 +105,21 @@ export class PlanEditPageFacade {
           catchError(err => this.handleError<number>(err))
         );
 
+    const openSessionCount$ = this.internalOpenSessionCount != null
+      ? of(this.internalOpenSessionCount)
+      : this.sessionService.getSessions({ limit: 0, plan_id: planId, status: ['PENDING', 'IN_PROGRESS'] }).pipe(
+          map(response => response.totalCount!),
+          tapIf(count => !!count, count => this.internalOpenSessionCount = count),
+          catchError(err => this.handleError<number>(err))
+        );
+
     const plan$ = this.planService.getPlan(planId).pipe(
       catchError(err => this.handleError<PlanServiceResponse<PlanDto>>(err))
     );
 
-    forkJoin({ profile$, exercises$, sessionCount$, plan$ }).pipe(
+    forkJoin({ profile$, exercises$, sessionCount$, openSessionCount$, plan$ }).pipe(
       takeUntilDestroyed(this.destroyRef),
-      tap(({ profile$: profile, exercises$: exercises, sessionCount$: sessionCount, plan$: plan }) => {
+      tap(({ profile$: profile, exercises$: exercises, sessionCount$: sessionCount, openSessionCount$: openSessionCount, plan$: plan }) => {
         if (!profile) {
           this.viewModelSignal.update(s => ({ ...s, isLoading: false, error: s.error || 'Failed to load critical user data.'}));
           return;
@@ -125,7 +135,7 @@ export class PlanEditPageFacade {
 
         if (plan && plan.data) {
           const mappedPlan = mapToPlanViewModel(plan.data, exercises ?? [], profile);
-          this.viewModelSignal.update(s => ({ ...s, plan: mappedPlan, isLoading: false, sessionCount: sessionCount, error: null }));
+          this.viewModelSignal.update(s => ({ ...s, plan: mappedPlan, isLoading: false, sessionCount: sessionCount, openSessionCount: openSessionCount ?? 0, error: null }));
         } else {
           const error = plan?.error || this.viewModel().error || 'Failed to load plan details.';
           this.viewModelSignal.update(s => ({ ...s, plan: null, isLoading: false, error }));
@@ -181,6 +191,18 @@ export class PlanEditPageFacade {
     );
   }
 
+  deactivatePlan(): Observable<PlanServiceResponse<null>> {
+    const user = this.authService.currentUser();
+    if (!user) {
+      return of({ error: 'Failed to load your session. Please sign in again.' } as PlanServiceResponse<null>);
+    }
+
+    return this.mutate(() => this.profileService.upsertProfile(user.id, { active_plan_id: null }).pipe(
+      tapIf(response => !!response?.data, response => this.internalProfile = response.data!),
+      map(response => ({ data: null, error: response.error } as PlanServiceResponse<null>))
+    ));
+  }
+
   createPlanDay(command: CreatePlanDayCommand): Observable<PlanServiceResponse<PlanDayDto>> {
     return this.mutate(planId => this.planService.createPlanDay(planId, command));
   }
@@ -191,6 +213,10 @@ export class PlanEditPageFacade {
 
   deletePlanDay(dayId: string): Observable<PlanServiceResponse<null>> {
     return this.mutate(planId => this.planService.deletePlanDay(planId, dayId));
+  }
+
+  archivePlanDay(dayId: string, archived = true): Observable<PlanServiceResponse<PlanDayDto>> {
+    return this.mutate(planId => this.planService.archivePlanDay(planId, dayId, archived));
   }
 
   createPlanExercise(dayId: string, command: CreatePlanExerciseCommand): Observable<PlanServiceResponse<PlanExerciseDto>> {
@@ -234,6 +260,10 @@ export class PlanEditPageFacade {
     return this.mutate(planId => this.planService.deletePlanExercise(planId, dayId, exerciseId));
   }
 
+  archivePlanExercise(dayId: string, exerciseId: string, archived = true): Observable<PlanServiceResponse<PlanExerciseDto>> {
+    return this.mutate(planId => this.planService.archivePlanExercise(planId, dayId, exerciseId, archived));
+  }
+
   upsertExerciseProgression(exerciseId: string, command: UpsertPlanExerciseProgressionCommand): Observable<PlanServiceResponse<PlanExerciseProgressionDto>> {
     return this.mutate(planId => this.planService.upsertExerciseProgression(planId, exerciseId, command));
   }
@@ -250,8 +280,10 @@ export class PlanEditPageFacade {
     return this.mutate(planId => this.planService.deletePlanExerciseSet(planId, dayId, exerciseId, setId));
   }
 
-  togglePreviewMode(): void {
-    this.viewModelSignal.update(s => ({ ...s, isPreview: !s.isPreview }));
+  reload(): void {
+    if (this.internalPlanId) {
+      this.loadPlanData(this.internalPlanId);
+    }
   }
 
   getAvailableExercises(): ExerciseDto[] {
@@ -295,6 +327,7 @@ export class PlanEditPageFacade {
     this.internalProfile = null;
     this.internalExercises = [];
     this.internalSessionCount = null;
+    this.internalOpenSessionCount = null;
     this.viewModelSignal.set(initialPlanEditPageViewModel);
   }
 }

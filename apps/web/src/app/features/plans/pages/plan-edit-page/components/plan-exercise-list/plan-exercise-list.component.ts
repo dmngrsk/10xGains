@@ -1,9 +1,9 @@
 import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter, signal, SimpleChanges, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
+import { PlanEditCapabilities } from '../../../../models/plan-edit-capabilities';
 import { PlanExerciseProgressionViewModel, PlanExerciseViewModel } from '../../../../models/plan.viewmodel';
 import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-item.component';
 
@@ -14,46 +14,37 @@ import { PlanExerciseItemComponent } from '../plan-exercise-item/plan-exercise-i
     CommonModule,
     MatButtonModule,
     MatIconModule,
-    MatExpansionModule,
     PlanExerciseItemComponent,
     DragDropModule,
   ],
   templateUrl: './plan-exercise-list.component.html',
+  styleUrl: './plan-exercise-list.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PlanExerciseListComponent implements OnChanges {
+export class PlanExerciseListComponent {
   @Input({ required: true }) planId!: string;
   @Input({ required: true }) dayId!: string;
   @Input({ required: true }) exercises!: PlanExerciseViewModel[];
   @Input({ required: true }) progressions!: PlanExerciseProgressionViewModel[];
-  @Input({ required: true }) isReadOnly!: boolean;
+  @Input({ required: true }) capabilities!: PlanEditCapabilities;
 
+  @Output() exerciseAdded = new EventEmitter<{dayId: string}>();
   @Output() exerciseDeleted = new EventEmitter<{exerciseId: string, exerciseName: string, dayId: string}>();
+  @Output() exerciseArchived = new EventEmitter<{exerciseId: string, exerciseName: string, dayId: string}>();
   @Output() exerciseReordered = new EventEmitter<{exerciseId: string, dayId: string, newIndex: number}>();
   @Output() progressionEdited = new EventEmitter<{exerciseId: string}>();
   @Output() setAdded = new EventEmitter<{exerciseId: string, dayId: string}>();
   @Output() setEdited = new EventEmitter<{setId: string, exerciseId: string, dayId: string}>();
-  @Output() setDeleted = new EventEmitter<{setId: string, exerciseId: string, dayId: string}>();
-  @Output() setReordered = new EventEmitter<{setId: string, exerciseId: string, dayId: string, newIndex: number}>();
+  @Output() setWeightStepped = new EventEmitter<{setId: string, exerciseId: string, dayId: string, weight: number}>();
 
+  onExerciseAdded = (): void => this.exerciseAdded.emit({ dayId: this.dayId });
+  onExerciseArchived = (eventData: {exerciseId: string, exerciseName: string, dayId: string}): void => this.exerciseArchived.emit(eventData);
   onExerciseDeleted = (eventData: {exerciseId: string, exerciseName: string, dayId: string}): void => this.exerciseDeleted.emit(eventData);
   onExerciseReordered = (event: CdkDragDrop<PlanExerciseViewModel[]>): void => this.onExerciseItemDropped(event);
   onProgressionEdited = (eventData: {exerciseId: string}): void => this.progressionEdited.emit(eventData);
   onSetAdded = (eventData: {exerciseId: string, dayId: string}): void => this.setAdded.emit(eventData);
   onSetEdited = (eventData: {setId: string, exerciseId: string, dayId: string}): void => this.setEdited.emit(eventData);
-  onSetDeleted = (eventData: {setId: string, exerciseId: string, dayId: string}): void => this.setDeleted.emit(eventData);
-  onSetReordered = (eventData: {setId: string, exerciseId: string, dayId: string, newIndex: number}): void => this.setReordered.emit(eventData);
-
-  expandedStates = signal<boolean[]>([]);
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['isReadOnly']) {
-      const isReadOnlyValue = changes['isReadOnly'].currentValue as boolean;
-      if (isReadOnlyValue) {
-        this.expandedStates.set(this.exercises.map(() => true));
-      }
-    }
-  }
+  onSetWeightStepped = (eventData: {setId: string, exerciseId: string, dayId: string, weight: number}): void => this.setWeightStepped.emit(eventData);
 
   getProgression(exerciseId: string): PlanExerciseProgressionViewModel | null {
     return this.progressions?.find(p => p.exerciseId === exerciseId) ?? null;
@@ -66,10 +57,5 @@ export class PlanExerciseListComponent implements OnChanges {
       this.exercises.splice(event.currentIndex, 0, movedExercise);
       this.exerciseReordered.emit({ exerciseId: movedExercise.id, dayId: this.dayId, newIndex: event.currentIndex + 1 });
     }
-  }
-
-  onExerciseItemToggled(index: number, expanded: boolean) {
-    const current = this.expandedStates();
-    this.expandedStates.set(current.map((val, i) => (i === index ? expanded : val)));
   }
 }

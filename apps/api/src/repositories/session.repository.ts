@@ -20,6 +20,7 @@ import {
   skipPendingSets
 } from '../services/session-completion/session-completion';
 import type { PlanDayWithExercisesRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
+import { assertSessionSetDeletable, assertSessionSetPrescriptionEditable } from '../services/session-sets/session-sets';
 import { createEntityInCollection, updateEntityInCollection, deleteEntityFromCollection } from '../utils/supabase';
 import type { CollectionConfig } from '../utils/supabase';
 import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
@@ -427,6 +428,8 @@ export class SessionRepository {
       plan_exercise_id: command.plan_exercise_id,
       set_index: command.set_index,
       expected_reps: command.expected_reps,
+      expected_weight: command.actual_weight,
+      is_prescribed: false,
       actual_reps: command.actual_reps,
       actual_weight: command.actual_weight,
       status: command.status || 'PENDING',
@@ -469,10 +472,14 @@ export class SessionRepository {
       return null;
     }
 
+    if (command.expected_reps !== undefined && command.expected_reps !== existingSet.expected_reps) {
+      assertSessionSetPrescriptionEditable(existingSet);
+    }
+
     const updatedSetData: SessionSetDto = {
       ...existingSet,
       ...command,
-      set_index: command.set_index !== undefined ? command.set_index : existingSet.set_index,
+      set_index: existingSet.set_index,
       status: command.status !== undefined ? command.status : existingSet.status,
       completed_at: command.completed_at !== undefined ? command.completed_at : existingSet.completed_at,
     };
@@ -485,9 +492,12 @@ export class SessionRepository {
   /**
    * Deletes a session set.
    *
+   * Only an ad hoc set that is still PENDING; see `assertSessionSetDeletable`.
+   *
    * @param {string} sessionId - The ID of the parent session.
    * @param {string} setId - The ID of the set to delete.
    * @returns {Promise<boolean>} A promise that resolves to true if deletion was successful.
+   * @throws {ConflictError} If the plan prescribes the set, or it has already been recorded.
    */
   async deleteSet(sessionId: string, setId: string): Promise<boolean> {
     await this.verifySessionOwnership(sessionId);
@@ -506,6 +516,8 @@ export class SessionRepository {
     if (!existingSet) {
       return false;
     }
+
+    assertSessionSetDeletable(existingSet);
 
     await deleteEntityFromCollection(this.supabase, this.sessionSetCollection(sessionId, existingSet.plan_exercise_id), setId);
 
@@ -573,6 +585,8 @@ export class SessionRepository {
       `)
       .eq('user_id', userId)
       .eq('id', command.plan_id as string)
+      .is('days.archived_at', null)
+      .is('days.exercises.archived_at', null)
       .single();
 
     if (planError || !plan) {

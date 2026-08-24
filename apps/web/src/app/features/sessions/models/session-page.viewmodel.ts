@@ -23,7 +23,6 @@ export interface SessionExerciseViewModel {
   exerciseName: string;
   order: number;
   sets: SessionSetViewModel[];
-  plannedSetsCount: number;
 }
 
 export interface SessionWarmupSetViewModel {
@@ -37,6 +36,7 @@ export interface SessionSetViewModel {
   planExerciseId: string;
   order: number;
   status: SessionSetStatus;
+  isPrescribed: boolean;
   expectedReps: number;
   actualReps?: number | null;
   weight?: number;

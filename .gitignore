@@ -56,8 +56,8 @@ testem.log
 /typings
 
 # Draft documents (work-in-progress specs, notes)
-docs/drafts/*
-!docs/drafts/.gitkeep
+docs/specs/*
+!docs/specs/.gitkeep
 
 # Environment files
 .env

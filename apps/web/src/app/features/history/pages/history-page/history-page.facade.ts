@@ -88,7 +88,7 @@ export class HistoryPageFacade {
     }
 
     forkJoin({
-      plans: this.planService.getPlans().pipe(map(res => res.data || []), catchError(() => of([] as PlanDto[]))),
+      plans: this.planService.getPlans(undefined, undefined, { includeArchived: true }).pipe(map(res => res.data || []), catchError(() => of([] as PlanDto[]))),
       exercises: this.exerciseService.getExercises().pipe(map(res => res.data ?? []), catchError(() => of([] as ExerciseDto[]))),
       profile: this.profileService.getProfile(user.id).pipe(map(res => res.data), catchError(() => of(null as ProfileDto | null)))
     }).pipe(

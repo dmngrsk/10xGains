@@ -11,7 +11,6 @@ const PATH_SCHEMA = z.object({
 });
 
 const COMMAND_SCHEMA = withCompletedAtConsistency(z.object({
-  set_index: z.number().int().positive('Set index must be a positive integer').optional(),
   expected_reps: z.number().int().nonnegative('Expected reps must be a non-negative integer').optional(),
   actual_weight: z.number().nonnegative('Actual weight cannot be negative').optional(),
   actual_reps: z.number().int().nonnegative('Actual reps must be a non-negative integer').nullable().optional(),

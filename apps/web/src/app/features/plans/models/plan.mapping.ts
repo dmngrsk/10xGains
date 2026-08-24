@@ -108,6 +108,7 @@ export function mapToPlanDayDto(day: PlanDayViewModel): PlanDayDto {
     description: day.description,
     order_index: day.orderIndex,
     plan_id: day.planId,
+    archived_at: null,
     exercises: (day.exercises || [])
       .map(mapToPlanExerciseDto)
       .sort((a,b) => a.order_index - b.order_index)
@@ -124,6 +125,7 @@ export function mapToPlanExerciseDto(exercise: PlanExerciseViewModel): PlanExerc
     exercise_id: exercise.exerciseId,
     order_index: exercise.orderIndex,
     plan_day_id: exercise.planDayId,
+    archived_at: null,
     sets: (exercise.sets || [])
       .map(mapToPlanExerciseSetDto)
       .sort((a, b) => a.set_index - b.set_index)

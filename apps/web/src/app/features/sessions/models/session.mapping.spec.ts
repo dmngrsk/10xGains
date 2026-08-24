@@ -9,6 +9,8 @@ const mockSetDto: SessionSetDto = {
   set_index: 0,
   status: 'PENDING' as SessionSetStatus,
   expected_reps: 10,
+  expected_weight: 0,
+  is_prescribed: true,
   actual_reps: null,
   actual_weight: 0,
   completed_at: null,
@@ -32,6 +34,7 @@ const mockPlanExerciseSetDto: PlanExerciseSetDto = {
 const mockPlanExerciseDto: PlanExerciseDto = {
   id: 'tpe1',
   plan_day_id: 'day1',
+  archived_at: null,
   exercise_id: 'ex1',
   order_index: 0,
   sets: [mockPlanExerciseSetDto],
@@ -43,6 +46,7 @@ const mockPlanDay: PlanDayDto = {
   name: 'Chest Day',
   order_index: 0,
   description: null,
+  archived_at: null,
   exercises: [mockPlanExerciseDto],
 };
 
@@ -85,7 +89,7 @@ describe('Session Mapping Functions', () => {
     it('should map SessionSetDto to SessionSetViewModel correctly', () => {
       const localMockSetDto: SessionSetDto = {
         id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
-        status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
+        status: 'PENDING' as SessionSetStatus, expected_reps: 10, expected_weight: 0, is_prescribed: true, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
       const result = mapToSessionSetViewModel(localMockSetDto, 12);
@@ -113,7 +117,7 @@ describe('Session Mapping Functions', () => {
     it('should use dto.expected_reps if originalExpectedReps is null', () => {
       const localMockSetDto: SessionSetDto = {
         id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
-        status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
+        status: 'PENDING' as SessionSetStatus, expected_reps: 10, expected_weight: 0, is_prescribed: true, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
       const result = mapToSessionSetViewModel(localMockSetDto, null);
@@ -124,7 +128,7 @@ describe('Session Mapping Functions', () => {
     it('should use dto.expected_reps if originalExpectedReps is undefined', () => {
        const localMockSetDto: SessionSetDto = {
         id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
-        status: 'PENDING' as SessionSetStatus, expected_reps: 10, actual_reps: null, actual_weight: 0, completed_at: null,
+        status: 'PENDING' as SessionSetStatus, expected_reps: 10, expected_weight: 0, is_prescribed: true, actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
       const result = mapToSessionSetViewModel(localMockSetDto);
@@ -137,6 +141,8 @@ describe('Session Mapping Functions', () => {
         id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus,
         expected_reps: 0,
+        expected_weight: 0,
+        is_prescribed: true,
         actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
@@ -147,6 +153,8 @@ describe('Session Mapping Functions', () => {
         id: 'set1', plan_exercise_id: 'tpe1', session_id: 's1', set_index: 0,
         status: 'PENDING' as SessionSetStatus,
         expected_reps: 5,
+        expected_weight: 0,
+        is_prescribed: true,
         actual_reps: null, actual_weight: 0, completed_at: null,
       };
 
@@ -258,7 +266,7 @@ describe('Session Mapping Functions', () => {
       expect(result.exercises[0].planExerciseId).toBe('tpe1');
       expect(result.exercises[0].sets).toHaveLength(1);
       expect(result.exercises[0].sets[0].id).toBe('set1');
-      expect(result.exercises[0].sets[0].expectedReps).toBe(12);
+      expect(result.exercises[0].sets[0].expectedReps).toBe(10);
       expect(result.exercises[0].sets[0].weight).toBe(0);
       expect(result.exercises[0].sets[0].completedAt).toBeNull();
     });
@@ -325,7 +333,10 @@ describe('Session Mapping Functions', () => {
       expect(result.exercises[0].sets).toHaveLength(0);
     });
 
-    it('should correctly map expectedReps from planned set if available, otherwise from actual set DTO', () => {
+    it('should map expectedReps from the session\'s own snapshot, not the plan as it now stands', () => {
+      // Completion judges `actual_reps` against the session's `expected_reps`, so the page has to
+      // show that number. Preferring the plan's let a mid-session plan edit display a target the
+      // verdict ignored - the user hits what the screen asks for and is recorded as having failed.
       const setDtoWithExpectedReps8: SessionSetDto = { ...mockSetDto, expected_reps: 8, actual_weight: 10 };
       const plannedExerciseWithSpecificSet: PlanExerciseDto = {
         ...mockPlanExerciseDto,
@@ -340,7 +351,7 @@ describe('Session Mapping Functions', () => {
       const result = mapToSessionPageViewModel(sessionWithSpecificSet, planWithSpecificSet, exerciseMap);
       expect(result).not.toBeNull();
       if (!result) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
-      expect(result.exercises[0].sets[0].expectedReps).toBe(15);
+      expect(result.exercises[0].sets[0].expectedReps).toBe(8);
 
       const plannedSetWithNullExpectedReps: PlanExerciseSetDto = {
         ...mockPlanExerciseSetDto,
@@ -359,7 +370,7 @@ describe('Session Mapping Functions', () => {
       expect(result2).not.toBeNull();
 
       if (!result2) throw new Error('mapToSessionPageViewModel returned null unexpectedly');
-      expect(result2.exercises[0].sets[0].expectedReps).toBe(0);
+      expect(result2.exercises[0].sets[0].expectedReps).toBe(8);
     });
 
      it('should default to 0 expectedReps if not in planned set (e.g. 0) and not in actual set DTO (e.g. 0)', () => {

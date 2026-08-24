@@ -4,12 +4,16 @@ import type { SessionSetDto, PlanExerciseDto, PlanExerciseProgressionDto, PlanEx
 /**
  * Resolves exercise progressions based on completed session sets and current progression rules.
  *
- * This function compares the actual performed sets from a training session against the expected sets
- * defined in the plan. Based on whether all sets for an exercise were successfully completed,
- * it determines how the exercise progression should be updated (e.g., increase weight, deload).
- * It also calculates the new set configurations (e.g., updated target weights) for the next session.
+ * This function compares the actual performed sets from a training session against the prescription
+ * the session was created with - `session_sets.expected_reps` / `expected_weight`, snapshotted at
+ * creation - rather than against the plan as it stands now. Based on whether all sets for an exercise
+ * were successfully completed, it determines how the exercise progression should be updated (e.g.,
+ * increase weight, deload). It also calculates the new set configurations (e.g., updated target
+ * weights) for the next session, and those *are* computed from the live plan: the verdict belongs to
+ * the session, the next targets belong to the plan.
  *
- * @param sessionSets - An array of `SessionSetDto` objects representing the sets performed during the training session.
+ * @param sessionSets - An array of `SessionSetDto` objects representing the sets performed during the
+ *                       training session, each carrying the prescription it was created with.
  * @param planExercises - An array of `PlanExerciseDto` objects detailing the exercises planned for the session,
  *                        including their expected sets (`sets` property).
  * @param exerciseProgressions - An array of `PlanExerciseProgressionDto` objects representing the current
@@ -51,7 +55,11 @@ export function resolveExerciseProgressions(
       continue;
     }
 
+    // An exercise is only judged on the sets the session was actually given. `judgedSetCount` is
+    // tracked separately from `exerciseFound` so that an exercise whose every planned set post-dates
+    // the session - all of them skipped below - can be left alone rather than judged on no evidence.
     let exerciseFound = false;
+    let judgedSetCount = 0;
     let exerciseSetsSuccessful = true;
 
     for (const scopedPlanExercise of scopedPlanExercises) {
@@ -63,17 +71,31 @@ export function resolveExerciseProgressions(
         for (const expectedSet of expectedScopedPlanSets) {
           const actualSet = actualPerformedSets.find(as => as.set_index === expectedSet.set_index);
           if (!actualSet) {
-            // Session sets are snapshotted when the session is created, so the plan may have gained sets mid-session.
-            console.warn(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}). Treating the set as failed.`);
-            exerciseSetsSuccessful = false;
-            break;
+            // A set the session was never given cannot have been failed, so it is skipped rather
+            // than counted against the exercise; the remaining sets still decide the outcome.
+            //
+            // Skipping rests on a set the plan prescribes never being deletable, at any status
+            // (`assertSessionSetDeletable`), nor repointable to another index. Were it removable,
+            // this branch would also catch a set the user failed and then deleted, and would excuse
+            // the failure that should have deloaded them. See that guard for the one route left.
+            console.warn(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}). It was added to the plan after the session started; skipping it.`);
+            continue;
           }
-          if (actualSet.status !== 'COMPLETED' || (actualSet.actual_reps ?? 0) < (expectedSet.expected_reps ?? 0) || (actualSet.actual_weight ?? 0) < (expectedSet.expected_weight ?? 0)) {
+          // Judged against the session's own snapshot, never against `expectedSet` - the live plan.
+          judgedSetCount++;
+          if (actualSet.status !== 'COMPLETED' || (actualSet.actual_reps ?? 0) < (actualSet.expected_reps ?? 0) || actualSet.actual_weight < actualSet.expected_weight) {
             exerciseSetsSuccessful = false;
             break;
           }
         }
       }
+    }
+
+    if (exerciseFound && judgedSetCount === 0) {
+      // Falling through would take the failure branch and punish the user for editing their own
+      // plan, so leave this exercise's targets and failure count exactly as they are.
+      console.warn(`No session set matched any planned set of exercise ${exerciseId}; every planned set post-dates the session. Leaving its progression unchanged.`);
+      continue;
     }
 
     const newSets: PlanExerciseSetDto[] = [];

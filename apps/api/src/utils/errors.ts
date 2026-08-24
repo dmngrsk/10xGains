@@ -75,10 +75,15 @@ export class ForbiddenError extends DomainError {
 /**
  * The request is well-formed but conflicts with the current state of the resource, such as
  * completing a session that is not in progress.
+ *
+ * The status defaults to 400, which is what every conflict here returned before it was made
+ * overridable; changing that wholesale would alter the contract of endpoints whose clients already
+ * branch on it. Pass 409 when the conflict is about the *state of the target resource* rather than
+ * the request - deleting a plan exercise that sessions still reference, say.
  */
 export class ConflictError extends DomainError {
-  constructor(message: string, code = 'CONFLICT', type = 'conflict_error') {
-    super(message, 400, code, type);
+  constructor(message: string, code = 'CONFLICT', type = 'conflict_error', status: 400 | 409 = 400) {
+    super(message, status, code, type);
   }
 }
 

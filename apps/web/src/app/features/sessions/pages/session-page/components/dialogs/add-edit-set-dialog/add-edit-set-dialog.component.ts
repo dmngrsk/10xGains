@@ -19,7 +19,6 @@ export interface AddEditSetDialogData {
   setIndexForNewSet?: number;
   setToEditDetails?: SessionSetViewModel;
   lastSetForPreFill?: SessionSetViewModel;
-  maxPlannedSetIndex?: number;
 }
 
 export interface DeleteSetResult {
@@ -52,7 +51,7 @@ export class AddEditSetDialogComponent {
   setForm: FormGroup;
 
   get titleText(): string {
-    if (this.data.mode === 'edit' && this.data.setToEditDetails) {
+    if (this.editedSet) {
       return 'Edit Set Details';
     } else if (this.data.mode === 'add') {
       return 'Add New Set';
@@ -70,11 +69,18 @@ export class AddEditSetDialogComponent {
     }
   }
 
+  private get editedSet(): SessionSetViewModel | null {
+    return this.data.mode === 'edit' ? this.data.setToEditDetails ?? null : null;
+  }
+
+  get isPrescriptionLocked(): boolean {
+    const set = this.editedSet;
+    return !!set && set.status !== 'PENDING';
+  }
+
   get isSetDeletable(): boolean {
-    if (this.data.mode !== 'edit' || !this.data.setToEditDetails || this.data.maxPlannedSetIndex === undefined) {
-      return false;
-    }
-    return this.data.setToEditDetails.order > this.data.maxPlannedSetIndex;
+    const set = this.editedSet;
+    return !!set && !set.isPrescribed && set.status === 'PENDING';
   }
 
   get validationMessages() {
@@ -85,8 +91,8 @@ export class AddEditSetDialogComponent {
     let initialReps: string = '';
     let initialWeight: string = '';
 
-    if (this.data.mode === 'edit' && this.data.setToEditDetails) {
-      const setToEdit = this.data.setToEditDetails;
+    const setToEdit = this.editedSet;
+    if (setToEdit) {
       initialReps = (setToEdit.expectedReps ?? setToEdit.actualReps ?? '').toString();
       initialWeight = (setToEdit.weight ?? '').toString();
     } else if (this.data.mode === 'add') {
@@ -97,7 +103,7 @@ export class AddEditSetDialogComponent {
     }
 
     this.setForm = this.fb.group({
-      reps: [initialReps, [Validators.required, Validators.min(0), integerValidator()]],
+      reps: [{ value: initialReps, disabled: this.isPrescriptionLocked }, [Validators.required, Validators.min(0), integerValidator()]],
       weight: [initialWeight, [Validators.required, Validators.min(0), numericValidator()]],
     });
   }
@@ -108,11 +114,11 @@ export class AddEditSetDialogComponent {
       return;
     }
 
-    const formValue = this.setForm.value;
+    const formValue = this.setForm.getRawValue();
 
-    if (this.data.mode === 'edit' && this.data.setToEditDetails) {
+    if (this.editedSet) {
       const command: UpdateSessionSetCommand = {
-        expected_reps: Number(formValue.reps),
+        ...(this.isPrescriptionLocked ? {} : { expected_reps: Number(formValue.reps) }),
         actual_reps: null,
         actual_weight: Number(formValue.weight),
         status: 'PENDING',

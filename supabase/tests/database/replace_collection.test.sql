@@ -42,7 +42,7 @@ select ok(
 select has_function(
     'public',
     'replace_collection',
-    array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid'],
+    array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid', 'text'],
     'replace_collection function should exist with correct parameter types'
 );
 
@@ -54,7 +54,7 @@ select has_function(
 );
 
 select function_returns(
-    'public', 'replace_collection', array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid'],
+    'public', 'replace_collection', array['text', 'text', 'uuid', 'text', 'jsonb', 'text', 'uuid', 'text'],
     'jsonb',
     'replace_collection should return jsonb'
 );

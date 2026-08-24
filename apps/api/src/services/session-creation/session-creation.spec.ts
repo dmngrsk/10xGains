@@ -117,10 +117,16 @@ describe('resolveNextPlanDayId', () => {
   });
 
   describe('when the rotation cannot be resumed', () => {
-    it('should throw if the last completed session trained a day no longer in the plan', () => {
-      const sessions = [completed('day-deleted', '2026-06-01T10:00:00.000Z')];
+    it('should restart at the first day if the last completed session trained an archived day', () => {
+      const sessions = [completed('day-archived', '2026-06-01T10:00:00.000Z')];
 
-      expect(() => resolveNextPlanDayId(DAYS, sessions)).toThrow('Failed to identify the next day for this plan.');
+      expect(resolveNextPlanDayId(DAYS, sessions)).toBe(DAY_A);
+    });
+
+    it('should still honour an explicitly requested day when the last trained day is gone', () => {
+      const sessions = [completed('day-archived', '2026-06-01T10:00:00.000Z')];
+
+      expect(resolveNextPlanDayId(DAYS, sessions, DAY_C)).toBe(DAY_C);
     });
 
     it('should throw if the plan has no days', () => {
@@ -219,11 +225,33 @@ describe('buildSessionSets', () => {
       plan_exercise_id: 'pe-1',
       set_index: 1,
       expected_reps: 5,
+      expected_weight: 100,
+      is_prescribed: true,
       actual_reps: null,
       actual_weight: 100,
       status: 'PENDING',
       completed_at: null,
     });
+  });
+
+  it('should mark every seeded set as prescribed by the plan', () => {
+    // What makes a set undeletable for the life of the session. Recorded here rather than derived
+    // later from the plan's set count, so that shrinking the exercise afterwards cannot reclassify a
+    // set the user has already trained as one they added ad hoc.
+    const result = buildSessionSets(day, 'session-1', ids());
+
+    expect(result.every(s => s.is_prescribed)).toBe(true);
+  });
+
+  it('should snapshot the whole prescription, so the session no longer depends on the plan', () => {
+    // Both halves are copied from the plan. `actual_weight` starts at the same number but is the
+    // user's to change during the workout; `expected_weight` is the record of what was asked, and is
+    // what the progression judges against once the session completes.
+    const result = buildSessionSets(day, 'session-1', ids());
+
+    const plannedSets = (day.exercises ?? []).flatMap(e => e.sets ?? []);
+    expect(result.map(s => [s.expected_reps, s.expected_weight]))
+      .toEqual(plannedSets.map(p => [p.expected_reps, p.expected_weight]));
   });
 
   it('should carry the plan exercise and set index of each planned set', () => {

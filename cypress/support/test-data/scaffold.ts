@@ -264,13 +264,13 @@ function generateSessionHistory(
   // Create pending session sets for workout A
   const pendingSets = [
     // Squat sets
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 1, actual_weight: 100, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null },
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 2, actual_weight: 100, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null },
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 3, actual_weight: 100, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null },
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 1, actual_weight: 100, actual_reps: null, expected_reps: 5, expected_weight: 100, status: 'PENDING', completed_at: null },
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 2, actual_weight: 100, actual_reps: null, expected_reps: 5, expected_weight: 100, status: 'PENDING', completed_at: null },
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: squatExerciseAId, set_index: 3, actual_weight: 100, actual_reps: null, expected_reps: 5, expected_weight: 100, status: 'PENDING', completed_at: null },
     // Bench press sets
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 1, actual_weight: 70, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null },
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 2, actual_weight: 70, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null },
-    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 3, actual_weight: 70, actual_reps: null, expected_reps: 5, status: 'PENDING', completed_at: null }
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 1, actual_weight: 70, actual_reps: null, expected_reps: 5, expected_weight: 70, status: 'PENDING', completed_at: null },
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 2, actual_weight: 70, actual_reps: null, expected_reps: 5, expected_weight: 70, status: 'PENDING', completed_at: null },
+    { id: crypto.randomUUID(), session_id: pendingSessionId, plan_exercise_id: benchPressExerciseId, set_index: 3, actual_weight: 70, actual_reps: null, expected_reps: 5, expected_weight: 70, status: 'PENDING', completed_at: null }
   ];
 
   sessionSets.push(...pendingSets);
@@ -302,13 +302,13 @@ function generateSessionHistory(
       // Workout A sets (squat + bench press)
       const workoutASets = [
         // Squat sets
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 1, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: sessionDate.toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 2, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 5 * 60 * 1000).toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 3, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 10 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 1, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: sessionDate.toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 2, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 5 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseAId, set_index: 3, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 10 * 60 * 1000).toISOString() },
         // Bench press sets
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 1, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 15 * 60 * 1000).toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 2, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 20 * 60 * 1000).toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 3, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 25 * 60 * 1000).toISOString() }
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 1, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, expected_weight: benchPressWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 15 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 2, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, expected_weight: benchPressWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 20 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: benchPressExerciseId, set_index: 3, actual_weight: benchPressWeight, actual_reps: 5, expected_reps: 5, expected_weight: benchPressWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 25 * 60 * 1000).toISOString() }
       ];
 
       sessionSets.push(...workoutASets);
@@ -319,11 +319,11 @@ function generateSessionHistory(
       // Workout B sets (squat + deadlift)
       const workoutBSets = [
         // Squat sets
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 1, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: sessionDate.toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 2, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 5 * 60 * 1000).toISOString() },
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 3, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 10 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 1, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: sessionDate.toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 2, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 5 * 60 * 1000).toISOString() },
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: squatExerciseBId, set_index: 3, actual_weight: squatWeight, actual_reps: 5, expected_reps: 5, expected_weight: squatWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 10 * 60 * 1000).toISOString() },
         // Deadlift set
-        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: deadliftExerciseId, set_index: 1, actual_weight: deadliftWeight, actual_reps: 5, expected_reps: 5, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 15 * 60 * 1000).toISOString() }
+        { id: crypto.randomUUID(), session_id: historicalSessionId, plan_exercise_id: deadliftExerciseId, set_index: 1, actual_weight: deadliftWeight, actual_reps: 5, expected_reps: 5, expected_weight: deadliftWeight, status: 'COMPLETED', completed_at: new Date(sessionDate.getTime() + 15 * 60 * 1000).toISOString() }
       ];
 
       sessionSets.push(...workoutBSets);
@@ -333,5 +333,5 @@ function generateSessionHistory(
     }
   }
 
-  return { sessions, sessionSets };
+  return { sessions, sessionSets: sessionSets.map(set => ({ ...set, is_prescribed: true })) };
 }

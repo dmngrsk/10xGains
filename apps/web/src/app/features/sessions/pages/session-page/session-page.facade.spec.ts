@@ -25,6 +25,7 @@ describe('SessionPageFacade', () => {
     planExerciseId: 'tpe1',
     order: 1,
     status: 'PENDING',
+    isPrescribed: true,
     expectedReps: 10,
     actualReps: null,
     weight: 50,
@@ -38,7 +39,7 @@ describe('SessionPageFacade', () => {
       isLoading: false,
       error: null,
       metadata: { status: 'IN_PROGRESS' },
-      exercises: [{ planExerciseId: 'tpe1', exerciseName: 'Bench Press', order: 1, plannedSetsCount: 1, sets }],
+      exercises: [{ planExerciseId: 'tpe1', exerciseName: 'Bench Press', order: 1, sets }],
     };
     facade.viewModel.set(viewModel);
   };
@@ -97,6 +98,8 @@ describe('SessionPageFacade', () => {
         set_index: 1,
         status: 'COMPLETED',
         expected_reps: 10,
+        expected_weight: 50,
+        is_prescribed: true,
         actual_reps: 10,
         actual_weight: 50,
         completed_at: '2023-01-01T10:00:01.200Z',

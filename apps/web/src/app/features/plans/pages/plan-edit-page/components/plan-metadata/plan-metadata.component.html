@@ -1,14 +1,35 @@
 @if (plan) {
-  <div class="flex flex-col gap-4 mb-6">
-    <p class="text-xl font-bold text-primary">{{ plan.name }}</p>
+  <div class="flex flex-col gap-2">
+    <div class="plan-heading">
+      @if (plan.description) {
+        <p class="plan-description">{{ plan.description }}</p>
+      } @else if (capabilities.canEditPlanMetadata) {
+        <p class="plan-description plan-description--empty">Add a description</p>
+      }
 
-    @if (plan.description) {
-      <p class="text-sm text-secondary">{{ plan.description }}</p>
+      @if (capabilities.canEditPlanMetadata) {
+        <button
+          mat-icon-button
+          class="plan-edit-button"
+          (click)="planEdited.emit()"
+          aria-label="Edit training plan"
+          data-cy="plan-edit-button">
+          <mat-icon>edit</mat-icon>
+        </button>
+      }
+    </div>
+
+    @if (showActiveNotice) {
+      <p class="text-sm text-secondary" data-cy="plan-metadata-active-notice">
+        This is your active plan, so it is read-only while you train it. Use
+        <strong>Deactivate And Edit Plan</strong> to make changes.
+      </p>
     }
 
-    @if (sessionCount > 0) {
-      <p class="font-semibold text-primary" data-cy="plan-metadata-read-only-notice">
-        NOTE: This plan has been used in {{ sessionCount }} training {{ sessionCount === 1 ? 'session' : 'sessions' }}. It cannot be edited.
+    @if (showHistoryNotice) {
+      <p class="text-sm text-secondary" data-cy="plan-metadata-history-notice">
+        Trained {{ sessionCount }} {{ sessionCount === 1 ? 'time' : 'times' }}. Weights and reps stay editable &mdash;
+        past workouts keep the numbers they were done with. Days and exercises can be archived rather than deleted.
       </p>
     }
   </div>

@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Reorder training days</h2>
+
+<mat-dialog-content>
+  <p class="reorder-hint">Drag a day to change the order the plan cycles through them.</p>
+
+  <ul
+    class="reorder-list"
+    cdkDropList
+    [cdkDropListData]="days()"
+    (cdkDropListDropped)="onDropped($event)"
+    data-cy="reorder-days-list">
+    @for (day of days(); track day.id) {
+      <li class="reorder-item" cdkDrag cdkDragLockAxis="y" data-cy="reorder-days-item">
+        <span class="reorder-handle" cdkDragHandle data-cy="reorder-days-handle">
+          <mat-icon>drag_indicator</mat-icon>
+        </span>
+        <span class="reorder-name">{{ day.name || 'Unnamed day' }}</span>
+      </li>
+    }
+  </ul>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" data-cy="reorder-days-cancel-button">Cancel</button>
+  <button mat-flat-button (click)="onSave()" data-cy="reorder-days-save-button">Save order</button>
+</mat-dialog-actions>

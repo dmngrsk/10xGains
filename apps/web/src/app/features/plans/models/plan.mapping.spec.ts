@@ -75,6 +75,7 @@ describe('Plan Mapping Functions', () => {
           "created_at": "2023-01-01T00:00:00.000Z",
           "days": [
             {
+              "archived_at": null,
               "description": "Pull",
               "exercises": [],
               "id": "day-0",
@@ -83,9 +84,11 @@ describe('Plan Mapping Functions', () => {
               "plan_id": "plan-1",
             },
             {
+              "archived_at": null,
               "description": "Push",
               "exercises": [
                 {
+                  "archived_at": null,
                   "exercise_id": "e-1",
                   "id": "ex-1",
                   "order_index": 0,
@@ -324,9 +327,11 @@ describe('Plan Mapping Functions', () => {
       const result = mapToPlanDayDto(viewModelDay);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "description": "Chest, Shoulders, Triceps",
           "exercises": [
             {
+              "archived_at": null,
               "exercise_id": "e-0",
               "id": "ex-0",
               "order_index": 0,
@@ -342,6 +347,7 @@ describe('Plan Mapping Functions', () => {
               ],
             },
             {
+              "archived_at": null,
               "exercise_id": "e-1",
               "id": "ex-1",
               "order_index": 1,
@@ -381,6 +387,7 @@ describe('Plan Mapping Functions', () => {
       expect(result.exercises).toEqual([]);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "description": null,
           "exercises": [],
           "id": "day-2",
@@ -404,6 +411,7 @@ describe('Plan Mapping Functions', () => {
       expect(result.exercises).toEqual([]);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "description": "LISS",
           "exercises": [],
           "id": "day-3",
@@ -437,6 +445,7 @@ describe('Plan Mapping Functions', () => {
       const result = mapToPlanExerciseDto(viewModelExercise);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "exercise_id": "e-1",
           "id": "ex-1",
           "order_index": 0,
@@ -478,6 +487,7 @@ describe('Plan Mapping Functions', () => {
       expect(result.sets).toEqual([]);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "exercise_id": "e-2",
           "id": "ex-2",
           "order_index": 1,
@@ -501,6 +511,7 @@ describe('Plan Mapping Functions', () => {
       expect(result.sets).toEqual([]);
       expect(result).toMatchInlineSnapshot(`
         {
+          "archived_at": null,
           "exercise_id": "e-3",
           "id": "ex-3",
           "order_index": 2,
@@ -656,12 +667,14 @@ describe('Plan Mapping Functions', () => {
             description: 'Chest, Shoulders, Triceps',
             order_index: 0,
             plan_id: 'tp-1',
+            archived_at: null,
             exercises: [
               {
                 id: 'ex-1',
                 exercise_id: 'e-1',
                 order_index: 0,
                 plan_day_id: 'day-1',
+                archived_at: null,
                 sets: [
                   { id: 'set-1a', set_index: 0, expected_reps: 8, expected_weight: 60, plan_exercise_id: 'ex-1' },
                 ],
@@ -737,13 +750,13 @@ describe('Plan Mapping Functions', () => {
         ...mockPlanDto,
         id: 'tp-unsorted',
         days: [
-          { id: 'day-2', name: 'Day B', description: null, order_index: 1, plan_id: 'tp-unsorted', exercises: [
-            { id: 'ex-b2', exercise_id: 'e-b2', order_index: 1, plan_day_id: 'day-2', sets: [] },
-            { id: 'ex-b1', exercise_id: 'e-b1', order_index: 0, plan_day_id: 'day-2', sets: [] },
+          { id: 'day-2', name: 'Day B', description: null, order_index: 1, plan_id: 'tp-unsorted', archived_at: null, exercises: [
+            { id: 'ex-b2', exercise_id: 'e-b2', order_index: 1, plan_day_id: 'day-2', archived_at: null, sets: [] },
+            { id: 'ex-b1', exercise_id: 'e-b1', order_index: 0, plan_day_id: 'day-2', archived_at: null, sets: [] },
           ]},
-          { id: 'day-1', name: 'Day A', description: null, order_index: 0, plan_id: 'tp-unsorted', exercises: [
-            { id: 'ex-a2', exercise_id: 'e-a2', order_index: 1, plan_day_id: 'day-1', sets: [] },
-            { id: 'ex-a1', exercise_id: 'e-a1', order_index: 0, plan_day_id: 'day-1', sets: [] },
+          { id: 'day-1', name: 'Day A', description: null, order_index: 0, plan_id: 'tp-unsorted', archived_at: null, exercises: [
+            { id: 'ex-a2', exercise_id: 'e-a2', order_index: 1, plan_day_id: 'day-1', archived_at: null, sets: [] },
+            { id: 'ex-a1', exercise_id: 'e-a1', order_index: 0, plan_day_id: 'day-1', archived_at: null, sets: [] },
           ]},
         ],
       };
@@ -859,12 +872,14 @@ describe('Plan Mapping Functions', () => {
             description: 'RT Day DTO1 Desc',
             order_index: 0,
             plan_id: 'base-dto-id',
+            archived_at: null,
             exercises: [
               {
                 id: 'ex-rt-dto1a',
                 exercise_id: 'e-rt-dto1',
                 order_index: 0,
                 plan_day_id: 'day-rt-dto1',
+                archived_at: null,
                 sets: [
                   { id: 'set-rt-dto1a1', set_index: 0, expected_reps: 5, expected_weight: 100, plan_exercise_id: 'ex-rt-dto1a' },
                 ],

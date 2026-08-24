@@ -3,12 +3,13 @@ import { z } from 'zod';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { PlanDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { optionalLimit, optionalOffset, optionalSort, validateQueryParams } from "../../utils/validation";
+import { optionalBoolean, optionalLimit, optionalOffset, optionalSort, validateQueryParams } from "../../utils/validation";
 
 export const QUERY_SCHEMA = z.object({
   limit: optionalLimit(),
   offset: optionalOffset(),
-  sort: optionalSort('created_at', 'desc', ['name'])
+  sort: optionalSort('created_at', 'desc', ['name']),
+  include_archived: optionalBoolean('include_archived'),
 });
 
 export async function handleGetPlans(c: Context<AppContext>) {
@@ -18,7 +19,7 @@ export async function handleGetPlans(c: Context<AppContext>) {
   const planRepository = c.get('planRepository');
 
   try {
-    const queryOptions = { limit: query!.limit, offset: query!.offset, sort: query!.sort };
+    const queryOptions = { limit: query!.limit, offset: query!.offset, sort: query!.sort, includeArchived: query!.include_archived };
     const result = await planRepository.findAll(queryOptions);
 
     const successData = createSuccessData<PlanDto[]>(result.data, { totalCount: result.totalCount });

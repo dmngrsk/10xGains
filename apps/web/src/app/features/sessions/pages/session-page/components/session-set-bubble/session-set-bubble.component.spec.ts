@@ -7,6 +7,7 @@ const createMockSet = (overrides: Partial<SessionSetViewModel> = {}): SessionSet
   id: 'set1',
   order: 1,
   status: 'PENDING',
+  isPrescribed: true,
   expectedReps: 10,
   weight: 100,
   actualReps: undefined,

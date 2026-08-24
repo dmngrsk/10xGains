@@ -18,6 +18,8 @@ function makeSet(overrides: Partial<SessionSetDto> = {}): SessionSetDto {
     plan_exercise_id: 'plan-exercise-1',
     set_index: 1,
     expected_reps: 5,
+    expected_weight: 100,
+    is_prescribed: true,
     actual_reps: 5,
     actual_weight: 100,
     status: 'COMPLETED',

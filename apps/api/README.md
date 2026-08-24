@@ -308,6 +308,7 @@ Lists all plans for the authenticated user. Supports pagination and sorting.
     -   `limit` (optional, integer, default: 20, max: 100): Number of plans to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
     -   `sort` (optional, string, default: `created_at.desc`): Sort criteria (e.g., `name.asc`, `created_at.desc`).
+    -   `include_archived` (optional, boolean, default: `false`): Include days and exercises the user has archived. Off by default, because the plan as it now stands does not contain them. Callers that render *history* against a plan must pass `true`: the history page builds each session card by walking the plan day it was trained from, so an exercise archived since would silently drop out of the workouts that trained it.
 -   **Response (200 OK)**: An array of `PlanDto` objects.
     ```json
     {
@@ -381,6 +382,8 @@ Retrieves a specific plan by its ID, if it belongs to the authenticated user. In
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `planId` (UUID) - The ID of the plan to retrieve.
+-   **URL Query Parameters**:
+    -   `include_archived` (optional, boolean, default: `false`): As for `GET /api/plans`. The plan editor and session creation omit it; the session page passes `true`, since it resolves a workout's sets through the plan's exercises.
 -   **Response (200 OK)**: The `PlanDto` object.
     ```json
     {
@@ -473,6 +476,7 @@ Retrieves a list of all training days for a specified plan. Includes nested exer
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of days to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
+    -   `include_archived` (optional, boolean, default: `false`): Include days and exercises the user has archived. As for `GET /api/plans`.
 -   **Response (200 OK)**: An array of `PlanDayDto` objects.
     ```json
     {
@@ -552,6 +556,8 @@ Retrieves details for a specific training day, including nested exercise and set
 -   **URL Path Parameters**:
     -   `planId` (UUID, required): The ID of the plan.
     -   `dayId` (UUID, required): The ID of the plan day.
+-   **URL Query Parameters**:
+    -   `include_archived` (optional, boolean, default: `false`): Include the day and its exercises even if the user has archived them. Without it an archived day reads as `404`, as for `GET /api/plans`.
 -   **Response (200 OK)**: The `PlanDayDto` object, including `exercises` and their `sets`.
     ```json
     {
@@ -611,12 +617,35 @@ Updates an existing training day. If `order_index` is changed, reordering of oth
 
 Deletes a specific training day. Reordering of subsequent days occurs automatically.
 
+Refused once the day has been trained: sessions reference it, and deleting it would delete those workouts. Archive it instead (see below).
+
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
     -   `planId` (UUID, required): The ID of the plan.
     -   `dayId` (UUID, required): The ID of the plan day to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (400 Bad Request)**: If `planId` or `dayId` format is invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
+-   **Response (409 Conflict)**: If any session references this day (`PLAN_ITEM_HAS_HISTORY`). The message names archiving as the alternative.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### POST /api/plans/{planId}/days/{dayId}/archive
+
+Archives or restores a training day.
+
+Archiving is the removal a plan with history is allowed to have: the day leaves the plan - it stops appearing in the editor, and session creation stops rotating onto it - while the workouts already trained from it stay readable. Its own endpoint rather than a field on `PUT`, because it is the only mutation permitted on a plan that has been trained. Idempotent, and reversible with `archived: false`.
+
+An archived day keeps its `order_index` and siblings are not renumbered around it, which the partial unique index over the live rows makes safe. Restoring cannot put it back in that position, though: the days still in the plan are renumbered 1..n by every ordinary edit, so the old index is likely taken by now. A restored day is appended after the last live one instead.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+-   **Request Body**: `ArchivePlanDayCommand`
+    -   `archived` (boolean, required): `true` to archive, `false` to restore.
+-   **Response (200 OK)**: The updated `PlanDayDto`, whose `archived_at` is a timestamp or `null`.
+-   **Response (400 Bad Request)**: If the path parameters or body are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
@@ -636,6 +665,7 @@ Retrieves a list of all exercises for a specified training day.
 -   **URL Query Parameters**:
     -   `limit` (optional, integer, default: 20, max: 100): Number of exercises to return.
     -   `offset` (optional, integer, default: 0): Offset for pagination.
+    -   `include_archived` (optional, boolean, default: `false`): Include exercises the user has archived. As for `GET /api/plans`.
 -   **Response (200 OK)**: An array of `PlanExerciseDto` objects.
     ```json
     {
@@ -696,6 +726,8 @@ Retrieves a specific exercise within a training day by its ID. Includes associat
     -   `planId` (UUID, required): The ID of the plan.
     -   `dayId` (UUID, required): The ID of the plan day.
     -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`) to retrieve.
+-   **URL Query Parameters**:
+    -   `include_archived` (optional, boolean, default: `false`): Include the exercise even if the user has archived it. Without it an archived exercise reads as `404`, as for `GET /api/plans`.
 -   **Response (200 OK)**: The `PlanExerciseDto` object, including `sets`.
     ```json
     {
@@ -759,6 +791,8 @@ If other fields of `plan_exercises` need to be updated, a separate endpoint or a
 
 Deletes a specific exercise from a training day. Reordering of subsequent exercises occurs automatically.
 
+Refused once the exercise has recorded sets against it, since deleting it would delete them. Archive it instead (see below).
+
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
     -   `planId` (UUID, required): The ID of the plan.
@@ -766,6 +800,24 @@ Deletes a specific exercise from a training day. Reordering of subsequent exerci
     -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`) to delete.
 -   **Response (204 No Content)**: Indicates successful deletion with no response body.
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
+-   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
+-   **Response (404 Not Found)**: If the plan, day, or specific plan exercise is not found or not accessible.
+-   **Response (409 Conflict)**: If any `session_sets` reference this exercise (`PLAN_ITEM_HAS_HISTORY`). The message names archiving as the alternative.
+-   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
+
+#### POST /api/plans/{planId}/days/{dayId}/exercises/{exerciseId}/archive
+
+Archives or restores an exercise within a training day. See `POST /api/plans/{planId}/days/{dayId}/archive`: the same contract, one level down. The exercise's sets are left in place, so restoring brings them back with it.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameters**:
+    -   `planId` (UUID, required): The ID of the plan.
+    -   `dayId` (UUID, required): The ID of the plan day.
+    -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`).
+-   **Request Body**: `ArchivePlanExerciseCommand`
+    -   `archived` (boolean, required): `true` to archive, `false` to restore.
+-   **Response (200 OK)**: The updated `PlanExerciseDto`, whose `archived_at` is a timestamp or `null`.
+-   **Response (400 Bad Request)**: If the path parameters or body are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the plan, day, or specific plan exercise is not found or not accessible.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
@@ -1082,7 +1134,9 @@ Creates a new training session for the authenticated user.
 If `plan_day_id` is not provided, the system determines it:
 - If historical completed sessions exist for the `plan_id`, the next `plan_day_id` in sequence is chosen.
 - Otherwise, the first `plan_day_id` of the `plan_id` is chosen.
-Once the `plan_day_id` is determined (either provided or automatically selected), new `session_sets` are automatically created for the session. These sets are based on the `plan_exercise_sets` defined for the determined day. `actual_reps` and `actual_weight` for these new sets are initialized from the `expected_reps` and `expected_weight` of the plan, and their `status` is set to `PENDING`.
+Once the `plan_day_id` is determined (either provided or automatically selected), new `session_sets` are automatically created for the session. These sets are based on the `plan_exercise_sets` defined for the determined day, and their `status` is set to `PENDING`.
+
+Each new set carries **both** halves of the plan's prescription and is marked as prescribed: `expected_reps` and `expected_weight` are snapshotted from the plan at this moment and are never edited afterwards, while `actual_weight` starts at the same weight for the user to adjust as they train. The session is judged against its own snapshot when it completes, not against the plan as it then stands - so editing the plan, whether by hand or by the progression that every completion applies, cannot change the verdict on a workout already underway. Archived days and exercises are excluded here, so structure the user has dropped is never programmed into a new workout.
 
 -   **Authorization**: Bearer token required.
 -   **Request Body**: `CreateSessionCommand`
@@ -1302,6 +1356,8 @@ Retrieves a list of all sets for a specified training session.
 
 Creates a new set for a specified training session.
 
+`expected_weight` is deliberately not accepted here or on `PUT`: it is the prescription the session is judged against, so letting a client rewrite it would reintroduce the moving target the snapshot exists to remove. A set added ad hoc mid-session was never prescribed at all, so its `expected_weight` is recorded as the `actual_weight` the user chose, and it is marked as such - which is what keeps it deletable while every set the plan asked for is not.
+
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**:
     -   `sessionId` (UUID, required): The ID of the training session.
@@ -1373,6 +1429,10 @@ Retrieves details for a specific set within a training session.
 
 Updates an existing set within a training session.
 
+Neither half of the prescription is freely writable, for the same reason: the session is judged against its own snapshot, so a client that can rewrite that snapshot can decide its own verdict. `expected_weight` is never accepted. `expected_reps` is accepted only while the set is still `PENDING` - re-targeting a set you have not performed yet is an ordinary thing to do mid-workout, whereas lowering the target of one already recorded would turn a failure into a success after the fact. Reset the set first if that is really the intent; that clears the record it would otherwise be rewriting.
+
+`set_index` is not accepted at all. Session sets are not reorderable, and repointing a recorded set at an index the plan does not prescribe would hide it from completion exactly as deleting it would.
+
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
     -   `sessionId` (UUID, required): The ID of the training session.
@@ -1380,8 +1440,7 @@ Updates an existing set within a training session.
 -   **Request Body**: `UpdateSessionSetCommand` (at least one optional field must be provided)
     ```json
     {
-      "set_index": 1, // Optional, SMALLINT >= 1. Reorders sets if changed.
-      "expected_reps": 5, // Optional, SMALLINT >= 0
+      "expected_reps": 5, // Optional, SMALLINT >= 0. Only while the set is PENDING.
       "actual_reps": 5, // Optional, SMALLINT >= 0, nullable
       "actual_weight": 57.5, // Optional, NUMERIC(7,3) >= 0
       "status": "COMPLETED", // Optional, e.g., 'PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'
@@ -1395,7 +1454,7 @@ Updates an existing set within a training session.
         "id": "uuid", // ID of the session set (matches setId)
         "session_id": "uuid", // Parent session ID
         "plan_exercise_id": "uuid", // Corresponding exercise in the plan
-        "set_index": 1, // Updated value
+        "set_index": 1, // Unchanged; not client-writable
         "expected_reps": 5, // Updated value
         "actual_reps": 5, // Updated value
         "actual_weight": 57.5, // Updated value
@@ -1408,11 +1467,16 @@ Updates an existing set within a training session.
     -   `400 Bad Request`: If path parameter formats are invalid, the request body is invalid, or no fields provided for update.
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `409 Conflict` (`SESSION_SET_PRESCRIPTION_LOCKED`): If `expected_reps` is changed on a set that has already been completed, failed, or skipped.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
 #### DELETE /api/sessions/{sessionId}/sets/{setId}
 
 Deletes a specific set from a training session. Reordering of subsequent sets occurs automatically.
+
+Only a set the plan does not prescribe, and only while it is still `PENDING`. Deleting renumbers the sets that remain, which leaves the session indistinguishable from one created a set shorter - and completion judges an exercise on the sets its session holds, reading an absent one as a set the plan gained after the session started and skipping it. A prescribed set is therefore refused whatever its status: resetting it to `PENDING` first would otherwise be a route out of a failure, erasing it from the verdict along with the deload it earned. A set added ad hoc mid-session was never part of the prescription, so removing it takes nothing away.
+
+Whether the plan prescribed a set is recorded on the set itself when the session is created, not inferred from the plan's current shape. Editing the exercise afterwards - including shrinking it below the set in question - therefore does not reclassify a set the user has already trained as one they added ad hoc.
 
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameters**:
@@ -1423,6 +1487,8 @@ Deletes a specific set from a training session. Reordering of subsequent sets oc
     -   `400 Bad Request`: If path parameter formats are invalid.
     -   `401 Unauthorized`: If the authentication token is missing or invalid.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `409 Conflict` (`SESSION_SET_PRESCRIBED`): If the plan prescribes this set, whatever its status.
+    -   `409 Conflict` (`SESSION_SET_NOT_DELETABLE`): If an ad hoc set has already been completed, failed, or skipped.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
 #### PATCH /api/sessions/{sessionId}/sets/{setId}/complete
