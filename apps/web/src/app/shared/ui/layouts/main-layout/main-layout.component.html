@@ -9,7 +9,9 @@
     <mat-progress-bar mode="indeterminate" color="accent" class="!fixed top-14 left-0 right-0 z-[99]"></mat-progress-bar>
   }
   <div [class.pb-16]="showBottomNavigation()" class="page-content-area pt-16 h-screen overflow-y-auto">
-    <ng-content></ng-content>
+    <div class="txg-content-measure">
+      <ng-content></ng-content>
+    </div>
   </div>
 }
 

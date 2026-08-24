@@ -49,6 +49,22 @@ $material-color-role-tokens: (
   --txg-chart-series-10: #bab0ac;
 }
 
+/*
+ * One measure for the whole app. The shell is mobile-first, so on a wide screen every page
+ * used to stretch edge to edge and the navigation bars spread their items across the full
+ * width. Content is centered on a single column instead, and both bars align to it - the
+ * bars themselves still span, so their surfaces remain full-bleed.
+ */
+:root {
+  --txg-content-measure: 48rem;
+}
+
+.txg-content-measure {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--txg-content-measure);
+}
+
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
 .mdc-notched-outline__notch { border-right: none; }
 
