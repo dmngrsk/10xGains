@@ -160,6 +160,31 @@ export function optionalCsvList<T extends z.ZodTypeAny>(itemSchema: T) {
 }
 
 /**
+ * An optional boolean query parameter, defaulting to false.
+ *
+ * Only the exact string `true` enables it. A query string carries no types, so anything looser -
+ * treating any present value as true, say - would make `?flag=false` and `?flag=0` both mean true,
+ * which is the opposite of what the caller wrote.
+ *
+ * @param {string} label - How the value is named in the validation message, e.g. 'include_archived'.
+ * @returns A schema accepting an optional boolean, defaulted to false.
+ */
+export function optionalBoolean(label: string) {
+  return z.preprocess((val) => {
+    if (isAbsent(val)) {
+      return false;
+    }
+    if (val === 'true' || val === true) {
+      return true;
+    }
+    if (val === 'false' || val === false) {
+      return false;
+    }
+    return val;
+  }, z.boolean({ invalid_type_error: `${label} must be either 'true' or 'false'` }));
+}
+
+/**
  * Rejects an inverted date range, which would otherwise pass validation and silently return an
  * empty result set. The error is reported on `date_from`.
  *

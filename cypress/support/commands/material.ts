@@ -9,10 +9,8 @@ function getMatSnackBar(): Cypress.Chainable<JQuery<HTMLElement>> {
 
 function closeMatSnackBar(): void {
   cy.get('body').then(($body) => {
-    const action = $body.find('simple-snack-bar button');
-    if (action.length > 0) {
-      cy.wrap(action.first()).click();
-      cy.get('simple-snack-bar').should('not.exist');
-    }
+    $body.find('simple-snack-bar button').get(0)?.click();
   });
+
+  cy.get('simple-snack-bar').should('not.exist');
 }

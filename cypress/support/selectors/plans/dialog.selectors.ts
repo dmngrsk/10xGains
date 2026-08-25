@@ -12,6 +12,8 @@ export const dialogSelectors = {
     nameInput: 'add-edit-plan-day-dialog-name-input',
     saveButton: 'add-edit-plan-day-dialog-save-button',
     deleteButton: 'add-edit-plan-day-dialog-delete-button',
+    archiveButton: 'add-edit-plan-day-dialog-archive-button',
+    cancelButton: 'add-edit-day-dialog-cancel-button',
   },
   exercises: {
     title: 'add-plan-exercise-dialog-title',
@@ -26,6 +28,7 @@ export const dialogSelectors = {
     content: 'edit-plan-exercise-progression-dialog-content',
     weightIncrementInput: 'edit-plan-exercise-progression-dialog-weight-increment-input',
     saveButton: 'edit-plan-exercise-progression-dialog-save-button',
+    cancelButton: 'edit-exercise-progression-dialog-cancel-button',
   },
   sets: {
     title: 'add-edit-plan-set-dialog-title',
@@ -33,5 +36,6 @@ export const dialogSelectors = {
     repsInput: 'add-edit-plan-set-dialog-reps-input',
     weightInput: 'add-edit-plan-set-dialog-weight-input',
     saveButton: 'add-edit-plan-set-dialog-save-button',
+    deleteButton: 'add-edit-set-dialog-delete-button',
   },
 };

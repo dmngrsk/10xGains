@@ -89,26 +89,6 @@ export type AiSuggestedPlanExerciseSetDto = PlanExerciseSetDto & {
   is_ai_modified?: boolean;
 };
 
-// Command and constituent data types for POST /plans/{planId}/composite
-// For composite updates, 'id' is optional for new items.
-// Days, exercises, sets not included in payload but existing in DB will be DELETED.
-// Order is determined by array position.
-export type CompositePlanUpdateCommand =
-  Pick<Database["public"]["Tables"]["plans"]["Update"], "name" | "description">
-  & { id?: string; days: CompositePlanDayData[]; }; // id of the plan is via URL parameter {planId}
-
-export type CompositePlanDayData =
-  Pick<Database["public"]["Tables"]["plan_days"]["Insert"], "name" | "description">
-  & { id?: string; exercises?: CompositePlanExerciseData[]; }; // id is optional for new, present for existing
-
-export type CompositePlanExerciseData =
-  Pick<Database["public"]["Tables"]["plan_exercises"]["Insert"], "exercise_id">
-  & { id?: string; sets?: CompositePlanExerciseSetData[]; }; // id is optional for new, present for existing
-
-export type CompositePlanExerciseSetData =
-  Pick<Database["public"]["Tables"]["plan_exercise_sets"]["Insert"], "expected_reps" | "expected_weight">
-  & { id?: string; }; // id is optional for new, present for existing
-
 // 4. Plan Day DTO and Commands
 export type PlanDayDto = Database["public"]["Tables"]["plan_days"]["Row"] & {
   exercises?: PlanExerciseDto[]; // nested exercises
@@ -120,6 +100,15 @@ export type CreatePlanDayCommand = Pick<Database["public"]["Tables"]["plan_days"
 export type UpdatePlanDayCommand = Pick<Database["public"]["Tables"]["plan_days"]["Update"], "name" | "description" | "order_index">;
 
 // Reorder command is covered by UpdatePlanDayCommand by sending only order_index.
+
+/**
+ * Archiving is not a field edit, which is why it has its own command and its own endpoint rather
+ * than being an `archived_at` on the update command above. It is the one mutation permitted on a
+ * plan that has session history - deleting the row would take that history with it - and it is
+ * idempotent and reversible, so the client says what the end state should be rather than sending a
+ * timestamp of its own.
+ */
+export type ArchivePlanDayCommand = { archived: boolean };
 
 // 5. Plan Exercise DTO and Commands
 export type PlanExerciseDto = Database["public"]["Tables"]["plan_exercises"]["Row"] & {
@@ -133,6 +122,8 @@ export type CreatePlanExerciseCommand = Pick<Database["public"]["Tables"]["plan_
 export type UpdatePlanExerciseCommand = Required<Pick<Database["public"]["Tables"]["plan_exercises"]["Update"], "order_index">>;
 
 // Reorder command is covered by UpdatePlanExerciseCommand.
+
+export type ArchivePlanExerciseCommand = { archived: boolean };
 
 // 6. Plan Exercise Set DTO and Commands
 export type PlanExerciseSetDto = Database["public"]["Tables"]["plan_exercise_sets"]["Row"];
@@ -167,7 +158,9 @@ export type SessionSetDto = Database["public"]["Tables"]["session_sets"]["Row"];
 
 export type CreateSessionSetCommand = Pick<Database["public"]["Tables"]["session_sets"]["Insert"], "session_id" | "plan_exercise_id" | "set_index" | "actual_weight" | "actual_reps" | "expected_reps" | "status" | "completed_at">;
 
-export type UpdateSessionSetCommand = Partial<Pick<Database["public"]["Tables"]["session_sets"]["Update"], "set_index" | "actual_reps" | "actual_weight" | "expected_reps" | "status" | "completed_at">>;
+// No `set_index`: session sets are not reorderable, and repointing a recorded set at an index the
+// plan does not prescribe would hide it from completion exactly as deleting it would.
+export type UpdateSessionSetCommand = Partial<Pick<Database["public"]["Tables"]["session_sets"]["Update"], "actual_reps" | "actual_weight" | "expected_reps" | "status" | "completed_at">>;
 
 // For PATCH /sessions/{sessionId}/sets/{setId}/complete
 // Request body is empty.

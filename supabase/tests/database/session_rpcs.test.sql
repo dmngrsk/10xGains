@@ -44,8 +44,8 @@ insert into public.plan_exercises (id, plan_day_id, exercise_id, order_index)
 -- S1: PENDING session with one PENDING set - drives the patch happy path, then completion.
 insert into public.sessions (id, user_id, plan_id, plan_day_id, status)
   values ('000000f1-0000-0000-0000-000000000001', '000000aa-0000-0000-0000-000000000001', '000000cc-0000-0000-0000-000000000001', '000000dd-0000-0000-0000-000000000001', 'PENDING');
-insert into public.session_sets (id, session_id, plan_exercise_id, set_index, actual_weight, expected_reps, status)
-  values ('000000f1-0000-0000-0000-000000001001', '000000f1-0000-0000-0000-000000000001', '000000ee-0000-0000-0000-000000000001', 1, 100, 5, 'PENDING');
+insert into public.session_sets (id, session_id, plan_exercise_id, set_index, actual_weight, expected_reps, expected_weight, status)
+  values ('000000f1-0000-0000-0000-000000001001', '000000f1-0000-0000-0000-000000000001', '000000ee-0000-0000-0000-000000000001', 1, 100, 5, 100, 'PENDING');
 
 -- S2: a second PENDING session - stays open, so it is the "outstanding" set create_session must see.
 insert into public.sessions (id, user_id, plan_id, plan_day_id, status)
@@ -54,8 +54,8 @@ insert into public.sessions (id, user_id, plan_id, plan_day_id, status)
 -- S3: an already COMPLETED session with a set - the terminal state patch must refuse.
 insert into public.sessions (id, user_id, plan_id, plan_day_id, status)
   values ('000000f3-0000-0000-0000-000000000003', '000000aa-0000-0000-0000-000000000001', '000000cc-0000-0000-0000-000000000001', '000000dd-0000-0000-0000-000000000001', 'COMPLETED');
-insert into public.session_sets (id, session_id, plan_exercise_id, set_index, actual_weight, expected_reps, status)
-  values ('000000f3-0000-0000-0000-000000001003', '000000f3-0000-0000-0000-000000000003', '000000ee-0000-0000-0000-000000000001', 1, 100, 5, 'COMPLETED');
+insert into public.session_sets (id, session_id, plan_exercise_id, set_index, actual_weight, expected_reps, expected_weight, status)
+  values ('000000f3-0000-0000-0000-000000001003', '000000f3-0000-0000-0000-000000000003', '000000ee-0000-0000-0000-000000000001', 1, 100, 5, 100, 'COMPLETED');
 
 -- Become the owner. auth.uid() now resolves to their id, and every statement below is under RLS.
 set local role authenticated;

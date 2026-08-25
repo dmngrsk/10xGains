@@ -1,8 +1,8 @@
 <txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center px-4 min-h-[calc(100vh-12.25rem)]" [class.py-4]="viewModel().viewMode === 'list'">
+  <div class="flex justify-center px-4 min-h-[var(--txg-page-viewport)]" [class.py-4]="viewModel().viewMode === 'list'">
     @if (viewModel(); as viewModel) {
       @if (viewModel.isLoading || pageRecentlyChanged()) {
-        <div class="flex justify-center items-center min-h-[calc(100vh-12.25rem)]">
+        <div class="flex justify-center items-center min-h-[var(--txg-page-viewport)]">
           <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
         </div>
       } @else if (viewModel.error) {
@@ -14,7 +14,7 @@
           data-cy="history-error-notice">
         </txg-notice>
       } @else if (viewModel.viewMode === 'calendar') {
-        <div class="w-full max-w-100 mx-auto h-[calc(100vh-12rem)]" data-cy="history-calendar-view">
+        <div class="w-full max-w-100 mx-auto h-[var(--txg-page-viewport)]" data-cy="history-calendar-view">
           <txg-history-calendar
             [sessions]="viewModel.calendarSessions"
             [month]="viewModel.calendarMonth"

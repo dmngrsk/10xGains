@@ -19,9 +19,13 @@
     <button mat-flat-button type="submit" form="dayDialogForm" [disabled]="dayForm.invalid" class="w-full" data-cy="add-edit-plan-day-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Changes' : 'Add Day' }}</span>
     </button>
-    @if (data.isEditMode) {
+    @if (data.isEditMode && data.canDelete) {
       <button mat-raised-button color="warn" (click)="onDeleteDay()" class="w-full" data-cy="add-edit-plan-day-dialog-delete-button">
         <span>Delete Day</span>
+      </button>
+    } @else if (data.isEditMode && data.canArchive) {
+      <button mat-raised-button (click)="onArchiveDay()" class="w-full" data-cy="add-edit-plan-day-dialog-archive-button">
+        <span>Archive Day</span>
       </button>
     }
     <button mat-raised-button (click)="onCancel()" class="w-full" data-cy="add-edit-day-dialog-cancel-button">

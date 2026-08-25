@@ -77,7 +77,7 @@ export class HomePageFacade {
             map(res => res.data ?? [] as SessionDto[]),
             catchError(() => of([] as SessionDto[]))
           ),
-          plan: this.planService.getPlan(profile.active_plan_id).pipe(
+          plan: this.planService.getPlan(profile.active_plan_id, { includeArchived: true }).pipe(
             map(res => res.data),
             catchError(() => of(null as PlanDto | null))
           ),

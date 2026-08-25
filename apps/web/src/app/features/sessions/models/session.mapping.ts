@@ -1,4 +1,4 @@
-import { ExerciseDto, PlanDto, PlanExerciseSetDto, SessionDto, SessionSetDto, SessionStatus, SessionSetStatus } from '@txg/shared';
+import { ExerciseDto, PlanDto, SessionDto, SessionSetDto, SessionStatus, SessionSetStatus } from '@txg/shared';
 import { toUtcDate } from '@shared/utils/dates/utc-date';
 import { SessionCardViewModel, SessionCardExerciseViewModel, SessionCardSetViewModel } from "./session-card.viewmodel";
 import { SessionPageViewModel, SessionExerciseViewModel, SessionSetViewModel } from "./session-page.viewmodel";
@@ -80,17 +80,15 @@ export function mapToSessionPageViewModel(
 
     const sessionSetViewModels: SessionSetViewModel[] = actualSetsForThisExercise
       .map(actualSet => {
-        let correspondingPlannedSet: PlanExerciseSetDto | undefined;
-        if (plannedExercise.sets) {
-          correspondingPlannedSet = plannedExercise.sets.find(ps => ps.set_index === actualSet.set_index);
-        }
+        const correspondingPlannedSet = plannedExercise.sets?.find(ps => ps.set_index === actualSet.set_index);
 
         const viewModelSet: SessionSetViewModel = {
           id: actualSet.id,
           planExerciseId: actualSet.plan_exercise_id,
           order: actualSet.set_index,
           status: actualSet.status as SessionSetStatus,
-          expectedReps: correspondingPlannedSet?.expected_reps ?? actualSet.expected_reps ?? 0,
+          isPrescribed: actualSet.is_prescribed,
+          expectedReps: actualSet.expected_reps ?? correspondingPlannedSet?.expected_reps ?? 0,
           actualReps: actualSet.actual_reps,
           weight: actualSet.actual_weight,
           completedAt: toUtcDate(actualSet.completed_at),
@@ -104,7 +102,6 @@ export function mapToSessionPageViewModel(
       exerciseName: exerciseName,
       order: plannedExercise.order_index ?? 0,
       sets: sessionSetViewModels,
-      plannedSetsCount: plannedExercise.sets?.length ?? 0,
     });
   }
 
@@ -132,6 +129,7 @@ export function mapToSessionSetViewModel(setDto: SessionSetDto, originalExpected
     id: setDto.id,
     status: setDto.status as SessionSetStatus,
     order: setDto.set_index,
+    isPrescribed: setDto.is_prescribed,
     expectedReps: originalExpectedReps ?? setDto.expected_reps ?? 0,
     actualReps: setDto.actual_reps,
     weight: setDto.actual_weight,

@@ -11,12 +11,22 @@ const mockPlanExerciseSet = (id: string, tpeId: string, index: number, weight: n
   expected_reps: reps,
 });
 
-const mockSessionSet = (id: string, tpeId: string, index: number, actualWeight: number, actualReps: number, status = 'COMPLETED'): SessionSetDto => ({
+const mockSessionSet = (
+  id: string,
+  tpeId: string,
+  index: number,
+  actualWeight: number,
+  actualReps: number,
+  status = 'COMPLETED',
+  prescribed: { expectedWeight?: number, expectedReps?: number } = {}
+): SessionSetDto => ({
   id,
   plan_exercise_id: tpeId,
   session_id: 'session1',
   set_index: index,
-  expected_reps: actualReps,
+  expected_reps: prescribed.expectedReps ?? actualReps,
+  expected_weight: prescribed.expectedWeight ?? actualWeight,
+  is_prescribed: true,
   actual_reps: actualReps,
   actual_weight: actualWeight,
   status: status as SessionSetDto['status'],
@@ -28,6 +38,7 @@ const mockPlanExercise = (id: string, exerciseId: string, sets: PlanExerciseSetD
   plan_day_id: 'day1',
   exercise_id: exerciseId,
   order_index: 0,
+  archived_at: null,
   sets,
 });
 
@@ -96,7 +107,7 @@ describe('resolveExerciseProgressions', () => {
   it('should increment consecutive_failures if a set is failed and deload not triggered', () => {
     const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)];
     const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
-    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3)];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3, 'COMPLETED', { expectedReps: 5 })];
     const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 0, 2)];
 
     const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
@@ -112,7 +123,7 @@ describe('resolveExerciseProgressions', () => {
 
     const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)];
     const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
-    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3)];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3, 'COMPLETED', { expectedReps: 5 })];
     const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 1, 2)];
 
     const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
@@ -244,7 +255,7 @@ describe('resolveExerciseProgressions', () => {
   it('should throw error for unsupported deload strategy', () => {
     const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5)];
     const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
-    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3)];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 3, 'COMPLETED', { expectedReps: 5 })];
     const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'UNKNOWN_STRATEGY', 10, 1, 2)];
 
     expect(() => {
@@ -281,7 +292,42 @@ describe('resolveExerciseProgressions', () => {
     expect(result.exerciseSetsToUpdate.every(s => s.plan_exercise_id === 'tpe1')).toBe(true);
   });
 
-   it('should warn and treat exercise as failed if an expected set is missing from actual performed sets', () => {
+  it('should judge a session against its own prescription, not the plan as it stands now', () => {
+    // The user was asked for 100 kg and delivered 100 kg. Afterwards - mid-session, which the plan
+    // editor permits - the plan was raised to 105 kg. That is next session's target, not a debt this
+    // session owes: the set succeeds, and the new target is computed from the plan's 105 kg.
+    const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 105, 5)];
+    const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
+    const sessionSets: SessionSetDto[] = [
+      mockSessionSet('ss1', 'tpe1', 0, 100, 5, 'COMPLETED', { expectedWeight: 100 }),
+    ];
+    const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 0, 2)];
+
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(result.exerciseProgressionsToUpdate[0].consecutive_failures).toBe(0);
+    expect(result.exerciseSetsToUpdate[0].expected_weight).toBe(107.5);
+  });
+
+  it('should fail a set that fell short of the weight the session prescribed', () => {
+    // The mirror of the test above: the snapshot is what is enforced, so falling short of it is a
+    // failure even when the live plan has since been lowered to meet the user where they were.
+    const planExercise1Sets = [mockPlanExerciseSet('set1-1', 'tpe1', 0, 95, 5)];
+    const planExercises: PlanExerciseDto[] = [mockPlanExercise('tpe1', 'ex1', planExercise1Sets)];
+    const sessionSets: SessionSetDto[] = [
+      mockSessionSet('ss1', 'tpe1', 0, 95, 5, 'COMPLETED', { expectedWeight: 100 }),
+    ];
+    const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 0, 2)];
+
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(result.exerciseProgressionsToUpdate[0].consecutive_failures).toBe(1);
+    expect(result.exerciseSetsToUpdate[0].expected_weight).toBe(95);
+  });
+
+  it('should skip an expected set the session was never given rather than failing the exercise', () => {
+    // A set added to the plan after the session started was never prescribed for it. The sets the
+    // session *was* given were all completed, so the exercise progresses.
     const planExercise1Sets = [
       mockPlanExerciseSet('set1-1', 'tpe1', 0, 100, 5),
       mockPlanExerciseSet('set1-2', 'tpe1', 1, 100, 5),
@@ -294,13 +340,29 @@ describe('resolveExerciseProgressions', () => {
 
     const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
 
-    expect(consoleWarnSpy).toHaveBeenCalledWith('No actual set found for expected set with index 1 of exercise ex1 (plan exercise ID: tpe1). Treating the set as failed.');
+    expect(consoleWarnSpy).toHaveBeenCalledWith('No actual set found for expected set with index 1 of exercise ex1 (plan exercise ID: tpe1). It was added to the plan after the session started; skipping it.');
     expect(result.exerciseProgressionsToUpdate.length).toBe(1);
-    expect(result.exerciseProgressionsToUpdate[0].consecutive_failures).toBe(1);
+    expect(result.exerciseProgressionsToUpdate[0].consecutive_failures).toBe(0);
     expect(result.exerciseSetsToUpdate.length).toBe(2);
     result.exerciseSetsToUpdate.forEach((set: PlanExerciseSetDto) => {
-      expect(set.expected_weight).toBe(100);
+      expect(set.expected_weight).toBe(102.5);
     });
+  });
+
+  it('should leave an exercise unchanged when every planned set post-dates the session', () => {
+    // Nothing the session recorded speaks to the current prescription, so there is no evidence to
+    // progress *or* to deload on. Counting it as a failure would punish the user for editing a plan.
+    const planExercises: PlanExerciseDto[] = [
+      mockPlanExercise('tpe1', 'ex1', [mockPlanExerciseSet('set1-1', 'tpe1', 7, 100, 5)]),
+    ];
+    const sessionSets: SessionSetDto[] = [mockSessionSet('ss1', 'tpe1', 0, 100, 5)];
+    const progressions: PlanExerciseProgressionDto[] = [mockExerciseProgression('ex1', 2.5, 'PROPORTIONAL', 10, 0, 2)];
+
+    const result = resolveExerciseProgressions(sessionSets, planExercises, progressions);
+
+    expect(result.exerciseSetsToUpdate).toEqual([]);
+    expect(result.exerciseProgressionsToUpdate).toEqual([]);
+    expect(consoleWarnSpy).toHaveBeenCalledWith('No session set matched any planned set of exercise ex1; every planned set post-dates the session. Leaving its progression unchanged.');
   });
 
   it('should key progressions by exercise alone, so callers must pass only one plan\'s rules', () => {

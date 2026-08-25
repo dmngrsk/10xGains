@@ -70,7 +70,7 @@ export class SessionPageFacade {
           session: of(
             res.data
           ),
-          plan: this.planService.getPlan(res.data.plan_id).pipe(
+          plan: this.planService.getPlan(res.data.plan_id, { includeArchived: true }).pipe(
             map(res => res.data),
             catchError(() => of(null as PlanDto | null))
           ),

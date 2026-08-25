@@ -21,12 +21,15 @@ export type SessionForRotation = Pick<SessionDto, 'status' | 'session_date' | 'p
  * Only dated, COMPLETED sessions advance the rotation: a cancelled or still-pending
  * session must not consume a day, or the user would silently skip a workout.
  *
+ * The day the last session trained may no longer be part of the plan - archiving a day the
+ * user has already trained is an ordinary edit. There is no position to resume from in that
+ * case, so the rotation restarts at the first day rather than refusing to open a session.
+ *
  * @param {PlanDayForSession[]} days - The days of the plan; must not be empty.
  * @param {SessionForRotation[]} sessions - The user's sessions for that plan, in any order.
  * @param {string | null | undefined} requestedDayId - A day explicitly asked for, if any.
  * @returns {string} The id of the day to train next.
- * @throws {Error} If the plan has no days, or the last completed session trained a day
- *                 that no longer belongs to the plan (so the rotation cannot be resumed).
+ * @throws {Error} If the plan has no days, so there is nothing to train.
  */
 export function resolveNextPlanDayId(
   days: PlanDayForSession[],
@@ -53,7 +56,10 @@ export function resolveNextPlanDayId(
 
   const lastIndex = dayIds.indexOf(lastCompleted.plan_day_id!);
   if (lastIndex === -1) {
-    throw new DataIntegrityError('Failed to identify the next day for this plan.', 'NEXT_DAY_UNRESOLVED', 'next_day_unresolved_error');
+    // Archived out of the plan: there is no position to resume from, so restart rather than
+    // leave the user unable to open any session at all.
+    console.warn(`The last completed session trained day ${lastCompleted.plan_day_id}, which is no longer an active day of this plan; restarting the rotation at its first day.`);
+    return dayIds[0];
   }
 
   return dayIds[(lastIndex + 1) % dayIds.length];
@@ -82,6 +88,12 @@ export function cancelOutstandingSessions(sessions: SessionDto[]): SessionDto[] 
  * weight and whose reps are not yet recorded: `expected_*` is what the plan asks for,
  * `actual_*` is what the user ends up doing.
  *
+ * Both halves of the prescription are copied, not just the reps, and each set is marked
+ * `is_prescribed`. The session is judged against this snapshot rather than against the
+ * plan, so the plan is free to change - by a user edit or by the progression the previous
+ * session triggered - without altering the verdict on a workout already underway, and
+ * without turning a set the user has already trained into one they may delete.
+ *
  * @param {PlanDayForSession} day - The plan day being trained, with its exercises and sets.
  * @param {string} sessionId - The id of the session the sets belong to.
  * @param {() => string} newId - Id factory, injected so the result is deterministic in tests.
@@ -100,6 +112,8 @@ export function buildSessionSets(
       plan_exercise_id: plannedSet.plan_exercise_id,
       set_index: plannedSet.set_index,
       expected_reps: plannedSet.expected_reps,
+      expected_weight: plannedSet.expected_weight,
+      is_prescribed: true,
       actual_reps: null,
       actual_weight: plannedSet.expected_weight,
       status: 'PENDING' as const,

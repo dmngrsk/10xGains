@@ -1,0 +1,30 @@
+.day-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.day-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+// The group's own divider would double up with the strip's.
+.day-tabs ::ng-deep .mat-mdc-tab-header {
+  border-bottom: 0;
+}
+
+.day-menu-button {
+  flex: 0 0 auto;
+}
+
+.day-panel {
+  padding-top: 1rem;
+}
+
+.day-description {
+  margin-bottom: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}

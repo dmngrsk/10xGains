@@ -41,6 +41,8 @@ export interface CollectionConfig<T> {
   setOrder: (entity: T, newOrder: number) => T;
   /** An optional second filter, for collections with a compound key. */
   scope?: CollectionScope;
+  /** The name of a nullable timestamp column marking soft-deleted rows, if the table has one. */
+  activeOnlyColumn?: string;
 }
 
 /**
@@ -62,7 +64,7 @@ async function replaceCollection<T>(
   config: CollectionConfig<T>,
   mutate: (existing: T[]) => T[]
 ): Promise<T[]> {
-  const { table, parentColumn, parentId, orderColumn, scope } = config;
+  const { table, parentColumn, parentId, orderColumn, scope, activeOnlyColumn } = config;
 
   const collectionQuery = supabase
     .from(table)
@@ -71,6 +73,10 @@ async function replaceCollection<T>(
 
   if (scope) {
     collectionQuery.eq(scope.column, scope.id);
+  }
+
+  if (activeOnlyColumn) {
+    collectionQuery.is(activeOnlyColumn, null);
   }
 
   const { data: existingEntities, error: fetchError } = await collectionQuery
@@ -88,7 +94,8 @@ async function replaceCollection<T>(
     p_parent_id: parentId,
     p_order_column: orderColumn,
     p_records: normalizedEntities as Json,
-    ...(scope ? { p_scope_column: scope.column, p_scope_id: scope.id } : {})
+    ...(scope ? { p_scope_column: scope.column, p_scope_id: scope.id } : {}),
+    ...(activeOnlyColumn ? { p_active_only_column: activeOnlyColumn } : {})
   });
 
   if (error) {

@@ -148,6 +148,8 @@ export class PlanListPageFacade {
             throw activePlan.error || new Error('Failed to load active plan.');
           } else if (activePlan.data) {
             this.internalActivePlanViewModel = mapToPlanViewModel(activePlan.data, this.internalExercises, this.internalProfile);
+          } else {
+            this.internalActivePlanViewModel = null;
           }
           return { profile: this.internalProfile!, exercises: this.internalExercises, activePlanViewModel: this.internalActivePlanViewModel };
         }));

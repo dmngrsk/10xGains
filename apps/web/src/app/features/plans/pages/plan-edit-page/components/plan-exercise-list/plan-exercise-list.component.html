@@ -1,28 +1,34 @@
 @if (exercises.length > 0) {
-  <mat-accordion multi="true" cdkDropList [cdkDropListData]="exercises" [cdkDropListDisabled]="isReadOnly"
+  <div cdkDropList [cdkDropListData]="exercises" [cdkDropListDisabled]="!capabilities.canReorder"
     (cdkDropListDropped)="onExerciseReordered($event)">
-    <div class="flex flex-col gap-2">
-      @for (exercise of exercises; track exercise.id; let i = $index) {
-        <txg-plan-exercise-item
-          [planId]="planId"
-          [dayId]="dayId"
-          [exercise]="exercise"
-          [progression]="getProgression(exercise.exerciseId)"
-          [isReadOnly]="isReadOnly"
-          [expanded]="expandedStates()[i]"
-          (opened)="onExerciseItemToggled(i, true)"
-          (closed)="onExerciseItemToggled(i, false)"
-          (exerciseDeleted)="onExerciseDeleted($event)"
-          (progressionEdited)="onProgressionEdited($event)"
-          (setAdded)="onSetAdded($event)"
-          (setEdited)="onSetEdited($event)"
-          (setDeleted)="onSetDeleted($event)"
-          (setReordered)="onSetReordered($event)"
-          data-cy="plan-exercise-item">
-        </txg-plan-exercise-item>
-      }
-    </div>
-  </mat-accordion>
+    @for (exercise of exercises; track exercise.id) {
+      <txg-plan-exercise-item
+        [planId]="planId"
+        [dayId]="dayId"
+        [exercise]="exercise"
+        [progression]="getProgression(exercise.exerciseId)"
+        [capabilities]="capabilities"
+        (exerciseDeleted)="onExerciseDeleted($event)"
+        (exerciseArchived)="onExerciseArchived($event)"
+        (progressionEdited)="onProgressionEdited($event)"
+        (setAdded)="onSetAdded($event)"
+        (setEdited)="onSetEdited($event)"
+        (setWeightStepped)="onSetWeightStepped($event)"
+        data-cy="plan-exercise-item">
+      </txg-plan-exercise-item>
+    }
+  </div>
 } @else {
-  <p class="text-sm p-2">No exercises defined for this day. Add the first one!</p>
+  <p class="text-sm text-secondary py-4">No exercises in this day yet.</p>
+}
+
+@if (capabilities.canAddItems) {
+  <button
+    mat-raised-button
+    class="add-exercise-button"
+    (click)="onExerciseAdded()"
+    data-cy="plan-day-add-exercise-button">
+    <mat-icon>add</mat-icon>
+    <span>Add Exercise</span>
+  </button>
 }

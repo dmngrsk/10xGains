@@ -1,4 +1,93 @@
-::ng-deep .mat-mdc-card-content:first-child,
-::ng-deep .mat-mdc-card-content:last-child {
-  padding: 4px !important;
+:host {
+  display: table-row;
+}
+
+td {
+  height: 3rem;
+  padding: 0 0.5rem;
+  vertical-align: middle;
+  border-top: 1px solid color-mix(in srgb, var(--mat-sys-outline-variant) 45%, transparent);
+}
+
+.set-reps {
+  width: 2.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.set-times {
+  width: 1rem;
+  padding-inline: 0.25rem;
+  color: var(--mat-sys-outline);
+  text-align: center;
+}
+
+.set-weight-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.set-weight-unit {
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 400;
+}
+
+.set-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+}
+
+.stepper-buttons {
+  display: inline-flex;
+}
+
+.stepper-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--mat-sys-primary);
+  cursor: pointer;
+
+  mat-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 1.125rem;
+    line-height: 1.125rem;
+  }
+
+  -webkit-tap-highlight-color: transparent;
+
+  &:disabled {
+    color: var(--mat-sys-on-surface-variant);
+    opacity: 0.38;
+    cursor: default;
+  }
+}
+
+.set-actions {
+  width: 1%;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.set-edit-button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 1.125rem;
+    line-height: 1.125rem;
+  }
 }

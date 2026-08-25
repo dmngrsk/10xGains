@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, computed, inject, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, DestroyRef, computed, inject, OnDestroy, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,7 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
-import { filter, Observable, of, switchMap, map, EMPTY } from 'rxjs';
+import { filter, Observable, of, switchMap, map, EMPTY, Subject, debounceTime, groupBy, mergeMap, concatMap, toArray } from 'rxjs';
 import {
   UpdatePlanDayCommand,
   CreatePlanExerciseSetCommand,
@@ -34,11 +34,17 @@ import { AddEditPlanDialogComponent, AddEditPlanDialogData, AddEditPlanDialogClo
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult } from '../../components/dialogs/add-edit-set/add-edit-set-dialog.component';
 import { AddExerciseDialogComponent, AddExerciseDialogCloseResult } from '../../components/dialogs/add-exercise/add-exercise-dialog.component';
 import { EditExerciseProgressionDialogComponent, EditExerciseProgressionDialogData, EditExerciseProgressionDialogCloseResult } from '../../components/dialogs/edit-exercise-progression/edit-exercise-progression-dialog.component';
+import { ReorderDaysDialogComponent, ReorderDaysDialogCloseResult, ReorderDaysDialogData } from '../../components/dialogs/reorder-days/reorder-days-dialog.component';
+import { derivePlanEditCapabilities } from '../../models/plan-edit-capabilities';
 import { PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, PlanExerciseProgressionViewModel } from '../../models/plan.viewmodel';
+
+/** Long enough that a run of taps counts as one edit, short enough that one tap still feels sent. */
+const WEIGHT_STEP_DEBOUNCE_MS = 500;
 
 @Component({
   selector: 'txg-plan-edit-page',
   templateUrl: './plan-edit-page.component.html',
+  styleUrl: './plan-edit-page.component.scss',
   standalone: true,
   imports: [
     CommonModule,
@@ -54,7 +60,7 @@ import { PlanDayViewModel, PlanExerciseViewModel, PlanExerciseSetViewModel, Plan
     NoticeComponent
   ],
 })
-export class PlanEditPageComponent implements OnInit {
+export class PlanEditPageComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly dialog = inject(MatDialog);
   private readonly route = inject(ActivatedRoute);
@@ -64,15 +70,46 @@ export class PlanEditPageComponent implements OnInit {
 
   readonly viewModel = this.facade.viewModel;
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
-  readonly isReadOnlySignal = computed(() => this.viewModel().isPreview || this.viewModel().sessionCount > 0);
-  readonly canActivatePlanSignal = computed(() =>
-    this.viewModel().plan
-      && !this.viewModel().plan!.isActive
-      && this.viewModel().plan!.days!.length > 0
-      && this.viewModel().plan!.days!.flatMap(d => d.exercises).length > 0
-      && this.viewModel().plan!.days!.flatMap(d => d.exercises!).flatMap(e => e.sets).length > 0);
+  /** What this plan's state permits, one flag per action. */
+  readonly capabilitiesSignal = computed(() => derivePlanEditCapabilities({
+    isActive: this.viewModel().plan?.isActive ?? false,
+    sessionCount: this.viewModel().sessionCount,
+    openSessionCount: this.viewModel().openSessionCount,
+  }));
+  /**
+   * Why the plan cannot be activated yet. Reported instead of disabling the action, which would say
+   * the user cannot proceed without saying what is missing.
+   *
+   * Per day and per exercise, not over the plan as a whole: an empty exercise contributes no session
+   * sets, so a day full of them activates into a workout with nothing in it.
+   */
+  readonly activationBlockerSignal = computed<string | null>(() => {
+    const days = this.viewModel().plan?.days ?? [];
 
-  @ViewChild('mainScrollContainer') mainScrollContainer!: ElementRef;
+    if (days.length === 0) {
+      return 'Add a training day before activating this plan.';
+    }
+
+    const emptyDay = days.find(day => (day.exercises ?? []).length === 0);
+    if (emptyDay) {
+      return `"${emptyDay.name}" has no exercises. Add one before activating this plan.`;
+    }
+
+    for (const day of days) {
+      const emptyExercise = (day.exercises ?? []).find(exercise => (exercise.sets ?? []).length === 0);
+      if (emptyExercise) {
+        return `"${emptyExercise.exerciseName}" in "${day.name}" has no sets. Add one before activating this plan.`;
+      }
+    }
+
+    return null;
+  });
+
+  /**
+   * Weight-stepper taps, grouped by set and debounced per group, so a run of taps on one set sends
+   * one request for the value it settled on and two different sets never wait on each other.
+   */
+  private readonly weightSteps$ = new Subject<{setId: string, exerciseId: string, dayId: string, weight: number}>();
 
   ngOnInit(): void {
     this.route.paramMap.pipe(
@@ -83,6 +120,31 @@ export class PlanEditPageComponent implements OnInit {
         return EMPTY;
       })
     ).subscribe();
+
+    this.weightSteps$.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      groupBy(step => step.setId, { duration: group => group.pipe(debounceTime(WEIGHT_STEP_DEBOUNCE_MS * 2)) }),
+      mergeMap(group => group.pipe(
+        debounceTime(WEIGHT_STEP_DEBOUNCE_MS),
+        switchMap(step => this.facade
+          .updatePlanExerciseSet(step.dayId, step.exerciseId, step.setId, { expected_weight: step.weight })
+          .pipe(
+            tapIf(response => !!response.error, response => {
+              this.snackBar.open(response.error || 'Failed to update weight.', 'Close', { duration: 4000 });
+              this.facade.reload();
+            }),
+            catchAndDisplayError('Failed to update weight', this.snackBar)
+          ))
+      ))
+    ).subscribe();
+  }
+
+  ngOnDestroy(): void {
+    this.weightSteps$.complete();
+  }
+
+  onSetWeightStepped(eventData: {setId: string, exerciseId: string, dayId: string, weight: number}): void {
+    this.weightSteps$.next(eventData);
   }
 
   onPlanEdited(): void {
@@ -152,6 +214,12 @@ export class PlanEditPageComponent implements OnInit {
       return;
     }
 
+    const blocker = this.activationBlockerSignal();
+    if (blocker) {
+      this.snackBar.open(blocker, 'Close', { duration: 4000 });
+      return;
+    }
+
     this.facade.activatePlan(plan.id)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -160,6 +228,33 @@ export class PlanEditPageComponent implements OnInit {
           this.router.navigate(['/home']);
         }),
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to activate plan.', 'Close', { duration: 5000 })),
+      ).subscribe();
+  }
+
+  onPlanDeactivated(): void {
+    const plan = this.facade.viewModel().plan;
+    if (!plan || !plan.id) {
+      this.snackBar.open('Plan is not available.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const dialogData: ConfirmationDialogData = {
+      title: 'Deactivate and Edit',
+      message: `"${plan.name}" will stop being your active plan so you can change it. Your training history is kept. Any workout you have open will be replaced when you activate the plan again.`,
+      confirmButtonText: 'Deactivate',
+      cancelButtonText: 'Cancel',
+    };
+
+    this.dialog
+      .open(ConfirmationDialogComponent, { width: '400px', data: dialogData })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter(result => !!result),
+        switchMap(() => this.facade.deactivatePlan()),
+        tapIf(response => !response.error, () => this.snackBar.open('Plan deactivated. You can edit it now.', 'Close', { duration: 3000 })),
+        tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to deactivate plan.', 'Close', { duration: 4000 })),
+        catchAndDisplayError('Failed to deactivate plan', this.snackBar)
       ).subscribe();
   }
 
@@ -204,7 +299,9 @@ export class PlanEditPageComponent implements OnInit {
     const dialogData: AddEditDayDialogData = {
       isEditMode: true,
       name: day.name,
-      description: day.description
+      description: day.description,
+      canDelete: this.capabilitiesSignal().canDeleteStructure,
+      canArchive: this.capabilitiesSignal().canArchiveStructure,
     };
 
     this.dialog
@@ -212,7 +309,7 @@ export class PlanEditPageComponent implements OnInit {
       .afterClosed()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        filter(result => this.isUpdateDayDialogResult(result) || this.isDeleteDayDialogResult(result)),
+        filter(result => this.isUpdateDayDialogResult(result) || this.isDeleteDayDialogResult(result) || this.isArchiveDayDialogResult(result)),
         switchMap(result => {
           if (this.isUpdateDayDialogResult(result)) {
             const command: UpdatePlanDayCommand = result.value;
@@ -225,6 +322,9 @@ export class PlanEditPageComponent implements OnInit {
             );
           } else if (this.isDeleteDayDialogResult(result)) {
             this.onDayDeleted(eventData);
+            return EMPTY;
+          } else if (this.isArchiveDayDialogResult(result)) {
+            this.onDayArchived(eventData);
             return EMPTY;
           }
           return EMPTY;
@@ -251,27 +351,70 @@ export class PlanEditPageComponent implements OnInit {
       ).subscribe();
   }
 
-  onDayReordered(eventData: {dayId: string, newIndex: number}): void {
-    const { dayId, newIndex } = eventData;
+  onDayArchived(eventData: {dayId: string}): void {
+    const { dayId } = eventData;
     const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
 
     if (!day) {
-      this.snackBar.open('Day to reorder not found.', 'Close', { duration: 3000 });
+      this.snackBar.open('Day to archive not found.', 'Close', { duration: 3000 });
       return;
     }
 
-    const command: UpdatePlanDayCommand = {
-      name: day.name,
-      description: day.description,
-      order_index: newIndex
-    };
-
-    this.facade.updatePlanDay(dayId, command)
+    this.facade.archivePlanDay(dayId)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !!response.data, () => this.snackBar.open('Day order updated.', 'Close', { duration: 2000 })),
-        tapIf(response => !response.data, response => this.snackBar.open(response.error || 'Failed to update day order.', 'Close', { duration: 4000 })),
-        catchAndDisplayError('Failed to reorder day', this.snackBar)
+        tapIf(response => !response.error, () => this.snackBar.open('Day archived.', 'Close', { duration: 2000 })),
+        tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to archive day.', 'Close', { duration: 4000 })),
+        catchAndDisplayError('Failed to archive day', this.snackBar)
+      ).subscribe();
+  }
+
+  onDaysReordered(): void {
+    const days = this.viewModel().plan?.days ?? [];
+
+    if (days.length < 2) {
+      return;
+    }
+
+    const dialogData: ReorderDaysDialogData = {
+      days: days.map((d: PlanDayViewModel) => ({ id: d.id, name: d.name })),
+    };
+
+    this.dialog
+      .open(ReorderDaysDialogComponent, { width: '450px', data: dialogData })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((result: ReorderDaysDialogCloseResult) => !!result && 'save' in result && result.save),
+        switchMap(result => {
+          const ordered = result!.value;
+          const moved = ordered
+            .map((item, index) => ({ item, newIndex: index + 1 }))
+            .filter(({ item, newIndex }) => days.find(d => d.id === item.id)?.orderIndex !== newIndex);
+
+          if (moved.length === 0) {
+            return EMPTY;
+          }
+
+          return of(...moved).pipe(
+            concatMap(({ item, newIndex }) => {
+              const day = days.find(d => d.id === item.id)!;
+              const command: UpdatePlanDayCommand = {
+                name: day.name,
+                description: day.description,
+                order_index: newIndex,
+              };
+              return this.facade.updatePlanDay(item.id, command);
+            }),
+            toArray()
+          );
+        }),
+        tapIf(responses => responses.every(r => !r.error), () => this.snackBar.open('Day order updated.', 'Close', { duration: 2000 })),
+        tapIf(responses => responses.some(r => !!r.error), responses => {
+          const failure = responses.find(r => !!r.error);
+          this.snackBar.open(failure?.error || 'Failed to update day order.', 'Close', { duration: 4000 });
+        }),
+        catchAndDisplayError('Failed to reorder days', this.snackBar)
       ).subscribe();
   }
 
@@ -348,6 +491,36 @@ export class PlanEditPageComponent implements OnInit {
         tapIf(response => !response?.error, () => this.snackBar.open('Exercise deleted.', 'Close', { duration: 2000 })),
         tapIf(response => !!response?.error, (response) => this.snackBar.open(response?.error || 'Failed to delete exercise.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to delete exercise', this.snackBar)
+      ).subscribe();
+  }
+
+  onExerciseArchived(eventData: {exerciseId: string, exerciseName: string, dayId: string}): void {
+    const { exerciseId, exerciseName, dayId } = eventData;
+    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
+    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
+
+    if (!exercise) {
+      this.snackBar.open('Exercise to archive not found.', 'Close', { duration: 3000 });
+      return;
+    }
+
+    const dialogData: ConfirmationDialogData = {
+      title: 'Archive Exercise',
+      message: `Remove "${exerciseName}" from this training day? The sets you have already recorded against it stay in your history, and future sessions will not include it.`,
+      confirmButtonText: 'Archive',
+      cancelButtonText: 'Cancel',
+    };
+
+    this.dialog
+      .open(ConfirmationDialogComponent, { width: '400px', data: dialogData })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter(result => !!result),
+        switchMap(() => this.facade.archivePlanExercise(dayId, exerciseId)),
+        tapIf(response => !response?.error, () => this.snackBar.open('Exercise archived.', 'Close', { duration: 2000 })),
+        tapIf(response => !!response?.error, response => this.snackBar.open(response?.error || 'Failed to archive exercise.', 'Close', { duration: 4000 })),
+        catchAndDisplayError('Failed to archive exercise', this.snackBar)
       ).subscribe();
   }
 
@@ -482,7 +655,11 @@ export class PlanEditPageComponent implements OnInit {
       ).subscribe();
   }
 
-  onSetDeleted(eventData: {setId: string, exerciseId: string, dayId: string}): void {
+  onPlansNavigated() {
+    this.router.navigate(['/plans']);
+  }
+
+  private onSetDeleted(eventData: {setId: string, exerciseId: string, dayId: string}): void {
     const { setId, exerciseId, dayId } = eventData;
     const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
     const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
@@ -500,36 +677,6 @@ export class PlanEditPageComponent implements OnInit {
         tapIf(response => !!response.error, response => this.snackBar.open(response.error || 'Failed to delete set.', 'Close', { duration: 4000 })),
         catchAndDisplayError('Failed to delete set', this.snackBar)
       ).subscribe();
-  }
-
-  onSetReordered(eventData: {setId: string, exerciseId: string, dayId: string, newIndex: number}): void {
-    const { setId, exerciseId, dayId, newIndex } = eventData;
-    const day = (this.viewModel().plan?.days ?? []).find((d: PlanDayViewModel) => d.id === dayId);
-    const exercise = day?.exercises?.find((e: PlanExerciseViewModel) => e.id === exerciseId);
-    const set = exercise?.sets?.find((s: PlanExerciseSetViewModel) => s.id === setId);
-
-    if (!set) {
-      this.snackBar.open('Set to edit not found.', 'Close', { duration: 3000 });
-      return;
-    }
-
-    const command: UpdatePlanExerciseSetCommand = { set_index: newIndex };
-    this.facade.updatePlanExerciseSet(dayId, exerciseId, setId, command)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        tapIf(response => !!response.data, () => this.snackBar.open('Set order updated.', 'Close', { duration: 2000 })),
-        tapIf(response => !response.data, response => this.snackBar.open(response.error || 'Failed to update set order.', 'Close', { duration: 4000 })),
-        catchAndDisplayError('Failed to reorder set', this.snackBar)
-      ).subscribe();
-  }
-
-  onPlansNavigated() {
-    this.router.navigate(['/plans']);
-  }
-
-  onPreviewToggled(): void {
-    this.facade.togglePreviewMode();
-    setTimeout(() => this.mainScrollContainer.nativeElement.scrollTo({ top: 0, behavior: 'smooth' }), 50);
   }
 
   private isUpdatePlanDialogResult(result: AddEditPlanDialogCloseResult): boolean {
@@ -550,6 +697,10 @@ export class PlanEditPageComponent implements OnInit {
 
   private isDeleteDayDialogResult(result: AddEditDayDialogCloseResult): boolean {
     return (result && 'delete' in result && result.delete) ?? false;
+  }
+
+  private isArchiveDayDialogResult(result: AddEditDayDialogCloseResult): boolean {
+    return (result && 'archive' in result && result.archive) ?? false;
   }
 
   private isAddExistingExerciseDialogResult(result: AddExerciseDialogCloseResult): boolean {

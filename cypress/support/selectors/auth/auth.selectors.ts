@@ -24,9 +24,4 @@ export const authSelectors = {
     requestSignInLinkButton: 'reset-password-request-link-button',
     successNotice: 'auth-layout-subtitle',
   },
-  changePassword: {
-    newPasswordInput: 'change-password-new-password-input',
-    confirmNewPasswordInput: 'change-password-confirm-new-password-input',
-    changePasswordButton: 'change-password-action-button',
-  },
 };

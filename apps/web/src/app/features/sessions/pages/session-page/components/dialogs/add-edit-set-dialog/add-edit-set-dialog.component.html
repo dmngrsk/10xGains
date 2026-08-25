@@ -13,6 +13,9 @@
     @if (setForm.get('reps')?.hasError('integer')) {
       <mat-error>{{ validationMessages.integer }}</mat-error>
     }
+    @if (isPrescriptionLocked) {
+      <mat-hint data-cy="add-edit-set-dialog-reps-locked-hint">Reset the set to change its target.</mat-hint>
+    }
   </mat-form-field>
 
   <mat-form-field appearance="outline" class="w-full">

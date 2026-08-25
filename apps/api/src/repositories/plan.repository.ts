@@ -19,7 +19,7 @@ import type {
   PagingQueryOptions,
   SortingQueryOptions
 } from '@txg/shared';
-import { DataIntegrityError, NotFoundError } from '../utils/errors';
+import { ConflictError, DataIntegrityError, NotFoundError } from '../utils/errors';
 import {
   createEntityInCollection,
   updateEntityInCollection,
@@ -32,15 +32,23 @@ interface PlanOwnershipPath {
   days?: { id: string; exercises?: { id: string; sets?: { id: string }[] | null }[] | null }[] | null;
 }
 
-export type PlanQueryOptions = PagingQueryOptions & SortingQueryOptions;
+/**
+ * Whether a read of the plan tree sees archived structure. Off by default, because the plan as the
+ * user now understands it does not contain it; on for callers that resolve past sessions against it.
+ */
+export interface ArchivedStructureOptions {
+  includeArchived?: boolean;
+}
+
+export type PlanQueryOptions = PagingQueryOptions & SortingQueryOptions & ArchivedStructureOptions;
 
 export type PlanListResult = ApiResult<PlanDto[]>;
 
-export type PlanDayQueryOptions = PagingQueryOptions;
+export type PlanDayQueryOptions = PagingQueryOptions & ArchivedStructureOptions;
 
 export type PlanDayListResult = ApiResult<PlanDayDto[]>;
 
-export type PlanExerciseQueryOptions = PagingQueryOptions;
+export type PlanExerciseQueryOptions = PagingQueryOptions & ArchivedStructureOptions;
 
 export type PlanExerciseListResult = ApiResult<PlanExerciseDto[]>;
 
@@ -63,7 +71,7 @@ export class PlanRepository {
   async findAll(options: PlanQueryOptions): Promise<PlanListResult> {
     const [sortColumn, sortDirection] = options.sort.split('.');
 
-    const { data, count, error } = await this.supabase
+    const query = this.supabase
       .from('plans')
       .select(`
         *,
@@ -84,6 +92,14 @@ export class PlanRepository {
       .order('order_index', { referencedTable: 'days.exercises', ascending: true })
       .order('set_index', { referencedTable: 'days.exercises.sets', ascending: true });
 
+    // The plan list normally describes plans as they now stand, so archived structure is omitted.
+    // See findById for why a caller rendering history must opt back in.
+    if (!options.includeArchived) {
+      query.is('days.archived_at', null).is('days.exercises.archived_at', null);
+    }
+
+    const { data, count, error } = await query;
+
     if (error) {
       throw error;
     }
@@ -97,11 +113,18 @@ export class PlanRepository {
   /**
    * Finds a single plan by its ID.
    *
+   * Archived days and exercises are excluded by default: to the plan editor, and to session
+   * creation, they no longer exist. Callers that resolve *history* against the plan must opt in, or
+   * a session that trained an exercise since archived renders with a hole in it - the session page
+   * builds its view model by walking the plan's exercises and matching session sets onto them, so a
+   * set whose exercise is missing is silently dropped rather than shown.
+   *
    * @param {string} planId - The ID of the plan to find.
+   * @param {ArchivedStructureOptions} options - Whether archived structure should be included.
    * @returns {Promise<PlanDto | null>} A promise that resolves to the plan or null if not found.
    */
-  async findById(planId: string): Promise<PlanDto | null> {
-    const { data, error } = await this.supabase
+  async findById(planId: string, options: ArchivedStructureOptions = {}): Promise<PlanDto | null> {
+    const query = this.supabase
       .from('plans')
       .select(`
         *,
@@ -122,8 +145,13 @@ export class PlanRepository {
       .eq('user_id', this.getUserId())
       .order('order_index', { referencedTable: 'days', ascending: true })
       .order('order_index', { referencedTable: 'days.exercises', ascending: true })
-      .order('set_index', { referencedTable: 'days.exercises.sets', ascending: true })
-      .single();
+      .order('set_index', { referencedTable: 'days.exercises.sets', ascending: true });
+
+    if (!options.includeArchived) {
+      query.is('days.archived_at', null).is('days.exercises.archived_at', null);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -215,14 +243,18 @@ export class PlanRepository {
   /**
    * Finds all training days for a given plan.
    *
+   * Archived days and exercises are excluded by default, and a caller resolving history must opt
+   * back in - see `findById` for why.
+   *
    * @param {string} planId - The ID of the plan.
-   * @param {PlanDayQueryOptions} options - Options for pagination.
+   * @param {PlanDayQueryOptions} options - Options for pagination, and whether archived structure
+   *                                        should be included.
    * @returns {Promise<PlanDayListResult>} A promise that resolves to a list of training days and total count.
    */
   async findDaysByPlanId(planId: string, options: PlanDayQueryOptions): Promise<PlanDayListResult> {
     await this.verifyPlanOwnership(planId);
 
-    const { data, count, error } = await this.supabase
+    const query = this.supabase
       .from('plan_days')
       .select(`
         *,
@@ -239,6 +271,12 @@ export class PlanRepository {
       .order('set_index', { referencedTable: 'exercises.sets', ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
 
+    if (!options.includeArchived) {
+      query.is('archived_at', null).is('exercises.archived_at', null);
+    }
+
+    const { data, count, error } = await query;
+
     if (error) {
       throw error;
     }
@@ -252,14 +290,19 @@ export class PlanRepository {
   /**
    * Finds a single training day by its ID within a plan.
    *
+   * The day itself is filtered on the same terms as its exercises: without the opt-in an archived
+   * day reads as absent, rather than coming back as a day that has mysteriously lost its archived
+   * exercises.
+   *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the day to find.
+   * @param {ArchivedStructureOptions} options - Whether archived structure should be included.
    * @returns {Promise<PlanDayDto | null>} A promise that resolves to the training day or null if not found.
    */
-  async findDayById(planId: string, dayId: string): Promise<PlanDayDto | null> {
+  async findDayById(planId: string, dayId: string, options: ArchivedStructureOptions = {}): Promise<PlanDayDto | null> {
     await this.verifyPlanOwnership(planId);
 
-    const { data, error } = await this.supabase
+    const query = this.supabase
       .from('plan_days')
       .select(`
         *,
@@ -273,8 +316,13 @@ export class PlanRepository {
       .eq('id', dayId)
       .eq('plan_id', planId)
       .order('order_index', { referencedTable: 'exercises', ascending: true })
-      .order('set_index', { referencedTable: 'exercises.sets', ascending: true })
-      .single();
+      .order('set_index', { referencedTable: 'exercises.sets', ascending: true });
+
+    if (!options.includeArchived) {
+      query.is('archived_at', null).is('exercises.archived_at', null);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -302,6 +350,7 @@ export class PlanRepository {
       name: command.name,
       description: command.description || null,
       order_index: command.order_index || 1,
+      archived_at: null,
     };
 
     const updatedDays = await createEntityInCollection(this.supabase, this.dayCollection(planId), newDay);
@@ -361,9 +410,83 @@ export class PlanRepository {
   async deleteDay(planId: string, dayId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId);
 
+    const { count, error } = await this.supabase
+      .from('sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_day_id', dayId);
+
+    if (error) {
+      throw error;
+    }
+
+    if ((count ?? 0) > 0) {
+      throw new ConflictError(
+        `This day has been trained ${count} time${count === 1 ? '' : 's'}. Deleting it would delete those workouts; archive it instead to remove it from the plan and keep the history.`,
+        'PLAN_ITEM_HAS_HISTORY',
+        'plan_item_has_history_error',
+        409
+      );
+    }
+
     await deleteEntityFromCollection(this.supabase, this.dayCollection(planId), dayId);
 
     return true;
+  }
+
+  /**
+   * Archives or restores a training day.
+   *
+   * Archiving is the delete a plan with history is allowed to have: the row survives, so the
+   * sessions that reference it stay readable, but the editor and session creation stop seeing it.
+   * The day keeps its `order_index`, and siblings are not renumbered around it - safe only because
+   * the ordering constraint is partial over the live rows.
+   *
+   * Restoring therefore cannot put the day back where it was: the live days have been renumbered
+   * 1..n in the meantime, and reinstating a stale `order_index` collides with the partial unique
+   * index. A restored day is appended after the last live one instead.
+   *
+   * @param {string} planId - The ID of the parent plan.
+   * @param {string} dayId - The ID of the day to archive.
+   * @param {boolean} archived - True to archive, false to restore.
+   * @returns {Promise<PlanDayDto | null>} The updated day, or null if it does not exist.
+   */
+  async archiveDay(planId: string, dayId: string, archived: boolean): Promise<PlanDayDto | null> {
+    await this.verifyPlanOwnership(planId, dayId);
+
+    const { data: current, error: currentError } = await this.supabase
+      .from('plan_days')
+      .select('archived_at')
+      .eq('id', dayId)
+      .eq('plan_id', planId)
+      .maybeSingle();
+
+    if (currentError) {
+      throw currentError;
+    }
+
+    if (!current) {
+      return null;
+    }
+
+    // Only a day actually coming back out of the archive is re-slotted. Restoring one that is
+    // already live would otherwise move it to the end, and the endpoint is idempotent.
+    const restoredOrderIndex = !archived && current.archived_at !== null
+      ? { order_index: await this.nextActiveDayOrderIndex(planId) }
+      : {};
+
+    const { data, error } = await this.supabase
+      .from('plan_days')
+      .update({ archived_at: archived ? new Date().toISOString() : null, ...restoredOrderIndex })
+      .eq('id', dayId)
+      .eq('plan_id', planId)
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data as PlanDayDto | null) ?? null;
   }
 
   /**
@@ -371,19 +494,26 @@ export class PlanRepository {
    *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
-   * @param {PlanExerciseQueryOptions} options - Options for pagination.
+   * @param {PlanExerciseQueryOptions} options - Options for pagination, and whether archived
+   *                                             exercises should be included.
    * @returns {Promise<PlanExerciseListResult>} A promise that resolves to a list of exercises and total count.
    */
   async findExercisesByDayId(planId: string, dayId: string, options: PlanExerciseQueryOptions): Promise<PlanExerciseListResult> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const { data, count, error } = await this.supabase
+    const query = this.supabase
       .from('plan_exercises')
       .select('*, sets:plan_exercise_sets(*)', { count: 'exact' })
       .eq('plan_day_id', dayId)
       .order('order_index', { ascending: true })
       .order('set_index', { referencedTable: 'sets', ascending: true })
       .range(options.offset, options.offset + options.limit - 1);
+
+    if (!options.includeArchived) {
+      query.is('archived_at', null);
+    }
+
+    const { data, count, error } = await query;
 
     if (error) {
       throw error;
@@ -401,18 +531,24 @@ export class PlanRepository {
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the exercise to find.
+   * @param {ArchivedStructureOptions} options - Whether an archived exercise should be included.
    * @returns {Promise<PlanExerciseDto | null>} A promise that resolves to the exercise or null if not found.
    */
-  async findExerciseById(planId: string, dayId: string, exerciseId: string): Promise<PlanExerciseDto | null> {
+  async findExerciseById(planId: string, dayId: string, exerciseId: string, options: ArchivedStructureOptions = {}): Promise<PlanExerciseDto | null> {
     await this.verifyPlanOwnership(planId, dayId);
 
-    const { data, error } = await this.supabase
+    const query = this.supabase
       .from('plan_exercises')
       .select('*, sets:plan_exercise_sets(*)')
       .eq('id', exerciseId)
       .eq('plan_day_id', dayId)
-      .order('set_index', { referencedTable: 'sets', ascending: true })
-      .single();
+      .order('set_index', { referencedTable: 'sets', ascending: true });
+
+    if (!options.includeArchived) {
+      query.is('archived_at', null);
+    }
+
+    const { data, error } = await query.single();
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -440,6 +576,7 @@ export class PlanRepository {
       plan_day_id: dayId,
       exercise_id: command.exercise_id,
       order_index: command.order_index || 1,
+      archived_at: null,
     };
 
     const updatedExercises = await createEntityInCollection(this.supabase, this.exerciseCollection(dayId), newExercise);
@@ -499,9 +636,77 @@ export class PlanRepository {
   async deleteExercise(planId: string, dayId: string, exerciseId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId);
 
+    const { count, error } = await this.supabase
+      .from('session_sets')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_exercise_id', exerciseId);
+
+    if (error) {
+      throw error;
+    }
+
+    if ((count ?? 0) > 0) {
+      throw new ConflictError(
+        `This exercise has ${count} recorded set${count === 1 ? '' : 's'}. Deleting it would delete them; archive it instead to remove it from the plan and keep the history.`,
+        'PLAN_ITEM_HAS_HISTORY',
+        'plan_item_has_history_error',
+        409
+      );
+    }
+
     await deleteEntityFromCollection(this.supabase, this.exerciseCollection(dayId), exerciseId);
 
     return true;
+  }
+
+  /**
+   * Archives or restores an exercise within a training day.
+   *
+   * See {@link archiveDay}: the same contract, one level down, including being appended rather than
+   * put back on restore. The exercise's sets are left in place - they belong to the exercise, not to
+   * the plan, and restoring must bring them back.
+   *
+   * @param {string} planId - The ID of the parent plan.
+   * @param {string} dayId - The ID of the parent day.
+   * @param {string} exerciseId - The ID of the exercise to archive.
+   * @param {boolean} archived - True to archive, false to restore.
+   * @returns {Promise<PlanExerciseDto | null>} The updated exercise, or null if it does not exist.
+   */
+  async archiveExercise(planId: string, dayId: string, exerciseId: string, archived: boolean): Promise<PlanExerciseDto | null> {
+    await this.verifyPlanOwnership(planId, dayId, exerciseId);
+
+    const { data: current, error: currentError } = await this.supabase
+      .from('plan_exercises')
+      .select('archived_at')
+      .eq('id', exerciseId)
+      .eq('plan_day_id', dayId)
+      .maybeSingle();
+
+    if (currentError) {
+      throw currentError;
+    }
+
+    if (!current) {
+      return null;
+    }
+
+    const restoredOrderIndex = !archived && current.archived_at !== null
+      ? { order_index: await this.nextActiveExerciseOrderIndex(dayId) }
+      : {};
+
+    const { data, error } = await this.supabase
+      .from('plan_exercises')
+      .update({ archived_at: archived ? new Date().toISOString() : null, ...restoredOrderIndex })
+      .eq('id', exerciseId)
+      .eq('plan_day_id', dayId)
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data as PlanExerciseDto | null) ?? null;
   }
 
   /**
@@ -759,6 +964,7 @@ export class PlanRepository {
       getId: (d) => d.id,
       getOrder: (d) => d.order_index,
       setOrder: (d, order) => ({ ...d, order_index: order }),
+      activeOnlyColumn: 'archived_at',
     };
   }
 
@@ -777,6 +983,7 @@ export class PlanRepository {
       getId: (e) => e.id,
       getOrder: (e) => e.order_index,
       setOrder: (e, order) => ({ ...e, order_index: order }),
+      activeOnlyColumn: 'archived_at',
     };
   }
 
@@ -796,6 +1003,55 @@ export class PlanRepository {
       getOrder: (s) => s.set_index,
       setOrder: (s, index) => ({ ...s, set_index: index }),
     };
+  }
+
+  /**
+   * The position a restored day takes: one past the last live sibling.
+   *
+   * Archived rows are excluded, so this is the end of the collection as the editor sees it, and it
+   * cannot collide with the partial unique index over the live rows.
+   *
+   * @param {string} planId - The plan whose live days are counted.
+   * @returns {Promise<number>} The 1-based index to place the restored day at.
+   */
+  private async nextActiveDayOrderIndex(planId: string): Promise<number> {
+    const { data, error } = await this.supabase
+      .from('plan_days')
+      .select('order_index')
+      .eq('plan_id', planId)
+      .is('archived_at', null)
+      .order('order_index', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data?.order_index ?? 0) + 1;
+  }
+
+  /**
+   * The position a restored exercise takes; see {@link nextActiveDayOrderIndex}.
+   *
+   * @param {string} dayId - The day whose live exercises are counted.
+   * @returns {Promise<number>} The 1-based index to place the restored exercise at.
+   */
+  private async nextActiveExerciseOrderIndex(dayId: string): Promise<number> {
+    const { data, error } = await this.supabase
+      .from('plan_exercises')
+      .select('order_index')
+      .eq('plan_day_id', dayId)
+      .is('archived_at', null)
+      .order('order_index', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    return (data?.order_index ?? 0) + 1;
   }
 
   /**

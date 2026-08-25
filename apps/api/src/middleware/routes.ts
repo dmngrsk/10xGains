@@ -24,11 +24,13 @@ import { handleCreatePlanDay } from '../handlers/plan-days/post';
 import { handleGetPlanDayById } from '../handlers/plan-days/get-id';
 import { handlePutPlanDayById } from '../handlers/plan-days/put-id';
 import { handleDeletePlanDayById } from '../handlers/plan-days/delete-id';
+import { handleArchivePlanDay } from '../handlers/plan-days/post-archive';
 import { handleGetPlanExercises } from '../handlers/plan-exercises/get';
 import { handleCreatePlanExercise } from '../handlers/plan-exercises/post';
 import { handleGetPlanExerciseById } from '../handlers/plan-exercises/get-id';
 import { handlePutPlanExerciseById } from '../handlers/plan-exercises/put-id';
 import { handleDeletePlanExerciseById } from '../handlers/plan-exercises/delete-id';
+import { handleArchivePlanExercise } from '../handlers/plan-exercises/post-archive';
 import { handleGetPlanExerciseSets } from '../handlers/plan-exercise-sets/get';
 import { handleCreatePlanExerciseSet } from '../handlers/plan-exercise-sets/post';
 import { handleGetPlanExerciseSetById } from '../handlers/plan-exercise-sets/get-id';
@@ -85,6 +87,7 @@ function createPlanDayRoutes(): Hono<AppContext> {
     .get('/:dayId', requiredAuthMiddleware, handleGetPlanDayById)
     .put('/:dayId', requiredAuthMiddleware, handlePutPlanDayById)
     .delete('/:dayId', requiredAuthMiddleware, handleDeletePlanDayById)
+    .post('/:dayId/archive', requiredAuthMiddleware, handleArchivePlanDay)
     .route('/:dayId/exercises', createPlanExerciseRoutes());
 }
 
@@ -96,6 +99,7 @@ function createPlanExerciseRoutes(): Hono<AppContext> {
     .get('/:exerciseId', requiredAuthMiddleware, handleGetPlanExerciseById)
     .put('/:exerciseId', requiredAuthMiddleware, handlePutPlanExerciseById)
     .delete('/:exerciseId', requiredAuthMiddleware, handleDeletePlanExerciseById)
+    .post('/:exerciseId/archive', requiredAuthMiddleware, handleArchivePlanExercise)
     .route('/:exerciseId/sets', createPlanExerciseSetRoutes());
 }
 

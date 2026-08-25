@@ -3,7 +3,7 @@ import type { Context } from 'hono';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { PlanExerciseDto } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { optionalLimit, optionalOffset, validatePathParams, validateQueryParams } from "../../utils/validation";
+import { optionalBoolean, optionalLimit, optionalOffset, validatePathParams, validateQueryParams } from "../../utils/validation";
 
 const PATH_SCHEMA = z.object({
   planId: z.string().uuid('Invalid planId format'),
@@ -12,7 +12,8 @@ const PATH_SCHEMA = z.object({
 
 const QUERY_SCHEMA = z.object({
   limit: optionalLimit(),
-  offset: optionalOffset()
+  offset: optionalOffset(),
+  include_archived: optionalBoolean('include_archived'),
 });
 
 export async function handleGetPlanExercises(c: Context<AppContext>) {
@@ -25,7 +26,7 @@ export async function handleGetPlanExercises(c: Context<AppContext>) {
   const planRepository = c.get('planRepository');
 
   try {
-    const queryOptions = { limit: query!.limit, offset: query!.offset };
+    const queryOptions = { limit: query!.limit, offset: query!.offset, includeArchived: query!.include_archived };
     const result = await planRepository.findExercisesByDayId(path!.planId, path!.dayId, queryOptions);
 
     const successData = createSuccessData<PlanExerciseDto[]>(result.data, { totalCount: result.totalCount });

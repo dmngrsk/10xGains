@@ -1,28 +1,44 @@
-<mat-card class="min-h-12 mb-2 transition-colors duration-150">
-  <mat-card-content>
-    <div class="flex min-h-12 items-center justify-between">
-      @if (!isReadOnly) {
-        <div cdkDragHandle class="flex items-center cursor-grab pr-2 text-outline" data-cy="plan-exercise-set-drag-handle">
-          <button mat-icon-button>
-            <mat-icon>drag_indicator</mat-icon>
-            </button>
-        </div>
-      }
-      <div [class.px-6]="isReadOnly" class="set-details flex-grow pr-6" data-cy="plan-exercise-set-details">
-        <span class="font-medium">{{ set.expectedReps }}</span>
-        <span class="text-secondary"> x </span>
-        <span class="font-medium">{{ set.expectedWeight }}</span>
-        <span class="text-secondary ml-1">kg</span>
-      </div>
+<td class="set-reps" data-cy="plan-exercise-set-reps">{{ set.expectedReps }}</td>
 
-      @if (!isReadOnly) {
-        <button mat-icon-button color="primary" (click)="onSetEdited()" data-cy="plan-exercise-set-edit-button">
-          <mat-icon>edit</mat-icon>
+<td class="set-times" aria-hidden="true">&times;</td>
+
+<td class="set-weight">
+  <span class="set-weight-value" data-cy="plan-exercise-set-weight">
+    {{ displayedWeight() }}<span class="set-weight-unit">&nbsp;kg</span>
+  </span>
+</td>
+
+<td class="set-actions">
+  <div class="set-controls">
+    @if (capabilities.canEditSetValues) {
+      <span class="stepper-buttons">
+        <button
+          type="button"
+          class="stepper-button"
+          [disabled]="!canDecrease"
+          [attr.aria-label]="'Decrease weight of set ' + set.setIndex + ' by ' + step + ' kilograms'"
+          (click)="onWeightStepped(-1)"
+          data-cy="plan-exercise-set-weight-decrease">
+          <mat-icon>remove</mat-icon>
         </button>
-        <button mat-icon-button color="warn" (click)="onSetDeleted()" data-cy="plan-exercise-set-delete-button">
-          <mat-icon>delete</mat-icon>
+        <button
+          type="button"
+          class="stepper-button"
+          [attr.aria-label]="'Increase weight of set ' + set.setIndex + ' by ' + step + ' kilograms'"
+          (click)="onWeightStepped(1)"
+          data-cy="plan-exercise-set-weight-increase">
+          <mat-icon>add</mat-icon>
         </button>
-      }
-    </div>
-  </mat-card-content>
-</mat-card>
+      </span>
+
+      <button
+        mat-icon-button
+        class="set-edit-button"
+        [attr.aria-label]="'Edit set ' + set.setIndex"
+        (click)="onSetEdited()"
+        data-cy="plan-exercise-set-edit-button">
+        <mat-icon>edit</mat-icon>
+      </button>
+    }
+  </div>
+</td>

@@ -46,6 +46,7 @@ export interface Database {
       }
       plan_days: {
         Row: {
+          archived_at: string | null
           description: string | null
           id: string
           name: string
@@ -53,6 +54,7 @@ export interface Database {
           plan_id: string
         }
         Insert: {
+          archived_at?: string | null
           description?: string | null
           id?: string
           name: string
@@ -60,6 +62,7 @@ export interface Database {
           plan_id: string
         }
         Update: {
+          archived_at?: string | null
           description?: string | null
           id?: string
           name?: string
@@ -164,18 +167,21 @@ export interface Database {
       }
       plan_exercises: {
         Row: {
+          archived_at: string | null
           exercise_id: string
           id: string
           order_index: number
           plan_day_id: string
         }
         Insert: {
+          archived_at?: string | null
           exercise_id: string
           id?: string
           order_index: number
           plan_day_id: string
         }
         Update: {
+          archived_at?: string | null
           exercise_id?: string
           id?: string
           order_index?: number
@@ -266,7 +272,9 @@ export interface Database {
           actual_weight: number
           completed_at: string | null
           expected_reps: number | null
+          expected_weight: number
           id: string
+          is_prescribed: boolean
           plan_exercise_id: string
           session_id: string
           set_index: number
@@ -277,7 +285,9 @@ export interface Database {
           actual_weight: number
           completed_at?: string | null
           expected_reps?: number | null
+          expected_weight: number
           id?: string
+          is_prescribed?: boolean
           plan_exercise_id: string
           session_id: string
           set_index: number
@@ -288,7 +298,9 @@ export interface Database {
           actual_weight?: number
           completed_at?: string | null
           expected_reps?: number | null
+          expected_weight?: number
           id?: string
+          is_prescribed?: boolean
           plan_exercise_id?: string
           session_id?: string
           set_index?: number
@@ -391,6 +403,7 @@ export interface Database {
       }
       replace_collection: {
         Args: {
+          p_active_only_column?: string
           p_order_column: string
           p_parent_column: string
           p_parent_id: string

@@ -6,6 +6,7 @@ const createMockSet = (overrides: Partial<SessionSetViewModel> = {}): SessionSet
   id: 'set1',
   order: 1,
   status: 'PENDING',
+  isPrescribed: true,
   expectedReps: 5,
   weight: 70,
   actualReps: undefined,
@@ -17,7 +18,6 @@ const createMockExercise = (overrides: Partial<SessionExerciseViewModel> = {}): 
   planExerciseId: 'tpex1',
   exerciseName: 'Squat',
   order: 1,
-  plannedSetsCount: 3,
   sets: [
     createMockSet({ id: 'set1', order: 1 }),
     createMockSet({ id: 'set2', order: 2 }),

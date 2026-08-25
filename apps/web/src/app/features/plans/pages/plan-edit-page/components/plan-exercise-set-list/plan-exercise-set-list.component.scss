@@ -1,13 +1,59 @@
-.set-list-container div[cdkDrag] {
-  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+.set-table {
+  width: 100%;
+  border-collapse: collapse;
+  // Digits line up down the Reps and Weight columns instead of shuffling as values change.
+  font-variant-numeric: tabular-nums;
 }
 
-.set-list-container div[cdkDrag].cdk-drag-dragging {
-  opacity: 0 !important;
-  visibility: hidden !important;
+.set-table th {
+  padding: 0 0.5rem 0.25rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
 }
 
-.set-list-container .cdk-drag-placeholder {
-  opacity: 0.4;
-  display: block;
+.set-reps-header {
+  width: 2.5rem;
+  text-align: right;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+// Air rather than a rule separates it from the rows it adds to - the table draws no lines at all.
+.add-set-cell {
+  padding: 1rem 0 0.25rem;
+}
+
+.empty-cell {
+  padding: 0.75rem 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+// Stripped of Material's vertical padding, so it sits at row height rather than button height.
+.add-set-button {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  padding: 0.25rem 0.5rem;
+  color: var(--mat-sys-primary);
+
+  mat-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 1.125rem;
+    line-height: 1.125rem;
+  }
 }

@@ -122,68 +122,74 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 
 | Feature Area | Scenario ID | Scenario Description | Priority | **Smoke Test** |
 | :--- | :--- | :--- | :--- | :--- |
-| **Authentication** | AUTH-01 | Choosing "Sign in with email" on the welcome screen opens the login form. | High | No |
-| | AUTH-02 | A new user can register via the email form and is signed in when email verification is disabled. | Critical | No |
-| | AUTH-03 | A user sees a pending verification notice when email verification is enabled. | High | No |
-| | AUTH-04 | A user can confirm their account via the activation-link callback and lands on Home. | Critical | No |
-| | AUTH-05 | A user can sign in with valid email credentials. | Critical | **Yes** |
-| | AUTH-06 | A user cannot sign in with invalid credentials and sees an error. | High | No |
-| | AUTH-07 | A user can request a password reset link from the login form. | High | No |
-| | AUTH-08 | A user can change their password after following the reset link and sign back in. | High | No |
-| | AUTH-09 | A user without a valid session (never signed in, or session expired mid-use) is redirected to the welcome screen. | Critical | No |
-| | AUTH-10 | An authenticated user visiting the welcome or login screens is redirected to Home. | High | No |
-| | AUTH-11 | An authenticated user can sign out and is returned to the welcome screen. | High | No |
-| | AUTH-12 | A user cannot access another user's data (RLS check). | Critical | No |
-| | AUTH-13 | A user can start the Google OAuth flow from the welcome screen. | High | No |
-| | AUTH-14 | A profile is created for a first-time Google user on the OAuth callback. | Critical | No |
-| | AUTH-15 | The existing profile of an auto-linked user is preserved on the OAuth callback. | Critical | No |
-| **Plan Management**| PLAN-01 | An authenticated user can create a new plan. | Critical | No |
-| | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
-| | PLAN-03 | In the plan editor, a user can add, edit and delete a new day. | High | No |
-| | PLAN-04 | In the plan editor, a user can add an exercise to a day, edit its progression, and delete it from a day. | High | No |
-| | PLAN-05 | In the plan editor, a user can create a global exercise and add this exercise to a day in a plan. | Medium | No |
-| | PLAN-06 | In the plan editor, a user can add, edit, and delete a set for an exercise. | High | No |
-| | PLAN-07 | In the plan editor, a user can reorder days, exercises, and sets using drag-and-drop and verify the order is saved. | Medium | No |
-| | PLAN-08 | A user can activate a plan, which then correctly appears as the active plan on the home page. | High | No |
-| | PLAN-09 | A plan that has been used in a session becomes read-only and all edit/delete/add controls are hidden or disabled. | High | No |
-| | PLAN-10 | A user can delete a plan that has not been used in any sessions. | Medium | No |
-| **Session Tracking**| SESS-01 | A user can start a new session from an active plan on the home page. | Critical | **Yes** |
-| | SESS-02 | A user can tap a set bubble to cycle through its states (Pending -> Completed -> Failed -> Pending). | Critical | No |
-| | SESS-03 | A user can long-press a set bubble to open the edit dialog and successfully update its details. | High | No |
-| | SESS-04 | The session timer starts and updates correctly after the first set interaction. | Critical | No |
-| | SESS-05 | A user can expand ephemeral warmup sets from the warmup toggle and dismiss them one by one, without any network traffic. | Medium | No |
-| | SESS-06 | Clicking a working set dismisses that exercise's warmup UI, and the dismissal persists per exercise across a reload. | Medium | No |
-| | SESS-07 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
-| | SESS-08 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
-| | SESS-09 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
-| | SESS-10 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
-| | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
-| | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
-| | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
-| | SESS-14 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
-| **History (Calendar)** | HIST-01 | Days holding completed sessions are marked with dots in the calendar. | High | No |
-| | HIST-02 | Tapping a day with a single session navigates to that session's detail page. | High | No |
-| | HIST-03 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |
-| | HIST-04 | Returning from a session detail page restores the calendar view and the displayed month. | Medium | No |
-| | HIST-05 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
-| | HIST-06 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
-| | HIST-07 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
-| **History (List)** | HIST-08 | A completed session correctly appears in the session history list. | High | No |
-| | HIST-09 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
-| | HIST-10 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
-| | HIST-11 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
-| | HIST-12 | An error notice is displayed if the session history fails to load. | High | No |
-| | HIST-13 | On error, a user can click the retry button to reload the session history. | High | No |
-| | HIST-14 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
-| | HIST-15 | Without a view parameter, the calendar opens by default; after toggling, the last used view (list, then calendar again) is restored on revisits. | Medium | No |
-| **Progress** | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
-| | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
-| | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |
-| | PROG-04 | Filtering by a custom date range narrows the plotted series to the exercises trained in that window. | Medium | No |
-| | PROG-05 | The empty state notice is shown when no progress data matches the filter criteria. | Medium | No |
-| | PROG-06 | An error notice is displayed if the progress data fails to load. | High | No |
-| | PROG-07 | On error, a user can click the retry button to reload the progress data. | High | No |
-| | PROG-08 | Pressing the chart activates every point of the pressed day: a scaffold day shared by Squat and Deadlift activates both points at the same day `x`. | Medium | No |
+| **Authentication**<br>*&nbsp;&nbsp;the welcome screen* | AUTH-01 | Choosing "Sign in with email" on the welcome screen opens the login form. | High | No |
+| *&nbsp;&nbsp;registration* | AUTH-02 | A new user can register via the email form and is signed in when email verification is disabled. | Critical | No |
+|  | AUTH-03 | A user sees a pending verification notice when email verification is enabled. | High | No |
+|  | AUTH-04 | A user can confirm their account via the activation-link callback and lands on Home. | Critical | No |
+| *&nbsp;&nbsp;signing in* | AUTH-05 | A user can sign in with valid email credentials. | Critical | **Yes** |
+|  | AUTH-06 | A user cannot sign in with invalid credentials and sees an error. | High | No |
+| *&nbsp;&nbsp;password reset* | AUTH-07 | A user can request a password reset link from the login form. | High | No |
+|  | AUTH-08 | A user can change their password after following the reset link and sign back in. | High | No |
+| *&nbsp;&nbsp;sessions and access* | AUTH-09 | A user without a valid session (never signed in, or session expired mid-use) is redirected to the welcome screen. | Critical | No |
+|  | AUTH-10 | An authenticated user visiting the welcome or login screens is redirected to Home. | High | No |
+|  | AUTH-11 | An authenticated user can sign out and is returned to the welcome screen. | High | No |
+|  | AUTH-12 | A user cannot access another user's data (RLS check). | Critical | No |
+| *&nbsp;&nbsp;Google sign-in* | AUTH-13 | A user can start the Google OAuth flow from the welcome screen. | High | No |
+|  | AUTH-14 | A profile is created for a first-time Google user on the OAuth callback. | Critical | No |
+|  | AUTH-15 | The existing profile of an auto-linked user is preserved on the OAuth callback. | Critical | No |
+| **Plan Management**<br>*&nbsp;&nbsp;the plan list* | PLAN-01 | An authenticated user can create a new plan. | Critical | No |
+|  | PLAN-02 | An authenticated user can view and navigate to an existing plan's details page. | Critical | **Yes** |
+| *&nbsp;&nbsp;building the structure* | PLAN-03 | In the plan editor, a user can add, edit and delete a new day. | High | No |
+|  | PLAN-04 | In the plan editor, a user can add an exercise to a day, edit its progression, and delete it from a day. | High | No |
+|  | PLAN-05 | In the plan editor, a user can create a global exercise and add this exercise to a day in a plan. | Medium | No |
+|  | PLAN-06 | In the plan editor, a user can add, edit, and delete a set for an exercise. | High | No |
+| *&nbsp;&nbsp;ready to activate* | PLAN-07 | A plan cannot be activated while any day has no exercises or any exercise has no sets, and the editor says which. | High | No |
+|  | PLAN-08 | A plan cannot be activated while any exercise has no progression rule, and can be once the rule is set. | Medium | No |
+| *&nbsp;&nbsp;editing an unused plan* | PLAN-09 | In the plan editor, a user can reorder days and exercises, and the order is saved. Sets are not reorderable. | Medium | No |
+|  | PLAN-10 | In the plan editor, a user can step a set's weight up and down inline, and only the settled value is written. | High | No |
+| *&nbsp;&nbsp;plan lifecycle* | PLAN-11 | A user can activate a plan, which then correctly appears as the active plan on the home page. | High | No |
+|  | PLAN-12 | A user can delete a plan that has not been used in any sessions. | Medium | No |
+| *&nbsp;&nbsp;a trained plan* | PLAN-13 | The active plan is read-only until deactivated; once deactivated, a plan with history stays editable but its trained days and exercises can only be archived, not deleted. | High | No |
+|  | PLAN-14 | Archiving an exercise removes it from an active plan while the workouts that trained it still render in history. | High | No |
+|  | PLAN-15 | Archiving a training day removes it from the plan while the workouts trained from it still name it in history. | High | No |
+|  | PLAN-16 | A session is judged against the prescription it was created with, not against a plan weight changed while it was open. | Critical | No |
+| **Session Tracking**<br>*&nbsp;&nbsp;recording a workout* | SESS-01 | A user can start a new session from an active plan on the home page. | Critical | **Yes** |
+|  | SESS-02 | A user can tap a set bubble to cycle through its states (Pending -> Completed -> Failed -> Pending). | Critical | No |
+|  | SESS-03 | A user can long-press a set bubble to open the edit dialog and successfully update its details. | High | No |
+|  | SESS-04 | The session timer starts and updates correctly after the first set interaction. | Critical | No |
+| *&nbsp;&nbsp;warmup sets* | SESS-05 | A user can expand ephemeral warmup sets from the warmup toggle and dismiss them one by one, without any network traffic. | Medium | No |
+|  | SESS-06 | Clicking a working set dismisses that exercise's warmup UI, and the dismissal persists per exercise across a reload. | Medium | No |
+| *&nbsp;&nbsp;completing a session* | SESS-07 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
+|  | SESS-08 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
+| *&nbsp;&nbsp;notes* | SESS-09 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
+|  | SESS-10 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
+|  | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
+|  | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
+|  | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
+| *&nbsp;&nbsp;history integrity* | SESS-14 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
+| **History (Calendar)**<br>*&nbsp;&nbsp;browsing the calendar* | HIST-01 | Days holding completed sessions are marked with dots in the calendar. | High | No |
+|  | HIST-02 | Tapping a day with a single session navigates to that session's detail page. | High | No |
+|  | HIST-03 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |
+|  | HIST-04 | Returning from a session detail page restores the calendar view and the displayed month. | Medium | No |
+|  | HIST-05 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
+| *&nbsp;&nbsp;filtering and errors* | HIST-06 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
+|  | HIST-07 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
+| **History (List)**<br>*&nbsp;&nbsp;browsing the list* | HIST-08 | A completed session correctly appears in the session history list. | High | No |
+|  | HIST-09 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
+| *&nbsp;&nbsp;filtering* | HIST-10 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
+|  | HIST-11 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
+| *&nbsp;&nbsp;errors* | HIST-12 | An error notice is displayed if the session history fails to load. | High | No |
+|  | HIST-13 | On error, a user can click the retry button to reload the session history. | High | No |
+| *&nbsp;&nbsp;notes and view preference* | HIST-14 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
+|  | HIST-15 | Without a view parameter, the calendar opens by default; after toggling, the last used view (list, then calendar again) is restored on revisits. | Medium | No |
+| **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
+|  | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
+| *&nbsp;&nbsp;filtering* | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |
+|  | PROG-04 | Filtering by a custom date range narrows the plotted series to the exercises trained in that window. | Medium | No |
+|  | PROG-05 | The empty state notice is shown when no progress data matches the filter criteria. | Medium | No |
+| *&nbsp;&nbsp;errors* | PROG-06 | An error notice is displayed if the progress data fails to load. | High | No |
+|  | PROG-07 | On error, a user can click the retry button to reload the progress data. | High | No |
+| *&nbsp;&nbsp;tooltips* | PROG-08 | Pressing the chart activates every point of the pressed day: a scaffold day shared by Squat and Deadlift activates both points at the same day `x`. | Medium | No |
 
 ---
 

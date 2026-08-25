@@ -107,14 +107,10 @@ export class SessionPageComponent implements OnDestroy {
     const exerciseId = event.exerciseId;
     const setToEdit = event.set;
 
-    const exercise = session.exercises.find(ex => ex.planExerciseId === exerciseId)!;
-    const maxPlannedSetIndex = exercise.plannedSetsCount > 0 ? exercise.plannedSetsCount : -1;
-
     const dialogData: AddEditSetDialogData = {
       mode: 'edit',
       setToEditDetails: setToEdit,
-      planExerciseId: exerciseId,
-      maxPlannedSetIndex: maxPlannedSetIndex
+      planExerciseId: exerciseId
     };
 
     this.dialog

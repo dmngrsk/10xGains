@@ -1,32 +1,86 @@
-<h3 class="text-xl text-primary font-semibold mb-4">Training Days</h3>
-
 @if (days.length > 0) {
-  <mat-accordion multi="true" cdkDropList [cdkDropListData]="days" [cdkDropListDisabled]="isReadOnly"
-    (cdkDropListDropped)="onDayItemDropped($event)">
-    <div class="flex flex-col gap-2">
-      @for (day of days; track day.id; let i = $index) {
-        <txg-plan-day-item
-          [planId]="planId!"
-          [day]="day"
-          [progressions]="progressions"
-          [isReadOnly]="isReadOnly"
-          [expanded]="expandedStates()[i]"
-          (opened)="onDayItemToggled(i, true)"
-          (closed)="onDayItemToggled(i, false)"
-          (dayEdited)="onDayEdited($event)"
-          (exerciseAdded)="onExerciseAdded($event)"
-          (exerciseDeleted)="onExerciseDeleted($event)"
-          (exerciseReordered)="onExerciseReordered($event)"
-          (progressionEdited)="onProgressionEdited($event)"
-          (setAdded)="onSetAdded($event)"
-          (setEdited)="onSetEdited($event)"
-          (setDeleted)="onSetDeleted($event)"
-          (setReordered)="onSetReordered($event)"
-          data-cy="plan-day-item">
-        </txg-plan-day-item>
+  <div class="day-strip">
+    <mat-tab-group
+      class="day-tabs"
+      [selectedIndex]="selectedIndex"
+      (selectedIndexChange)="onDaySelected($event)"
+      animationDuration="0ms"
+      data-cy="plan-day-tabs">
+      @for (day of days; track day.id) {
+        <mat-tab>
+          <ng-template mat-tab-label>
+            <span data-cy="plan-day-tab">{{ day.name || 'Unnamed day' }}</span>
+          </ng-template>
+        </mat-tab>
       }
-    </div>
-  </mat-accordion>
+    </mat-tab-group>
+
+    @if (hasDayMenuActions) {
+      <button
+        mat-icon-button
+        class="day-menu-button"
+        [matMenuTriggerFor]="dayMenu"
+        aria-label="Actions for this training day"
+        data-cy="plan-day-menu-button">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+    }
+  </div>
+
+  @if (selectedDay; as day) {
+    <section class="day-panel" [attr.aria-label]="day.name" data-cy="plan-day-item">
+      @if (day.description) {
+        <p class="day-description" data-cy="plan-edit-day-description">{{ day.description }}</p>
+      }
+
+      <txg-plan-exercise-list
+        [planId]="planId"
+        [dayId]="day.id"
+        [exercises]="day.exercises"
+        [progressions]="progressions"
+        [capabilities]="capabilities"
+        (exerciseAdded)="onExerciseAdded($event)"
+        (exerciseDeleted)="onExerciseDeleted($event)"
+        (exerciseArchived)="onExerciseArchived($event)"
+        (exerciseReordered)="onExerciseReordered($event)"
+        (progressionEdited)="onProgressionEdited($event)"
+        (setAdded)="onSetAdded($event)"
+        (setEdited)="onSetEdited($event)"
+        (setWeightStepped)="onSetWeightStepped($event)">
+      </txg-plan-exercise-list>
+    </section>
+  }
 } @else {
   <p class="py-4">No days defined for this plan. Add the first one!</p>
+
+  @if (capabilities.canAddItems) {
+    <button mat-raised-button class="w-full" (click)="onDayAdded()" data-cy="plan-add-day-button">
+      <mat-icon>add</mat-icon>
+      <span>Add training day</span>
+    </button>
+  }
 }
+
+<mat-menu #dayMenu="matMenu">
+  @if (capabilities.canEditPlanMetadata) {
+    <button mat-menu-item (click)="onDayEdited()" data-cy="plan-edit-day-edit-button">
+      <mat-icon>edit</mat-icon>
+      <span>Edit day</span>
+    </button>
+  }
+
+  @if (capabilities.canAddItems) {
+    <button mat-menu-item (click)="onDayAdded()" data-cy="plan-add-day-button">
+      <mat-icon>add</mat-icon>
+      <span>Add training day</span>
+    </button>
+  }
+
+  @if (capabilities.canReorder && days.length > 1) {
+    <button mat-menu-item (click)="onDaysReordered()" data-cy="plan-reorder-days-button">
+      <mat-icon>swap_vert</mat-icon>
+      <span>Reorder days</span>
+    </button>
+  }
+
+</mat-menu>

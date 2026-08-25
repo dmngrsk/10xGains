@@ -1,8 +1,8 @@
 <txg-main-layout title="Progress" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center p-4 min-h-[calc(100vh-12.25rem)]">
+  <div class="flex justify-center p-4 min-h-[var(--txg-page-viewport)]">
     @if (viewModel(); as viewModel) {
       @if (viewModel.isLoading) {
-        <div class="flex justify-center items-center min-h-[calc(100vh-12.25rem)]">
+        <div class="flex justify-center items-center min-h-[var(--txg-page-viewport)]">
           <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="progress-loading-spinner"></mat-progress-spinner>
         </div>
       } @else if (viewModel.error) {

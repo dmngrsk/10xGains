@@ -49,6 +49,34 @@ $material-color-role-tokens: (
   --txg-chart-series-10: #bab0ac;
 }
 
+/* One measure for the whole app; bars still span, only their contents align to it. */
+:root {
+  --txg-content-measure: 48rem;
+}
+
+.txg-content-measure {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--txg-content-measure);
+}
+
+/* The fixed chrome. Each bar sets its own height from these, so page offsets stay derived. */
+:root {
+  --txg-top-bar-height: 4rem;
+  --txg-bottom-nav-height: 4rem;
+  --txg-actions-bar-height: 4rem;
+
+  /* What is left of the viewport on a page carrying all three bars. */
+  --txg-page-viewport: calc(
+    100vh - var(--txg-top-bar-height) - var(--txg-actions-bar-height) - var(--txg-bottom-nav-height)
+  );
+}
+
+/* Applied as a class binding, since only some pages carry the bottom navigation. */
+.txg-bottom-nav-offset {
+  padding-bottom: var(--txg-bottom-nav-height);
+}
+
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
 .mdc-notched-outline__notch { border-right: none; }
 

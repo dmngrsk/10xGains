@@ -1,7 +1,7 @@
-<section class="flex flex-col h-16 fixed bottom-0 left-0 right-0 z-100">
+<section class="flex flex-col h-[var(--txg-bottom-nav-height)] fixed bottom-0 left-0 right-0 z-100">
   <mat-divider class="!border-t-outline-variant"></mat-divider>
   <mat-toolbar class="flex-grow">
-    <nav class="relative w-full">
+    <nav class="txg-content-measure relative">
       @for (link of navLinks; track link.label; let i = $index) {
         <div class="nav-item-container absolute" [style.left]="(10 + i * 20) + '%'">
           <a mat-button class="h-full" routerLinkActive="active-nav-item" [routerLink]="link.disabled ? null : link.path" [attr.data-cy]="link.dataCy">

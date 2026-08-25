@@ -1,5 +1,6 @@
 export const navigationSelectors = {
   back: 'navigation-back-button',
+  title: 'navigation-title',
   bottom: {
     prefix: 'bottom-navigation-',
     home: 'bottom-navigation-home',

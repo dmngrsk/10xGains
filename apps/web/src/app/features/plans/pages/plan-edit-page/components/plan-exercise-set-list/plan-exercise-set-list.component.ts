@@ -1,11 +1,12 @@
-import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { PlanEditCapabilities } from '@features/plans/models/plan-edit-capabilities';
 import { PlanExerciseSetViewModel } from '@features/plans/models/plan.viewmodel';
 import { PlanExerciseSetItemComponent } from '../plan-exercise-set-item/plan-exercise-set-item.component';
 
+/** An exercise's sets, as a table. Not reorderable: they differ only by reps and weight. */
 @Component({
   selector: 'txg-plan-exercise-set-list',
   standalone: true,
@@ -14,7 +15,6 @@ import { PlanExerciseSetItemComponent } from '../plan-exercise-set-item/plan-exe
     PlanExerciseSetItemComponent,
     MatButtonModule,
     MatIconModule,
-    DragDropModule,
   ],
   templateUrl: './plan-exercise-set-list.component.html',
   styleUrl: './plan-exercise-set-list.component.scss',
@@ -25,22 +25,14 @@ export class PlanExerciseSetListComponent {
   @Input({ required: true }) dayId!: string;
   @Input({ required: true }) exerciseId!: string;
   @Input({ required: true }) sets!: PlanExerciseSetViewModel[];
-  @Input({ required: true }) isReadOnly!: boolean;
+  @Input({ required: true }) capabilities!: PlanEditCapabilities;
+  @Input() weightIncrement: number | null = null;
 
+  @Output() setAdded = new EventEmitter<{exerciseId: string, dayId: string}>();
   @Output() setEdited = new EventEmitter<{setId: string, exerciseId: string, dayId: string}>();
-  @Output() setDeleted = new EventEmitter<{setId: string, exerciseId: string, dayId: string}>();
-  @Output() setReordered = new EventEmitter<{setId: string, exerciseId: string, dayId: string, newIndex: number}>();
+  @Output() setWeightStepped = new EventEmitter<{setId: string, exerciseId: string, dayId: string, weight: number}>();
 
+  onSetAdded = () => this.setAdded.emit({ exerciseId: this.exerciseId, dayId: this.dayId });
   onSetEdited = (eventData: {setId: string, exerciseId: string, dayId: string}) => this.setEdited.emit(eventData);
-  onSetDeleted = (eventData: {setId: string, exerciseId: string, dayId: string}) => this.setDeleted.emit(eventData);
-  onSetReordered = (event: CdkDragDrop<PlanExerciseSetViewModel[]>): void => this.onSetItemDropped(event);
-
-  onSetItemDropped(event: CdkDragDrop<PlanExerciseSetViewModel[]>): void {
-    if (event.previousContainer === event.container && event.previousIndex !== event.currentIndex) {
-      const [moved] = this.sets.splice(event.previousIndex, 1);
-      this.sets.splice(event.currentIndex, 0, moved);
-      this.sets.forEach((s, i) => s.setIndex = i + 1);
-      this.setReordered.emit({ setId: moved.id, exerciseId: this.exerciseId, dayId: this.dayId, newIndex: event.currentIndex + 1 });
-    }
-  }
+  onSetWeightStepped = (eventData: {setId: string, exerciseId: string, dayId: string, weight: number}) => this.setWeightStepped.emit(eventData);
 }

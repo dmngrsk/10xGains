@@ -21,7 +21,7 @@
     "@marplex/hono-azurefunc-adapter": "^1.0.1",
     "@supabase/supabase-js": "^2.49.4",
     "@txg/shared": "workspace:*",
-    "hono": "^4.7.0",
+    "hono": "^4.12.34",
     "zod": "^3.24.3"
   },
   "devDependencies": {

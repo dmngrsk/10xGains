@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import {
+  ArchivePlanDayCommand,
+  ArchivePlanExerciseCommand,
   PlanDto,
   UpdatePlanCommand,
   CreatePlanDayCommand,
@@ -33,9 +35,11 @@ export class PlanService {
    * @param offset Starting position for pagination
    * @returns Observable with plans data and potential error
    */
-  getPlans(limit?: number, offset?: number): Observable<PlanServiceResponse<PlanDto[]>> {
+  getPlans(limit?: number, offset?: number, options: { includeArchived?: boolean } = {}): Observable<PlanServiceResponse<PlanDto[]>> {
+    const suffix = options.includeArchived ? 'include_archived=true' : '';
+
     if (limit === undefined) {
-      return this.apiService.getAll<PlanDto>('/plans');
+      return this.apiService.getAll<PlanDto>(suffix ? `/plans?${suffix}` : '/plans');
     }
 
     const queryParams = new URLSearchParams();
@@ -43,6 +47,10 @@ export class PlanService {
 
     if (offset !== undefined) {
       queryParams.append('offset', offset.toString());
+    }
+
+    if (options.includeArchived) {
+      queryParams.append('include_archived', 'true');
     }
 
     return this.apiService.get<PlanDto[]>(`/plans?${queryParams.toString()}`);
@@ -53,12 +61,14 @@ export class PlanService {
    * @param planId The ID of the plan to fetch
    * @returns Observable with the plan data and potential error
    */
-  getPlan(planId: string): Observable<PlanServiceResponse<PlanDto>> {
+  getPlan(planId: string, options: { includeArchived?: boolean } = {}): Observable<PlanServiceResponse<PlanDto>> {
     if (!planId) {
       return throwError(() => new Error('Plan ID is required'));
     }
 
-    const url = `/plans/${planId}`;
+    const url = options.includeArchived
+      ? `/plans/${planId}?include_archived=true`
+      : `/plans/${planId}`;
     return this.apiService.get<PlanDto>(url);
   }
 
@@ -161,6 +171,26 @@ export class PlanService {
   }
 
   /**
+   * Archives or restores a training day.
+   *
+   * The delete a plan with history is allowed to have: the day leaves the plan but its workouts
+   * stay readable. Passing `archived: false` puts it back.
+   *
+   * @param planId The ID of the plan.
+   * @param dayId The ID of the day.
+   * @param archived True to archive, false to restore.
+   * @returns Observable with the updated day and potential error.
+   */
+  archivePlanDay(planId: string, dayId: string, archived: boolean): Observable<PlanServiceResponse<PlanDayDto>> {
+    if (!planId || !dayId) {
+      return throwError(() => new Error('Plan ID and Day ID are required for archive'));
+    }
+
+    const url = `/plans/${planId}/days/${dayId}/archive`;
+    return this.apiService.post<ArchivePlanDayCommand, PlanDayDto>(url, { archived });
+  }
+
+  /**
    * Adds an exercise to a specific training day within a plan.
    * @param planId The ID of the plan.
    * @param dayId The ID of the day to add the exercise to.
@@ -216,6 +246,24 @@ export class PlanService {
 
     const url = `/plans/${planId}/days/${dayId}/exercises/${planExerciseId}`;
     return this.apiService.delete(url);
+  }
+
+  /**
+   * Archives or restores an exercise within a training day. See archivePlanDay.
+   *
+   * @param planId The ID of the plan.
+   * @param dayId The ID of the day.
+   * @param planExerciseId The ID of the plan exercise.
+   * @param archived True to archive, false to restore.
+   * @returns Observable with the updated exercise and potential error.
+   */
+  archivePlanExercise(planId: string, dayId: string, planExerciseId: string, archived: boolean): Observable<PlanServiceResponse<PlanExerciseDto>> {
+    if (!planId || !dayId || !planExerciseId) {
+      return throwError(() => new Error('Plan ID, Day ID, and Plan Exercise ID are required for archive'));
+    }
+
+    const url = `/plans/${planId}/days/${dayId}/exercises/${planExerciseId}/archive`;
+    return this.apiService.post<ArchivePlanExerciseCommand, PlanExerciseDto>(url, { archived });
   }
 
   /**
@@ -291,22 +339,6 @@ export class PlanService {
     }
     const url = `/plans/${planId}/days/${dayId}/exercises/${planExerciseId}/sets/${setId}`;
     return this.apiService.delete(url);
-  }
-
-  /**
-   * Retrieves the progression rules for a specific exercise in a plan.
-   * @param planId The ID of the plan.
-   * @param exerciseId The global ID of the exercise (from 'exercises' table).
-   * @returns Observable with the exercise progression data or undefined, and potential error.
-   * @deprecated This is fetched from the /plans/{planId} endpoint.
-   */
-  getExerciseProgression(planId: string, exerciseId: string): Observable<PlanServiceResponse<PlanExerciseProgressionDto | undefined>> {
-    if (!planId || !exerciseId) {
-      return throwError(() => new Error('Plan ID and Exercise ID are required to get progression'));
-    }
-
-    const url = `/plans/${planId}/progressions/${exerciseId}`;
-    return this.apiService.get<PlanExerciseProgressionDto | undefined>(url);
   }
 
   /**
