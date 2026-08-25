@@ -55,7 +55,7 @@ coverage/
 testem.log
 /typings
 
-# Draft documents (work-in-progress specs, notes)
+# Spec documents
 docs/specs/*
 !docs/specs/.gitkeep
 

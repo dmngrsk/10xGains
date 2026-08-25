@@ -1598,11 +1598,13 @@ For every `(exercise, session)` pair:
 
 Sessions whose status is not `COMPLETED` are excluded entirely, and a pair with no completed set yields no point. Series are sorted by exercise name, points by `session_date` ascending. The response is not paginated — one point per exercise per session keeps it small regardless of set count — so no `totalCount` is returned.
 
+The underlying read *is* paginated internally. PostgREST caps any single response at `max_rows` (1000), which a consistent lifter crosses at roughly six months of history, so the repository walks the matching sets a page at a time and aggregates the complete set. Without a `date_from` this spans the account's entire history; the request is correspondingly slower for a long-lived account, and a query needing more than 25 pages (25,000 sets) is rejected with a `500` rather than silently returning a partial series.
+
 -   **Authorization**: Bearer token required.
 -   **URL Query Parameters**:
     -   `plan_id` (optional, string UUID): Restrict to sessions of a single plan. Omit to span all of the user's plans.
     -   `exercise_ids` (optional, comma-separated UUIDs): Restrict the returned series to these exercises.
-    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive). Rejected with `400 Bad Request` if later than `date_to`.
+    -   `date_from` (optional, string ISO 8601): Filter sessions from this date (inclusive). Omit to span the user's entire history — this is what the client's `ALL` range sends. Rejected with `400 Bad Request` if later than `date_to`.
     -   `date_to` (optional, string ISO 8601): Filter sessions up to this date (inclusive).
 -   **Response (200 OK)**: An array of `ExerciseProgressDto` objects.
     ```json

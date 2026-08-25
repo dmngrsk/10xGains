@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DEFAULT_PROGRESS_WINDOW_MONTHS, aggregateExerciseProgress, resolveProgressWindowStart } from './exercise-progress';
+import { aggregateExerciseProgress } from './exercise-progress';
 import type { ExerciseProgressRow } from './exercise-progress';
 
 const SQUAT_ID = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -175,29 +175,45 @@ describe('aggregateExerciseProgress', () => {
 
     expect(result[0].points.map(p => p.plan_id)).toEqual([PLAN_ID, otherPlanId]);
   });
-});
 
-describe('resolveProgressWindowStart', () => {
-  const NOW = new Date('2026-07-20T12:00:00.000Z');
+  it('should aggregate a session whose sets arrive split across page boundaries', () => {
+    // The repository reads sets a page at a time and concatenates them. A session straddling a
+    // boundary must still yield one point carrying every set - a half-arrived session that
+    // produces a short `reps` array and an understated top weight is the defect pagination fixes,
+    // and it renders as a legitimate point rather than a missing one.
+    const pageOne = [
+      makeRow({ weight: 100, setIndex: 1, reps: 5 }),
+      makeRow({ weight: 100, setIndex: 2, reps: 5 }),
+      makeRow({ weight: 100, setIndex: 3, reps: 5 }),
+    ];
+    const pageTwo = [
+      makeRow({ weight: 120, setIndex: 4, reps: 3 }),
+      makeRow({ weight: 100, setIndex: 5, reps: 4, status: 'FAILED' }),
+    ];
 
-  it('should use the start date the caller asked for', () => {
-    expect(resolveProgressWindowStart('2020-01-01T00:00:00.000Z', NOW)).toBe('2020-01-01T00:00:00.000Z');
+    const result = aggregateExerciseProgress([...pageOne, ...pageTwo]);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].points).toHaveLength(1);
+    expect(result[0].points[0].top_weight).toBe(120);
+    expect(result[0].points[0].reps).toEqual([5, 5, 5, 3, 4]);
   });
 
-  it('should default to a bounded window rather than the whole training history', () => {
-    // Without a floor the query reads every set of every completed session ever recorded, and
-    // aggregates them in the API process - a cost that grows with the age of the account.
-    expect(resolveProgressWindowStart(undefined, NOW)).toBe('2025-07-20T12:00:00.000Z');
-  });
+  it('should place a session on one point regardless of how pages interleave sessions', () => {
+    // Pages are ordered by set id, not by session, so one page can carry the tail of one session
+    // and the head of the next.
+    const pageOne = [
+      makeRow({ sessionId: SESSION_A, sessionDate: '2026-04-15T17:32:11.000Z', weight: 100, setIndex: 1 }),
+      makeRow({ sessionId: SESSION_B, sessionDate: '2026-04-22T18:01:47.000Z', weight: 105, setIndex: 1 }),
+    ];
+    const pageTwo = [
+      makeRow({ sessionId: SESSION_A, sessionDate: '2026-04-15T17:32:11.000Z', weight: 102, setIndex: 2 }),
+      makeRow({ sessionId: SESSION_B, sessionDate: '2026-04-22T18:01:47.000Z', weight: 107, setIndex: 2 }),
+    ];
 
-  it('should place the default window exactly DEFAULT_PROGRESS_WINDOW_MONTHS back', () => {
-    const start = new Date(resolveProgressWindowStart(undefined, NOW));
-    const monthsBack = (NOW.getUTCFullYear() - start.getUTCFullYear()) * 12 + (NOW.getUTCMonth() - start.getUTCMonth());
+    const result = aggregateExerciseProgress([...pageOne, ...pageTwo]);
 
-    expect(monthsBack).toBe(DEFAULT_PROGRESS_WINDOW_MONTHS);
-  });
-
-  it('should roll the year back correctly from early January', () => {
-    expect(resolveProgressWindowStart(undefined, new Date('2026-01-05T00:00:00.000Z'))).toBe('2025-01-05T00:00:00.000Z');
+    expect(result[0].points).toHaveLength(2);
+    expect(result[0].points.map(p => p.top_weight)).toEqual([102, 107]);
   });
 });
