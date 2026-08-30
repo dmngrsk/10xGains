@@ -208,7 +208,51 @@ describe('Session History', { tags: ['@history'] }, () => {
       });
     });
 
-    it('remembers the last used view without a query parameter', { tags: ['HIST-15'] }, () => {
+  });
+
+  describe('when using the notes view', () => {
+    describe('with session notes', () => {
+      beforeEach(() => {
+        stubHistoryApi();
+        cy.visit('/history?view=notes');
+      });
+
+      it('lists only the sessions carrying a note', { tags: ['HIST-15'] }, () => {
+        // The fixture holds 15 completed sessions, one of which has a note.
+        cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
+        cy.getBySel(dataCy.history.noteCardText).should('have.text', 'Tough workout, felt tired.');
+      });
+
+      it('navigates to the session when tapping a note', { tags: ['HIST-16'] }, () => {
+        cy.getBySel(dataCy.history.noteCard).first().click();
+
+        cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000015');
+      });
+    });
+
+    describe('with no notes or errors', () => {
+      it('shows the empty state notice when no session in range has a note', { tags: ['HIST-17'] }, () => {
+        cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
+        cy.visit('/history?view=notes');
+
+        cy.getBySel(dataCy.history.notesEmptyNotice).should('exist');
+      });
+
+      it('displays an error notice and recovers via the retry button', { tags: ['HIST-18'] }, () => {
+        stubHistoryApi();
+        cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
+        cy.visit('/history?view=notes');
+
+        cy.getBySel(dataCy.history.errorNotice).should('exist');
+        cy.getBySel(dataCy.history.errorNotice).find('button').contains('Try Again').click();
+
+        cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
+      });
+    });
+  });
+
+  describe('when switching views', () => {
+    it('remembers the last used view without a query parameter', { tags: ['HIST-19'] }, () => {
       // Without a stored value, the calendar is the default.
       cy.navigateTo('history');
       cy.getBySel(dataCy.history.calendar).should('exist');
@@ -237,33 +281,6 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.visit('/history');
       cy.getBySel(dataCy.history.calendar).should('exist');
       cy.location('search').should('contain', 'view=calendar');
-    });
-  });
-
-  describe('when using the notes view', () => {
-    it('lists only the sessions carrying a note', { tags: ['HIST-16'] }, () => {
-      stubHistoryApi();
-      cy.visit('/history?view=notes');
-
-      // The fixture holds 15 completed sessions, one of which has a note.
-      cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
-      cy.getBySel(dataCy.history.noteCardText).should('have.text', 'Tough workout, felt tired.');
-    });
-
-    it('navigates to the session when tapping a note', { tags: ['HIST-17'] }, () => {
-      stubHistoryApi();
-      cy.visit('/history?view=notes');
-
-      cy.getBySel(dataCy.history.noteCard).first().click();
-
-      cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000015');
-    });
-
-    it('shows the empty state notice when no session in range has a note', { tags: ['HIST-18'] }, () => {
-      cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
-      cy.visit('/history?view=notes');
-
-      cy.getBySel(dataCy.history.notesEmptyNotice).should('exist');
     });
   });
 });

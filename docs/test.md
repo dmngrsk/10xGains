@@ -55,7 +55,10 @@ The following features and components are within the scope of testing:
     *   Creating, editing, and clearing session notes and plan notes (save on dialog close via 'Save' or backdrop click).
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
+    *   Three views - calendar, list and notes - chosen from the tab strip, with the last used view remembered between visits.
     *   Viewing a paginated list of completed sessions.
+    *   Browsing completed sessions by month in the calendar, including days holding more than one session.
+    *   Reading back the notes of completed sessions in the notes view, which lists only the sessions carrying one.
     *   Filtering session history by plan and date range.
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
@@ -180,8 +183,12 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 |  | HIST-11 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
 | *&nbsp;&nbsp;errors* | HIST-12 | An error notice is displayed if the session history fails to load. | High | No |
 |  | HIST-13 | On error, a user can click the retry button to reload the session history. | High | No |
-| *&nbsp;&nbsp;notes and view preference* | HIST-14 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
-|  | HIST-15 | Without a view parameter, the calendar opens by default; after toggling, the last used view (list, then calendar again) is restored on revisits. | Medium | No |
+| *&nbsp;&nbsp;notes* | HIST-14 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
+| **History (Notes)**<br>*&nbsp;&nbsp;reading notes back* | HIST-15 | The notes view lists only the completed sessions carrying a note, newest first. | High | No |
+|  | HIST-16 | Tapping a note card navigates to that session's detail page. | Medium | No |
+| *&nbsp;&nbsp;empty and errors* | HIST-17 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
+|  | HIST-18 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
+| **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-19 | Without a view parameter, the calendar opens by default; each view picked from the tabs (list, then notes, then calendar) is restored on revisits. | Medium | No |
 | **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 |  | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
 | *&nbsp;&nbsp;filtering* | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |
