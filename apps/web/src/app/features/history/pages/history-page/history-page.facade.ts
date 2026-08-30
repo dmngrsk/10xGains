@@ -16,6 +16,8 @@ import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 const SESSION_SWEEP_PAGE_SIZE = 100;
+// How much of the list is fetched at a time as the sentinel comes into view.
+const LIST_PAGE_SIZE = 10;
 const CALENDAR_PREFETCH_RADIUS = 3;
 
 const FILTERS_STORAGE_KEY = 'txg.history.filters';
@@ -23,7 +25,6 @@ const FILTERS_STORAGE_KEY = 'txg.history.filters';
 interface PersistedHistoryFilters {
   selectedPlanId: string;
   dateRange: DateRangeValue;
-  pageSize: number;
 }
 
 const initialHistoryPageViewModel: HistoryPageViewModel = {
@@ -32,16 +33,14 @@ const initialHistoryPageViewModel: HistoryPageViewModel = {
     selectedPlanId: '',
     dateRange: { preset: null, dateFrom: null, dateTo: null },
     availablePlans: [],
-    pageSize: 10,
-    pageSizeOptions: [5, 10, 25, 100],
   },
   totalSessions: 0,
-  currentPage: 0,
   viewMode: 'list',
   calendarMonth: format(new Date(), 'yyyy-MM'),
   calendarSessions: [],
   noteSessions: [],
   isLoading: false,
+  isLoadingMore: false,
   error: null,
 };
 
@@ -73,7 +72,10 @@ export class HistoryPageFacade {
 
     const persisted = this.readPersistedFilters();
     if (persisted) {
-      this.viewModel.update(vm => ({ ...vm, filters: { ...vm.filters, ...persisted } }));
+      this.viewModel.update(vm => ({
+        ...vm,
+        filters: { ...vm.filters, selectedPlanId: persisted.selectedPlanId, dateRange: persisted.dateRange }
+      }));
     }
   }
 
@@ -132,17 +134,19 @@ export class HistoryPageFacade {
     ).subscribe();
   }
 
-  loadSessions(): void {
-    const currentViewModel = this.viewModel();
-    const filters = currentViewModel.filters;
-    const currentPage = currentViewModel.currentPage;
-    const pageSize = currentViewModel.filters.pageSize;
+  loadSessions(isLoadMore = false): void {
+    const { filters, sessions } = this.viewModel();
 
-    this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
+    this.viewModel.update(vm => ({
+      ...vm,
+      isLoading: !isLoadMore,
+      isLoadingMore: isLoadMore,
+      error: null
+    }));
 
     const queryParams: GetSessionsParams = {
-      limit: pageSize,
-      offset: currentPage * pageSize,
+      limit: LIST_PAGE_SIZE,
+      offset: isLoadMore ? sessions.length : 0,
       sort: 'session_date.desc',
       status: ['COMPLETED'],
       date_from: filters.dateRange.dateFrom ?? undefined,
@@ -157,18 +161,22 @@ export class HistoryPageFacade {
         this.viewModel.update(vm => ({
           ...vm,
           isLoading: false,
+          isLoadingMore: false,
           error: 'Failed to load sessions. Please try again later.',
-          sessions: [],
-          totalSessions: 0
+          // A failed page keeps what has already been scrolled through; a failed first one has
+          // nothing to keep.
+          sessions: isLoadMore ? vm.sessions : [],
+          totalSessions: isLoadMore ? vm.totalSessions : 0
         }));
         return EMPTY;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
       this.viewModel.update(vm => ({
         ...vm,
-        sessions: result.sessions,
+        sessions: isLoadMore ? [...vm.sessions, ...result.sessions] : result.sessions,
         totalSessions: result.totalCount,
         isLoading: false,
+        isLoadingMore: false,
         error: null
       }));
     });
@@ -342,8 +350,7 @@ export class HistoryPageFacade {
 
     this.viewModel.update(vm => ({
       ...vm,
-      filters: { ...vm.filters, ...newFilters },
-      currentPage: 0
+      filters: { ...vm.filters, ...newFilters }
     }));
 
     if (planChanged) {
@@ -361,8 +368,7 @@ export class HistoryPageFacade {
 
     this.viewModel.update(vm => ({
       ...vm,
-      filters: { ...vm.filters, ...newFilters },
-      currentPage: 0
+      filters: { ...vm.filters, ...newFilters }
     }));
 
     if (planChanged) {
@@ -372,19 +378,6 @@ export class HistoryPageFacade {
     this.listNeedsReload = true;
     this.persistFilters();
     this.loadNoteSessions();
-  }
-
-  updatePagination(currentPage: number, pageSize: number): void {
-    // `pageSize` lives on `filters`, which is what `loadSessions` reads. Writing it to the
-    // view-model root instead left the request limit pinned at its initial value, so the
-    // paginator's page-size selector had no effect.
-    this.viewModel.update(vm => ({
-      ...vm,
-      currentPage,
-      filters: { ...vm.filters, pageSize }
-    }));
-    this.persistFilters();
-    this.loadSessions();
   }
 
   private loadActiveViewSessions(): void {
@@ -493,8 +486,8 @@ export class HistoryPageFacade {
   }
 
   private persistFilters(): void {
-    const { selectedPlanId, dateRange, pageSize } = this.viewModel().filters;
-    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange, pageSize };
+    const { selectedPlanId, dateRange } = this.viewModel().filters;
+    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange };
     this.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toPersist));
   }
 

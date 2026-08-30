@@ -9,7 +9,7 @@
     <!-- The gutter belongs to the views that want one; the calendar scrolls edge to edge. -->
     <div class="flex justify-center min-h-[var(--txg-history-page-viewport)]" [class.p-4]="viewModel().viewMode !== 'calendar'">
       @if (viewModel(); as viewModel) {
-        @if (viewModel.isLoading || pageRecentlyChanged()) {
+        @if (viewModel.isLoading) {
           <div class="flex justify-center items-center min-h-[var(--txg-history-page-viewport)]">
             <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
           </div>
@@ -34,8 +34,11 @@
           <txg-history-list
             class="contents"
             [sessions]="viewModel.sessions"
+            [hasMore]="hasMoreSessions()"
+            [isLoadingMore]="viewModel.isLoadingMore"
             (sessionNavigated)="onSessionNavigated($event)"
             (notesClicked)="onNotesClicked($event)"
+            (loadMore)="onLoadMoreSessions()"
             (editFiltersClicked)="onFilterButtonClicked()">
           </txg-history-list>
         } @else if (viewModel.viewMode === 'notes') {
@@ -50,15 +53,14 @@
     </div>
   </div>
 
-  <txg-history-actions-bar
-    [length]="viewModel().totalSessions"
-    [pageSize]="viewModel().filters.pageSize"
-    [pageIndex]="viewModel().currentPage"
-    [pageSizeOptions]="viewModel().filters.pageSizeOptions"
-    [planName]="calendarPlanName()"
-    [viewMode]="viewModel().viewMode"
-    (pageChanged)="onPageChanged($event)"
-    (filterButtonClicked)="onFilterButtonClicked()"
-    data-cy="history-actions-bar">
-  </txg-history-actions-bar>
+  <!-- Clears the bottom navigation by the same gap the session view leaves above the edge. -->
+  <div class="fixed bottom-[calc(var(--txg-bottom-nav-height)+1.5rem)] right-4 z-10">
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      (click)="onFilterButtonClicked()"
+      data-cy="history-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
 </txg-main-layout>

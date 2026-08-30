@@ -87,10 +87,6 @@ export class HistoryFilterDialogComponent implements OnInit {
     return (this.data.mode === 'calendar' ? this.data.availablePlans : this.data.filters.availablePlans) || [];
   }
 
-  get pageSizeOptions(): number[] {
-    return this.data.mode === 'list' ? (this.data.filters.pageSizeOptions || []) : [];
-  }
-
   ngOnInit(): void {
     if (this.data.mode === 'calendar') {
       this.filterForm = this.fb.group({
@@ -102,7 +98,6 @@ export class HistoryFilterDialogComponent implements OnInit {
     if (this.data.mode === 'list' || this.data.mode === 'notes') {
       this.filterForm = this.fb.group({
         selectedPlanId: [this.data.filters.selectedPlanId],
-        pageSize: [this.data.filters.pageSize],
       });
       this.dateRange = this.data.filters.dateRange;
     }
@@ -144,8 +139,6 @@ export class HistoryFilterDialogComponent implements OnInit {
       const result: HistoryFiltersViewModel = {
         selectedPlanId: formValue.selectedPlanId,
         dateRange: this.dateRange,
-        pageSize: formValue.pageSize,
-        pageSizeOptions: this.data.filters.pageSizeOptions,
         availablePlans: this.data.filters.availablePlans,
       };
       this.dialogRef.close(result);

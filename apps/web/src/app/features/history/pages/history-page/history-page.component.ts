@@ -1,18 +1,17 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, computed, Signal, DestroyRef, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, computed, Signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { format } from 'date-fns';
-import { debounceTime, filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { HistoryFiltersViewModel, HistoryPageViewModel, HistoryViewMode } from '@features/history/models/history-page.viewmodel';
 import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '@features/sessions/components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
@@ -21,7 +20,6 @@ import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HistoryCalendarFilterResult, HistoryFilterDialogComponent, HistoryFilterDialogData, HistoryFilterDialogResult } from './components/dialogs/history-filter-dialog/history-filter-dialog.component';
 import { SessionPickerDialogComponent, SessionPickerDialogData } from './components/dialogs/session-picker-dialog/session-picker-dialog.component';
-import { HistoryActionsBarComponent } from './components/history-actions-bar/history-actions-bar.component';
 import { HistoryCalendarComponent } from './components/history-calendar/history-calendar.component';
 import { HistoryListComponent } from './components/history-list/history-list.component';
 import { HistoryNotesComponent } from './components/history-notes/history-notes.component';
@@ -40,12 +38,10 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
     MainLayoutComponent,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatPaginatorModule,
     MatDialogModule,
     MatButtonModule,
     MatTooltipModule,
     MatDividerModule,
-    HistoryActionsBarComponent,
     HistoryCalendarComponent,
     HistoryListComponent,
     HistoryNotesComponent,
@@ -67,15 +63,8 @@ export class HistoryPageComponent implements OnInit {
   private readonly localStorage = inject(LocalStorageService);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
-  readonly isLoadingSignal: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
-
-  readonly calendarPlanName = computed(() => {
-    const { selectedPlanId, availablePlans } = this.viewModel().filters;
-    return availablePlans?.find(plan => plan.id === selectedPlanId)?.name ?? '';
-  });
-
-  readonly pageRecentlyChanged = signal(false);
-  private readonly pageChangedSubject = new Subject<PageEvent>();
+  readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
+  readonly hasMoreSessions: Signal<boolean> = computed(() => this.viewModel().sessions.length < this.viewModel().totalSessions);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -90,15 +79,6 @@ export class HistoryPageComponent implements OnInit {
     this.facade.seedViewState(viewMode, month);
     this.syncViewQueryParams();
     this.facade.loadHistoryPageData();
-
-    this.pageChangedSubject.pipe(
-      tap(() => this.pageRecentlyChanged.set(true)),
-      debounceTime(300),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(event => {
-      this.facade.updatePagination(event.pageIndex, event.pageSize);
-      this.pageRecentlyChanged.set(false);
-    });
   }
 
   onSessionNavigated(sessionId: string): void {
@@ -130,8 +110,8 @@ export class HistoryPageComponent implements OnInit {
       });
   }
 
-  onPageChanged(event: PageEvent): void {
-    this.pageChangedSubject.next(event);
+  onLoadMoreSessions(): void {
+    this.facade.loadSessions(true);
   }
 
   onViewModeChanged(mode: HistoryViewMode): void {

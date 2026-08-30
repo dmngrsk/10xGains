@@ -56,10 +56,10 @@ The following features and components are within the scope of testing:
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
     *   Three views - calendar, list and notes - chosen from the tab strip, with the last used view remembered between visits.
-    *   Viewing a paginated list of completed sessions.
+    *   Viewing a list of completed sessions, which loads a further page each time its end is scrolled to.
     *   Browsing completed sessions by month in the calendar, including days holding more than one session.
     *   Reading back the notes of completed sessions in the notes view, which lists only the sessions carrying one.
-    *   Filtering session history by plan and date range.
+    *   Filtering session history by plan and date range, from the filter FAB.
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
     *   Weight-over-time chart, scoped to the active plan and the last 3 months by default.
@@ -171,7 +171,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 |  | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
 | *&nbsp;&nbsp;history integrity* | SESS-14 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
 | **History (List)**<br>*&nbsp;&nbsp;browsing the list* | HIST-01 | A completed session correctly appears in the session history list. | High | No |
-|  | HIST-02 | The session history list correctly paginates when there are more sessions than the page size. | Medium | No |
+|  | HIST-02 | The session history list loads a further page of sessions when its end is scrolled to, and stops once every session is loaded. | Medium | No |
 | *&nbsp;&nbsp;filtering* | HIST-03 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
 |  | HIST-04 | The empty state notice is shown when no sessions match the filter criteria. | Medium | No |
 | *&nbsp;&nbsp;errors* | HIST-05 | An error notice is displayed if the session history fails to load. | High | No |

@@ -15,5 +15,17 @@
       (sessionNavigated)="onSessionNavigated($event)"
       (notesClicked)="onNotesClicked($event)">
     </txg-session-list>
+
+    @if (hasMore) {
+      <!-- Sentinel for Intersection Observer -->
+      <div #sentinel class="h-10" data-cy="history-load-more-sentinel"></div>
+    }
+
+    @if (isLoadingMore) {
+      <div class="flex items-center mt-4 ml-2" data-cy="history-load-more-spinner">
+        <mat-progress-spinner mode="indeterminate" diameter="30"></mat-progress-spinner>
+        <span class="ml-4 text-secondary">Loading more sessions...</span>
+      </div>
+    }
   </div>
 }

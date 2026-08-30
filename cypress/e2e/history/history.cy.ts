@@ -61,11 +61,14 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.getBySel(dataCy.history.sessionCard).should('contain.text', 'Workout A');
       });
 
-      it('paginates the session history list when more sessions than page size', { tags: ['HIST-02'] }, () => {
-        cy.getBySel(dataCy.history.paginator).should('exist');
-        cy.getBySel(dataCy.history.paginator).find('button[aria-label="Next page"]').click();
+      it('loads more sessions as the list is scrolled', { tags: ['HIST-02'] }, () => {
+        // The scaffolded plan holds more sessions than one page, so the first page stops short
+        // of the total and leaves a sentinel to scroll to.
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', 10);
+        cy.getBySel(dataCy.history.loadMoreSentinel).should('exist').scrollIntoView();
 
-        cy.getBySel(dataCy.history.sessionList).getBySel(dataCy.history.sessionCard).should('exist');
+        cy.getBySel(dataCy.history.sessionCard).should('have.length.greaterThan', 10);
+        cy.getBySel(dataCy.history.loadMoreSentinel).should('not.exist'); // Nothing left to fetch.
       });
 
       it('allows filtering by date range', { tags: ['HIST-03'] }, () => {
@@ -256,13 +259,12 @@ describe('Session History', { tags: ['@history'] }, () => {
       // Without a stored value, the calendar is the default.
       cy.navigateTo('history');
       cy.getBySel(dataCy.history.calendar).should('exist');
-      cy.getBySel(dataCy.history.paginator).should('not.exist');
+      cy.getBySel(dataCy.history.sessionList).should('not.exist');
       cy.location('search').should('contain', 'view=calendar');
 
       // Switching to the list is remembered across visits...
       cy.getBySel(dataCy.history.tabs.list).click();
       cy.getBySel(dataCy.history.sessionList).should('exist');
-      cy.getBySel(dataCy.history.paginator).should('exist');
       cy.visit('/history');
       cy.getBySel(dataCy.history.sessionList).should('exist');
       cy.location('search').should('contain', 'view=list');
