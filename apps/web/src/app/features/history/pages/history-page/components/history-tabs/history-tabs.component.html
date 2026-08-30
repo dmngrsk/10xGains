@@ -6,9 +6,9 @@
         [active]="viewMode === tab.mode"
         (click)="onTabClicked(tab.mode)"
         [attr.data-cy]="tab.dataCy">
-        <span class="flex flex-col items-center gap-1">
+        <span class="flex flex-col items-center justify-center">
           <mat-icon>{{ tab.icon }}</mat-icon>
-          <span class="text-xs">{{ tab.label }}</span>
+          <span class="text-xs mt-1 text-center">{{ tab.label }}</span>
         </span>
       </a>
     }
