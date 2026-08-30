@@ -35,16 +35,18 @@
         }
       } @else {
         <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
-          <span class="text-sm text-on-surface-variant truncate" data-cy="progress-filter-summary">{{ filterSummary() }}</span>
-          <txg-exercise-chip-row
-            [exercises]="viewModel.series"
-            (exerciseToggled)="onExerciseToggled($event)">
-          </txg-exercise-chip-row>
+          <span class="font-medium text-primary truncate" data-cy="progress-filter-summary">{{ filterSummary() }}</span>
           <txg-progress-chart
             class="block flex-1 min-h-0"
             [series]="selectedSeries()"
             [showPlanName]="isAllPlansSelected()">
           </txg-progress-chart>
+          <!-- Padded clear of the filter FAB, which shares the row the chips sit on. -->
+          <txg-exercise-chip-row
+            class="block pr-16"
+            [exercises]="viewModel.series"
+            (exerciseToggled)="onExerciseToggled($event)">
+          </txg-exercise-chip-row>
         </div>
       }
     }
