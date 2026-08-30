@@ -30,7 +30,7 @@
   @if (selectedDay; as day) {
     <section class="day-panel" [attr.aria-label]="day.name" data-cy="plan-day-item">
       @if (day.description) {
-        <p class="day-description" data-cy="plan-edit-day-description">{{ day.description }}</p>
+        <p class="day-description text-sm text-secondary" data-cy="plan-edit-day-description">{{ day.description }}</p>
       }
 
       <txg-plan-exercise-list

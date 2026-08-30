@@ -1,19 +1,23 @@
 <txg-main-layout title="Training Plans" [loadingSignal]="isLoadingSignal">
   @if (viewModel(); as viewModel) {
     @if (viewModel.error) {
-      <txg-notice
-        [descriptionText]="viewModel.error!"
-        [isError]="true">
-      </txg-notice>
+      <div class="txg-page-fill">
+        <txg-notice
+          [descriptionText]="viewModel.error!"
+          [isError]="true">
+        </txg-notice>
+      </div>
     } @else if (!viewModel.isLoading && !viewModel.activePlan && viewModel.plans.length === 0) {
-      <txg-notice
-        iconName="assignment"
-        titleText="No Training Plans Found"
-        descriptionText="You don't have any plans yet. Create your first plan to get started!"
-        buttonText="Create New Plan"
-        (buttonClicked)="onCreatePlanButtonClicked()"
-        data-cy="plan-list-no-plans-notice">
-      </txg-notice>
+      <div class="txg-page-fill">
+        <txg-notice
+          iconName="assignment"
+          titleText="No Training Plans Found"
+          descriptionText="You don't have any plans yet. Create your first plan to get started!"
+          buttonText="Create New Plan"
+          (buttonClicked)="onCreatePlanButtonClicked()"
+          data-cy="plan-list-no-plans-notice">
+        </txg-notice>
+      </div>
     } @else {
       <div class="p-4">
         @if (viewModel.activePlan) {

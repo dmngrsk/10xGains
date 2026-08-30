@@ -1,27 +1,29 @@
 <txg-main-layout
   backNavigation="/plans"
-  title="Training Plan"
+  title="Edit Training Plan"
   [loadingSignal]="isLoadingSignal">
 
-  <div class="py-4 h-full overflow-y-auto">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.error) {
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <div class="txg-page-fill p-4">
         <txg-notice
-          class="block px-4"
           [descriptionText]="viewModel.error!"
           [isError]="true"
           data-cy="plan-edit-error-notice">
         </txg-notice>
-      } @else if (!viewModel.isLoading && !viewModel.plan) {
+      </div>
+    } @else if (!viewModel.isLoading && !viewModel.plan) {
+      <div class="txg-page-fill p-4">
         <txg-notice
-          class="block px-4"
           iconName="error_outline"
           titleText="Plan Not Found"
           descriptionText="The requested plan could not be loaded or does not exist."
           buttonText="Back to Plans"
           (buttonClicked)="onPlansNavigated()">
         </txg-notice>
-      } @else if (viewModel.plan) {
+      </div>
+    } @else if (viewModel.plan) {
+      <div class="py-4 h-full overflow-y-auto">
         <div class="px-4 mb-4">
           <txg-plan-metadata
             [plan]="viewModel.plan"
@@ -65,8 +67,7 @@
             </button>
           }
         </div>
-
-      }
+      </div>
     }
-  </div>
+  }
 </txg-main-layout>

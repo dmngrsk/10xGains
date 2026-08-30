@@ -103,6 +103,17 @@ $material-color-role-tokens: (
 }
 
 /*
+ * Fills what the layout leaves a page, so a notice shown on its own centres in that space
+ * instead of sitting at the top of it. Put the page's own padding on this element rather than
+ * an ancestor: padding inside the min-height costs nothing, padding around it overflows.
+ */
+.txg-page-fill {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - var(--txg-top-bar-height) - var(--txg-page-bottom-edge));
+}
+
+/*
  * Where a FAB hangs: the same gap above the page's bottom edge everywhere, which is the bottom
  * navigation on the pages carrying one and the viewport edge on the pages that do not. Wrap the
  * button rather than positioning it directly - Material's own `position: relative` outranks a
