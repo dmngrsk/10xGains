@@ -3,16 +3,18 @@
   [title]="(viewModel().plan?.name ? 'Editing: ' + viewModel().plan!.name : 'Loading Plan...')"
   [loadingSignal]="isLoadingSignal">
 
-  <div class="p-4 h-full overflow-y-auto">
+  <div class="py-4 h-full overflow-y-auto">
     @if (viewModel(); as viewModel) {
       @if (viewModel.error) {
         <txg-notice
+          class="block px-4"
           [descriptionText]="viewModel.error!"
           [isError]="true"
           data-cy="plan-edit-error-notice">
         </txg-notice>
       } @else if (!viewModel.isLoading && !viewModel.plan) {
         <txg-notice
+          class="block px-4"
           iconName="error_outline"
           titleText="Plan Not Found"
           descriptionText="The requested plan could not be loaded or does not exist."
@@ -20,7 +22,7 @@
           (buttonClicked)="onPlansNavigated()">
         </txg-notice>
       } @else if (viewModel.plan) {
-        <div class="mb-4">
+        <div class="px-4 mb-4">
           <txg-plan-metadata
             [plan]="viewModel.plan"
             [sessionCount]="viewModel.sessionCount"
@@ -50,7 +52,7 @@
           data-cy="training-day-list">
         </txg-plan-day-list>
 
-        <div class="plan-actions">
+        <div class="plan-actions px-4">
           @if (viewModel.plan.isActive) {
             <button mat-raised-button (click)="onPlanDeactivated()" data-cy="plan-deactivate-button">
               <mat-icon>edit_off</mat-icon>

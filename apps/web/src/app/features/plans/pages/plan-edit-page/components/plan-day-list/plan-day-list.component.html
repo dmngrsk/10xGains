@@ -51,14 +51,16 @@
     </section>
   }
 } @else {
-  <p class="py-4">No days defined for this plan. Add the first one!</p>
+  <div class="p-4">
+    <p class="pb-4">No days defined for this plan. Add the first one!</p>
 
-  @if (capabilities.canAddItems) {
-    <button mat-raised-button class="w-full" (click)="onDayAdded()" data-cy="plan-add-day-button">
-      <mat-icon>add</mat-icon>
-      <span>Add training day</span>
-    </button>
-  }
+    @if (capabilities.canAddItems) {
+      <button mat-raised-button class="w-full" (click)="onDayAdded()" data-cy="plan-add-day-button">
+        <mat-icon>add</mat-icon>
+        <span>Add training day</span>
+      </button>
+    }
+  </div>
 }
 
 <mat-menu #dayMenu="matMenu">

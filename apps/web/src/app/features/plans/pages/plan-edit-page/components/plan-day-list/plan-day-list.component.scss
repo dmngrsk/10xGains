@@ -17,10 +17,12 @@
 
 .day-menu-button {
   flex: 0 0 auto;
+  margin-right: 0.5rem;
 }
 
+// The strip spans the page so its divider does too; the margin belongs to the tab's content.
 .day-panel {
-  padding-top: 1rem;
+  padding: 1rem;
 }
 
 .day-description {
