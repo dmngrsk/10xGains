@@ -43,10 +43,12 @@
         }
 
         @if ((viewModel.activePlan || viewModel.plans.length > 0) && !viewModel.isLoading) {
-          <button mat-mini-fab color="primary" matTooltip="Create a new plan" class="txg-fab !fixed bottom-[5.5rem] right-6 z-50" data-cy="plan-list-create-button"
-            (click)="onCreatePlanButtonClicked()">
-            <mat-icon>add</mat-icon>
-          </button>
+          <div class="txg-fab-anchor">
+            <button mat-mini-fab color="primary" matTooltip="Create a new plan" class="txg-fab" data-cy="plan-list-create-button"
+              (click)="onCreatePlanButtonClicked()">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
         }
       </div>
     }

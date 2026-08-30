@@ -13,7 +13,6 @@ import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.
 import { formatDateRangeSummary } from '@shared/utils/dates/date-range-presets';
 import { ProgressFilterDialogComponent } from './components/dialogs/progress-filter-dialog/progress-filter-dialog.component';
 import { ExerciseChipRowComponent } from './components/exercise-chip-row/exercise-chip-row.component';
-import { ProgressActionsBarComponent } from './components/progress-actions-bar/progress-actions-bar.component';
 import { ProgressChartComponent } from './components/progress-chart/progress-chart.component';
 import { ProgressPageFacade } from './progress-page.facade';
 
@@ -29,7 +28,6 @@ import { ProgressPageFacade } from './progress-page.facade';
     MatButtonModule,
     ExerciseChipRowComponent,
     ProgressChartComponent,
-    ProgressActionsBarComponent,
     NoticeComponent,
   ],
   templateUrl: './progress-page.component.html',

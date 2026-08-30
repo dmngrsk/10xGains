@@ -2,7 +2,6 @@ export const progressSelectors = {
   content: 'progress-content',
   chartCanvas: 'progress-chart-canvas',
   exerciseChip: 'progress-exercise-chip',
-  actionsBar: 'progress-actions-bar',
   filterButton: 'progress-filter-button',
   filterSummary: 'progress-filter-summary',
   emptyNotice: 'progress-empty-notice',

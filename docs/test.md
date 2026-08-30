@@ -63,7 +63,7 @@ The following features and components are within the scope of testing:
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
     *   Weight-over-time chart, scoped to the active plan and the last 3 months by default.
-    *   Filtering by training plan (including "All plans", which spans plans) and by date-range preset.
+    *   Filtering by training plan (including "All plans", which spans plans) and by date-range preset, from the filter FAB, with the current filter summarised above the chip row.
     *   Toggling which exercise series are plotted via the chip row.
     *   Aggregation correctness: top completed set per session, reps of every set (failed ones included).
 *   **Home & Settings:**

@@ -1,3 +1,9 @@
 :host {
-  --txg-progress-page-viewport: calc(var(--txg-page-viewport) - 0.25rem);
+  /*
+   * The page's filter is a FAB rather than an actions bar, so only the top bar and the bottom
+   * navigation come off. The 0.25rem is slack the page has always carried.
+   */
+  --txg-progress-page-viewport: calc(
+    100vh - var(--txg-top-bar-height) - var(--txg-bottom-nav-height) - 0.25rem
+  );
 }

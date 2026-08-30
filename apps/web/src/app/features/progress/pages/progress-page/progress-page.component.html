@@ -35,6 +35,7 @@
         }
       } @else {
         <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
+          <span class="text-sm text-on-surface-variant truncate" data-cy="progress-filter-summary">{{ filterSummary() }}</span>
           <txg-exercise-chip-row
             [exercises]="viewModel.series"
             (exerciseToggled)="onExerciseToggled($event)">
@@ -49,9 +50,13 @@
     }
   </div>
 
-  <txg-progress-actions-bar
-    [summary]="filterSummary()"
-    (filterButtonClicked)="onFilterButtonClicked()"
-    data-cy="progress-actions-bar">
-  </txg-progress-actions-bar>
+  <div class="txg-fab-anchor">
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      (click)="onFilterButtonClicked()"
+      data-cy="progress-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
 </txg-main-layout>

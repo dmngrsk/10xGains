@@ -64,21 +64,19 @@ $material-color-role-tokens: (
 :root {
   --txg-top-bar-height: 4rem;
   --txg-bottom-nav-height: 4rem;
-  --txg-actions-bar-height: 4rem;
   --txg-tabs-bar-height: 3.75rem;
+
+  /* What a FAB hangs above. Pages carrying the bottom navigation raise it below. */
+  --txg-page-bottom-edge: 0rem;
 
   /* Where the top bar's underside really falls: mat-toolbar's own height rule wins below 600px. */
   --txg-top-bar-edge: 3.5rem;
-
-  /* What a page carrying all three bars has left; pages adjust from here. */
-  --txg-page-viewport: calc(
-    100vh - var(--txg-top-bar-height) - var(--txg-actions-bar-height) - var(--txg-bottom-nav-height)
-  );
 }
 
 /* Applied as a class binding, since only some pages carry the bottom navigation. */
 .txg-bottom-nav-offset {
   padding-bottom: var(--txg-bottom-nav-height);
+  --txg-page-bottom-edge: var(--txg-bottom-nav-height);
 }
 
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
@@ -102,6 +100,19 @@ $material-color-role-tokens: (
 .txg-fab.txg-fab {
   width: 48px;
   height: 48px;
+}
+
+/*
+ * Where a FAB hangs: the same gap above the page's bottom edge everywhere, which is the bottom
+ * navigation on the pages carrying one and the viewport edge on the pages that do not. Wrap the
+ * button rather than positioning it directly - Material's own `position: relative` outranks a
+ * single class on the button itself.
+ */
+.txg-fab-anchor {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--txg-page-bottom-edge) + 1.5rem);
+  z-index: 10;
 }
 
 /* Hide scrollbars dynamically - to be used with txgAutoHideScrollbar directive */
