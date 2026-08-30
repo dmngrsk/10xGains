@@ -13,7 +13,7 @@ export function createPlan(name = 'Test Training Plan') {
   cy.getBySel(dataCy.plans.dialogs.plans.saveButton).click();
 
   cy.getBySel(dataCy.plans.dialogs.plans.content).should('not.exist');
-  cy.getBySel(dataCy.shared.navigation.title).should('contain.text', name);
+  cy.getBySel(dataCy.plans.planEdit.name).should('contain.text', name);
 }
 
 export function createPlanDay(name = 'Test Training Day') {

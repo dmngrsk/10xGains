@@ -31,7 +31,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
 
       cy.url().should('match', /\/plans\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/);
 
-      cy.getBySel(dataCy.shared.navigation.title).should('be.visible').and('contain.text', 'Test Training Plan');
+      cy.getBySel(dataCy.plans.planEdit.name).should('be.visible').and('contain.text', 'Test Training Plan');
     });
   });
 
