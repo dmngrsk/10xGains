@@ -6,7 +6,8 @@
 
   <!-- The offset lives on its own wrapper so no view's padding can compete with it. -->
   <div class="pt-[var(--txg-history-content-offset)]">
-    <div class="flex justify-center px-4 min-h-[var(--txg-history-page-viewport)]" [class.py-4]="viewModel().viewMode !== 'calendar'">
+    <!-- The gutter belongs to the views that want one; the calendar scrolls edge to edge. -->
+    <div class="flex justify-center min-h-[var(--txg-history-page-viewport)]" [class.p-4]="viewModel().viewMode !== 'calendar'">
       @if (viewModel(); as viewModel) {
         @if (viewModel.isLoading || pageRecentlyChanged()) {
           <div class="flex justify-center items-center min-h-[var(--txg-history-page-viewport)]">
