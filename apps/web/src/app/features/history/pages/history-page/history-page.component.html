@@ -21,7 +21,7 @@
             data-cy="history-error-notice">
           </txg-notice>
         } @else if (viewModel.viewMode === 'calendar') {
-          <div class="w-full max-w-100 mx-auto h-[var(--txg-history-calendar-viewport)]" data-cy="history-calendar-view">
+          <div class="w-full h-[var(--txg-history-calendar-viewport)]" data-cy="history-calendar-view">
             <txg-history-calendar
               [sessions]="viewModel.calendarSessions"
               [month]="viewModel.calendarMonth"
