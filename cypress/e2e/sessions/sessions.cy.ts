@@ -229,7 +229,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         cy.getBySel(dataCy.history.sessionNavigateButton).click();
       });
 
-      cy.closeMatSnackBar(); // A lingering snackbar can overlay the notes FAB
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('have.value', 'Switch to low-bar next cycle.');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
@@ -257,7 +256,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Workout C'); // Session from the second plan
       cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
 
-      cy.closeMatSnackBar(); // A lingering snackbar can overlay the notes FAB
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('have.value', '');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
