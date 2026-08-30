@@ -1,0 +1,4 @@
+:host {
+  --txg-history-page-viewport: calc(var(--txg-page-viewport) - 0.25rem);
+  --txg-history-calendar-viewport: var(--txg-page-viewport);
+}

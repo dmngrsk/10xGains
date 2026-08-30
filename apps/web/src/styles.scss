@@ -60,13 +60,16 @@ $material-color-role-tokens: (
   max-width: var(--txg-content-measure);
 }
 
-/* The fixed chrome. Each bar sets its own height from these, so page offsets stay derived. */
+/* The fixed chrome; bars size themselves from these, pages derive their offsets from them. */
 :root {
   --txg-top-bar-height: 4rem;
   --txg-bottom-nav-height: 4rem;
   --txg-actions-bar-height: 4rem;
 
-  /* What is left of the viewport on a page carrying all three bars. */
+  /* Where the top bar's underside really falls: mat-toolbar's own height rule wins below 600px. */
+  --txg-top-bar-edge: 3.5rem;
+
+  /* What a page carrying all three bars has left; pages adjust from here. */
   --txg-page-viewport: calc(
     100vh - var(--txg-top-bar-height) - var(--txg-actions-bar-height) - var(--txg-bottom-nav-height)
   );

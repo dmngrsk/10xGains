@@ -1,12 +1,12 @@
 <txg-top-navigation-bar [title]="title" [backNavigation]="backNavigation" />
 
 @if (showFullScreenLoader()) {
-  <div [class.txg-bottom-nav-offset]="showBottomNavigation()" class="flex pt-[var(--txg-top-bar-height)] justify-center items-center fixed inset-0 z-50">
+  <div [class.txg-bottom-nav-offset]="showBottomNavigation()" class="flex pt-[var(--txg-top-bar-edge)] justify-center items-center fixed inset-0 z-50">
     <mat-progress-spinner mode="indeterminate" diameter="60"></mat-progress-spinner>
   </div>
 } @else {
   @if (showProgressBar()) {
-    <mat-progress-bar mode="indeterminate" color="accent" class="!fixed top-[var(--txg-top-bar-height)] left-0 right-0 z-[99]"></mat-progress-bar>
+    <mat-progress-bar mode="indeterminate" color="accent" class="!fixed top-[var(--txg-top-bar-edge)] left-0 right-0 z-[99]"></mat-progress-bar>
   }
   <div [class.txg-bottom-nav-offset]="showBottomNavigation()" class="page-content-area pt-[var(--txg-top-bar-height)] h-screen overflow-y-auto">
     <div class="txg-content-measure">

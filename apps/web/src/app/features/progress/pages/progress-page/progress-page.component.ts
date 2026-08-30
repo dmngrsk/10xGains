@@ -33,6 +33,7 @@ import { ProgressPageFacade } from './progress-page.facade';
     NoticeComponent,
   ],
   templateUrl: './progress-page.component.html',
+  styleUrl: './progress-page.component.scss',
   providers: [ProgressPageFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -48,6 +48,7 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
     NoticeComponent,
   ],
   templateUrl: './history-page.component.html',
+  styleUrl: './history-page.component.scss',
   providers: [HistoryPageFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
