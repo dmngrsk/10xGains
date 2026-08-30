@@ -1,0 +1,35 @@
+@if (sessions.length === 0) {
+  <txg-notice
+    iconName="sticky_note_2"
+    titleText="No Notes Found"
+    descriptionText="None of the sessions matching your current filters have notes attached to them yet."
+    buttonText="Edit Filters"
+    (buttonClicked)="onEditFiltersClicked()"
+    data-cy="history-notes-empty-notice">
+  </txg-notice>
+} @else {
+  <div class="pb-18 w-full" data-cy="history-notes-list">
+    <div class="grid grid-cols-1 gap-4">
+      @for (session of sessions; track session.id) {
+        <mat-card
+          class="cursor-pointer"
+          role="button"
+          tabindex="0"
+          (click)="onSessionNavigated(session.id)"
+          (keydown.enter)="onSessionNavigated(session.id)"
+          (keydown.space)="onSpaceActivated($event, session.id)"
+          data-cy="history-note-card">
+          <mat-card-header>
+            <mat-card-title class="!text-xl !font-medium text-primary">{{ session.title }}</mat-card-title>
+            @if (formatSessionDate(session.sessionDate); as sessionDate) {
+              <mat-card-subtitle class="!text-sm !font-normal !text-secondary">{{ sessionDate }}</mat-card-subtitle>
+            }
+          </mat-card-header>
+          <mat-card-content class="my-4">
+            <p class="text-sm whitespace-pre-line" data-cy="history-note-card-text">{{ session.notes }}</p>
+          </mat-card-content>
+        </mat-card>
+      }
+    </div>
+  </div>
+}

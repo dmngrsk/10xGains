@@ -32,7 +32,6 @@ export class HistoryActionsBarComponent {
 
   @Output() filterButtonClicked = new EventEmitter<void>();
   @Output() pageChanged = new EventEmitter<PageEvent>();
-  @Output() viewModeChanged = new EventEmitter<HistoryViewMode>();
 
   onPageChanged(event: PageEvent): void {
     this.pageChanged.emit(event);
@@ -40,14 +39,5 @@ export class HistoryActionsBarComponent {
 
   onFilterClicked(): void {
     this.filterButtonClicked.emit();
-  }
-
-  onViewToggleClicked(): void {
-    if (this.viewMode === 'list') {
-      this.viewModeChanged.emit('calendar');
-    }
-    if (this.viewMode === 'calendar') {
-      this.viewModeChanged.emit('list');
-    }
   }
 }

@@ -393,4 +393,86 @@ describe('HistoryPageFacade', () => {
       expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
     });
   });
+
+  describe('notes view', () => {
+    const noteSessionDto = (id: string, sessionDate: string, notes: string | null) => ({
+      ...sessionDto(id, sessionDate),
+      notes,
+    });
+
+    const configureListSeeded = () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05');
+      facade.loadHistoryPageData();
+    };
+
+    it('should sweep the filtered range and keep only the sessions carrying a note', () => {
+      configureListSeeded();
+      getSessionsMock.mockReturnValue(of({
+        data: [
+          noteSessionDto('s-1', '2026-05-02T10:00:00.000Z', 'Felt strong.'),
+          noteSessionDto('s-2', '2026-05-03T10:00:00.000Z', null),
+          noteSessionDto('s-3', '2026-05-04T10:00:00.000Z', '   '),
+          noteSessionDto('s-4', '2026-05-05T10:00:00.000Z', 'Shoulder twinge.'),
+        ],
+        totalCount: 4,
+        error: null,
+      }));
+
+      facade.setViewMode('notes');
+
+      expect(facade.viewModel().noteSessions.map(s => s.id)).toEqual(['s-1', 's-4']);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should query the whole range newest first rather than a single page', () => {
+      configureListSeeded();
+
+      facade.setViewMode('notes');
+
+      expect(lastQuery()).toEqual(expect.objectContaining({
+        status: ['COMPLETED'],
+        plan_id: 'plan-1',
+        sort: 'session_date.desc',
+        limit: 100,
+        offset: 0,
+      }));
+    });
+
+    it('should not re-sweep when the view is re-entered unchanged', () => {
+      configureListSeeded();
+      facade.setViewMode('notes');
+      const callsAfterFirstSweep = getSessionsMock.mock.calls.length;
+
+      facade.setViewMode('list');
+      facade.setViewMode('notes');
+
+      // Neither view is stale, so leaving and coming back costs nothing.
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstSweep);
+    });
+
+    it('should re-sweep after the filters changed underneath it', () => {
+      configureListSeeded();
+      facade.setViewMode('notes');
+      facade.setViewMode('list');
+      facade.updateFilters({ selectedPlanId: 'plan-2' });
+      const callsAfterFilterChange = getSessionsMock.mock.calls.length;
+
+      facade.setViewMode('notes');
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFilterChange + 1);
+      expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2', sort: 'session_date.desc' }));
+    });
+
+    it('should surface an error when the sweep fails', () => {
+      configureListSeeded();
+      getSessionsMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.setViewMode('notes');
+
+      expect(facade.viewModel().error).toContain('Failed to load session notes');
+      expect(facade.viewModel().isLoading).toBe(false);
+      expect(facade.viewModel().noteSessions).toEqual([]);
+    });
+  });
 });

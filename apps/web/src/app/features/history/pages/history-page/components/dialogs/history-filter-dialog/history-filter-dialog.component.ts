@@ -19,6 +19,11 @@ export interface HistoryListFilterDialogData {
   filters: HistoryFiltersViewModel;
 }
 
+export interface HistoryNotesFilterDialogData {
+  mode: 'notes';
+  filters: HistoryFiltersViewModel;
+}
+
 export interface HistoryCalendarFilterDialogData {
   mode: 'calendar';
   selectedPlanId: string;
@@ -26,7 +31,7 @@ export interface HistoryCalendarFilterDialogData {
   availablePlans: HistoryFilterPlan[];
 }
 
-export type HistoryFilterDialogData = HistoryListFilterDialogData | HistoryCalendarFilterDialogData;
+export type HistoryFilterDialogData = HistoryListFilterDialogData | HistoryNotesFilterDialogData | HistoryCalendarFilterDialogData;
 
 export interface HistoryCalendarFilterResult {
   selectedPlanId: string;
@@ -94,7 +99,7 @@ export class HistoryFilterDialogComponent implements OnInit {
       });
     }
 
-    if (this.data.mode === 'list') {
+    if (this.data.mode === 'list' || this.data.mode === 'notes') {
       this.filterForm = this.fb.group({
         selectedPlanId: [this.data.filters.selectedPlanId],
         pageSize: [this.data.filters.pageSize],
@@ -135,7 +140,7 @@ export class HistoryFilterDialogComponent implements OnInit {
       this.dialogRef.close(result);
     }
 
-    if (this.data.mode === 'list') {
+    if (this.data.mode === 'list' || this.data.mode === 'notes') {
       const result: HistoryFiltersViewModel = {
         selectedPlanId: formValue.selectedPlanId,
         dateRange: this.dateRange,

@@ -1,0 +1,12 @@
+:host {
+  /*
+   * Material sizes a tab link from its own token, and the default 48px has no room for an icon
+   * above a label. Raising the token keeps the links, the ink bar and the header in step.
+   */
+  --mat-tab-container-height: var(--txg-tabs-bar-height);
+
+  ::ng-deep .mat-mdc-tab-link .mdc-tab__text-label {
+    /* The label slot centres a single line; the stacked icon and text need a column instead. */
+    display: flex;
+  }
+}

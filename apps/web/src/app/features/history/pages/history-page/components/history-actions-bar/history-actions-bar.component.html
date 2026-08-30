@@ -11,22 +11,11 @@
         data-cy="history-paginator">
       </mat-paginator>
     }
-    @if (viewMode === 'calendar') {
-      <!-- The calendar scrolls by month instead of paginating; the left slot names the filtered plan. -->
+    @if (viewMode !== 'list') {
+      <!-- Neither the calendar nor the notes paginate; the left slot names the filtered plan. -->
       <span class="px-2 text-sm text-on-surface-variant truncate" data-cy="history-calendar-plan-name">{{ planName }}</span>
     }
     <div class="flex flex-row items-center">
-      <button
-        mat-icon-button
-        (click)="onViewToggleClicked()"
-        data-cy="history-view-toggle">
-        @if (viewMode === 'list') {
-          <mat-icon>calendar_month</mat-icon>
-        }
-        @if (viewMode === 'calendar') {
-          <mat-icon>list</mat-icon>
-        }
-      </button>
       <button mat-icon-button (click)="onFilterClicked()" data-cy="history-filter-button">
         <mat-icon>filter_list</mat-icon>
       </button>

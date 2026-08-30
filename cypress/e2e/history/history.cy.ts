@@ -216,19 +216,54 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.location('search').should('contain', 'view=calendar');
 
       // Switching to the list is remembered across visits...
-      cy.getBySel(dataCy.history.viewToggle).click();
+      cy.getBySel(dataCy.history.tabs.list).click();
       cy.getBySel(dataCy.history.sessionList).should('exist');
       cy.getBySel(dataCy.history.paginator).should('exist');
       cy.visit('/history');
       cy.getBySel(dataCy.history.sessionList).should('exist');
       cy.location('search').should('contain', 'view=list');
 
+      // ...and so is switching on to the notes. The seeded plan carries no notes, so the tab's
+      // own selected state stands in for the view rather than a note card.
+      cy.getBySel(dataCy.history.tabs.notes).click();
+      cy.getBySel(dataCy.history.tabs.notes).should('have.attr', 'aria-selected', 'true');
+      cy.visit('/history');
+      cy.getBySel(dataCy.history.tabs.notes).should('have.attr', 'aria-selected', 'true');
+      cy.location('search').should('contain', 'view=notes');
+
       // ...and so is switching back to the calendar.
-      cy.getBySel(dataCy.history.viewToggle).click();
+      cy.getBySel(dataCy.history.tabs.calendar).click();
       cy.getBySel(dataCy.history.calendar).should('exist');
       cy.visit('/history');
       cy.getBySel(dataCy.history.calendar).should('exist');
       cy.location('search').should('contain', 'view=calendar');
+    });
+  });
+
+  describe('when using the notes view', () => {
+    it('lists only the sessions carrying a note', { tags: ['HIST-16'] }, () => {
+      stubHistoryApi();
+      cy.visit('/history?view=notes');
+
+      // The fixture holds 15 completed sessions, one of which has a note.
+      cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
+      cy.getBySel(dataCy.history.noteCardText).should('have.text', 'Tough workout, felt tired.');
+    });
+
+    it('navigates to the session when tapping a note', { tags: ['HIST-17'] }, () => {
+      stubHistoryApi();
+      cy.visit('/history?view=notes');
+
+      cy.getBySel(dataCy.history.noteCard).first().click();
+
+      cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000015');
+    });
+
+    it('shows the empty state notice when no session in range has a note', { tags: ['HIST-18'] }, () => {
+      cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
+      cy.visit('/history?view=notes');
+
+      cy.getBySel(dataCy.history.notesEmptyNotice).should('exist');
     });
   });
 });

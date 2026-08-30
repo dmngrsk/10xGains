@@ -1,37 +1,52 @@
 <txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center px-4 min-h-[var(--txg-history-page-viewport)]" [class.py-4]="viewModel().viewMode === 'list'">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.isLoading || pageRecentlyChanged()) {
-        <div class="flex justify-center items-center min-h-[var(--txg-history-page-viewport)]">
-          <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
-        </div>
-      } @else if (viewModel.error) {
-        <txg-notice
-          [descriptionText]="viewModel.error!"
-          buttonText="Try Again"
-          (buttonClicked)="onErrorButtonClicked()"
-          [isError]="true"
-          data-cy="history-error-notice">
-        </txg-notice>
-      } @else if (viewModel.viewMode === 'calendar') {
-        <div class="w-full max-w-100 mx-auto h-[var(--txg-history-calendar-viewport)]" data-cy="history-calendar-view">
-          <txg-history-calendar
-            [sessions]="viewModel.calendarSessions"
-            [month]="viewModel.calendarMonth"
-            (monthChanged)="onMonthChanged($event)"
-            (dayClicked)="onDayClicked($event)">
-          </txg-history-calendar>
-        </div>
-      } @else if (viewModel.viewMode === 'list') {
-        <txg-history-list
-          class="contents"
-          [sessions]="viewModel.sessions"
-          (sessionNavigated)="onSessionNavigated($event)"
-          (notesClicked)="onNotesClicked($event)"
-          (editFiltersClicked)="onFilterButtonClicked()">
-        </txg-history-list>
+  <txg-history-tabs
+    [viewMode]="viewModel().viewMode"
+    (viewModeChanged)="onViewModeChanged($event)">
+  </txg-history-tabs>
+
+  <!-- The offset lives on its own wrapper so no view's padding can compete with it. -->
+  <div class="pt-[var(--txg-history-content-offset)]">
+    <div class="flex justify-center px-4 min-h-[var(--txg-history-page-viewport)]" [class.py-4]="viewModel().viewMode !== 'calendar'">
+      @if (viewModel(); as viewModel) {
+        @if (viewModel.isLoading || pageRecentlyChanged()) {
+          <div class="flex justify-center items-center min-h-[var(--txg-history-page-viewport)]">
+            <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
+          </div>
+        } @else if (viewModel.error) {
+          <txg-notice
+            [descriptionText]="viewModel.error!"
+            buttonText="Try Again"
+            (buttonClicked)="onErrorButtonClicked()"
+            [isError]="true"
+            data-cy="history-error-notice">
+          </txg-notice>
+        } @else if (viewModel.viewMode === 'calendar') {
+          <div class="w-full max-w-100 mx-auto h-[var(--txg-history-calendar-viewport)]" data-cy="history-calendar-view">
+            <txg-history-calendar
+              [sessions]="viewModel.calendarSessions"
+              [month]="viewModel.calendarMonth"
+              (monthChanged)="onMonthChanged($event)"
+              (dayClicked)="onDayClicked($event)">
+            </txg-history-calendar>
+          </div>
+        } @else if (viewModel.viewMode === 'list') {
+          <txg-history-list
+            class="contents"
+            [sessions]="viewModel.sessions"
+            (sessionNavigated)="onSessionNavigated($event)"
+            (notesClicked)="onNotesClicked($event)"
+            (editFiltersClicked)="onFilterButtonClicked()">
+          </txg-history-list>
+        } @else if (viewModel.viewMode === 'notes') {
+          <txg-history-notes
+            class="contents"
+            [sessions]="viewModel.noteSessions"
+            (sessionNavigated)="onSessionNavigated($event)"
+            (editFiltersClicked)="onFilterButtonClicked()">
+          </txg-history-notes>
+        }
       }
-    }
+    </div>
   </div>
 
   <txg-history-actions-bar
@@ -43,7 +58,6 @@
     [viewMode]="viewModel().viewMode"
     (pageChanged)="onPageChanged($event)"
     (filterButtonClicked)="onFilterButtonClicked()"
-    (viewModeChanged)="onViewModeChanged($event)"
     data-cy="history-actions-bar">
   </txg-history-actions-bar>
 </txg-main-layout>

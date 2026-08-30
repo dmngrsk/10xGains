@@ -7,8 +7,16 @@ export const historySelectors = {
   filterButton: 'history-filter-button',
   emptyNotice: 'history-empty-notice',
   errorNotice: 'history-error-notice',
-  viewToggle: 'history-view-toggle',
   calendar: 'history-calendar',
+  tabs: {
+    calendar: 'history-tab-calendar',
+    list: 'history-tab-list',
+    notes: 'history-tab-notes',
+  },
+  notesList: 'history-notes-list',
+  noteCard: 'history-note-card',
+  noteCardText: 'history-note-card-text',
+  notesEmptyNotice: 'history-notes-empty-notice',
   filterDialog: {
     applyFiltersButton: 'history-filter-dialog-apply-filters-button',
     monthInput: 'history-filter-dialog-month-input',

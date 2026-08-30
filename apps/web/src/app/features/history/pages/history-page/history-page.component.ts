@@ -24,9 +24,12 @@ import { SessionPickerDialogComponent, SessionPickerDialogData } from './compone
 import { HistoryActionsBarComponent } from './components/history-actions-bar/history-actions-bar.component';
 import { HistoryCalendarComponent } from './components/history-calendar/history-calendar.component';
 import { HistoryListComponent } from './components/history-list/history-list.component';
+import { HistoryNotesComponent } from './components/history-notes/history-notes.component';
+import { HistoryTabsComponent } from './components/history-tabs/history-tabs.component';
 import { HistoryPageFacade } from './history-page.facade';
 
 const VIEW_MODE_STORAGE_KEY = 'txg.history.view-mode';
+const VIEW_MODES: HistoryViewMode[] = ['calendar', 'list', 'notes'];
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 @Component({
@@ -45,6 +48,8 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
     HistoryActionsBarComponent,
     HistoryCalendarComponent,
     HistoryListComponent,
+    HistoryNotesComponent,
+    HistoryTabsComponent,
     NoticeComponent,
   ],
   templateUrl: './history-page.component.html',
@@ -75,7 +80,9 @@ export class HistoryPageComponent implements OnInit {
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     const requestedViewMode = params.has('view') ? params.get('view') : this.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-    const viewMode: HistoryViewMode = requestedViewMode === 'list' ? 'list' : 'calendar';
+    const viewMode: HistoryViewMode = VIEW_MODES.includes(requestedViewMode as HistoryViewMode)
+      ? requestedViewMode as HistoryViewMode
+      : 'calendar';
 
     const monthParam = params.get('month');
     const month = monthParam && MONTH_PARAM_PATTERN.test(monthParam) ? monthParam : format(new Date(), 'yyyy-MM');
@@ -178,6 +185,11 @@ export class HistoryPageComponent implements OnInit {
     if (viewMode === 'list') {
       this.openFilterDialog({ mode: 'list', filters })
         .subscribe(result => this.facade.updateFilters(result as HistoryFiltersViewModel));
+    }
+
+    if (viewMode === 'notes') {
+      this.openFilterDialog({ mode: 'notes', filters })
+        .subscribe(result => this.facade.updateNotesFilters(result as HistoryFiltersViewModel));
     }
   }
 

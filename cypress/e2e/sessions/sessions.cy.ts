@@ -224,7 +224,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       // Open a completed session of the same plan from the history list (the calendar opens by default).
       cy.navigateBack();
       cy.navigateTo('history');
-      cy.getBySel(dataCy.history.viewToggle).click();
+      cy.getBySel(dataCy.history.tabs.list).click();
       cy.getBySel(dataCy.history.sessionCard).first().within(() => {
         cy.getBySel(dataCy.history.sessionNavigateButton).click();
       });

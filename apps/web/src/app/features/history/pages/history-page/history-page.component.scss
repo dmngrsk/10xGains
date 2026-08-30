@@ -1,4 +1,10 @@
 :host {
-  --txg-history-page-viewport: calc(var(--txg-page-viewport) - 0.25rem);
-  --txg-history-calendar-viewport: var(--txg-page-viewport);
+  /* The tabs bar hangs under the top bar; the layout has already padded for the bar itself. */
+  --txg-history-content-offset: calc(
+    var(--txg-top-bar-edge) + var(--txg-tabs-bar-height) - var(--txg-top-bar-height)
+  );
+
+  /* Viewport less the three shared bars and the tabs; the 0.25rem is slack the page has always carried. */
+  --txg-history-page-viewport: calc(var(--txg-page-viewport) - var(--txg-tabs-bar-height) - 0.25rem);
+  --txg-history-calendar-viewport: calc(var(--txg-page-viewport) - var(--txg-tabs-bar-height));
 }

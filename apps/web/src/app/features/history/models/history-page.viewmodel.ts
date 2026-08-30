@@ -1,7 +1,7 @@
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
-export type HistoryViewMode = 'list' | 'calendar';
+export type HistoryViewMode = 'list' | 'calendar' | 'notes';
 
 export interface HistoryPageViewModel {
   filters: HistoryFiltersViewModel;
@@ -11,6 +11,7 @@ export interface HistoryPageViewModel {
   viewMode: HistoryViewMode;
   calendarMonth: string; // 'yyyy-MM'
   calendarSessions: SessionCardViewModel[];
+  noteSessions: SessionCardViewModel[];
   isLoading: boolean;
   error: string | null;
 }

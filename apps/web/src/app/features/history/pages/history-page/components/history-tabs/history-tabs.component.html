@@ -1,0 +1,17 @@
+<div class="fixed top-[var(--txg-top-bar-edge)] left-0 right-0 h-[var(--txg-tabs-bar-height)] bg-surface z-100">
+  <nav mat-tab-nav-bar [tabPanel]="tabPanel" class="txg-content-measure" data-cy="history-tabs">
+    @for (tab of tabs; track tab.mode) {
+      <a
+        mat-tab-link
+        [active]="viewMode === tab.mode"
+        (click)="onTabClicked(tab.mode)"
+        [attr.data-cy]="tab.dataCy">
+        <span class="flex flex-col items-center gap-1">
+          <mat-icon>{{ tab.icon }}</mat-icon>
+          <span class="text-xs">{{ tab.label }}</span>
+        </span>
+      </a>
+    }
+  </nav>
+  <mat-tab-nav-panel #tabPanel></mat-tab-nav-panel>
+</div>
