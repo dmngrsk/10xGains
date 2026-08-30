@@ -1,7 +1,8 @@
 :host {
   /*
    * Material sizes a tab link from its own token, and the default 48px has no room for an icon
-   * above a label. Raising the token keeps the links, the ink bar and the header in step.
+   * above a label. Raising the token keeps the links, the ink bar and the header in step - and
+   * keeps the divider on the bar's own bottom edge, with the icon and label centred between.
    */
   --mat-tab-container-height: var(--txg-tabs-bar-height);
 
