@@ -50,6 +50,75 @@ describe('Session History', { tags: ['@history'] }, () => {
     cy.teardown();
   });
 
+  describe('when using the list view', () => {
+    describe('with completed sessions', () => {
+      beforeEach(() => {
+        cy.visit('/history?view=list');
+      });
+
+      it('shows a completed session in the history list', { tags: ['HIST-01'] }, () => {
+        cy.getBySel(dataCy.history.sessionList).should('exist');
+        cy.getBySel(dataCy.history.sessionCard).should('contain.text', 'Workout A');
+      });
+
+      it('paginates the session history list when more sessions than page size', { tags: ['HIST-02'] }, () => {
+        cy.getBySel(dataCy.history.paginator).should('exist');
+        cy.getBySel(dataCy.history.paginator).find('button[aria-label="Next page"]').click();
+
+        cy.getBySel(dataCy.history.sessionList).getBySel(dataCy.history.sessionCard).should('exist');
+      });
+
+      it('allows filtering by date range', { tags: ['HIST-03'] }, () => {
+        cy.getBySel(dataCy.history.filterButton).click();
+        cy.getBySel(dataCy.shared.dateRange.startInput).clear().type(FILTER_DATE_FROM);
+        cy.getBySel(dataCy.shared.dateRange.endInput).clear().type(FILTER_DATE_TO);
+        cy.getBySel(dataCy.history.filterDialog.applyFiltersButton).click();
+
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', 6); // Filtered by date range.
+      });
+    });
+
+    describe('with no completed sessions or errors', () => {
+      it('shows the empty state notice when no sessions match the filter', { tags: ['HIST-04'] }, () => {
+        cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
+        cy.visit('/history?view=list');
+
+        cy.getBySel(dataCy.history.emptyNotice).should('exist');
+      });
+
+      it('displays an error notice if the session history fails to load', { tags: ['HIST-05'] }, () => {
+        cy.intercept('GET', '**/api/sessions*', { statusCode: 500, fixture: 'shared/common-error.json' });
+        cy.visit('/history?view=list');
+
+        cy.getBySel(dataCy.history.errorNotice).should('exist');
+      });
+
+      it('reloads the session history list when the user clicks the retry button', { tags: ['HIST-06'] }, () => {
+        cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
+        cy.visit('/history?view=list');
+
+        cy.getBySel(dataCy.history.errorNotice).should('exist');
+        cy.getBySel(dataCy.history.errorNotice).find('button').contains('Try Again').click();
+
+        cy.getBySel(dataCy.history.sessionList).should('exist');
+      });
+    });
+
+    describe('with a session note', () => {
+      it('shows a note indicator on the history entry and opens the note from it', { tags: ['HIST-07'] }, () => {
+        stubHistoryApi();
+        cy.visit('/history?view=list');
+
+        cy.getBySel(dataCy.history.sessionCard).first().within(() => {
+          cy.getBySel(dataCy.history.notesButton).should('be.visible').click();
+        });
+        cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Tough workout, felt tired.');
+        cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('not.exist'); // Plan notes are reachable from the session view only.
+      });
+    });
+
+  });
+
   describe('when using the calendar view', () => {
     describe('with completed sessions', () => {
       beforeEach(() => {
@@ -57,17 +126,17 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.visit(`/history?view=calendar&month=${SESSIONS_MONTH}`);
       });
 
-      it('marks session days with dots', { tags: ['HIST-01'] }, () => {
+      it('marks session days with dots', { tags: ['HIST-08'] }, () => {
         cy.getBySel(dataCy.history.calendar).find(`[data-month="${SESSIONS_MONTH}"] .txg-session-day`).should('have.length', 12);
       });
 
-      it('navigates to the session when tapping a single-session day', { tags: ['HIST-02'] }, () => {
+      it('navigates to the session when tapping a single-session day', { tags: ['HIST-09'] }, () => {
         cy.getBySel(dataCy.history.calendar).find(`[data-month="${SESSIONS_MONTH}"] .txg-session-day`).first().click({ scrollBehavior: false });
 
         cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000003');
       });
 
-      it('opens the session picker when tapping a multi-session day', { tags: ['HIST-03'] }, () => {
+      it('opens the session picker when tapping a multi-session day', { tags: ['HIST-10'] }, () => {
         cy.getBySel(dataCy.history.calendar).find('.txg-session-day--multi').click({ scrollBehavior: false });
 
         cy.getBySel(dataCy.history.sessionPickerDialog.content).should('be.visible');
@@ -77,7 +146,7 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.location('pathname').should('eq', '/sessions/66666666-6666-4666-8666-666666666666');
       });
 
-      it('restores the calendar view after navigating back from a session', { tags: ['HIST-04'] }, () => {
+      it('restores the calendar view after navigating back from a session', { tags: ['HIST-11'] }, () => {
         cy.getBySel(dataCy.history.calendar).find(`[data-month="${SESSIONS_MONTH}"] .txg-session-day`).first().click({ scrollBehavior: false });
         cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000003');
 
@@ -94,7 +163,7 @@ describe('Session History', { tags: ['@history'] }, () => {
         stubHistoryApi();
       });
 
-      it('scrolls between months and updates the anchored month', { tags: ['HIST-05'] }, () => {
+      it('scrolls between months and updates the anchored month', { tags: ['HIST-12'] }, () => {
         // The anchored July renders empty while the adjacent June (preloaded with the initial
         // window) carries the dots.
         cy.visit(`/history?view=calendar&month=${EMPTY_MONTH}`);
@@ -110,7 +179,7 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.location('search').should('contain', `month=${SESSIONS_MONTH}`);
       });
 
-      it('offers plan and month selection in the filter dialog and jumps to the picked month', { tags: ['HIST-06'] }, () => {
+      it('offers plan and month selection in the filter dialog and jumps to the picked month', { tags: ['HIST-13'] }, () => {
         cy.visit('/history?view=calendar&month=2026-01'); // June 2025 is outside the initially prefetched window.
 
         cy.getBySel(dataCy.history.filterButton).click();
@@ -129,7 +198,7 @@ describe('Session History', { tags: ['@history'] }, () => {
     });
 
     describe('with loading errors', () => {
-      it('displays an error notice and recovers via the retry button', { tags: ['HIST-07'] }, () => {
+      it('displays an error notice and recovers via the retry button', { tags: ['HIST-14'] }, () => {
         cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
         cy.navigateTo('history');
 
@@ -139,75 +208,6 @@ describe('Session History', { tags: ['@history'] }, () => {
         cy.getBySel(dataCy.history.calendar).should('exist');
       });
     });
-  });
-
-  describe('when using the list view', () => {
-    describe('with completed sessions', () => {
-      beforeEach(() => {
-        cy.visit('/history?view=list');
-      });
-
-      it('shows a completed session in the history list', { tags: ['HIST-08'] }, () => {
-        cy.getBySel(dataCy.history.sessionList).should('exist');
-        cy.getBySel(dataCy.history.sessionCard).should('contain.text', 'Workout A');
-      });
-
-      it('paginates the session history list when more sessions than page size', { tags: ['HIST-09'] }, () => {
-        cy.getBySel(dataCy.history.paginator).should('exist');
-        cy.getBySel(dataCy.history.paginator).find('button[aria-label="Next page"]').click();
-
-        cy.getBySel(dataCy.history.sessionList).getBySel(dataCy.history.sessionCard).should('exist');
-      });
-
-      it('allows filtering by date range', { tags: ['HIST-10'] }, () => {
-        cy.getBySel(dataCy.history.filterButton).click();
-        cy.getBySel(dataCy.shared.dateRange.startInput).clear().type(FILTER_DATE_FROM);
-        cy.getBySel(dataCy.shared.dateRange.endInput).clear().type(FILTER_DATE_TO);
-        cy.getBySel(dataCy.history.filterDialog.applyFiltersButton).click();
-
-        cy.getBySel(dataCy.history.sessionCard).should('have.length', 6); // Filtered by date range.
-      });
-    });
-
-    describe('with no completed sessions or errors', () => {
-      it('shows the empty state notice when no sessions match the filter', { tags: ['HIST-11'] }, () => {
-        cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
-        cy.visit('/history?view=list');
-
-        cy.getBySel(dataCy.history.emptyNotice).should('exist');
-      });
-
-      it('displays an error notice if the session history fails to load', { tags: ['HIST-12'] }, () => {
-        cy.intercept('GET', '**/api/sessions*', { statusCode: 500, fixture: 'shared/common-error.json' });
-        cy.visit('/history?view=list');
-
-        cy.getBySel(dataCy.history.errorNotice).should('exist');
-      });
-
-      it('reloads the session history list when the user clicks the retry button', { tags: ['HIST-13'] }, () => {
-        cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
-        cy.visit('/history?view=list');
-
-        cy.getBySel(dataCy.history.errorNotice).should('exist');
-        cy.getBySel(dataCy.history.errorNotice).find('button').contains('Try Again').click();
-
-        cy.getBySel(dataCy.history.sessionList).should('exist');
-      });
-    });
-
-    describe('with a session note', () => {
-      it('shows a note indicator on the history entry and opens the note from it', { tags: ['HIST-14'] }, () => {
-        stubHistoryApi();
-        cy.visit('/history?view=list');
-
-        cy.getBySel(dataCy.history.sessionCard).first().within(() => {
-          cy.getBySel(dataCy.history.notesButton).should('be.visible').click();
-        });
-        cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Tough workout, felt tired.');
-        cy.getBySel(dataCy.sessions.dialogs.notes.planInput).should('not.exist'); // Plan notes are reachable from the session view only.
-      });
-    });
-
   });
 
   describe('when using the notes view', () => {
