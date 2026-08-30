@@ -115,6 +115,12 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.settings.account.changePasswordDialog.confirmPasswordInput).type('Password123!');
       cy.getBySel(dataCy.settings.account.changePasswordDialog.submitButton).click();
       cy.getBySel(dataCy.settings.account.changePasswordDialog.content).should('not.exist');
+
+      // The dialog closes first and the request goes out on its afterClosed, so the dialog being
+      // gone says nothing about the password having changed. Wait for the confirmation, or the
+      // sign-out below races the update and the new password is not yet the one to sign in with.
+      cy.getMatSnackBar().should('contain.text', 'Password changed successfully');
+
       cy.getBySel(dataCy.settings.account.signOutButton).click();
 
       cy.get('@email').then((userEmail) => {
