@@ -46,7 +46,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
 
       // Filters are applied on the dialog's afterClosed, so wait for the summary to catch up -
       // reopening the dialog before then would hand it the previous range.
-      cy.getBySel(dataCy.progress.filterSummary).should('contain.text', 'All time');
+      cy.getBySel(dataCy.progress.filterRange).should('contain.text', 'All time');
     });
 
     it('renders the chart with one chip per exercise of the plan', { tags: ['PROG-01'] }, () => {
@@ -57,7 +57,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
       cy.getBySel(dataCy.progress.exerciseChip).eq(1).should('contain.text', 'Bench Press');
       cy.getBySel(dataCy.progress.exerciseChip).eq(2).should('contain.text', 'Deadlift');
 
-      cy.getBySel(dataCy.progress.filterSummary).should('contain.text', 'All time');
+      cy.getBySel(dataCy.progress.filterRange).should('contain.text', 'All time');
     });
 
     it('toggles a series when its exercise chip is clicked', { tags: ['PROG-02'] }, () => {
@@ -72,7 +72,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
     });
 
     it('allows widening the scope to all training plans', { tags: ['PROG-03'] }, () => {
-      cy.getBySel(dataCy.progress.filterSummary).should('contain.text', 'Test Training Plan');
+      cy.getBySel(dataCy.progress.filterPlan).should('contain.text', 'Test Training Plan');
 
       cy.getBySel(dataCy.progress.filterButton).click();
       cy.getBySel(dataCy.progress.filterDialog.planSelect).click();
@@ -81,7 +81,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
       cy.getBySel(dataCy.shared.dateRange.presetOption).contains('All time').click();
       cy.getBySel(dataCy.progress.filterDialog.applyFiltersButton).click();
 
-      cy.getBySel(dataCy.progress.filterSummary).should('contain.text', 'All plans');
+      cy.getBySel(dataCy.progress.filterPlan).should('contain.text', 'All plans');
       cy.getBySel(dataCy.progress.exerciseChip).should('have.length', 3);
 
       // Reopening must still show the choice: a mat-select clears its trigger if the
