@@ -73,6 +73,7 @@ alias_port "${TXG_API_PORT:-7071}" 7071
 alias_port "${TXG_SUPABASE_PORT:-54321}" 54321
 alias_port "${TXG_STUDIO_PORT:-54323}" 54323
 alias_port "${TXG_MAIL_PORT:-54324}" 54324
+alias_port "${TXG_VNC_PORT:-6080}" 6080
 
 # Cypress runs Electron, which needs an X server. The container inherits the host's DISPLAY
 # (WSLg passthrough) with no socket behind it, and a set-but-dead DISPLAY keeps Cypress from
@@ -82,7 +83,7 @@ alias_port "${TXG_MAIL_PORT:-54324}" 54324
 # that would otherwise suppress the relaunch forever.
 XVFB_DISPLAY="${DISPLAY:-:0}"
 XVFB_DISPLAY="${XVFB_DISPLAY%%.*}"
-XVFB_COMMAND="Xvfb ${XVFB_DISPLAY} -screen 0 1280x800x24"
+XVFB_COMMAND="Xvfb ${XVFB_DISPLAY} -screen 0 1600x1000x24"
 case "$XVFB_DISPLAY" in
   :[0-9]*)
     if ! pgrep -fx "$XVFB_COMMAND" >/dev/null; then
@@ -101,6 +102,36 @@ case "$XVFB_DISPLAY" in
     echo "DISPLAY='${DISPLAY:-}' is not a local ':N' display; skipping Xvfb for Cypress." >&2
     ;;
 esac
+
+# `cypress run` is happy drawing into the framebuffer above, but `cypress open` puts a window
+# there that nobody can see. Export the same display over the browser: fluxbox to place and
+# resize the runner window, x11vnc to serve the framebuffer, and noVNC to put a client in
+# front of it. Both servers bind loopback only; the published port decides who can reach them.
+#
+# Guard on the port rather than the process name. websockify runs as a python script, so its
+# name is the interpreter's for part of its startup, and a name guard loses that race and
+# stacks a second copy on the same port at every container start.
+start_viewer() {
+  local port="$1"; shift
+
+  if ss -ltn "sport = :${port}" | grep -q LISTEN; then
+    return 0
+  fi
+
+  nohup "$@" >/dev/null 2>&1 &
+}
+
+if [ -S "/tmp/.X11-unix/X${XVFB_DISPLAY#:}" ]; then
+  # fluxbox owns no port; it is only here so the runner window can be placed and resized.
+  if ! pgrep -x fluxbox >/dev/null; then
+    nohup fluxbox -display "$XVFB_DISPLAY" >/dev/null 2>&1 &
+  fi
+  # x11vnc bails out when WAYLAND_DISPLAY is set - it assumes a Wayland session it cannot
+  # read - and the container inherits the editor's. Drop it for this process only.
+  start_viewer 5900 env -u WAYLAND_DISPLAY x11vnc -display "$XVFB_DISPLAY" -localhost -nopw -forever -shared -quiet -rfbport 5900
+  start_viewer 6080 websockify --web /usr/share/novnc 6080 127.0.0.1:5900
+  echo "Watch \`pnpm e2e\` at http://localhost:${TXG_VNC_PORT:-6080}/vnc.html - leave the tab open."
+fi
 
 # Point the three gitignored config files at the running stack (fresh keys on every recreate,
 # hence every start). Only the derived values are rewritten; other lines a developer added
