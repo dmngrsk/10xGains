@@ -4,9 +4,9 @@ FROM node:24.18.0-bookworm
 # socat backs the port aliases in post-start.sh, iproute2 provides `ss` for their
 # liveness check, and the libraries below are Cypress's runtime dependencies on Debian.
 #
-# Xvfb is a framebuffer with no screen attached, which is all `cypress run` needs. To also
-# watch `cypress open`, fluxbox gives its window a manager to be placed and resized by, and
-# x11vnc plus noVNC export that framebuffer over the browser - see post-start.sh.
+# xvfb is here for Cypress to start on its own, which it does whenever DISPLAY is unset - a
+# container nobody has attached an editor to, for instance. Nothing here runs it; when the
+# editor forwards a display in, Cypress uses that and never touches Xvfb.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         iproute2 \
@@ -22,10 +22,6 @@ RUN apt-get update \
         libxtst6 \
         xauth \
         xvfb \
-        fluxbox \
-        novnc \
-        websockify \
-        x11vnc \
     && rm -rf /var/lib/apt/lists/*
 
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0

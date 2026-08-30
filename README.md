@@ -79,7 +79,6 @@ Each container runs a full Supabase stack, so two containers cannot both publish
 | `TXG_SUPABASE_PORT` | `54321` | `54421`     | Supabase API          |
 | `TXG_STUDIO_PORT`   | `54323` | `54423`     | Supabase Studio       |
 | `TXG_MAIL_PORT`     | `54324` | `54424`     | Mailpit               |
-| `TXG_VNC_PORT`      | `6080`  | `6180`      | Cypress runner viewer |
 
 ### Host Setup
 
@@ -199,7 +198,7 @@ Below are the most important scripts defined in `package.json`.
 
 - `pnpm e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
 
-  > **In the dev container**, the runner is a native window and the container's only display is a headless framebuffer, so nothing reaches your screen on its own. `post-start.sh` publishes that framebuffer over noVNC: open `http://localhost:6080/vnc.html` once and leave the tab open, and every `pnpm e2e` from then on appears in it. `pnpm e2e:run` needs none of this.
+  > **In the dev container** this needs no setup: VS Code forwards the host's X11 socket in, so the runner opens as a native window on your desktop (through WSLg on Windows). If it ever opens blind, check that `DISPLAY` names a socket something is actually serving - a dead `DISPLAY` also stops Cypress from starting the Xvfb it would otherwise fall back to, which is what `pnpm e2e:run` relies on when no display exists at all.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 
