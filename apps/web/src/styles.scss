@@ -73,6 +73,13 @@ $material-color-role-tokens: (
   --txg-top-bar-edge: 3.5rem;
 }
 
+/* Above that breakpoint the toolbar is its full height, and what hangs below it has to follow. */
+@media (min-width: 600px) {
+  :root {
+    --txg-top-bar-edge: var(--txg-top-bar-height);
+  }
+}
+
 /* Applied as a class binding, since only some pages carry the bottom navigation. */
 .txg-bottom-nav-offset {
   padding-bottom: var(--txg-bottom-nav-height);
@@ -100,6 +107,16 @@ $material-color-role-tokens: (
 .txg-fab.txg-fab {
   width: 48px;
   height: 48px;
+}
+
+/*
+ * The same FAB, switched on: filled with the primary colour instead of its container tint. Set
+ * through Material's own tokens, which is all a Material 3 FAB takes its colours from - there is
+ * no palette class to hand it instead.
+ */
+.txg-fab-active {
+  --mat-fab-small-container-color: var(--mat-sys-primary);
+  --mat-fab-small-foreground-color: var(--mat-sys-on-primary);
 }
 
 /*
