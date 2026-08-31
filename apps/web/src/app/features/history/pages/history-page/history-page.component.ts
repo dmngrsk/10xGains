@@ -16,6 +16,7 @@ import { HistoryFiltersViewModel, HistoryPageViewModel, HistoryViewMode } from '
 import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '@features/sessions/components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { LocalStorageService } from '@shared/services/local-storage.service';
+import { NavigationHistoryService } from '@shared/services/navigation-history.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HistoryCalendarFilterResult, HistoryFilterDialogComponent, HistoryFilterDialogData, HistoryFilterDialogResult } from './components/dialogs/history-filter-dialog/history-filter-dialog.component';
@@ -50,7 +51,6 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
   ],
   templateUrl: './history-page.component.html',
   styleUrl: './history-page.component.scss',
-  providers: [HistoryPageFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryPageComponent implements OnInit {
@@ -61,6 +61,7 @@ export class HistoryPageComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly localStorage = inject(LocalStorageService);
+  private readonly navigationHistory = inject(NavigationHistoryService);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
@@ -78,6 +79,14 @@ export class HistoryPageComponent implements OnInit {
 
     this.facade.seedViewState(viewMode, month);
     this.syncViewQueryParams();
+
+    // Coming back to the page the user left, with the view and month they left it on, is the one
+    // case where what the facade holds is what belongs on screen. Any other arrival - a tab, a
+    // link, a reload - reloads, so a session finished elsewhere is not missed.
+    if (this.navigationHistory.isPopState && this.facade.isLoaded()) {
+      return;
+    }
+
     this.facade.loadHistoryPageData();
   }
 

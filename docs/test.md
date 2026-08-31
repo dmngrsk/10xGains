@@ -189,6 +189,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | *&nbsp;&nbsp;empty and errors* | HIST-17 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
 |  | HIST-18 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
 | **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-19 | Without a view parameter, the calendar opens by default; each view picked from the tabs (list, then notes, then calendar again) is restored on revisits. | Medium | No |
+|  | HIST-20 | Returning from a session with the back control restores the view that was left, the pages already scrolled through, and the scroll position. | High | No |
 | **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 |  | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
 | *&nbsp;&nbsp;filtering* | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |

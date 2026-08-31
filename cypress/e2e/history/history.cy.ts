@@ -285,4 +285,30 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.location('search').should('contain', 'view=calendar');
     });
   });
+
+  describe('when returning from a session', () => {
+    it('restores the list as it was left', { tags: ['HIST-20'] }, () => {
+      // Arrive the way a user does, so the app has history of its own to go back through.
+      cy.visit('/home');
+      cy.navigateTo('history');
+      cy.getBySel(dataCy.history.tabs.list).click();
+      cy.getBySel(dataCy.history.sessionList).should('exist');
+      cy.getBySel(dataCy.history.loadMoreSentinel).scrollIntoView();
+      cy.getBySel(dataCy.history.sessionCard).should('have.length.greaterThan', 10);
+      cy.get('.overflow-y-auto').first().scrollTo('bottom');
+
+      cy.getBySel(dataCy.history.sessionCard).its('length').then((loaded) => {
+        cy.getBySel(dataCy.history.sessionNavigateButton).last().click();
+        cy.location('pathname').should('include', '/sessions/');
+
+        cy.navigateBack();
+
+        // The view the user left, not the one their last tab tap happened to store.
+        cy.location('search').should('contain', 'view=list');
+        // Every page they had scrolled through, still there, and still where they were.
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', loaded);
+        cy.get('.overflow-y-auto').first().invoke('scrollTop').should('be.greaterThan', 0);
+      });
+    });
+  });
 });

@@ -64,6 +64,8 @@ export class HistoryPageFacade {
   private readonly pendingCalendarMonths = new Set<string>();
 
   private listNeedsReload = false;
+  // Whether the view models hold a loaded page rather than their initial emptiness.
+  private loaded = false;
   // Unlike the list, the notes view is never loaded up front, so it starts stale.
   private notesNeedReload = true;
 
@@ -77,6 +79,11 @@ export class HistoryPageFacade {
         filters: { ...vm.filters, selectedPlanId: persisted.selectedPlanId, dateRange: persisted.dateRange }
       }));
     }
+  }
+
+  /** Whether the page can be shown from what is already held, without loading it again. */
+  isLoaded(): boolean {
+    return this.loaded;
   }
 
   loadHistoryPageData(): void {
@@ -120,6 +127,7 @@ export class HistoryPageFacade {
           }
         }));
 
+        this.loaded = true;
         this.loadActiveViewSessions();
       }),
       catchError((error: Error) => {
@@ -510,6 +518,7 @@ export class HistoryPageFacade {
     this.internalExercises.set([]);
     this.listNeedsReload = true;
     this.notesNeedReload = true;
+    this.loaded = false;
     this.viewModel.set(initialHistoryPageViewModel);
   }
 

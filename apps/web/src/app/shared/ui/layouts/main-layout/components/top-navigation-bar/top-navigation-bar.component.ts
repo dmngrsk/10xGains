@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
 import { EnvironmentService } from '@shared/services/environment.service';
+import { NavigationHistoryService } from '@shared/services/navigation-history.service';
 
 @Component({
   selector: 'txg-top-navigation-bar',
@@ -25,6 +26,7 @@ export class TopNavigationBarComponent {
   private router = inject(Router);
   private location = inject(Location);
   private environmentService: EnvironmentService = inject(EnvironmentService);
+  private navigationHistory = inject(NavigationHistoryService);
 
   readonly showBackNavigation: Signal<boolean> = computed(() => {
     return !!this.backNavigation;
@@ -43,10 +45,19 @@ export class TopNavigationBarComponent {
   }
 
   onNavigateBack(): void {
+    // Going back restores the page the user left - its view, its month, its filters - where
+    // navigating to `backNavigation` drops all of that and lands on a bare route. The path is
+    // the fallback for arriving with no history of ours behind us: a deep link, or a fresh tab.
+    if (this.navigationHistory.canGoBack) {
+      this.location.back();
+      return;
+    }
+
     if (this.backNavigation) {
       this.router.navigate([this.backNavigation]);
-    } else {
-      this.location.back();
+      return;
     }
+
+    this.location.back();
   }
 }
