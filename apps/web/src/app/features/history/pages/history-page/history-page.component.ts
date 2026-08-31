@@ -28,7 +28,7 @@ import { HistoryPageFacade } from './history-page.facade';
 
 const VIEW_MODE_STORAGE_KEY = 'txg.history.view-mode';
 const NOTES_ONLY_STORAGE_KEY = 'txg.history.notes-only';
-const VIEW_MODES: HistoryViewMode[] = ['calendar', 'list'];
+const VIEW_MODES: HistoryViewMode[] = ['list', 'calendar'];
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 @Component({
@@ -73,9 +73,10 @@ export class HistoryPageComponent implements OnInit {
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     const requestedViewMode = params.has('view') ? params.get('view') : this.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+    // The first tab of the strip, so a first visit opens where the strip says it starts.
     const viewMode: HistoryViewMode = VIEW_MODES.includes(requestedViewMode as HistoryViewMode)
       ? requestedViewMode as HistoryViewMode
-      : 'calendar';
+      : 'list';
 
     const monthParam = params.get('month');
     const month = monthParam && MONTH_PARAM_PATTERN.test(monthParam) ? monthParam : format(new Date(), 'yyyy-MM');

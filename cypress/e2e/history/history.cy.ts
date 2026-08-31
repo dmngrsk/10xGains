@@ -203,7 +203,7 @@ describe('Session History', { tags: ['@history'] }, () => {
     describe('with loading errors', () => {
       it('displays an error notice and recovers via the retry button', { tags: ['HIST-14'] }, () => {
         cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
-        cy.navigateTo('history');
+        cy.visit('/history?view=calendar');
 
         cy.getBySel(dataCy.history.errorNotice).should('exist');
         cy.getBySel(dataCy.history.errorNotice).find('button').contains('Try Again').click();
@@ -268,20 +268,13 @@ describe('Session History', { tags: ['@history'] }, () => {
 
   describe('when switching views', () => {
     it('remembers the last used view without a query parameter', { tags: ['HIST-20'] }, () => {
-      // Without a stored value, the calendar is the default.
+      // Without a stored value, the list is the default - the strip's own first tab.
       cy.navigateTo('history');
-      cy.getBySel(dataCy.history.calendar).should('exist');
-      cy.getBySel(dataCy.history.sessionList).should('not.exist');
-      cy.location('search').should('contain', 'view=calendar');
-
-      // Switching to the list is remembered across visits...
-      cy.getBySel(dataCy.history.tabs.list).click();
       cy.getBySel(dataCy.history.sessionList).should('exist');
-      cy.visit('/history');
-      cy.getBySel(dataCy.history.sessionList).should('exist');
+      cy.getBySel(dataCy.history.calendar).should('not.exist');
       cy.location('search').should('contain', 'view=list');
 
-      // ...and so is narrowing that list to the sessions carrying a note.
+      // Narrowing that list to the sessions carrying a note is remembered across visits...
       cy.getBySel(dataCy.history.notesToggleButton).click();
       cy.location('search').should('contain', 'notes=1');
       cy.visit('/history');
@@ -289,12 +282,19 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.getBySel(dataCy.history.notesToggleButton).should('have.attr', 'aria-pressed', 'true');
       cy.getBySel(dataCy.history.notesToggleButton).click();
 
-      // ...and so is switching back to the calendar.
+      // ...and so is switching to the calendar.
       cy.getBySel(dataCy.history.tabs.calendar).click();
       cy.getBySel(dataCy.history.calendar).should('exist');
       cy.visit('/history');
       cy.getBySel(dataCy.history.calendar).should('exist');
       cy.location('search').should('contain', 'view=calendar');
+
+      // ...and so is switching back to the list.
+      cy.getBySel(dataCy.history.tabs.list).click();
+      cy.getBySel(dataCy.history.sessionList).should('exist');
+      cy.visit('/history');
+      cy.getBySel(dataCy.history.sessionList).should('exist');
+      cy.location('search').should('contain', 'view=list');
     });
   });
 

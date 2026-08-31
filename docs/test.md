@@ -55,7 +55,7 @@ The following features and components are within the scope of testing:
     *   Creating, editing, and clearing session notes and plan notes (save on dialog close via 'Save' or backdrop click).
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
-    *   Two views - calendar and list - chosen from the tab strip, with the last used view remembered between visits.
+    *   Two views - list and calendar - chosen from the tab strip, the list opening by default, with the last used view remembered between visits.
     *   Viewing a list of completed sessions, which loads a further page each time its end is scrolled to.
     *   Browsing completed sessions by month in the calendar, including days holding more than one session.
     *   Narrowing the list to the sessions carrying a note, from the notes toggle, which shows each note in place of the workout the card would otherwise summarise.
@@ -189,7 +189,7 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 |  | HIST-17 | Switching the notes toggle back off restores the full, paged list. | Medium | No |
 | *&nbsp;&nbsp;empty and errors* | HIST-18 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
 |  | HIST-19 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
-| **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-20 | Without a view parameter, the calendar opens by default; the view picked from the tabs and the notes toggle's state are both restored on revisits. | Medium | No |
+| **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-20 | Without a view parameter, the list opens by default; the view picked from the tabs and the notes toggle's state are both restored on revisits. | Medium | No |
 |  | HIST-21 | Returning from a session with the back control restores the view that was left, the pages already scrolled through, and the scroll position. | High | No |
 | **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 |  | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
