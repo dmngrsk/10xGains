@@ -45,9 +45,6 @@ export class TopNavigationBarComponent {
   }
 
   onNavigateBack(): void {
-    // Going back restores the page the user left - its view, its month, its filters - where
-    // navigating to `backNavigation` drops all of that and lands on a bare route. The path is
-    // the fallback for arriving with no history of ours behind us: a deep link, or a fresh tab.
     if (this.navigationHistory.canGoBack) {
       this.location.back();
       return;

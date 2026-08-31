@@ -35,7 +35,6 @@
         }
       } @else {
         <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
-          <!-- Reads as the session view's header does: what you are looking at, then its scope. -->
           <div class="flex flex-col">
             <p class="text-xl font-bold text-primary truncate" data-cy="progress-filter-plan">{{ filterPlanName() }}</p>
             <p class="text-sm text-primary truncate" data-cy="progress-filter-range">{{ filterDateRange() }}</p>
@@ -45,7 +44,6 @@
             [series]="selectedSeries()"
             [showPlanName]="isAllPlansSelected()">
           </txg-progress-chart>
-          <!-- Padded clear of the filter FAB, which shares the row the chips sit on. -->
           <txg-exercise-chip-row
             class="block pr-16"
             [exercises]="viewModel.series"

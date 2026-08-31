@@ -1,12 +1,6 @@
 :host {
-  /*
-   * Material sizes a tab link from its own token, and the default 48px has no room for an icon
-   * above a label. Raising the token keeps the links, the ink bar and the header in step - and
-   * keeps the divider on the bar's own bottom edge, with the icon and label centred between.
-   */
   --mat-tab-container-height: var(--txg-tabs-bar-height);
 
-  /* The same primary/outline pairing the bottom navigation uses for its own selected state. */
   --mat-tab-active-label-text-color: var(--color-primary);
   --mat-tab-active-hover-label-text-color: var(--color-primary);
   --mat-tab-active-focus-label-text-color: var(--color-primary);
@@ -15,7 +9,6 @@
   --mat-tab-inactive-focus-label-text-color: var(--color-outline);
 
   ::ng-deep .mat-mdc-tab-link .mdc-tab__text-label {
-    /* The label slot centres a single line; the stacked icon and text need a column instead. */
     display: flex;
   }
 }

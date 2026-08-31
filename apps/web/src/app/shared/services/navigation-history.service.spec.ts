@@ -9,7 +9,6 @@ describe('NavigationHistoryService', () => {
   let service: NavigationHistoryService;
   let nextId: number;
 
-  /** One navigation the user starts themselves: a link, a redirect, or the first load. */
   function navigate(url: string): number {
     const id = nextId++;
     events.next(new NavigationStart(id, url, 'imperative'));
@@ -17,7 +16,6 @@ describe('NavigationHistoryService', () => {
     return id;
   }
 
-  /** One history step, back or forward: the browser restores the entry `entryId` created. */
   function popTo(url: string, entryId: number): void {
     const id = nextId++;
     events.next(new NavigationStart(id, url, 'popstate', { navigationId: entryId }));

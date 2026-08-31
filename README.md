@@ -197,8 +197,6 @@ Below are the most important scripts defined in `package.json`.
 #### End-to-End Tests (Cypress)
 
 - `pnpm e2e` - Opens the interactive Cypress Test Runner, allowing you to watch tests run in a browser and debug them visually.
-
-  > **In the dev container** this needs no setup: VS Code forwards the host's X11 socket in, so the runner opens as a native window on your desktop (through WSLg on Windows). If it ever opens blind, check that `DISPLAY` names a socket something is actually serving - a dead `DISPLAY` also stops Cypress from starting the Xvfb it would otherwise fall back to, which is what `pnpm e2e:run` relies on when no display exists at all.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 

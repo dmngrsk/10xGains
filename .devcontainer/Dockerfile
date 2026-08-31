@@ -1,12 +1,5 @@
-# Pinned to the exact version in .nvmrc; keep the two in sync.
 FROM node:24.18.0-bookworm
 
-# socat backs the port aliases in post-start.sh, iproute2 provides `ss` for their
-# liveness check, and the libraries below are Cypress's runtime dependencies on Debian.
-#
-# xvfb is here for Cypress to start on its own, which it does whenever DISPLAY is unset - a
-# container nobody has attached an editor to, for instance. Nothing here runs it; when the
-# editor forwards a display in, Cypress uses that and never touches Xvfb.
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         iproute2 \

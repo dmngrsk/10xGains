@@ -24,12 +24,6 @@ export class NavigationHistoryService {
       if (event instanceof NavigationStart) {
         this.currentTrigger = event.navigationTrigger ?? 'imperative';
 
-        // `popstate` is the browser's forward button as much as its back one, and counting both
-        // as a step back walks the depth down to zero while the user is still inside the app.
-        // A restored entry carries the id of the navigation that first created it, so comparing
-        // it with the entry on screen says which way this one went. An entry not of ours has no
-        // id to compare; treat it as a step back, the safe way to be wrong - the back control
-        // then falls back to its route instead of leaving the app.
         const restoredEntryId = event.restoredState?.navigationId;
         this.pendingEntryId = restoredEntryId ?? event.id;
         this.pendingStep = this.isPopState && (restoredEntryId ?? 0) <= this.currentEntryId ? -1 : 1;

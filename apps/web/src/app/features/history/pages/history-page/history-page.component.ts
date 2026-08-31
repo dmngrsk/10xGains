@@ -80,9 +80,6 @@ export class HistoryPageComponent implements OnInit {
     this.facade.seedViewState(viewMode, month);
     this.syncViewQueryParams();
 
-    // Coming back to the page the user left, with the view and month they left it on, is the one
-    // case where what the facade holds is what belongs on screen. Any other arrival - a tab, a
-    // link, a reload - reloads, so a session finished elsewhere is not missed.
     if (this.navigationHistory.isPopState && this.facade.isLoaded()) {
       return;
     }

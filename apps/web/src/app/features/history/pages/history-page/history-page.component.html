@@ -4,9 +4,7 @@
     (viewModeChanged)="onViewModeChanged($event)">
   </txg-history-tabs>
 
-  <!-- The offset lives on its own wrapper so no view's padding can compete with it. -->
   <div class="pt-[var(--txg-history-content-offset)]">
-    <!-- The gutter belongs to the views that want one; the calendar scrolls edge to edge. -->
     <div class="flex justify-center min-h-[var(--txg-history-page-viewport)]" [class.p-4]="viewModel().viewMode !== 'calendar'">
       @if (viewModel(); as viewModel) {
         @if (viewModel.isLoading) {

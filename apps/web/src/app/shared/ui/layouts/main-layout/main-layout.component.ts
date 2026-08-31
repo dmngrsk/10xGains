@@ -34,8 +34,6 @@ export class MainLayoutComponent {
   private scrollPositions = inject(ScrollPositionService);
   private destroyRef = inject(DestroyRef);
 
-  // The scroller only exists on the branch that renders the page, so this fires when the
-  // full-screen loader gives way to content - which is the moment a restore can land.
   @ViewChild('scroller') set scrollerRef(ref: ElementRef<HTMLElement> | undefined) {
     this.scroller = ref?.nativeElement;
     this.restoreScrollPosition();
@@ -62,7 +60,6 @@ export class MainLayoutComponent {
   });
 
   constructor() {
-    // On the way out, while `router.url` still names the page being left.
     this.router.events
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(event => {
@@ -79,8 +76,6 @@ export class MainLayoutComponent {
   }
 
   private restoreScrollPosition(): void {
-    // Only a back or forward restores: any other arrival is a fresh look at the page, and the
-    // top is where it should start.
     if (!this.scroller || !this.navigationHistory.isPopState) {
       return;
     }
@@ -90,8 +85,6 @@ export class MainLayoutComponent {
       return;
     }
 
-    // The content is in the DOM but has not been laid out yet, and scrollTop clamps to a height
-    // that does not exist until it has been.
     requestAnimationFrame(() => this.scroller?.scrollTo({ top }));
   }
 }

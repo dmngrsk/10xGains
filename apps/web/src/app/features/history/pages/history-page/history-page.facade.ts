@@ -16,7 +16,6 @@ import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
 const SESSION_SWEEP_PAGE_SIZE = 100;
-// How much of the list is fetched at a time as the sentinel comes into view.
 const LIST_PAGE_SIZE = 10;
 const CALENDAR_PREFETCH_RADIUS = 3;
 
@@ -64,9 +63,7 @@ export class HistoryPageFacade {
   private readonly pendingCalendarMonths = new Set<string>();
 
   private listNeedsReload = false;
-  // Whether the view models hold a loaded page rather than their initial emptiness.
   private loaded = false;
-  // Unlike the list, the notes view is never loaded up front, so it starts stale.
   private notesNeedReload = true;
 
   constructor() {
@@ -81,7 +78,6 @@ export class HistoryPageFacade {
     }
   }
 
-  /** Whether the page can be shown from what is already held, without loading it again. */
   isLoaded(): boolean {
     return this.loaded;
   }
@@ -171,8 +167,6 @@ export class HistoryPageFacade {
           isLoading: false,
           isLoadingMore: false,
           error: 'Failed to load sessions. Please try again later.',
-          // A failed page keeps what has already been scrolled through; a failed first one has
-          // nothing to keep.
           sessions: isLoadMore ? vm.sessions : [],
           totalSessions: isLoadMore ? vm.totalSessions : 0
         }));
@@ -236,8 +230,6 @@ export class HistoryPageFacade {
       plan_id: filters.selectedPlanId ?? undefined,
     };
 
-    // The API cannot filter on notes, so the filtered range is swept in full and narrowed here.
-    // Notes are sparse, which makes paging the range cheaper than it looks.
     this.loadAllSessionPages(queryParams, 0, []).pipe(
       map(response => this.mapSessionsResponse(response.data, response.totalCount)),
       catchError((error: Error) => {
@@ -334,8 +326,6 @@ export class HistoryPageFacade {
       map(res => !res?.error),
       tap(success => {
         if (!success) return;
-        // A session that just gained its first note is not in `noteSessions` to be patched,
-        // so the notes view is marked stale rather than reconciled in place.
         this.notesNeedReload = true;
         this.viewModel.update(vm => ({
           ...vm,
@@ -445,15 +435,12 @@ export class HistoryPageFacade {
       plan_id: planId,
     };
 
-    // Page through the whole run so a dense window never silently drops sessions (and, with the
-    // ascending sort, never drops the most recent - and most likely on-screen - months).
     this.loadAllSessionPages(queryParams, 0, []).pipe(
       map(response => this.mapSessionsResponse(response.data, response.totalCount)),
       catchError((error: Error) => {
         console.error('Error loading calendar sessions:', error);
         months.forEach(month => this.pendingCalendarMonths.delete(month));
-        // A background prefetch failure only logs - it retries on the next scroll; failing the
-        // whole view is reserved for the initial load, where there is nothing to show instead.
+
         if (isInitialLoad) {
           this.viewModel.update(vm => ({
             ...vm,
@@ -472,8 +459,7 @@ export class HistoryPageFacade {
       for (const session of result.sessions) {
         if (!session.sessionDate) continue;
         const month = format(session.sessionDate, 'yyyy-MM');
-        // Bucket strictly into the requested months - anything else would duplicate sessions
-        // already cached by an earlier batch.
+
         if (!months.includes(month)) continue;
         this.calendarMonthSessions.set(month, [...(this.calendarMonthSessions.get(month) ?? []), session]);
       }

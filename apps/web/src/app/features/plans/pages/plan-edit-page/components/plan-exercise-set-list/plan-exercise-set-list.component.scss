@@ -1,7 +1,6 @@
 .set-table {
   width: 100%;
   border-collapse: collapse;
-  // Digits line up down the Reps and Weight columns instead of shuffling as values change.
   font-variant-numeric: tabular-nums;
 }
 
@@ -20,7 +19,6 @@
   text-align: right;
 }
 
-// Air rather than a rule separates it from the rows it adds to - the table draws no lines at all.
 .add-set-cell {
   padding: 1rem 0 0.25rem;
 }
@@ -31,7 +29,6 @@
   font-size: 0.875rem;
 }
 
-// Stripped of Material's vertical padding, so it sits at row height rather than button height.
 .add-set-button {
   display: flex;
   justify-content: center;

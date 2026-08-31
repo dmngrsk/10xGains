@@ -1,14 +1,8 @@
 :host {
-  /* The tabs bar hangs under the top bar; the layout has already padded for the bar itself. */
   --txg-history-content-offset: calc(
     var(--txg-top-bar-edge) + var(--txg-tabs-bar-height) - var(--txg-top-bar-height)
   );
 
-  /*
-   * The page carries the tabs where other pages carry an actions bar - its filter is a FAB - so
-   * it states its own chrome rather than adjusting the shared three-bar figure. The 0.25rem is
-   * slack the page has always carried; the calendar does without it.
-   */
   --txg-history-chrome: calc(
     var(--txg-top-bar-height) + var(--txg-tabs-bar-height) + var(--txg-bottom-nav-height)
   );

@@ -30,7 +30,6 @@ export class HistoryNotesComponent {
   }
 
   onSpaceActivated(event: Event, sessionId: string): void {
-    // Space on a role="button" would otherwise scroll the list underneath the activation.
     event.preventDefault();
     this.sessionNavigated.emit(sessionId);
   }

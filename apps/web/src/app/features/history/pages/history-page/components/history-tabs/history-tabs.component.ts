@@ -28,8 +28,6 @@ export class HistoryTabsComponent {
 
   @Output() viewModeChanged = new EventEmitter<HistoryViewMode>();
 
-  // A nav bar rather than a tab group: the page already renders each view off `viewMode` and
-  // keeps it in the query string, so the tabs only have to report which one was picked.
   readonly tabs: HistoryTab[] = [
     { mode: 'list', label: 'List', icon: 'list', dataCy: 'history-tab-list' },
     { mode: 'calendar', label: 'Calendar', icon: 'calendar_month', dataCy: 'history-tab-calendar' },

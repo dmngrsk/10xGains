@@ -63,7 +63,7 @@ describe('HistoryFilterDialogComponent', () => {
       expect(close).toHaveBeenCalledWith({
         selectedPlanId: 'plan-1',
         dateRange: DATE_RANGE_1M,
-                    availablePlans: AVAILABLE_PLANS,
+        availablePlans: AVAILABLE_PLANS,
       });
     });
 

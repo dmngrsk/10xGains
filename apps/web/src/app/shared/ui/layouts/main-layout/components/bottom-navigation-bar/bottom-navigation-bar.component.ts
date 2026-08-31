@@ -36,8 +36,6 @@ export class BottomNavigationBarComponent {
     { label: 'Settings', icon: 'settings', path: '/settings', dataCy: 'bottom-navigation-settings' }
   ];
 
-  // Material colours its own icons and button labels, and does so from a stylesheet injected after
-  // the app's own - hence the `!`. One class per state rather than three that override each other.
   navItemColorClass(link: NavLink, isActive: boolean): string {
     if (link.disabled) {
       return '!text-outline-variant';
