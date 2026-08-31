@@ -1,44 +1,4 @@
-.reorder-hint {
-  margin-bottom: 0.75rem;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.875rem;
-}
-
-.reorder-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.reorder-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 0.5rem;
-  background: var(--mat-sys-surface);
-  cursor: grab;
-
-  & + & {
-    margin-top: 0.5rem;
-  }
-}
-
-.reorder-handle {
-  display: inline-flex;
-  color: var(--mat-sys-outline);
-}
-
-
-.reorder-name {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+// The preview is a clone the CDK lifts out of the list; the placeholder is the gap it leaves.
 .cdk-drag-preview {
   box-shadow: var(--mat-sys-level3);
 }

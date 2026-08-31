@@ -1,7 +1,7 @@
 @if (days.length > 0) {
-  <div class="day-strip">
+  <div class="flex items-center gap-1 border-b border-outline-variant">
     <mat-tab-group
-      class="day-tabs"
+      class="day-tabs flex-auto min-w-0"
       [selectedIndex]="selectedIndex"
       (selectedIndexChange)="onDaySelected($event)"
       animationDuration="0ms"
@@ -18,7 +18,7 @@
     @if (hasDayMenuActions) {
       <button
         mat-icon-button
-        class="day-menu-button"
+        class="flex-none mr-2"
         [matMenuTriggerFor]="dayMenu"
         aria-label="Actions for this training day"
         data-cy="plan-day-menu-button">
@@ -28,9 +28,9 @@
   </div>
 
   @if (selectedDay; as day) {
-    <section class="day-panel" [attr.aria-label]="day.name" data-cy="plan-day-item">
+    <section class="p-4" [attr.aria-label]="day.name" data-cy="plan-day-item">
       @if (day.description) {
-        <p class="day-description text-sm text-secondary" data-cy="plan-edit-day-description">{{ day.description }}</p>
+        <p class="mb-3 text-sm text-secondary" data-cy="plan-edit-day-description">{{ day.description }}</p>
       }
 
       <txg-plan-exercise-list

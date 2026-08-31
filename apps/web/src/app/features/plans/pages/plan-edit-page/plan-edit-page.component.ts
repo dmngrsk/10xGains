@@ -44,7 +44,6 @@ const WEIGHT_STEP_DEBOUNCE_MS = 500;
 @Component({
   selector: 'txg-plan-edit-page',
   templateUrl: './plan-edit-page.component.html',
-  styleUrl: './plan-edit-page.component.scss',
   standalone: true,
   imports: [
     CommonModule,

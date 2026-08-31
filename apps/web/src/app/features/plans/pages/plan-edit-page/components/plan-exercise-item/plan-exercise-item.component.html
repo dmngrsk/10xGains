@@ -1,19 +1,19 @@
 <mat-card
-  class="exercise-card"
+  class="exercise-card mb-2"
   cdkDrag
   cdkDragLockAxis="y"
   [cdkDragData]="exercise"
   [cdkDragDisabled]="!capabilities.canReorder">
 
   <mat-card-content>
-    <div class="exercise-header">
+    <div class="flex items-center gap-2 min-w-0 pb-4">
       @if (capabilities.canReorder) {
-        <span cdkDragHandle class="exercise-drag-handle" data-cy="plan-exercise-drag-handle">
+        <span cdkDragHandle class="inline-flex items-center text-outline cursor-grab" data-cy="plan-exercise-drag-handle">
           <mat-icon>drag_indicator</mat-icon>
         </span>
       }
 
-      <span class="exercise-name" data-cy="plan-exercise-name">{{ exercise.exerciseName }}</span>
+      <span class="flex-auto min-w-0 font-medium truncate" data-cy="plan-exercise-name">{{ exercise.exerciseName }}</span>
 
       @if (capabilities.canEditPlanMetadata) {
         <button
@@ -42,7 +42,7 @@
       @if (hasMenuActions) {
         <button
           mat-icon-button
-          class="exercise-menu-button"
+          class="flex-none -mr-2"
           [matMenuTriggerFor]="exerciseMenu"
           [attr.aria-label]="'Actions for ' + exercise.exerciseName"
           data-cy="plan-exercise-menu-button">
@@ -52,7 +52,7 @@
     </div>
 
     @if (exercise.exerciseDescription) {
-      <p class="exercise-description">{{ exercise.exerciseDescription }}</p>
+      <p class="mt-2 text-sm text-on-surface-variant">{{ exercise.exerciseDescription }}</p>
     }
 
     <txg-plan-exercise-set-list

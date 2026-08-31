@@ -25,7 +25,6 @@ interface NavLink {
     MatDividerModule
   ],
   templateUrl: './bottom-navigation-bar.component.html',
-  styleUrl: './bottom-navigation-bar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BottomNavigationBarComponent {
@@ -36,4 +35,14 @@ export class BottomNavigationBarComponent {
     { label: 'Progress', icon: 'stacked_line_chart', path: '/progress', dataCy: 'bottom-navigation-progress' },
     { label: 'Settings', icon: 'settings', path: '/settings', dataCy: 'bottom-navigation-settings' }
   ];
+
+  // Material colours its own icons and button labels, and does so from a stylesheet injected after
+  // the app's own - hence the `!`. One class per state rather than three that override each other.
+  navItemColorClass(link: NavLink, isActive: boolean): string {
+    if (link.disabled) {
+      return '!text-outline-variant';
+    }
+
+    return isActive ? '!text-primary' : '!text-outline';
+  }
 }

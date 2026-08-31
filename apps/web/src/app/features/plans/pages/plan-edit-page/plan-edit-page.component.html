@@ -54,14 +54,14 @@
           data-cy="training-day-list">
         </txg-plan-day-list>
 
-        <div class="plan-actions px-4">
+        <div class="px-4 mt-2 pb-2">
           @if (viewModel.plan.isActive) {
-            <button mat-raised-button (click)="onPlanDeactivated()" data-cy="plan-deactivate-button">
+            <button mat-raised-button class="w-full" (click)="onPlanDeactivated()" data-cy="plan-deactivate-button">
               <mat-icon>edit_off</mat-icon>
               <span>Deactivate And Edit Plan</span>
             </button>
           } @else {
-            <button mat-flat-button (click)="onPlanActivated()" data-cy="plan-activate-button">
+            <button mat-flat-button class="w-full" (click)="onPlanActivated()" data-cy="plan-activate-button">
               <mat-icon>rocket_launch</mat-icon>
               <span>Activate Training Plan</span>
             </button>
