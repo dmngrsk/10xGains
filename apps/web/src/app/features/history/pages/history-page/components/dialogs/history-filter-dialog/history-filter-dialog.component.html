@@ -28,7 +28,7 @@
         </mat-datepicker>
       </mat-form-field>
     }
-    @if (data.mode === 'list' || data.mode === 'notes') {
+    @if (data.mode === 'list') {
       <txg-date-range-field
         [value]="dateRange"
         (valueChange)="onDateRangeChanged($event)"

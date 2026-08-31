@@ -35,6 +35,7 @@ const initialHistoryPageViewModel: HistoryPageViewModel = {
   },
   totalSessions: 0,
   viewMode: 'list',
+  notesOnly: false,
   calendarMonth: format(new Date(), 'yyyy-MM'),
   calendarSessions: [],
   noteSessions: [],
@@ -62,7 +63,7 @@ export class HistoryPageFacade {
   private readonly calendarMonthSessions = new Map<string, SessionCardViewModel[]>();
   private readonly pendingCalendarMonths = new Set<string>();
 
-  private listNeedsReload = false;
+  private listNeedsReload = true;
   private loaded = false;
   private notesNeedReload = true;
 
@@ -141,6 +142,7 @@ export class HistoryPageFacade {
   loadSessions(isLoadMore = false): void {
     const { filters, sessions } = this.viewModel();
 
+    this.listNeedsReload = false;
     this.viewModel.update(vm => ({
       ...vm,
       isLoading: !isLoadMore,
@@ -162,6 +164,7 @@ export class HistoryPageFacade {
       map(response => this.mapSessionsResponse(response.data, response.totalCount)),
       catchError((error: Error) => {
         console.error('Error loading sessions:', error);
+        this.listNeedsReload = true;
         this.viewModel.update(vm => ({
           ...vm,
           isLoading: false,
@@ -253,8 +256,8 @@ export class HistoryPageFacade {
     });
   }
 
-  seedViewState(viewMode: HistoryViewMode, calendarMonth: string): void {
-    this.viewModel.update(vm => ({ ...vm, viewMode, calendarMonth }));
+  seedViewState(viewMode: HistoryViewMode, calendarMonth: string, notesOnly: boolean): void {
+    this.viewModel.update(vm => ({ ...vm, viewMode, calendarMonth, notesOnly }));
   }
 
   setViewMode(mode: HistoryViewMode): void {
@@ -280,21 +283,22 @@ export class HistoryPageFacade {
       return;
     }
 
-    if (mode === 'list') {
-      this.viewModel.update(vm => ({ ...vm, viewMode: mode }));
+    this.viewModel.update(vm => ({ ...vm, viewMode: mode }));
+    this.loadListSessions();
+  }
 
-      if (this.listNeedsReload) {
-        this.listNeedsReload = false;
-        this.loadSessions();
-      }
+  /**
+   * The notes are every session carrying one, not a page of them: a note is rare enough that
+   * paging through the sessions to find them would hand the user an empty page at a time. So the
+   * narrowed list is swept in full and shown whole, and the load-more sentinel stays away.
+   */
+  setNotesOnly(notesOnly: boolean): void {
+    if (this.viewModel().notesOnly === notesOnly) {
       return;
     }
 
-    this.viewModel.update(vm => ({ ...vm, viewMode: mode }));
-
-    if (this.notesNeedReload) {
-      this.loadNoteSessions();
-    }
+    this.viewModel.update(vm => ({ ...vm, notesOnly }));
+    this.loadListSessions();
   }
 
   setCalendarMonth(month: string): void {
@@ -355,44 +359,34 @@ export class HistoryPageFacade {
       this.clearCalendarCache();
     }
 
+    this.listNeedsReload = true;
     this.notesNeedReload = true;
     this.persistFilters();
-    this.loadSessions();
-  }
-
-  updateNotesFilters(newFilters: Partial<HistoryFiltersViewModel>): void {
-    const planChanged = newFilters.selectedPlanId !== undefined
-      && newFilters.selectedPlanId !== this.viewModel().filters.selectedPlanId;
-
-    this.viewModel.update(vm => ({
-      ...vm,
-      filters: { ...vm.filters, ...newFilters }
-    }));
-
-    if (planChanged) {
-      this.clearCalendarCache();
-    }
-
-    this.listNeedsReload = true;
-    this.persistFilters();
-    this.loadNoteSessions();
+    this.loadListSessions();
   }
 
   private loadActiveViewSessions(): void {
-    const { viewMode } = this.viewModel();
-
-    if (viewMode === 'calendar') {
+    if (this.viewModel().viewMode === 'calendar') {
       this.listNeedsReload = true;
+      this.notesNeedReload = true;
       this.loadCalendarSessions();
+      return;
     }
 
-    if (viewMode === 'list') {
+    this.loadListSessions();
+  }
+
+  /** Loads whichever of the two the list is showing, and only if it has gone stale. */
+  private loadListSessions(): void {
+    if (this.viewModel().notesOnly) {
+      if (this.notesNeedReload) {
+        this.loadNoteSessions();
+      }
+      return;
+    }
+
+    if (this.listNeedsReload) {
       this.loadSessions();
-    }
-
-    if (viewMode === 'notes') {
-      this.listNeedsReload = true;
-      this.loadNoteSessions();
     }
   }
 

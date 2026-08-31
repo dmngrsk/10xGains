@@ -8,7 +8,9 @@
     }
   </mat-card-header>
   <mat-card-content class="flex-grow my-4">
-    @if (sessionData.exercises && sessionData.exercises.length > 0) {
+    @if (showNotes) {
+      <p class="text-sm whitespace-pre-line" data-cy="session-card-notes-text">{{ sessionData.notes }}</p>
+    } @else if (sessionData.exercises && sessionData.exercises.length > 0) {
       <ul class="list-disc list-inside text-sm">
         @for (exercise of sessionData.exercises; track exercise.name) {
           <li><span class="font-medium">{{ exercise.name }}:</span> {{ getExerciseSummaryText(exercise.sets) }}</li>

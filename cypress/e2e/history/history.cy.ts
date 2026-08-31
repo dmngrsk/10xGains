@@ -213,49 +213,61 @@ describe('Session History', { tags: ['@history'] }, () => {
     });
   });
 
-  describe('when using the notes view', () => {
+  describe('when narrowing the list to the sessions with notes', () => {
     describe('with session notes', () => {
       beforeEach(() => {
         stubHistoryApi();
-        cy.visit('/history?view=notes');
+        cy.visit('/history?view=list&notes=1');
       });
 
-      it('lists only the sessions carrying a note', { tags: ['HIST-15'] }, () => {
+      it('lists only the sessions carrying a note, showing the note itself', { tags: ['HIST-15'] }, () => {
         // The fixture holds 15 completed sessions, one of which has a note.
-        cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
-        cy.getBySel(dataCy.history.noteCardText).should('have.text', 'Tough workout, felt tired.');
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', 1);
+        cy.getBySel(dataCy.history.sessionCardNotesText).should('have.text', 'Tough workout, felt tired.');
+        // The note stands in place of the workout the card would otherwise summarise, and the
+        // notes are swept whole, so there is no page left to scroll for.
+        cy.getBySel(dataCy.history.sessionCard).should('not.contain.text', 'No exercises defined');
+        cy.getBySel(dataCy.history.loadMoreSentinel).should('not.exist');
       });
 
       it('navigates to the session when tapping a note', { tags: ['HIST-16'] }, () => {
-        cy.getBySel(dataCy.history.noteCard).first().click();
+        cy.getBySel(dataCy.history.sessionNavigateButton).first().click();
 
         cy.location('pathname').should('eq', '/sessions/00000000-0000-4000-8000-000000000015');
+      });
+
+      it('gives the whole list back when the toggle is switched off', { tags: ['HIST-17'] }, () => {
+        cy.getBySel(dataCy.history.notesToggleButton).click();
+
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', 10);
+        cy.getBySel(dataCy.history.sessionCardNotesText).should('not.exist');
+        cy.location('search').should('not.contain', 'notes=1');
       });
     });
 
     describe('with no notes or errors', () => {
-      it('shows the empty state notice when no session in range has a note', { tags: ['HIST-17'] }, () => {
+      it('shows the empty state notice when no session in range has a note', { tags: ['HIST-18'] }, () => {
         cy.intercept('GET', '**/api/sessions*', { statusCode: 200, fixture: 'shared/common-data-empty.json' });
-        cy.visit('/history?view=notes');
+        cy.visit('/history?view=list&notes=1');
 
         cy.getBySel(dataCy.history.notesEmptyNotice).should('exist');
       });
 
-      it('displays an error notice and recovers via the retry button', { tags: ['HIST-18'] }, () => {
+      it('displays an error notice and recovers via the retry button', { tags: ['HIST-19'] }, () => {
         stubHistoryApi();
         cy.intercept({ method: 'GET', url: '**/api/sessions*', times: 1 }, { statusCode: 500, fixture: 'shared/common-error.json' });
-        cy.visit('/history?view=notes');
+        cy.visit('/history?view=list&notes=1');
 
         cy.getBySel(dataCy.history.errorNotice).should('exist');
         cy.getBySel(dataCy.history.errorNotice).find('button').contains('Try Again').click();
 
-        cy.getBySel(dataCy.history.noteCard).should('have.length', 1);
+        cy.getBySel(dataCy.history.sessionCard).should('have.length', 1);
       });
     });
   });
 
   describe('when switching views', () => {
-    it('remembers the last used view without a query parameter', { tags: ['HIST-19'] }, () => {
+    it('remembers the last used view without a query parameter', { tags: ['HIST-20'] }, () => {
       // Without a stored value, the calendar is the default.
       cy.navigateTo('history');
       cy.getBySel(dataCy.history.calendar).should('exist');
@@ -269,13 +281,13 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.getBySel(dataCy.history.sessionList).should('exist');
       cy.location('search').should('contain', 'view=list');
 
-      // ...and so is switching on to the notes. The seeded plan carries no notes, so the tab's
-      // own selected state stands in for the view rather than a note card.
-      cy.getBySel(dataCy.history.tabs.notes).click();
-      cy.getBySel(dataCy.history.tabs.notes).should('have.attr', 'aria-selected', 'true');
+      // ...and so is narrowing that list to the sessions carrying a note.
+      cy.getBySel(dataCy.history.notesToggleButton).click();
+      cy.location('search').should('contain', 'notes=1');
       cy.visit('/history');
-      cy.getBySel(dataCy.history.tabs.notes).should('have.attr', 'aria-selected', 'true');
-      cy.location('search').should('contain', 'view=notes');
+      cy.location('search').should('contain', 'notes=1');
+      cy.getBySel(dataCy.history.notesToggleButton).should('have.attr', 'aria-pressed', 'true');
+      cy.getBySel(dataCy.history.notesToggleButton).click();
 
       // ...and so is switching back to the calendar.
       cy.getBySel(dataCy.history.tabs.calendar).click();
@@ -287,7 +299,7 @@ describe('Session History', { tags: ['@history'] }, () => {
   });
 
   describe('when returning from a session', () => {
-    it('restores the list as it was left', { tags: ['HIST-20'] }, () => {
+    it('restores the list as it was left', { tags: ['HIST-21'] }, () => {
       // Arrive the way a user does, so the app has history of its own to go back through.
       cy.visit('/home');
       cy.navigateTo('history');

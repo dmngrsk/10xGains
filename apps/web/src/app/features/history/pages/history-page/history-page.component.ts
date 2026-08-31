@@ -23,12 +23,12 @@ import { HistoryCalendarFilterResult, HistoryFilterDialogComponent, HistoryFilte
 import { SessionPickerDialogComponent, SessionPickerDialogData } from './components/dialogs/session-picker-dialog/session-picker-dialog.component';
 import { HistoryCalendarComponent } from './components/history-calendar/history-calendar.component';
 import { HistoryListComponent } from './components/history-list/history-list.component';
-import { HistoryNotesComponent } from './components/history-notes/history-notes.component';
 import { HistoryTabsComponent } from './components/history-tabs/history-tabs.component';
 import { HistoryPageFacade } from './history-page.facade';
 
 const VIEW_MODE_STORAGE_KEY = 'txg.history.view-mode';
-const VIEW_MODES: HistoryViewMode[] = ['calendar', 'list', 'notes'];
+const NOTES_ONLY_STORAGE_KEY = 'txg.history.notes-only';
+const VIEW_MODES: HistoryViewMode[] = ['calendar', 'list'];
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 @Component({
@@ -45,7 +45,6 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
     MatDividerModule,
     HistoryCalendarComponent,
     HistoryListComponent,
-    HistoryNotesComponent,
     HistoryTabsComponent,
     NoticeComponent,
   ],
@@ -65,7 +64,11 @@ export class HistoryPageComponent implements OnInit {
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
-  readonly hasMoreSessions: Signal<boolean> = computed(() => this.viewModel().sessions.length < this.viewModel().totalSessions);
+  readonly listedSessions: Signal<SessionCardViewModel[]> = computed(() =>
+    this.viewModel().notesOnly ? this.viewModel().noteSessions : this.viewModel().sessions);
+  // The notes are swept in full rather than paged, so there is never another page of them to fetch.
+  readonly hasMoreSessions: Signal<boolean> = computed(() =>
+    !this.viewModel().notesOnly && this.viewModel().sessions.length < this.viewModel().totalSessions);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
@@ -77,7 +80,10 @@ export class HistoryPageComponent implements OnInit {
     const monthParam = params.get('month');
     const month = monthParam && MONTH_PARAM_PATTERN.test(monthParam) ? monthParam : format(new Date(), 'yyyy-MM');
 
-    this.facade.seedViewState(viewMode, month);
+    const requestedNotesOnly = params.has('notes') ? params.get('notes') : this.localStorage.getItem(NOTES_ONLY_STORAGE_KEY);
+    const notesOnly = requestedNotesOnly === '1';
+
+    this.facade.seedViewState(viewMode, month, notesOnly);
     this.syncViewQueryParams();
 
     if (this.navigationHistory.isPopState && this.facade.isLoaded()) {
@@ -92,7 +98,7 @@ export class HistoryPageComponent implements OnInit {
   }
 
   onNotesClicked(sessionId: string): void {
-    const session = this.viewModel().sessions.find(s => s.id === sessionId);
+    const session = this.listedSessions().find(s => s.id === sessionId);
     if (!session) return;
 
     const dialogData: SessionNotesDialogData = {
@@ -123,6 +129,14 @@ export class HistoryPageComponent implements OnInit {
   onViewModeChanged(mode: HistoryViewMode): void {
     this.facade.setViewMode(mode);
     this.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    this.syncViewQueryParams();
+  }
+
+  onNotesOnlyToggled(): void {
+    const notesOnly = !this.viewModel().notesOnly;
+
+    this.facade.setNotesOnly(notesOnly);
+    this.localStorage.setItem(NOTES_ONLY_STORAGE_KEY, notesOnly ? '1' : '0');
     this.syncViewQueryParams();
   }
 
@@ -172,11 +186,6 @@ export class HistoryPageComponent implements OnInit {
       this.openFilterDialog({ mode: 'list', filters })
         .subscribe(result => this.facade.updateFilters(result as HistoryFiltersViewModel));
     }
-
-    if (viewMode === 'notes') {
-      this.openFilterDialog({ mode: 'notes', filters })
-        .subscribe(result => this.facade.updateNotesFilters(result as HistoryFiltersViewModel));
-    }
   }
 
   onErrorButtonClicked(): void {
@@ -190,12 +199,13 @@ export class HistoryPageComponent implements OnInit {
   }
 
   private syncViewQueryParams(): void {
-    const { viewMode, calendarMonth } = this.viewModel();
+    const { viewMode, calendarMonth, notesOnly } = this.viewModel();
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
         view: viewMode,
         month: viewMode === 'calendar' ? calendarMonth : null,
+        notes: viewMode === 'list' && notesOnly ? '1' : null,
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,

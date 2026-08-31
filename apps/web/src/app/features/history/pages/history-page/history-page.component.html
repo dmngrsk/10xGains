@@ -31,7 +31,8 @@
         } @else if (viewModel.viewMode === 'list') {
           <txg-history-list
             class="contents"
-            [sessions]="viewModel.sessions"
+            [sessions]="listedSessions()"
+            [notesOnly]="viewModel.notesOnly"
             [hasMore]="hasMoreSessions()"
             [isLoadingMore]="viewModel.isLoadingMore"
             (sessionNavigated)="onSessionNavigated($event)"
@@ -39,19 +40,24 @@
             (loadMore)="onLoadMoreSessions()"
             (editFiltersClicked)="onFilterButtonClicked()">
           </txg-history-list>
-        } @else if (viewModel.viewMode === 'notes') {
-          <txg-history-notes
-            class="contents"
-            [sessions]="viewModel.noteSessions"
-            (sessionNavigated)="onSessionNavigated($event)"
-            (editFiltersClicked)="onFilterButtonClicked()">
-          </txg-history-notes>
         }
       }
     </div>
   </div>
 
-  <div class="txg-fab-anchor">
+  <div class="txg-fab-anchor flex flex-col gap-3">
+    @if (viewModel().viewMode === 'list') {
+      <button
+        mat-mini-fab
+        class="txg-fab"
+        [class.txg-fab-active]="viewModel().notesOnly"
+        [attr.aria-pressed]="viewModel().notesOnly"
+        [matTooltip]="viewModel().notesOnly ? 'Showing the sessions with notes' : 'Show only the sessions with notes'"
+        (click)="onNotesOnlyToggled()"
+        data-cy="history-notes-toggle-button">
+        <mat-icon>sticky_note_2</mat-icon>
+      </button>
+    }
     <button
       mat-mini-fab
       class="txg-fab"

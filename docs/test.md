@@ -55,10 +55,10 @@ The following features and components are within the scope of testing:
     *   Creating, editing, and clearing session notes and plan notes (save on dialog close via 'Save' or backdrop click).
     *   Completion of an active session, triggering backend progression logic.
 *   **Session History:**
-    *   Three views - calendar, list and notes - chosen from the tab strip, with the last used view remembered between visits.
+    *   Two views - calendar and list - chosen from the tab strip, with the last used view remembered between visits.
     *   Viewing a list of completed sessions, which loads a further page each time its end is scrolled to.
     *   Browsing completed sessions by month in the calendar, including days holding more than one session.
-    *   Reading back the notes of completed sessions in the notes view, which lists only the sessions carrying one.
+    *   Narrowing the list to the sessions carrying a note, from the notes toggle, which shows each note in place of the workout the card would otherwise summarise.
     *   Filtering session history by plan and date range, from the filter FAB.
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
@@ -184,12 +184,13 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 |  | HIST-12 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
 | *&nbsp;&nbsp;filtering and errors* | HIST-13 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
 |  | HIST-14 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
-| **History (Notes)**<br>*&nbsp;&nbsp;reading notes back* | HIST-15 | The notes view lists only the completed sessions carrying a note, newest first. | High | No |
-|  | HIST-16 | Tapping a note card navigates to that session's detail page. | Medium | No |
-| *&nbsp;&nbsp;empty and errors* | HIST-17 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
-|  | HIST-18 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
-| **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-19 | Without a view parameter, the calendar opens by default; each view picked from the tabs (list, then notes, then calendar again) is restored on revisits. | Medium | No |
-|  | HIST-20 | Returning from a session with the back control restores the view that was left, the pages already scrolled through, and the scroll position. | High | No |
+| **History (Notes)**<br>*&nbsp;&nbsp;reading notes back* | HIST-15 | The notes toggle narrows the list to the completed sessions carrying a note, newest first, and each card shows the note in place of the workout it recorded. | High | No |
+|  | HIST-16 | Tapping a session showing its note navigates to that session's detail page. | Medium | No |
+|  | HIST-17 | Switching the notes toggle back off restores the full, paged list. | Medium | No |
+| *&nbsp;&nbsp;empty and errors* | HIST-18 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
+|  | HIST-19 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
+| **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-20 | Without a view parameter, the calendar opens by default; the view picked from the tabs and the notes toggle's state are both restored on revisits. | Medium | No |
+|  | HIST-21 | Returning from a session with the back control restores the view that was left, the pages already scrolled through, and the scroll position. | High | No |
 | **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
 |  | PROG-02 | Tapping an exercise chip removes its series from the chart, and tapping it again restores it. | Medium | No |
 | *&nbsp;&nbsp;filtering* | PROG-03 | A user can widen the scope to "All plans", and the filter selection is still shown when the dialog is reopened. | Medium | No |

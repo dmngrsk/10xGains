@@ -31,7 +31,6 @@ export class HistoryTabsComponent {
   readonly tabs: HistoryTab[] = [
     { mode: 'list', label: 'List', icon: 'list', dataCy: 'history-tab-list' },
     { mode: 'calendar', label: 'Calendar', icon: 'calendar_month', dataCy: 'history-tab-calendar' },
-    { mode: 'notes', label: 'Notes', icon: 'sticky_note_2', dataCy: 'history-tab-notes' },
   ];
 
   onTabClicked(mode: HistoryViewMode): void {

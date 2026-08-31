@@ -1,4 +1,13 @@
-@if (sessions.length === 0) {
+@if (sessions.length === 0 && notesOnly) {
+  <txg-notice
+    iconName="sticky_note_2"
+    titleText="No Notes Found"
+    descriptionText="None of the sessions matching your current filters have notes attached to them yet."
+    buttonText="Edit Filters"
+    (buttonClicked)="onEditFiltersClicked()"
+    data-cy="history-notes-empty-notice">
+  </txg-notice>
+} @else if (sessions.length === 0) {
   <txg-notice
     iconName="search_off"
     titleText="No Sessions Found"
@@ -12,6 +21,7 @@
     <txg-session-list
       [sessions]="sessions"
       [notesAccessible]="true"
+      [showNotes]="notesOnly"
       (sessionNavigated)="onSessionNavigated($event)"
       (notesClicked)="onNotesClicked($event)">
     </txg-session-list>

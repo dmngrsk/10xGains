@@ -186,7 +186,7 @@ describe('HistoryPageFacade', () => {
     // group below bootstraps differently and sets itself up instead.
     const configureListSeeded = () => {
       configure('plan-1');
-      facade.seedViewState('list', '2026-05');
+      facade.seedViewState('list', '2026-05', false);
       facade.loadHistoryPageData();
     };
 
@@ -365,7 +365,7 @@ describe('HistoryPageFacade', () => {
     describe('when seeded before the initial load', () => {
       it('should load the calendar months instead of the list', () => {
         configure('plan-1');
-        facade.seedViewState('calendar', '2026-05');
+        facade.seedViewState('calendar', '2026-05', false);
 
         facade.loadHistoryPageData();
 
@@ -411,7 +411,7 @@ describe('HistoryPageFacade', () => {
     });
   });
 
-  describe('notes view', () => {
+  describe('the notes-only list', () => {
     const noteSessionDto = (id: string, sessionDate: string, notes: string | null) => ({
       ...sessionDto(id, sessionDate),
       notes,
@@ -419,7 +419,7 @@ describe('HistoryPageFacade', () => {
 
     const configureListSeeded = () => {
       configure('plan-1');
-      facade.seedViewState('list', '2026-05');
+      facade.seedViewState('list', '2026-05', false);
       facade.loadHistoryPageData();
     };
 
@@ -436,7 +436,7 @@ describe('HistoryPageFacade', () => {
         error: null,
       }));
 
-      facade.setViewMode('notes');
+      facade.setNotesOnly(true);
 
       expect(facade.viewModel().noteSessions.map(s => s.id)).toEqual(['s-1', 's-4']);
       expect(facade.viewModel().isLoading).toBe(false);
@@ -445,7 +445,7 @@ describe('HistoryPageFacade', () => {
     it('should query the whole range newest first rather than a single page', () => {
       configureListSeeded();
 
-      facade.setViewMode('notes');
+      facade.setNotesOnly(true);
 
       expect(lastQuery()).toEqual(expect.objectContaining({
         status: ['COMPLETED'],
@@ -456,26 +456,26 @@ describe('HistoryPageFacade', () => {
       }));
     });
 
-    it('should not re-sweep when the view is re-entered unchanged', () => {
+    it('should not re-sweep when the toggle is switched off and on again', () => {
       configureListSeeded();
-      facade.setViewMode('notes');
+      facade.setNotesOnly(true);
       const callsAfterFirstSweep = getSessionsMock.mock.calls.length;
 
-      facade.setViewMode('list');
-      facade.setViewMode('notes');
+      facade.setNotesOnly(false);
+      facade.setNotesOnly(true);
 
-      // Neither view is stale, so leaving and coming back costs nothing.
+      // Neither list is stale, so switching away and back costs nothing.
       expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstSweep);
     });
 
     it('should re-sweep after the filters changed underneath it', () => {
       configureListSeeded();
-      facade.setViewMode('notes');
-      facade.setViewMode('list');
+      facade.setNotesOnly(true);
+      facade.setNotesOnly(false);
       facade.updateFilters({ selectedPlanId: 'plan-2' });
       const callsAfterFilterChange = getSessionsMock.mock.calls.length;
 
-      facade.setViewMode('notes');
+      facade.setNotesOnly(true);
 
       expect(getSessionsMock.mock.calls.length).toBe(callsAfterFilterChange + 1);
       expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2', sort: 'session_date.desc' }));
@@ -485,7 +485,7 @@ describe('HistoryPageFacade', () => {
       configureListSeeded();
       getSessionsMock.mockReturnValue(throwError(() => new Error('boom')));
 
-      facade.setViewMode('notes');
+      facade.setNotesOnly(true);
 
       expect(facade.viewModel().error).toContain('Failed to load session notes');
       expect(facade.viewModel().isLoading).toBe(false);
