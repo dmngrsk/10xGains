@@ -1,12 +1,14 @@
 <txg-main-layout title="Settings" [loadingSignal]="isLoadingSignal">
-  <div class="p-4 h-full">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.error) {
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <div class="txg-page-fill p-4">
         <txg-notice
           [descriptionText]="viewModel.error!"
           [isError]="true">
         </txg-notice>
-      } @else if (!viewModel.isLoading || initialLoadFinished()) {
+      </div>
+    } @else if (!viewModel.isLoading || initialLoadFinished()) {
+      <div class="p-4 h-full">
         <div class="grid grid-cols-1 gap-6">
           <txg-profile-settings-card
             [profile]="viewModel.profile"
@@ -21,7 +23,7 @@
             (googleDisconnected)="onGoogleDisconnected()">
           </txg-account-settings-card>
         </div>
-      }
+      </div>
     }
-  </div>
+  }
 </txg-main-layout>

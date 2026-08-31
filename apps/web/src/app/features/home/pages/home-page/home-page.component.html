@@ -21,9 +21,9 @@
     } @else if (!isLoadingSignal()) {
       @if (activeSession(); as session) {
         <div class="p-4">
-          <div class="mb-4">
-            <p class="text-2xl text-primary font-medium">{{ greetingText }}</p>
-            <p class="text-sm mt-2 text-secondary">This is your upcoming workout:</p>
+          <div class="flex flex-col gap-2 mb-4">
+            <p class="text-xl font-bold text-primary">{{ greetingText }}</p>
+            <p class="text-sm text-secondary">This is your upcoming workout:</p>
           </div>
 
           <txg-session-card
@@ -34,13 +34,15 @@
           </txg-session-card>
         </div>
       } @else {
-        <txg-notice
-          iconName="event_busy"
-          titleText="No Active Session Found"
-          descriptionText="It looks like you don't have an active session yet. Create a new one to get started!"
-          buttonText="Create Session"
-          (buttonClicked)="onSessionCreated()">
-        </txg-notice>
+        <div class="txg-page-fill">
+          <txg-notice
+            iconName="event_busy"
+            titleText="No Active Session Found"
+            descriptionText="It looks like you don't have an active session yet. Create a new one to get started!"
+            buttonText="Create Session"
+            (buttonClicked)="onSessionCreated()">
+          </txg-notice>
+        </div>
       }
     }
   }
