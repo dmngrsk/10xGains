@@ -37,5 +37,6 @@ export const dialogSelectors = {
     weightInput: 'add-edit-plan-set-dialog-weight-input',
     saveButton: 'add-edit-plan-set-dialog-save-button',
     deleteButton: 'add-edit-set-dialog-delete-button',
+    cancelButton: 'add-edit-set-dialog-cancel-button',
   },
 };

@@ -339,6 +339,14 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
         cy.getBySel(dataCy.plans.planEdit.exercises.archiveButton).should('exist');
         cy.get('body').type('{esc}');
 
+        // A set has no archived form, and removing one renumbers the sets after it - which is what
+        // progression matches a recorded session against. So the entry is simply gone, and the
+        // dialog is left offering only the numbers, which stay safe to tune.
+        cy.getBySel(dataCy.plans.planEdit.sets.editButton).eq(0).click();
+        cy.getBySel(dataCy.plans.dialogs.sets.deleteButton).should('not.exist');
+        cy.getBySel(dataCy.plans.dialogs.sets.saveButton).should('exist');
+        cy.getBySel(dataCy.plans.dialogs.sets.cancelButton).click();
+
         // Reordering survives too. It was withdrawn under an open session while progression read the
         // live plan to judge a set; now that the session carries its own copy, moving an exercise
         // cannot change what any recorded set is measured against.

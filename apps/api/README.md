@@ -968,6 +968,7 @@ Deletes a specific set. Reordering of subsequent sets (if `set_index` is managed
 -   **Response (400 Bad Request)**: If path parameter formats are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the plan, day, exercise, or set is not found or not accessible.
+-   **Response (409 Conflict)**: If any `session_sets` reference the parent exercise (`PLAN_ITEM_HAS_HISTORY`). A set has no archived form, and deleting one renumbers the rest, so the message names editing the targets as the alternative.
 -   **Response (500 Internal Server Error)**: If an unexpected server error occurs.
 
 ### Plan Exercise Progression API

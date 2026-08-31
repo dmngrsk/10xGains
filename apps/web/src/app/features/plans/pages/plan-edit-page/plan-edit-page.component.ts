@@ -623,7 +623,8 @@ export class PlanEditPageComponent implements OnInit, OnDestroy {
     const dialogData: AddEditSetDialogData = {
       isEditMode: true,
       expected_reps: set.expectedReps ?? undefined,
-      expected_weight: set.expectedWeight ?? undefined
+      expected_weight: set.expectedWeight ?? undefined,
+      canDelete: this.capabilitiesSignal().canDeleteStructure
     };
 
     this.dialog

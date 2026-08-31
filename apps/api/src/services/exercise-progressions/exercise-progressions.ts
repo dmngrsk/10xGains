@@ -74,10 +74,12 @@ export function resolveExerciseProgressions(
             // A set the session was never given cannot have been failed, so it is skipped rather
             // than counted against the exercise; the remaining sets still decide the outcome.
             //
-            // Skipping rests on a set the plan prescribes never being deletable, at any status
-            // (`assertSessionSetDeletable`), nor repointable to another index. Were it removable,
+            // Skipping rests on neither side of the match being removable: a session set the plan
+            // prescribes cannot be deleted at any status (`assertSessionSetDeletable`) nor
+            // repointed to another index, and a plan set cannot be deleted once anything has been
+            // recorded against its exercise (`PlanRepository.deleteSet`). Were either removable,
             // this branch would also catch a set the user failed and then deleted, and would excuse
-            // the failure that should have deloaded them. See that guard for the one route left.
+            // the failure that should have deloaded them.
             console.warn(`No actual set found for expected set with index ${expectedSet.set_index} of exercise ${exerciseId} (plan exercise ID: ${scopedPlanExercise.id}). It was added to the plan after the session started; skipping it.`);
             continue;
           }
