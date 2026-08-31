@@ -4,6 +4,7 @@
       <txg-session-card
         [sessionData]="session"
         [notesAccessible]="notesAccessible"
+        [showNotes]="showNotes"
         (sessionNavigated)="onSessionNavigated($event)"
         (notesClicked)="onNotesClicked($event)"
         data-cy="session-card">

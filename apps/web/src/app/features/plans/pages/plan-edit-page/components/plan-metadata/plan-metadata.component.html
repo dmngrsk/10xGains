@@ -1,16 +1,20 @@
 @if (plan) {
   <div class="flex flex-col gap-2">
-    <div class="plan-heading">
-      @if (plan.description) {
-        <p class="plan-description">{{ plan.description }}</p>
-      } @else if (capabilities.canEditPlanMetadata) {
-        <p class="plan-description plan-description--empty">Add a description</p>
-      }
+    <div class="flex items-center gap-2 min-w-0">
+      <div class="flex-auto min-w-0 flex flex-col gap-2">
+        <p class="text-xl font-bold text-primary" data-cy="plan-metadata-name">{{ plan.name }}</p>
+
+        @if (plan.description) {
+          <p class="text-sm text-secondary">{{ plan.description }}</p>
+        } @else if (capabilities.canEditPlanMetadata) {
+          <p class="italic opacity-70 text-sm text-secondary">Add a description</p>
+        }
+      </div>
 
       @if (capabilities.canEditPlanMetadata) {
         <button
           mat-icon-button
-          class="plan-edit-button"
+          class="flex-none -mr-2"
           (click)="planEdited.emit()"
           aria-label="Edit training plan"
           data-cy="plan-edit-button">

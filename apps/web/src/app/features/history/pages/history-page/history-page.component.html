@@ -1,49 +1,69 @@
 <txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center px-4 min-h-[var(--txg-page-viewport)]" [class.py-4]="viewModel().viewMode === 'list'">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.isLoading || pageRecentlyChanged()) {
-        <div class="flex justify-center items-center min-h-[var(--txg-page-viewport)]">
-          <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
-        </div>
-      } @else if (viewModel.error) {
-        <txg-notice
-          [descriptionText]="viewModel.error!"
-          buttonText="Try Again"
-          (buttonClicked)="onErrorButtonClicked()"
-          [isError]="true"
-          data-cy="history-error-notice">
-        </txg-notice>
-      } @else if (viewModel.viewMode === 'calendar') {
-        <div class="w-full max-w-100 mx-auto h-[var(--txg-page-viewport)]" data-cy="history-calendar-view">
-          <txg-history-calendar
-            [sessions]="viewModel.calendarSessions"
-            [month]="viewModel.calendarMonth"
-            (monthChanged)="onMonthChanged($event)"
-            (dayClicked)="onDayClicked($event)">
-          </txg-history-calendar>
-        </div>
-      } @else if (viewModel.viewMode === 'list') {
-        <txg-history-list
-          class="contents"
-          [sessions]="viewModel.sessions"
-          (sessionNavigated)="onSessionNavigated($event)"
-          (notesClicked)="onNotesClicked($event)"
-          (editFiltersClicked)="onFilterButtonClicked()">
-        </txg-history-list>
+  <txg-history-tabs
+    [viewMode]="viewModel().viewMode"
+    (viewModeChanged)="onViewModeChanged($event)">
+  </txg-history-tabs>
+
+  <div class="pt-[var(--txg-history-content-offset)]">
+    <div class="flex justify-center min-h-[var(--txg-history-page-viewport)]" [class.p-4]="viewModel().viewMode !== 'calendar'">
+      @if (viewModel(); as viewModel) {
+        @if (viewModel.isLoading) {
+          <div class="flex justify-center items-center min-h-[var(--txg-history-page-viewport)]">
+            <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="history-loading-spinner"></mat-progress-spinner>
+          </div>
+        } @else if (viewModel.error) {
+          <txg-notice
+            [descriptionText]="viewModel.error!"
+            buttonText="Try Again"
+            (buttonClicked)="onErrorButtonClicked()"
+            [isError]="true"
+            data-cy="history-error-notice">
+          </txg-notice>
+        } @else if (viewModel.viewMode === 'calendar') {
+          <div class="w-full h-[var(--txg-history-calendar-viewport)]" data-cy="history-calendar-view">
+            <txg-history-calendar
+              [sessions]="viewModel.calendarSessions"
+              [month]="viewModel.calendarMonth"
+              (monthChanged)="onMonthChanged($event)"
+              (dayClicked)="onDayClicked($event)">
+            </txg-history-calendar>
+          </div>
+        } @else if (viewModel.viewMode === 'list') {
+          <txg-history-list
+            class="contents"
+            [sessions]="listedSessions()"
+            [notesOnly]="viewModel.notesOnly"
+            [hasMore]="hasMoreSessions()"
+            [isLoadingMore]="viewModel.isLoadingMore"
+            (sessionNavigated)="onSessionNavigated($event)"
+            (notesClicked)="onNotesClicked($event)"
+            (loadMore)="onLoadMoreSessions()"
+            (editFiltersClicked)="onFilterButtonClicked()">
+          </txg-history-list>
+        }
       }
-    }
+    </div>
   </div>
 
-  <txg-history-actions-bar
-    [length]="viewModel().totalSessions"
-    [pageSize]="viewModel().filters.pageSize"
-    [pageIndex]="viewModel().currentPage"
-    [pageSizeOptions]="viewModel().filters.pageSizeOptions"
-    [planName]="calendarPlanName()"
-    [viewMode]="viewModel().viewMode"
-    (pageChanged)="onPageChanged($event)"
-    (filterButtonClicked)="onFilterButtonClicked()"
-    (viewModeChanged)="onViewModeChanged($event)"
-    data-cy="history-actions-bar">
-  </txg-history-actions-bar>
+  <div class="txg-fab-anchor flex flex-col gap-3">
+    @if (viewModel().viewMode === 'list') {
+      <button
+        mat-mini-fab
+        class="txg-fab"
+        [class.txg-fab-active]="viewModel().notesOnly"
+        [attr.aria-pressed]="viewModel().notesOnly"
+        [matTooltip]="viewModel().notesOnly ? 'Showing the sessions with notes' : 'Show only the sessions with notes'"
+        (click)="onNotesOnlyToggled()"
+        data-cy="history-notes-toggle-button">
+        <mat-icon>sticky_note_2</mat-icon>
+      </button>
+    }
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      (click)="onFilterButtonClicked()"
+      data-cy="history-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
 </txg-main-layout>

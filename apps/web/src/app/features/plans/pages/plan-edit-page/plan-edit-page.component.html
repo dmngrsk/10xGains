@@ -1,17 +1,19 @@
 <txg-main-layout
   backNavigation="/plans"
-  [title]="(viewModel().plan?.name ? 'Editing: ' + viewModel().plan!.name : 'Loading Plan...')"
+  title="Edit Training Plan"
   [loadingSignal]="isLoadingSignal">
 
-  <div class="p-4 h-full overflow-y-auto">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.error) {
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <div class="txg-page-fill p-4">
         <txg-notice
           [descriptionText]="viewModel.error!"
           [isError]="true"
           data-cy="plan-edit-error-notice">
         </txg-notice>
-      } @else if (!viewModel.isLoading && !viewModel.plan) {
+      </div>
+    } @else if (!viewModel.isLoading && !viewModel.plan) {
+      <div class="txg-page-fill p-4">
         <txg-notice
           iconName="error_outline"
           titleText="Plan Not Found"
@@ -19,8 +21,10 @@
           buttonText="Back to Plans"
           (buttonClicked)="onPlansNavigated()">
         </txg-notice>
-      } @else if (viewModel.plan) {
-        <div class="mb-4">
+      </div>
+    } @else if (viewModel.plan) {
+      <div class="py-4 h-full overflow-y-auto">
+        <div class="px-4 mb-4">
           <txg-plan-metadata
             [plan]="viewModel.plan"
             [sessionCount]="viewModel.sessionCount"
@@ -50,21 +54,20 @@
           data-cy="training-day-list">
         </txg-plan-day-list>
 
-        <div class="plan-actions">
+        <div class="px-4 mt-2 pb-2">
           @if (viewModel.plan.isActive) {
-            <button mat-raised-button (click)="onPlanDeactivated()" data-cy="plan-deactivate-button">
+            <button mat-raised-button class="w-full" (click)="onPlanDeactivated()" data-cy="plan-deactivate-button">
               <mat-icon>edit_off</mat-icon>
               <span>Deactivate And Edit Plan</span>
             </button>
           } @else {
-            <button mat-flat-button (click)="onPlanActivated()" data-cy="plan-activate-button">
+            <button mat-flat-button class="w-full" (click)="onPlanActivated()" data-cy="plan-activate-button">
               <mat-icon>rocket_launch</mat-icon>
               <span>Activate Training Plan</span>
             </button>
           }
         </div>
-
-      }
+      </div>
     }
-  </div>
+  }
 </txg-main-layout>

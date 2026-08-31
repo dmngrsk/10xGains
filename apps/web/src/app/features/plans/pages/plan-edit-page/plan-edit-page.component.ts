@@ -44,7 +44,6 @@ const WEIGHT_STEP_DEBOUNCE_MS = 500;
 @Component({
   selector: 'txg-plan-edit-page',
   templateUrl: './plan-edit-page.component.html',
-  styleUrl: './plan-edit-page.component.scss',
   standalone: true,
   imports: [
     CommonModule,
@@ -624,7 +623,8 @@ export class PlanEditPageComponent implements OnInit, OnDestroy {
     const dialogData: AddEditSetDialogData = {
       isEditMode: true,
       expected_reps: set.expectedReps ?? undefined,
-      expected_weight: set.expectedWeight ?? undefined
+      expected_weight: set.expectedWeight ?? undefined,
+      canDelete: this.capabilitiesSignal().canDeleteStructure
     };
 
     this.dialog

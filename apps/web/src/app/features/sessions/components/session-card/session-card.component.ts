@@ -20,6 +20,7 @@ import { SessionCardViewModel, SessionCardSetViewModel } from '../../models/sess
 export class SessionCardComponent {
   @Input() sessionData!: SessionCardViewModel;
   @Input() notesAccessible = false;
+  @Input() showNotes = false;
   @Output() sessionNavigated = new EventEmitter<string>();
   @Output() sessionAbandoned = new EventEmitter<string>();
   @Output() notesClicked = new EventEmitter<string>();

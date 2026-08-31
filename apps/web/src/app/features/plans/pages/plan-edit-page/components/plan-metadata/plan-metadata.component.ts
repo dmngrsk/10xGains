@@ -8,7 +8,6 @@ import { PlanEditCapabilities } from '@features/plans/models/plan-edit-capabilit
 @Component({
   selector: 'txg-plan-metadata',
   templateUrl: './plan-metadata.component.html',
-  styleUrl: './plan-metadata.component.scss',
   standalone: true,
   imports: [CommonModule, MatIconModule, MatButtonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,

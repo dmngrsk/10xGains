@@ -1,0 +1,13 @@
+:host {
+  --mat-tab-container-height: var(--txg-tabs-bar-height);
+  --mat-tab-active-label-text-color: var(--color-primary);
+  --mat-tab-active-hover-label-text-color: var(--color-primary);
+  --mat-tab-active-focus-label-text-color: var(--color-primary);
+  --mat-tab-inactive-label-text-color: var(--color-outline);
+  --mat-tab-inactive-hover-label-text-color: var(--color-outline);
+  --mat-tab-inactive-focus-label-text-color: var(--color-outline);
+
+  ::ng-deep .mat-mdc-tab-link .mdc-tab__text-label {
+    display: flex;
+  }
+}

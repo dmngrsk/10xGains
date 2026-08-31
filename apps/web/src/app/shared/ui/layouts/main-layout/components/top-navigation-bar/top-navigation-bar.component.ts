@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router } from '@angular/router';
 import { EnvironmentService } from '@shared/services/environment.service';
+import { NavigationHistoryService } from '@shared/services/navigation-history.service';
 
 @Component({
   selector: 'txg-top-navigation-bar',
@@ -25,6 +26,7 @@ export class TopNavigationBarComponent {
   private router = inject(Router);
   private location = inject(Location);
   private environmentService: EnvironmentService = inject(EnvironmentService);
+  private navigationHistory = inject(NavigationHistoryService);
 
   readonly showBackNavigation: Signal<boolean> = computed(() => {
     return !!this.backNavigation;
@@ -43,10 +45,16 @@ export class TopNavigationBarComponent {
   }
 
   onNavigateBack(): void {
+    if (this.navigationHistory.canGoBack) {
+      this.location.back();
+      return;
+    }
+
     if (this.backNavigation) {
       this.router.navigate([this.backNavigation]);
-    } else {
-      this.location.back();
+      return;
     }
+
+    this.location.back();
   }
 }

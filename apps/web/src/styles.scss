@@ -60,21 +60,30 @@ $material-color-role-tokens: (
   max-width: var(--txg-content-measure);
 }
 
-/* The fixed chrome. Each bar sets its own height from these, so page offsets stay derived. */
+/* The fixed chrome; bars size themselves from these, pages derive their offsets from them. */
 :root {
   --txg-top-bar-height: 4rem;
   --txg-bottom-nav-height: 4rem;
-  --txg-actions-bar-height: 4rem;
+  --txg-tabs-bar-height: 3.75rem;
 
-  /* What is left of the viewport on a page carrying all three bars. */
-  --txg-page-viewport: calc(
-    100vh - var(--txg-top-bar-height) - var(--txg-actions-bar-height) - var(--txg-bottom-nav-height)
-  );
+  /* What a FAB hangs above. Pages carrying the bottom navigation raise it below. */
+  --txg-page-bottom-edge: 0rem;
+
+  /* Where the top bar's underside really falls: mat-toolbar's own height rule wins below 600px. */
+  --txg-top-bar-edge: 3.5rem;
+}
+
+/* Above that breakpoint the toolbar is its full height, and what hangs below it has to follow. */
+@media (min-width: 600px) {
+  :root {
+    --txg-top-bar-edge: var(--txg-top-bar-height);
+  }
 }
 
 /* Applied as a class binding, since only some pages carry the bottom navigation. */
 .txg-bottom-nav-offset {
   padding-bottom: var(--txg-bottom-nav-height);
+  --txg-page-bottom-edge: var(--txg-bottom-nav-height);
 }
 
 /* Remove the border line in Material Text Fields: https://stackoverflow.com/a/76034412 */
@@ -98,6 +107,40 @@ $material-color-role-tokens: (
 .txg-fab.txg-fab {
   width: 48px;
   height: 48px;
+}
+
+/*
+ * The same FAB, switched on: filled with the primary colour instead of its container tint. Set
+ * through Material's own tokens, which is all a Material 3 FAB takes its colours from - there is
+ * no palette class to hand it instead.
+ */
+.txg-fab-active {
+  --mat-fab-small-container-color: var(--mat-sys-primary);
+  --mat-fab-small-foreground-color: var(--mat-sys-on-primary);
+}
+
+/*
+ * Fills what the layout leaves a page, so a notice shown on its own centres in that space
+ * instead of sitting at the top of it. Put the page's own padding on this element rather than
+ * an ancestor: padding inside the min-height costs nothing, padding around it overflows.
+ */
+.txg-page-fill {
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - var(--txg-top-bar-height) - var(--txg-page-bottom-edge));
+}
+
+/*
+ * Where a FAB hangs: the same gap above the page's bottom edge everywhere, which is the bottom
+ * navigation on the pages carrying one and the viewport edge on the pages that do not. Wrap the
+ * button rather than positioning it directly - Material's own `position: relative` outranks a
+ * single class on the button itself.
+ */
+.txg-fab-anchor {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--txg-page-bottom-edge) + 1.5rem);
+  z-index: 10;
 }
 
 /* Hide scrollbars dynamically - to be used with txgAutoHideScrollbar directive */

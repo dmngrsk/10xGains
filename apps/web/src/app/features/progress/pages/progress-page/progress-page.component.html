@@ -1,8 +1,8 @@
 <txg-main-layout title="Progress" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center p-4 min-h-[var(--txg-page-viewport)]">
+  <div class="flex justify-center p-4 min-h-[var(--txg-progress-page-viewport)]">
     @if (viewModel(); as viewModel) {
       @if (viewModel.isLoading) {
-        <div class="flex justify-center items-center min-h-[var(--txg-page-viewport)]">
+        <div class="flex justify-center items-center min-h-[var(--txg-progress-page-viewport)]">
           <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="progress-loading-spinner"></mat-progress-spinner>
         </div>
       } @else if (viewModel.error) {
@@ -35,23 +35,32 @@
         }
       } @else {
         <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
-          <txg-exercise-chip-row
-            [exercises]="viewModel.series"
-            (exerciseToggled)="onExerciseToggled($event)">
-          </txg-exercise-chip-row>
+          <div class="flex flex-col">
+            <p class="text-xl font-bold text-primary truncate" data-cy="progress-filter-plan">{{ filterPlanName() }}</p>
+            <p class="text-sm text-primary truncate" data-cy="progress-filter-range">{{ filterDateRange() }}</p>
+          </div>
           <txg-progress-chart
             class="block flex-1 min-h-0"
             [series]="selectedSeries()"
             [showPlanName]="isAllPlansSelected()">
           </txg-progress-chart>
+          <txg-exercise-chip-row
+            class="block pr-16"
+            [exercises]="viewModel.series"
+            (exerciseToggled)="onExerciseToggled($event)">
+          </txg-exercise-chip-row>
         </div>
       }
     }
   </div>
 
-  <txg-progress-actions-bar
-    [summary]="filterSummary()"
-    (filterButtonClicked)="onFilterButtonClicked()"
-    data-cy="progress-actions-bar">
-  </txg-progress-actions-bar>
+  <div class="txg-fab-anchor">
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      (click)="onFilterButtonClicked()"
+      data-cy="progress-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+  </div>
 </txg-main-layout>

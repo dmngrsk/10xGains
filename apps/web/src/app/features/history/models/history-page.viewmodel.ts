@@ -7,20 +7,20 @@ export interface HistoryPageViewModel {
   filters: HistoryFiltersViewModel;
   sessions: SessionCardViewModel[];
   totalSessions: number;
-  currentPage: number;
   viewMode: HistoryViewMode;
+  notesOnly: boolean;
   calendarMonth: string; // 'yyyy-MM'
   calendarSessions: SessionCardViewModel[];
+  noteSessions: SessionCardViewModel[];
   isLoading: boolean;
+  isLoadingMore: boolean;
   error: string | null;
 }
 
 export interface HistoryFiltersViewModel {
   selectedPlanId: string;
   dateRange: DateRangeValue;
-  pageSize: number;
   availablePlans: HistoryFilterPlan[] | null;
-  pageSizeOptions: number[];
 }
 
 export interface HistoryFilterPlan {

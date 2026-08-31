@@ -13,7 +13,6 @@ import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.
 import { formatDateRangeSummary } from '@shared/utils/dates/date-range-presets';
 import { ProgressFilterDialogComponent } from './components/dialogs/progress-filter-dialog/progress-filter-dialog.component';
 import { ExerciseChipRowComponent } from './components/exercise-chip-row/exercise-chip-row.component';
-import { ProgressActionsBarComponent } from './components/progress-actions-bar/progress-actions-bar.component';
 import { ProgressChartComponent } from './components/progress-chart/progress-chart.component';
 import { ProgressPageFacade } from './progress-page.facade';
 
@@ -29,10 +28,10 @@ import { ProgressPageFacade } from './progress-page.facade';
     MatButtonModule,
     ExerciseChipRowComponent,
     ProgressChartComponent,
-    ProgressActionsBarComponent,
     NoticeComponent,
   ],
   templateUrl: './progress-page.component.html',
+  styleUrl: './progress-page.component.scss',
   providers: [ProgressPageFacade],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -48,13 +47,14 @@ export class ProgressPageComponent implements OnInit {
   readonly selectedSeries = computed(() => this.viewModel().series.filter(s => s.selected));
   readonly isAllPlansSelected = computed(() => this.viewModel().filters.selectedPlanId === null);
 
-  readonly filterSummary = computed(() => {
+  readonly filterPlanName = computed(() => {
     const filters = this.viewModel().filters;
-    const planName = filters.selectedPlanId
+    return filters.selectedPlanId
       ? filters.availablePlans.find(p => p.id === filters.selectedPlanId)?.name ?? 'Unknown plan'
       : 'All plans';
-    return `${planName} – ${formatDateRangeSummary(filters.dateRange)}`;
   });
+
+  readonly filterDateRange = computed(() => formatDateRangeSummary(this.viewModel().filters.dateRange));
 
   readonly noDataAtAll = computed(() => {
     const { series, filters } = this.viewModel();

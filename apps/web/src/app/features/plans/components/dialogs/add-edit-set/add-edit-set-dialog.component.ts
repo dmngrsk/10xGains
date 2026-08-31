@@ -11,7 +11,7 @@ import { integerValidator } from '@shared/utils/forms/validators/integer.validat
 import { numericValidator } from '@shared/utils/forms/validators/numeric.validator';
 
 export type AddEditSetDialogValue = Pick<PlanExerciseSetDto, 'expected_reps' | 'expected_weight'>;
-export type AddEditSetDialogData = Partial<AddEditSetDialogValue> & { isEditMode?: boolean; }
+export type AddEditSetDialogData = Partial<AddEditSetDialogValue> & { isEditMode?: boolean; canDelete?: boolean; }
 export type AddEditSetDialogCloseResult =
   | { save: true; value: AddEditSetDialogValue }
   | { delete: true }

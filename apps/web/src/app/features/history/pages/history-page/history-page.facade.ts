@@ -15,7 +15,8 @@ import { LocalStorageService } from '@shared/services/local-storage.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { DateRangeValue } from '@shared/utils/dates/date-range-presets';
 
-const CALENDAR_PAGE_SIZE = 100;
+const SESSION_SWEEP_PAGE_SIZE = 100;
+const LIST_PAGE_SIZE = 10;
 const CALENDAR_PREFETCH_RADIUS = 3;
 
 const FILTERS_STORAGE_KEY = 'txg.history.filters';
@@ -23,7 +24,6 @@ const FILTERS_STORAGE_KEY = 'txg.history.filters';
 interface PersistedHistoryFilters {
   selectedPlanId: string;
   dateRange: DateRangeValue;
-  pageSize: number;
 }
 
 const initialHistoryPageViewModel: HistoryPageViewModel = {
@@ -32,15 +32,15 @@ const initialHistoryPageViewModel: HistoryPageViewModel = {
     selectedPlanId: '',
     dateRange: { preset: null, dateFrom: null, dateTo: null },
     availablePlans: [],
-    pageSize: 10,
-    pageSizeOptions: [5, 10, 25, 100],
   },
   totalSessions: 0,
-  currentPage: 0,
   viewMode: 'list',
+  notesOnly: false,
   calendarMonth: format(new Date(), 'yyyy-MM'),
   calendarSessions: [],
+  noteSessions: [],
   isLoading: false,
+  isLoadingMore: false,
   error: null,
 };
 
@@ -63,15 +63,24 @@ export class HistoryPageFacade {
   private readonly calendarMonthSessions = new Map<string, SessionCardViewModel[]>();
   private readonly pendingCalendarMonths = new Set<string>();
 
-  private listNeedsReload = false;
+  private listNeedsReload = true;
+  private loaded = false;
+  private notesNeedReload = true;
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
 
     const persisted = this.readPersistedFilters();
     if (persisted) {
-      this.viewModel.update(vm => ({ ...vm, filters: { ...vm.filters, ...persisted } }));
+      this.viewModel.update(vm => ({
+        ...vm,
+        filters: { ...vm.filters, selectedPlanId: persisted.selectedPlanId, dateRange: persisted.dateRange }
+      }));
     }
+  }
+
+  isLoaded(): boolean {
+    return this.loaded;
   }
 
   loadHistoryPageData(): void {
@@ -115,6 +124,7 @@ export class HistoryPageFacade {
           }
         }));
 
+        this.loaded = true;
         this.loadActiveViewSessions();
       }),
       catchError((error: Error) => {
@@ -129,17 +139,20 @@ export class HistoryPageFacade {
     ).subscribe();
   }
 
-  loadSessions(): void {
-    const currentViewModel = this.viewModel();
-    const filters = currentViewModel.filters;
-    const currentPage = currentViewModel.currentPage;
-    const pageSize = currentViewModel.filters.pageSize;
+  loadSessions(isLoadMore = false): void {
+    const { filters, sessions } = this.viewModel();
 
-    this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
+    this.listNeedsReload = false;
+    this.viewModel.update(vm => ({
+      ...vm,
+      isLoading: !isLoadMore,
+      isLoadingMore: isLoadMore,
+      error: null
+    }));
 
     const queryParams: GetSessionsParams = {
-      limit: pageSize,
-      offset: currentPage * pageSize,
+      limit: LIST_PAGE_SIZE,
+      offset: isLoadMore ? sessions.length : 0,
       sort: 'session_date.desc',
       status: ['COMPLETED'],
       date_from: filters.dateRange.dateFrom ?? undefined,
@@ -151,21 +164,24 @@ export class HistoryPageFacade {
       map(response => this.mapSessionsResponse(response.data, response.totalCount)),
       catchError((error: Error) => {
         console.error('Error loading sessions:', error);
+        this.listNeedsReload = true;
         this.viewModel.update(vm => ({
           ...vm,
           isLoading: false,
+          isLoadingMore: false,
           error: 'Failed to load sessions. Please try again later.',
-          sessions: [],
-          totalSessions: 0
+          sessions: isLoadMore ? vm.sessions : [],
+          totalSessions: isLoadMore ? vm.totalSessions : 0
         }));
         return EMPTY;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
       this.viewModel.update(vm => ({
         ...vm,
-        sessions: result.sessions,
+        sessions: isLoadMore ? [...vm.sessions, ...result.sessions] : result.sessions,
         totalSessions: result.totalCount,
         isLoading: false,
+        isLoadingMore: false,
         error: null
       }));
     });
@@ -186,6 +202,7 @@ export class HistoryPageFacade {
     }
 
     if (monthsToLoad.length === 0) {
+      this.settleLoader();
       return;
     }
 
@@ -201,8 +218,47 @@ export class HistoryPageFacade {
     }
   }
 
-  seedViewState(viewMode: HistoryViewMode, calendarMonth: string): void {
-    this.viewModel.update(vm => ({ ...vm, viewMode, calendarMonth }));
+  loadNoteSessions(): void {
+    const { filters } = this.viewModel();
+
+    this.notesNeedReload = false;
+    this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
+
+    const queryParams: GetSessionsParams = {
+      limit: SESSION_SWEEP_PAGE_SIZE,
+      offset: 0,
+      sort: 'session_date.desc',
+      status: ['COMPLETED'],
+      date_from: filters.dateRange.dateFrom ?? undefined,
+      date_to: filters.dateRange.dateTo ?? undefined,
+      plan_id: filters.selectedPlanId ?? undefined,
+    };
+
+    this.loadAllSessionPages(queryParams, 0, []).pipe(
+      map(response => this.mapSessionsResponse(response.data, response.totalCount)),
+      catchError((error: Error) => {
+        console.error('Error loading session notes:', error);
+        this.notesNeedReload = true;
+        this.viewModel.update(vm => ({
+          ...vm,
+          isLoading: false,
+          error: 'Failed to load session notes. Please try again later.',
+          noteSessions: []
+        }));
+        return EMPTY;
+      })
+    ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
+      this.viewModel.update(vm => ({
+        ...vm,
+        noteSessions: result.sessions.filter(session => !!session.notes?.trim()),
+        isLoading: false,
+        error: null
+      }));
+    });
+  }
+
+  seedViewState(viewMode: HistoryViewMode, calendarMonth: string, notesOnly: boolean): void {
+    this.viewModel.update(vm => ({ ...vm, viewMode, calendarMonth, notesOnly }));
   }
 
   setViewMode(mode: HistoryViewMode): void {
@@ -222,19 +278,23 @@ export class HistoryPageFacade {
 
       if (hadDateRange) {
         this.listNeedsReload = true;
+        this.notesNeedReload = true;
       }
       this.loadCalendarSessions();
       return;
     }
 
-    if (mode === 'list') {
-      this.viewModel.update(vm => ({ ...vm, viewMode: mode }));
+    this.viewModel.update(vm => ({ ...vm, viewMode: mode }));
+    this.loadListSessions();
+  }
 
-      if (this.listNeedsReload) {
-        this.listNeedsReload = false;
-        this.loadSessions();
-      }
+  setNotesOnly(notesOnly: boolean): void {
+    if (this.viewModel().notesOnly === notesOnly) {
+      return;
     }
+
+    this.viewModel.update(vm => ({ ...vm, notesOnly }));
+    this.loadListSessions();
   }
 
   setCalendarMonth(month: string): void {
@@ -253,6 +313,7 @@ export class HistoryPageFacade {
 
     if (planChanged) {
       this.listNeedsReload = true;
+      this.notesNeedReload = true;
       this.clearCalendarCache();
     }
 
@@ -265,9 +326,13 @@ export class HistoryPageFacade {
       map(res => !res?.error),
       tap(success => {
         if (!success) return;
+        this.notesNeedReload = true;
         this.viewModel.update(vm => ({
           ...vm,
-          sessions: vm.sessions.map(s => s.id === sessionId ? { ...s, notes } : s)
+          sessions: vm.sessions.map(s => s.id === sessionId ? { ...s, notes } : s),
+          noteSessions: vm.noteSessions
+            .map(s => s.id === sessionId ? { ...s, notes } : s)
+            .filter(s => !!s.notes?.trim())
         }));
       }),
       catchError(err => {
@@ -283,42 +348,49 @@ export class HistoryPageFacade {
 
     this.viewModel.update(vm => ({
       ...vm,
-      filters: { ...vm.filters, ...newFilters },
-      currentPage: 0
+      filters: { ...vm.filters, ...newFilters }
     }));
 
     if (planChanged) {
       this.clearCalendarCache();
     }
 
+    this.listNeedsReload = true;
+    this.notesNeedReload = true;
     this.persistFilters();
-    this.loadSessions();
-  }
-
-  updatePagination(currentPage: number, pageSize: number): void {
-    // `pageSize` lives on `filters`, which is what `loadSessions` reads. Writing it to the
-    // view-model root instead left the request limit pinned at its initial value, so the
-    // paginator's page-size selector had no effect.
-    this.viewModel.update(vm => ({
-      ...vm,
-      currentPage,
-      filters: { ...vm.filters, pageSize }
-    }));
-    this.persistFilters();
-    this.loadSessions();
+    this.loadListSessions();
   }
 
   private loadActiveViewSessions(): void {
-    const { viewMode } = this.viewModel();
-
-    if (viewMode === 'calendar') {
+    if (this.viewModel().viewMode === 'calendar') {
       this.listNeedsReload = true;
+      this.notesNeedReload = true;
       this.loadCalendarSessions();
+      return;
     }
 
-    if (viewMode === 'list') {
+    this.loadListSessions(true);
+  }
+
+  private loadListSessions(force = false): void {
+    if (this.viewModel().notesOnly) {
+      if (force || this.notesNeedReload) {
+        this.loadNoteSessions();
+      }
+      return;
+    }
+
+    if (force || this.listNeedsReload) {
       this.loadSessions();
     }
+  }
+
+  private settleLoader(): void {
+    if (this.pendingCalendarMonths.size > 0) {
+      return;
+    }
+
+    this.viewModel.update(vm => (vm.isLoading ? { ...vm, isLoading: false } : vm));
   }
 
   private mapSessionsResponse(data: SessionDto[] | null, totalCount: number | undefined): { sessions: SessionCardViewModel[], totalCount: number } {
@@ -351,7 +423,7 @@ export class HistoryPageFacade {
 
   private loadCalendarBatch(months: string[], planId: string | undefined, isInitialLoad: boolean): void {
     const queryParams: GetSessionsParams = {
-      limit: CALENDAR_PAGE_SIZE,
+      limit: SESSION_SWEEP_PAGE_SIZE,
       offset: 0,
       sort: 'session_date.asc',
       status: ['COMPLETED'],
@@ -360,23 +432,20 @@ export class HistoryPageFacade {
       plan_id: planId,
     };
 
-    // Page through the whole run so a dense window never silently drops sessions (and, with the
-    // ascending sort, never drops the most recent - and most likely on-screen - months).
-    this.loadAllCalendarPages(queryParams, 0, []).pipe(
+    this.loadAllSessionPages(queryParams, 0, []).pipe(
       map(response => this.mapSessionsResponse(response.data, response.totalCount)),
       catchError((error: Error) => {
         console.error('Error loading calendar sessions:', error);
         months.forEach(month => this.pendingCalendarMonths.delete(month));
-        // A background prefetch failure only logs - it retries on the next scroll; failing the
-        // whole view is reserved for the initial load, where there is nothing to show instead.
+
         if (isInitialLoad) {
           this.viewModel.update(vm => ({
             ...vm,
-            isLoading: false,
             error: 'Failed to load sessions. Please try again later.',
             calendarSessions: []
           }));
         }
+        this.settleLoader();
         return EMPTY;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
@@ -387,8 +456,7 @@ export class HistoryPageFacade {
       for (const session of result.sessions) {
         if (!session.sessionDate) continue;
         const month = format(session.sessionDate, 'yyyy-MM');
-        // Bucket strictly into the requested months - anything else would duplicate sessions
-        // already cached by an earlier batch.
+
         if (!months.includes(month)) continue;
         this.calendarMonthSessions.set(month, [...(this.calendarMonthSessions.get(month) ?? []), session]);
       }
@@ -396,9 +464,9 @@ export class HistoryPageFacade {
       this.viewModel.update(vm => ({
         ...vm,
         calendarSessions: this.flattenCalendarCache(),
-        isLoading: isInitialLoad ? false : vm.isLoading,
         error: null
       }));
+      this.settleLoader();
     });
   }
 
@@ -409,8 +477,8 @@ export class HistoryPageFacade {
   }
 
   private persistFilters(): void {
-    const { selectedPlanId, dateRange, pageSize } = this.viewModel().filters;
-    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange, pageSize };
+    const { selectedPlanId, dateRange } = this.viewModel().filters;
+    const toPersist: PersistedHistoryFilters = { selectedPlanId, dateRange };
     this.localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(toPersist));
   }
 
@@ -432,18 +500,20 @@ export class HistoryPageFacade {
     this.internalPlans.set([]);
     this.internalExercises.set([]);
     this.listNeedsReload = true;
+    this.notesNeedReload = true;
+    this.loaded = false;
     this.viewModel.set(initialHistoryPageViewModel);
   }
 
-  private loadAllCalendarPages(base: GetSessionsParams, offset: number, acc: SessionDto[]): Observable<{ data: SessionDto[], totalCount: number }> {
+  private loadAllSessionPages(base: GetSessionsParams, offset: number, acc: SessionDto[]): Observable<{ data: SessionDto[], totalCount: number }> {
     return this.sessionService.getSessions({ ...base, offset }).pipe(
       switchMap(response => {
         const page = response.data ?? [];
         const combined = offset === 0 ? page : [...acc, ...page];
-        if (page.length < CALENDAR_PAGE_SIZE) {
+        if (page.length < SESSION_SWEEP_PAGE_SIZE) {
           return of({ data: combined, totalCount: response.totalCount ?? combined.length });
         }
-        return this.loadAllCalendarPages(base, offset + CALENDAR_PAGE_SIZE, combined);
+        return this.loadAllSessionPages(base, offset + SESSION_SWEEP_PAGE_SIZE, combined);
       })
     );
   }

@@ -16,6 +16,7 @@ import { SessionCardComponent } from '../session-card/session-card.component';
 export class SessionListComponent {
   @Input() sessions: SessionCardViewModel[] | null = null;
   @Input() notesAccessible = false;
+  @Input() showNotes = false;
   @Output() sessionNavigated = new EventEmitter<string>();
   @Output() notesClicked = new EventEmitter<string>();
 

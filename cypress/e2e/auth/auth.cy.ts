@@ -115,6 +115,8 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.getBySel(dataCy.settings.account.changePasswordDialog.confirmPasswordInput).type('Password123!');
       cy.getBySel(dataCy.settings.account.changePasswordDialog.submitButton).click();
       cy.getBySel(dataCy.settings.account.changePasswordDialog.content).should('not.exist');
+      cy.getMatSnackBar().should('contain.text', 'Password changed successfully');
+
       cy.getBySel(dataCy.settings.account.signOutButton).click();
 
       cy.get('@email').then((userEmail) => {

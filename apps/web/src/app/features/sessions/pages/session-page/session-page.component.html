@@ -1,13 +1,15 @@
 <txg-main-layout [title]="title" [loadingSignal]="isLoadingSignal" [backNavigation]="navigation">
-  <div class="p-4">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.error) {
+  @if (viewModel(); as viewModel) {
+    @if (viewModel.error) {
+      <div class="txg-page-fill p-4">
         <txg-notice
           [descriptionText]="viewModel.error!"
           [isError]="true"
           data-cy="session-error-notice">
         </txg-notice>
-      } @else {
+      </div>
+    } @else {
+      <div class="p-4">
         <txg-session-header [metadata]="viewModel.metadata!" />
 
         <div class="mt-4">
@@ -31,7 +33,7 @@
         }
 
         <txg-session-notes (notesClicked)="onNotesClicked()" />
-      }
+      </div>
     }
-  </div>
+  }
 </txg-main-layout>

@@ -17,9 +17,7 @@ const DATE_RANGE_1M: DateRangeValue = { preset: '1M', dateFrom: '2026-06-13T00:0
 const baseFilters: HistoryFiltersViewModel = {
   selectedPlanId: 'plan-1',
   dateRange: DATE_RANGE_1M,
-  pageSize: 10,
   availablePlans: AVAILABLE_PLANS,
-  pageSizeOptions: [5, 10, 25, 100],
 };
 
 const listData: HistoryFilterDialogData = { 
@@ -65,8 +63,6 @@ describe('HistoryFilterDialogComponent', () => {
       expect(close).toHaveBeenCalledWith({
         selectedPlanId: 'plan-1',
         dateRange: DATE_RANGE_1M,
-        pageSize: 10,
-        pageSizeOptions: [5, 10, 25, 100],
         availablePlans: AVAILABLE_PLANS,
       });
     });

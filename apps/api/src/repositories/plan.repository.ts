@@ -839,6 +839,11 @@ export class PlanRepository {
   /**
    * Deletes a set.
    *
+   * Unlike a day or an exercise, a set has no archived form: deleting one renumbers the
+   * `set_index` of every set after it, and progression judges a session by matching its recorded
+   * sets to the plan's by that index. So once anything has been recorded against the exercise,
+   * the set stays and only its targets may be edited.
+   *
    * @param {string} planId - The ID of the parent plan.
    * @param {string} dayId - The ID of the parent day.
    * @param {string} exerciseId - The ID of the parent exercise.
@@ -847,6 +852,24 @@ export class PlanRepository {
    */
   async deleteSet(planId: string, dayId: string, exerciseId: string, setId: string): Promise<boolean> {
     await this.verifyPlanOwnership(planId, dayId, exerciseId, setId);
+
+    const { count, error } = await this.supabase
+      .from('session_sets')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_exercise_id', exerciseId);
+
+    if (error) {
+      throw error;
+    }
+
+    if ((count ?? 0) > 0) {
+      throw new ConflictError(
+        `This exercise has ${count} recorded set${count === 1 ? '' : 's'}. Deleting a set would renumber the others and change what those workouts are judged against; edit the set's targets instead.`,
+        'PLAN_ITEM_HAS_HISTORY',
+        'plan_item_has_history_error',
+        409
+      );
+    }
 
     await deleteEntityFromCollection(this.supabase, this.planSetCollection(exerciseId), setId);
 

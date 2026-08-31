@@ -1,4 +1,13 @@
-@if (sessions.length === 0) {
+@if (sessions.length === 0 && notesOnly) {
+  <txg-notice
+    iconName="sticky_note_2"
+    titleText="No Notes Found"
+    descriptionText="None of the sessions matching your current filters have notes attached to them yet."
+    buttonText="Edit Filters"
+    (buttonClicked)="onEditFiltersClicked()"
+    data-cy="history-notes-empty-notice">
+  </txg-notice>
+} @else if (sessions.length === 0) {
   <txg-notice
     iconName="search_off"
     titleText="No Sessions Found"
@@ -12,8 +21,20 @@
     <txg-session-list
       [sessions]="sessions"
       [notesAccessible]="true"
+      [showNotes]="notesOnly"
       (sessionNavigated)="onSessionNavigated($event)"
       (notesClicked)="onNotesClicked($event)">
     </txg-session-list>
+
+    @if (hasMore) {
+      <div #sentinel class="h-10" data-cy="history-load-more-sentinel"></div>
+    }
+
+    @if (isLoadingMore) {
+      <div class="flex items-center mt-4 ml-2" data-cy="history-load-more-spinner">
+        <mat-progress-spinner mode="indeterminate" diameter="30"></mat-progress-spinner>
+        <span class="ml-4 text-secondary">Loading more sessions...</span>
+      </div>
+    }
   </div>
 }

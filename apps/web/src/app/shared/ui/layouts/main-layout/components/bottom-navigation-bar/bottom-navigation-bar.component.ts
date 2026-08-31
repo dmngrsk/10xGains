@@ -25,7 +25,6 @@ interface NavLink {
     MatDividerModule
   ],
   templateUrl: './bottom-navigation-bar.component.html',
-  styleUrl: './bottom-navigation-bar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class BottomNavigationBarComponent {
@@ -36,4 +35,12 @@ export class BottomNavigationBarComponent {
     { label: 'Progress', icon: 'stacked_line_chart', path: '/progress', dataCy: 'bottom-navigation-progress' },
     { label: 'Settings', icon: 'settings', path: '/settings', dataCy: 'bottom-navigation-settings' }
   ];
+
+  navItemColorClass(link: NavLink, isActive: boolean): string {
+    if (link.disabled) {
+      return '!text-outline-variant';
+    }
+
+    return isActive ? '!text-primary' : '!text-outline';
+  }
 }

@@ -37,7 +37,7 @@
     <button mat-flat-button color="primary" (click)="onSave()" [disabled]="setForm.invalid" class="w-full" data-cy="add-edit-plan-set-dialog-save-button">
       <span>{{ data.isEditMode ? 'Save Set' : 'Add Set' }}</span>
     </button>
-    @if (data.isEditMode) {
+    @if (data.isEditMode && data.canDelete) {
       <button mat-raised-button color="warn" (click)="onDeleteSet()" class="w-full" data-cy="add-edit-set-dialog-delete-button">
         <span>Delete Set</span>
       </button>

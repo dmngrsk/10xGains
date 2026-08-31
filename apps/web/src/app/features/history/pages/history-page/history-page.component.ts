@@ -1,32 +1,34 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, computed, Signal, DestroyRef, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, computed, Signal, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, Subject } from 'rxjs';
+import { Observable } from 'rxjs';
 import { format } from 'date-fns';
-import { debounceTime, filter, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { HistoryFiltersViewModel, HistoryPageViewModel, HistoryViewMode } from '@features/history/models/history-page.viewmodel';
 import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '@features/sessions/components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { LocalStorageService } from '@shared/services/local-storage.service';
+import { NavigationHistoryService } from '@shared/services/navigation-history.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HistoryCalendarFilterResult, HistoryFilterDialogComponent, HistoryFilterDialogData, HistoryFilterDialogResult } from './components/dialogs/history-filter-dialog/history-filter-dialog.component';
 import { SessionPickerDialogComponent, SessionPickerDialogData } from './components/dialogs/session-picker-dialog/session-picker-dialog.component';
-import { HistoryActionsBarComponent } from './components/history-actions-bar/history-actions-bar.component';
 import { HistoryCalendarComponent } from './components/history-calendar/history-calendar.component';
 import { HistoryListComponent } from './components/history-list/history-list.component';
+import { HistoryTabsComponent } from './components/history-tabs/history-tabs.component';
 import { HistoryPageFacade } from './history-page.facade';
 
 const VIEW_MODE_STORAGE_KEY = 'txg.history.view-mode';
+const NOTES_ONLY_STORAGE_KEY = 'txg.history.notes-only';
+const VIEW_MODES: HistoryViewMode[] = ['list', 'calendar'];
 const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 @Component({
@@ -37,18 +39,17 @@ const MONTH_PARAM_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
     MainLayoutComponent,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatPaginatorModule,
     MatDialogModule,
     MatButtonModule,
     MatTooltipModule,
     MatDividerModule,
-    HistoryActionsBarComponent,
     HistoryCalendarComponent,
     HistoryListComponent,
+    HistoryTabsComponent,
     NoticeComponent,
   ],
   templateUrl: './history-page.component.html',
-  providers: [HistoryPageFacade],
+  styleUrl: './history-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryPageComponent implements OnInit {
@@ -59,38 +60,36 @@ export class HistoryPageComponent implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
   private readonly localStorage = inject(LocalStorageService);
+  private readonly navigationHistory = inject(NavigationHistoryService);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
-  readonly isLoadingSignal: Signal<boolean> = computed(() => this.pageRecentlyChanged() || this.viewModel().isLoading);
-
-  readonly calendarPlanName = computed(() => {
-    const { selectedPlanId, availablePlans } = this.viewModel().filters;
-    return availablePlans?.find(plan => plan.id === selectedPlanId)?.name ?? '';
-  });
-
-  readonly pageRecentlyChanged = signal(false);
-  private readonly pageChangedSubject = new Subject<PageEvent>();
+  readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
+  readonly listedSessions: Signal<SessionCardViewModel[]> = computed(() =>
+    this.viewModel().notesOnly ? this.viewModel().noteSessions : this.viewModel().sessions);
+  readonly hasMoreSessions: Signal<boolean> = computed(() =>
+    !this.viewModel().notesOnly && this.viewModel().sessions.length < this.viewModel().totalSessions);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     const requestedViewMode = params.has('view') ? params.get('view') : this.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-    const viewMode: HistoryViewMode = requestedViewMode === 'list' ? 'list' : 'calendar';
+    const viewMode: HistoryViewMode = VIEW_MODES.includes(requestedViewMode as HistoryViewMode)
+      ? requestedViewMode as HistoryViewMode
+      : 'list';
 
     const monthParam = params.get('month');
     const month = monthParam && MONTH_PARAM_PATTERN.test(monthParam) ? monthParam : format(new Date(), 'yyyy-MM');
 
-    this.facade.seedViewState(viewMode, month);
-    this.syncViewQueryParams();
-    this.facade.loadHistoryPageData();
+    const requestedNotesOnly = params.has('notes') ? params.get('notes') : this.localStorage.getItem(NOTES_ONLY_STORAGE_KEY);
+    const notesOnly = requestedNotesOnly === '1';
 
-    this.pageChangedSubject.pipe(
-      tap(() => this.pageRecentlyChanged.set(true)),
-      debounceTime(300),
-      takeUntilDestroyed(this.destroyRef)
-    ).subscribe(event => {
-      this.facade.updatePagination(event.pageIndex, event.pageSize);
-      this.pageRecentlyChanged.set(false);
-    });
+    this.facade.seedViewState(viewMode, month, notesOnly);
+    this.syncViewQueryParams();
+
+    if (this.navigationHistory.isPopState && this.facade.isLoaded()) {
+      return;
+    }
+
+    this.facade.loadHistoryPageData();
   }
 
   onSessionNavigated(sessionId: string): void {
@@ -98,7 +97,7 @@ export class HistoryPageComponent implements OnInit {
   }
 
   onNotesClicked(sessionId: string): void {
-    const session = this.viewModel().sessions.find(s => s.id === sessionId);
+    const session = this.listedSessions().find(s => s.id === sessionId);
     if (!session) return;
 
     const dialogData: SessionNotesDialogData = {
@@ -122,13 +121,21 @@ export class HistoryPageComponent implements OnInit {
       });
   }
 
-  onPageChanged(event: PageEvent): void {
-    this.pageChangedSubject.next(event);
+  onLoadMoreSessions(): void {
+    this.facade.loadSessions(true);
   }
 
   onViewModeChanged(mode: HistoryViewMode): void {
     this.facade.setViewMode(mode);
     this.localStorage.setItem(VIEW_MODE_STORAGE_KEY, mode);
+    this.syncViewQueryParams();
+  }
+
+  onNotesOnlyToggled(): void {
+    const notesOnly = !this.viewModel().notesOnly;
+
+    this.facade.setNotesOnly(notesOnly);
+    this.localStorage.setItem(NOTES_ONLY_STORAGE_KEY, notesOnly ? '1' : '0');
     this.syncViewQueryParams();
   }
 
@@ -191,12 +198,13 @@ export class HistoryPageComponent implements OnInit {
   }
 
   private syncViewQueryParams(): void {
-    const { viewMode, calendarMonth } = this.viewModel();
+    const { viewMode, calendarMonth, notesOnly } = this.viewModel();
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
         view: viewMode,
         month: viewMode === 'calendar' ? calendarMonth : null,
+        notes: viewMode === 'list' && notesOnly ? '1' : null,
       },
       queryParamsHandling: 'merge',
       replaceUrl: true,

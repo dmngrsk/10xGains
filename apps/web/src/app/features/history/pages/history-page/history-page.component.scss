@@ -1,0 +1,11 @@
+:host {
+  --txg-history-content-offset: calc(
+    var(--txg-top-bar-edge) + var(--txg-tabs-bar-height) - var(--txg-top-bar-height)
+  );
+
+  --txg-history-chrome: calc(
+    var(--txg-top-bar-height) + var(--txg-tabs-bar-height) + var(--txg-bottom-nav-height)
+  );
+  --txg-history-page-viewport: calc(100vh - var(--txg-history-chrome) - 0.25rem);
+  --txg-history-calendar-viewport: calc(100vh - var(--txg-history-chrome));
+}

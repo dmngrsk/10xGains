@@ -1,5 +1,6 @@
 export const planEditSelectors = {
   metadata: 'plan-edit-metadata',
+  name: 'plan-metadata-name',
   historyNotice: 'plan-metadata-history-notice',
   activeNotice: 'plan-metadata-active-notice',
   deactivateButton: 'plan-deactivate-button',

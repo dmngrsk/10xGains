@@ -107,26 +107,53 @@ describe('HistoryPageFacade', () => {
     });
   });
 
-  describe('updatePagination', () => {
+  describe('loadSessions', () => {
+    const sessionsPage = (ids: string[], totalCount: number) => of({
+      data: ids.map((id, i) => sessionDto(id, `2026-05-${String(i + 1).padStart(2, '0')}T10:00:00.000Z`)),
+      totalCount,
+      error: null,
+    });
+
     beforeEach(() => {
       configure('plan-1');
+      getSessionsMock.mockReturnValue(sessionsPage(['s-1', 's-2'], 5));
       facade.loadHistoryPageData();
     });
 
-    it('should request the selected page size', () => {
-      // The paginator's page-size selector is only wired up if the new size reaches the request:
-      // writing it to the view-model root instead of `filters` left the limit pinned at 10.
-      facade.updatePagination(0, 25);
+    it('should offset the next page by what is already loaded', () => {
+      getSessionsMock.mockReturnValue(sessionsPage(['s-3', 's-4'], 5));
 
-      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 0 }));
-      expect(facade.viewModel().filters.pageSize).toBe(25);
+      facade.loadSessions(true);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 10, offset: 2 }));
     });
 
-    it('should offset by the selected page size when paging forward', () => {
-      facade.updatePagination(2, 25);
+    it('should append the next page rather than replace the list', () => {
+      getSessionsMock.mockReturnValue(sessionsPage(['s-3', 's-4'], 5));
 
-      expect(lastQuery()).toEqual(expect.objectContaining({ limit: 25, offset: 50 }));
-      expect(facade.viewModel().currentPage).toBe(2);
+      facade.loadSessions(true);
+
+      expect(facade.viewModel().sessions.map(s => s.id)).toEqual(['s-1', 's-2', 's-3', 's-4']);
+      expect(facade.viewModel().isLoadingMore).toBe(false);
+    });
+
+    it('should keep what is loaded when a further page fails', () => {
+      getSessionsMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.loadSessions(true);
+
+      expect(facade.viewModel().sessions.map(s => s.id)).toEqual(['s-1', 's-2']);
+      expect(facade.viewModel().error).toContain('Failed to load sessions');
+      expect(facade.viewModel().isLoadingMore).toBe(false);
+    });
+
+    it('should start from the top again when not loading more', () => {
+      getSessionsMock.mockReturnValue(sessionsPage(['s-9'], 1));
+
+      facade.loadSessions();
+
+      expect(lastQuery()).toEqual(expect.objectContaining({ offset: 0 }));
+      expect(facade.viewModel().sessions.map(s => s.id)).toEqual(['s-9']);
     });
   });
 
@@ -136,14 +163,11 @@ describe('HistoryPageFacade', () => {
       facade.loadHistoryPageData();
     });
 
-    it('should send the selected plan and reset to the first page', () => {
-      facade.viewModel.update(vm => ({ ...vm, currentPage: 3 }));
-
+    it('should send the selected plan and start the list again from the top', () => {
       facade.updateFilters({ selectedPlanId: 'plan-2' });
 
       expect(lastQuery().plan_id).toBe('plan-2');
       expect(lastQuery().offset).toBe(0);
-      expect(facade.viewModel().currentPage).toBe(0);
     });
 
     it('should send the date range bounds from the filter', () => {
@@ -151,12 +175,6 @@ describe('HistoryPageFacade', () => {
 
       expect(lastQuery().date_from).toBe('2026-03-01T00:00:00.000Z');
       expect(lastQuery().date_to).toBe('2026-04-01T23:59:59.999Z');
-    });
-
-    it('should reload with the new page size', () => {
-      facade.updateFilters({ pageSize: 5 });
-
-      expect(lastQuery().limit).toBe(5);
     });
   });
 
@@ -168,7 +186,7 @@ describe('HistoryPageFacade', () => {
     // group below bootstraps differently and sets itself up instead.
     const configureListSeeded = () => {
       configure('plan-1');
-      facade.seedViewState('list', '2026-05');
+      facade.seedViewState('list', '2026-05', false);
       facade.loadHistoryPageData();
     };
 
@@ -347,7 +365,7 @@ describe('HistoryPageFacade', () => {
     describe('when seeded before the initial load', () => {
       it('should load the calendar months instead of the list', () => {
         configure('plan-1');
-        facade.seedViewState('calendar', '2026-05');
+        facade.seedViewState('calendar', '2026-05', false);
 
         facade.loadHistoryPageData();
 
@@ -361,12 +379,52 @@ describe('HistoryPageFacade', () => {
     });
   });
 
+  describe('when the page is entered again', () => {
+    it('should take the list again rather than leave the loader on', () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05', false);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      // Tapping the tab in the navigation bar enters the page afresh, loader and all.
+      facade.loadHistoryPageData();
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry + 1);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should take the notes again when the list is narrowed to them', () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05', true);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      facade.loadHistoryPageData();
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry + 1);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should answer the calendar from its cache without leaving the loader on', () => {
+      configure('plan-1');
+      facade.seedViewState('calendar', '2026-05', false);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      facade.loadHistoryPageData();
+
+      // Every month on screen is already held, so nothing is queried - and nothing is waited for.
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+  });
+
   describe('filter persistence across navigation', () => {
     it('restores the last chosen filters when the facade is rebuilt', () => {
       // First visit: move the plan and page size away from their defaults.
       configure('plan-1');
       facade.loadHistoryPageData();
-      facade.updateFilters({ selectedPlanId: 'plan-2', pageSize: 25 });
+      facade.updateFilters({ selectedPlanId: 'plan-2' });
       expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
 
       // Returning from a session opened out of the history view rebuilds the component-scoped
@@ -377,8 +435,7 @@ describe('HistoryPageFacade', () => {
       facade.loadHistoryPageData();
 
       expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
-      expect(facade.viewModel().filters.pageSize).toBe(25);
-      expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2', limit: 25 }));
+      expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2' }));
     });
 
     it('falls back to the active plan when the persisted plan no longer exists', () => {
@@ -391,6 +448,88 @@ describe('HistoryPageFacade', () => {
       facade.loadHistoryPageData();
 
       expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
+    });
+  });
+
+  describe('the notes-only list', () => {
+    const noteSessionDto = (id: string, sessionDate: string, notes: string | null) => ({
+      ...sessionDto(id, sessionDate),
+      notes,
+    });
+
+    const configureListSeeded = () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05', false);
+      facade.loadHistoryPageData();
+    };
+
+    it('should sweep the filtered range and keep only the sessions carrying a note', () => {
+      configureListSeeded();
+      getSessionsMock.mockReturnValue(of({
+        data: [
+          noteSessionDto('s-1', '2026-05-02T10:00:00.000Z', 'Felt strong.'),
+          noteSessionDto('s-2', '2026-05-03T10:00:00.000Z', null),
+          noteSessionDto('s-3', '2026-05-04T10:00:00.000Z', '   '),
+          noteSessionDto('s-4', '2026-05-05T10:00:00.000Z', 'Shoulder twinge.'),
+        ],
+        totalCount: 4,
+        error: null,
+      }));
+
+      facade.setNotesOnly(true);
+
+      expect(facade.viewModel().noteSessions.map(s => s.id)).toEqual(['s-1', 's-4']);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should query the whole range newest first rather than a single page', () => {
+      configureListSeeded();
+
+      facade.setNotesOnly(true);
+
+      expect(lastQuery()).toEqual(expect.objectContaining({
+        status: ['COMPLETED'],
+        plan_id: 'plan-1',
+        sort: 'session_date.desc',
+        limit: 100,
+        offset: 0,
+      }));
+    });
+
+    it('should not re-sweep when the toggle is switched off and on again', () => {
+      configureListSeeded();
+      facade.setNotesOnly(true);
+      const callsAfterFirstSweep = getSessionsMock.mock.calls.length;
+
+      facade.setNotesOnly(false);
+      facade.setNotesOnly(true);
+
+      // Neither list is stale, so switching away and back costs nothing.
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstSweep);
+    });
+
+    it('should re-sweep after the filters changed underneath it', () => {
+      configureListSeeded();
+      facade.setNotesOnly(true);
+      facade.setNotesOnly(false);
+      facade.updateFilters({ selectedPlanId: 'plan-2' });
+      const callsAfterFilterChange = getSessionsMock.mock.calls.length;
+
+      facade.setNotesOnly(true);
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFilterChange + 1);
+      expect(lastQuery()).toEqual(expect.objectContaining({ plan_id: 'plan-2', sort: 'session_date.desc' }));
+    });
+
+    it('should surface an error when the sweep fails', () => {
+      configureListSeeded();
+      getSessionsMock.mockReturnValue(throwError(() => new Error('boom')));
+
+      facade.setNotesOnly(true);
+
+      expect(facade.viewModel().error).toContain('Failed to load session notes');
+      expect(facade.viewModel().isLoading).toBe(false);
+      expect(facade.viewModel().noteSessions).toEqual([]);
     });
   });
 });
