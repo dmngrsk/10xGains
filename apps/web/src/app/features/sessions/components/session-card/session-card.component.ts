@@ -20,7 +20,6 @@ import { SessionCardViewModel, SessionCardSetViewModel } from '../../models/sess
 export class SessionCardComponent {
   @Input() sessionData!: SessionCardViewModel;
   @Input() notesAccessible = false;
-  /** Shows the session's note where the workout it recorded would otherwise be summarised. */
   @Input() showNotes = false;
   @Output() sessionNavigated = new EventEmitter<string>();
   @Output() sessionAbandoned = new EventEmitter<string>();

@@ -19,7 +19,6 @@ import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 })
 export class HistoryListComponent implements OnDestroy {
   @Input() sessions: SessionCardViewModel[] = [];
-  /** The list is narrowed to the sessions carrying a note, and shows the note on each card. */
   @Input() notesOnly = false;
   @Input() hasMore = false;
   @Input() isLoadingMore = false;

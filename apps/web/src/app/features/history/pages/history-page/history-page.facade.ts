@@ -288,11 +288,6 @@ export class HistoryPageFacade {
     this.loadListSessions();
   }
 
-  /**
-   * The notes are every session carrying one, not a page of them: a note is rare enough that
-   * paging through the sessions to find them would hand the user an empty page at a time. So the
-   * narrowed list is swept in full and shown whole, and the load-more sentinel stays away.
-   */
   setNotesOnly(notesOnly: boolean): void {
     if (this.viewModel().notesOnly === notesOnly) {
       return;
@@ -377,11 +372,6 @@ export class HistoryPageFacade {
     this.loadListSessions(true);
   }
 
-  /**
-   * Loads whichever of the two the list is showing. Switching between them leans on what is
-   * already held, but a page load has turned the loader on before asking and has to be answered,
-   * so it takes the sessions again rather than leaving the page waiting on a load that never comes.
-   */
   private loadListSessions(force = false): void {
     if (this.viewModel().notesOnly) {
       if (force || this.notesNeedReload) {

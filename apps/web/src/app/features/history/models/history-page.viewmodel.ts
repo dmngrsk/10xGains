@@ -8,7 +8,6 @@ export interface HistoryPageViewModel {
   sessions: SessionCardViewModel[];
   totalSessions: number;
   viewMode: HistoryViewMode;
-  /** Narrows the list to the sessions carrying a note, and shows the note in place of the workout. */
   notesOnly: boolean;
   calendarMonth: string; // 'yyyy-MM'
   calendarSessions: SessionCardViewModel[];

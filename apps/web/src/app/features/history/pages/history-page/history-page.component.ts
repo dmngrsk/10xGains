@@ -66,14 +66,12 @@ export class HistoryPageComponent implements OnInit {
   readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
   readonly listedSessions: Signal<SessionCardViewModel[]> = computed(() =>
     this.viewModel().notesOnly ? this.viewModel().noteSessions : this.viewModel().sessions);
-  // The notes are swept in full rather than paged, so there is never another page of them to fetch.
   readonly hasMoreSessions: Signal<boolean> = computed(() =>
     !this.viewModel().notesOnly && this.viewModel().sessions.length < this.viewModel().totalSessions);
 
   ngOnInit(): void {
     const params = this.route.snapshot.queryParamMap;
     const requestedViewMode = params.has('view') ? params.get('view') : this.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-    // The first tab of the strip, so a first visit opens where the strip says it starts.
     const viewMode: HistoryViewMode = VIEW_MODES.includes(requestedViewMode as HistoryViewMode)
       ? requestedViewMode as HistoryViewMode
       : 'list';
