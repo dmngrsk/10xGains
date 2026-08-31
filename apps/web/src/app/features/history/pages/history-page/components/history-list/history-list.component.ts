@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { SessionListComponent } from '@features/sessions/components/session-list/session-list.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
@@ -17,7 +17,7 @@ import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
   templateUrl: './history-list.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoryListComponent implements AfterViewInit, OnDestroy {
+export class HistoryListComponent implements OnDestroy {
   @Input() sessions: SessionCardViewModel[] = [];
   @Input() hasMore = false;
   @Input() isLoadingMore = false;
@@ -27,12 +27,24 @@ export class HistoryListComponent implements AfterViewInit, OnDestroy {
   @Output() editFiltersClicked = new EventEmitter<void>();
   @Output() loadMore = new EventEmitter<void>();
 
-  @ViewChild('sentinel') sentinel?: ElementRef<HTMLElement>;
-
   private intersectionObserver?: IntersectionObserver;
+  private observedSentinel?: HTMLElement;
 
-  ngAfterViewInit(): void {
-    this.setupIntersectionObserver();
+  @ViewChild('sentinel') set sentinel(sentinel: ElementRef<HTMLElement> | undefined) {
+    const element = sentinel?.nativeElement;
+    if (element === this.observedSentinel) {
+      return;
+    }
+
+    if (this.observedSentinel) {
+      this.intersectionObserver?.unobserve(this.observedSentinel);
+    }
+
+    this.observedSentinel = element;
+
+    if (element) {
+      this.observer().observe(element);
+    }
   }
 
   ngOnDestroy(): void {
@@ -51,22 +63,13 @@ export class HistoryListComponent implements AfterViewInit, OnDestroy {
     this.editFiltersClicked.emit();
   }
 
-  private setupIntersectionObserver(): void {
-    // The sentinel is only rendered once there is a page left to fetch, so it comes and goes
-    // with the list; observing the host keeps one observer across those appearances.
-    this.intersectionObserver?.disconnect();
-
-    this.intersectionObserver = new IntersectionObserver((entries) => {
+  private observer(): IntersectionObserver {
+    this.intersectionObserver ??= new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && this.hasMore && !this.isLoadingMore) {
         this.loadMore.emit();
       }
     }, { rootMargin: '200px' });
 
-    if (this.sentinel?.nativeElement) {
-      this.intersectionObserver.observe(this.sentinel.nativeElement);
-      return;
-    }
-
-    setTimeout(() => this.setupIntersectionObserver(), 100);
+    return this.intersectionObserver;
   }
 }
