@@ -202,6 +202,7 @@ export class HistoryPageFacade {
     }
 
     if (monthsToLoad.length === 0) {
+      this.settleLoader();
       return;
     }
 
@@ -373,21 +374,33 @@ export class HistoryPageFacade {
       return;
     }
 
-    this.loadListSessions();
+    this.loadListSessions(true);
   }
 
-  /** Loads whichever of the two the list is showing, and only if it has gone stale. */
-  private loadListSessions(): void {
+  /**
+   * Loads whichever of the two the list is showing. Switching between them leans on what is
+   * already held, but a page load has turned the loader on before asking and has to be answered,
+   * so it takes the sessions again rather than leaving the page waiting on a load that never comes.
+   */
+  private loadListSessions(force = false): void {
     if (this.viewModel().notesOnly) {
-      if (this.notesNeedReload) {
+      if (force || this.notesNeedReload) {
         this.loadNoteSessions();
       }
       return;
     }
 
-    if (this.listNeedsReload) {
+    if (force || this.listNeedsReload) {
       this.loadSessions();
     }
+  }
+
+  private settleLoader(): void {
+    if (this.pendingCalendarMonths.size > 0) {
+      return;
+    }
+
+    this.viewModel.update(vm => (vm.isLoading ? { ...vm, isLoading: false } : vm));
   }
 
   private mapSessionsResponse(data: SessionDto[] | null, totalCount: number | undefined): { sessions: SessionCardViewModel[], totalCount: number } {
@@ -438,11 +451,11 @@ export class HistoryPageFacade {
         if (isInitialLoad) {
           this.viewModel.update(vm => ({
             ...vm,
-            isLoading: false,
             error: 'Failed to load sessions. Please try again later.',
             calendarSessions: []
           }));
         }
+        this.settleLoader();
         return EMPTY;
       })
     ).subscribe((result: { sessions: SessionCardViewModel[], totalCount: number }) => {
@@ -461,9 +474,9 @@ export class HistoryPageFacade {
       this.viewModel.update(vm => ({
         ...vm,
         calendarSessions: this.flattenCalendarCache(),
-        isLoading: isInitialLoad ? false : vm.isLoading,
         error: null
       }));
+      this.settleLoader();
     });
   }
 

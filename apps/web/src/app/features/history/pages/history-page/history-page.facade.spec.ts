@@ -379,6 +379,46 @@ describe('HistoryPageFacade', () => {
     });
   });
 
+  describe('when the page is entered again', () => {
+    it('should take the list again rather than leave the loader on', () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05', false);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      // Tapping the tab in the navigation bar enters the page afresh, loader and all.
+      facade.loadHistoryPageData();
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry + 1);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should take the notes again when the list is narrowed to them', () => {
+      configure('plan-1');
+      facade.seedViewState('list', '2026-05', true);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      facade.loadHistoryPageData();
+
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry + 1);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+
+    it('should answer the calendar from its cache without leaving the loader on', () => {
+      configure('plan-1');
+      facade.seedViewState('calendar', '2026-05', false);
+      facade.loadHistoryPageData();
+      const callsAfterFirstEntry = getSessionsMock.mock.calls.length;
+
+      facade.loadHistoryPageData();
+
+      // Every month on screen is already held, so nothing is queried - and nothing is waited for.
+      expect(getSessionsMock.mock.calls.length).toBe(callsAfterFirstEntry);
+      expect(facade.viewModel().isLoading).toBe(false);
+    });
+  });
+
   describe('filter persistence across navigation', () => {
     it('restores the last chosen filters when the facade is rebuilt', () => {
       // First visit: move the plan and page size away from their defaults.
