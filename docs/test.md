@@ -57,8 +57,8 @@ The following features and components are within the scope of testing:
 *   **Session History:**
     *   Two views - list and calendar - chosen from the tab strip, the list opening by default, with the last used view remembered between visits.
     *   Viewing a list of completed sessions, which loads a further page each time its end is scrolled to.
+    *   Narrowing that list to the sessions carrying a note, from the notes toggle, which shows each note in place of the workout the card would otherwise summarise.
     *   Browsing completed sessions by month in the calendar, including days holding more than one session.
-    *   Narrowing the list to the sessions carrying a note, from the notes toggle, which shows each note in place of the workout the card would otherwise summarise.
     *   Filtering session history by plan and date range, from the filter FAB.
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
@@ -177,18 +177,18 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | *&nbsp;&nbsp;errors* | HIST-05 | An error notice is displayed if the session history fails to load. | High | No |
 |  | HIST-06 | On error, a user can click the retry button to reload the session history. | High | No |
 | *&nbsp;&nbsp;notes* | HIST-07 | A completed session with a note shows a note indicator on its history entry, and the note can be opened from the history view. | High | No |
-| **History (Calendar)**<br>*&nbsp;&nbsp;browsing the calendar* | HIST-08 | Days holding completed sessions are marked with dots in the calendar. | High | No |
-|  | HIST-09 | Tapping a day with a single session navigates to that session's detail page. | High | No |
-|  | HIST-10 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |
-|  | HIST-11 | Returning from a session detail page restores the calendar view and the displayed month. | Medium | No |
-|  | HIST-12 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
-| *&nbsp;&nbsp;filtering and errors* | HIST-13 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
-|  | HIST-14 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
-| **History (Notes)**<br>*&nbsp;&nbsp;reading notes back* | HIST-15 | The notes toggle narrows the list to the completed sessions carrying a note, newest first, and each card shows the note in place of the workout it recorded. | High | No |
-|  | HIST-16 | Tapping a session showing its note navigates to that session's detail page. | Medium | No |
-|  | HIST-17 | Switching the notes toggle back off restores the full, paged list. | Medium | No |
-| *&nbsp;&nbsp;empty and errors* | HIST-18 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
-|  | HIST-19 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
+| **History (Notes)**<br>*&nbsp;&nbsp;reading notes back* | HIST-08 | The notes toggle narrows the list to the completed sessions carrying a note, newest first, and each card shows the note in place of the workout it recorded. | High | No |
+|  | HIST-09 | Tapping a session showing its note navigates to that session's detail page. | Medium | No |
+|  | HIST-10 | Switching the notes toggle back off restores the full, paged list. | Medium | No |
+| *&nbsp;&nbsp;empty and errors* | HIST-11 | The empty state notice is shown when no session matching the filters has a note. | Medium | No |
+|  | HIST-12 | An error notice is displayed if the notes fail to load, and the retry button restores them. | High | No |
+| **History (Calendar)**<br>*&nbsp;&nbsp;browsing the calendar* | HIST-13 | Days holding completed sessions are marked with dots in the calendar. | High | No |
+|  | HIST-14 | Tapping a day with a single session navigates to that session's detail page. | High | No |
+|  | HIST-15 | Tapping a day with multiple sessions opens the session picker, and choosing an entry navigates to it. | High | No |
+|  | HIST-16 | Returning from a session detail page restores the calendar view and the displayed month. | Medium | No |
+|  | HIST-17 | Scrolling between months updates the anchored month and its dots; an empty month renders with no dots and no empty-state notice. | Medium | No |
+| *&nbsp;&nbsp;filtering and errors* | HIST-18 | The calendar's filter dialog offers plan and month selection (no date range or page size), and applying a month jumps the calendar to it. | Medium | No |
+|  | HIST-19 | An error notice is displayed if the calendar fails to load, and the retry button restores the calendar. | High | No |
 | **History (Views)**<br>*&nbsp;&nbsp;switching views* | HIST-20 | Without a view parameter, the list opens by default; the view picked from the tabs and the notes toggle's state are both restored on revisits. | Medium | No |
 |  | HIST-21 | Returning from a session with the back control restores the view that was left, the pages already scrolled through, and the scroll position. | High | No |
 | **Progress**<br>*&nbsp;&nbsp;plotting and toggling series* | PROG-01 | The progress chart renders with one chip per exercise of the selected plan, all plotted by default, in plan appearance order. | High | No |
