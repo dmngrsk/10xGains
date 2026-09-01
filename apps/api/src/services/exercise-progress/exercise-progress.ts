@@ -29,7 +29,7 @@ export interface ExerciseProgressRow {
  *
  * For every (exercise, session) pair one point is produced, carrying:
  * - top_weight: the highest actual_weight among the COMPLETED sets, ties broken by the
- *   higher actual_reps. A pair without any completed set yields no point at all.
+ *   higher actual_reps. A pair whose sets were all SKIPPED yields no point at all.
  * - reps: the actual reps of every set in set order, so failed sets are visible too;
  *   a set with no recorded reps counts as 0.
  *
@@ -74,12 +74,15 @@ export function aggregateExerciseProgress(rows: ExerciseProgressRow[]): Exercise
 
 /**
  * Builds the data point for a single exercise within a single session,
- * or null when the exercise has no completed set in that session.
+ * or null when the exercise was skipped outright in that session.
+ *
+ * The top set is looked for among the COMPLETED sets first and only among the FAILED ones when
+ * there are none, so a session that fell short still plots the weight it was attempted at while
+ * a failed set never outranks a completed one. Ranking the two together would let an attempt the
+ * user did not make - 120 kg for 1 of 5 - overwrite the 100 kg they actually completed.
  */
 function toPoint(sessionRows: ExerciseProgressRow[]): ExerciseProgressPointDto | null {
-  const topSet = sessionRows
-    .filter(row => row.status === 'COMPLETED')
-    .reduce<ExerciseProgressRow | null>((top, row) => (top && !isHigherSet(row, top) ? top : row), null);
+  const topSet = topSetOfStatus(sessionRows, 'COMPLETED') ?? topSetOfStatus(sessionRows, 'FAILED');
 
   if (!topSet) {
     return null;
@@ -96,6 +99,19 @@ function toPoint(sessionRows: ExerciseProgressRow[]): ExerciseProgressPointDto |
     top_weight: topSet.actual_weight,
     reps,
   };
+}
+
+/**
+ * Picks the heaviest set holding the given status, ties broken by the higher rep count,
+ * or null when the session holds no set with that status.
+ */
+function topSetOfStatus(
+  sessionRows: ExerciseProgressRow[],
+  status: SessionSetDto['status']
+): ExerciseProgressRow | null {
+  return sessionRows
+    .filter(row => row.status === status)
+    .reduce<ExerciseProgressRow | null>((top, row) => (top && !isHigherSet(row, top) ? top : row), null);
 }
 
 function isHigherSet(candidate: ExerciseProgressRow, current: ExerciseProgressRow): boolean {

@@ -94,7 +94,7 @@ describe('aggregateExerciseProgress', () => {
     expect(result[0].points[0].top_weight).toBe(100);
   });
 
-  it('should NOT derive the top weight from a failed set that lifted more', () => {
+  it('should NOT derive the top weight from a failed set that lifted more than a completed one', () => {
     const rows = [
       makeRow({ weight: 100, setIndex: 1, reps: 5 }),
       makeRow({ weight: 120, setIndex: 2, reps: 1, status: 'FAILED' }),
@@ -106,13 +106,52 @@ describe('aggregateExerciseProgress', () => {
     expect(result[0].points[0].reps).toEqual([5, 1]);
   });
 
-  it('should produce no point for a session where the exercise has no completed set', () => {
+  it('should fall back to the top failed set for a session with no completed set', () => {
     const rows = [
-      makeRow({ weight: 100, setIndex: 1, reps: 0, status: 'FAILED' }),
+      makeRow({ weight: 100, setIndex: 1, reps: 2, status: 'FAILED' }),
+      makeRow({ weight: 100, setIndex: 2, reps: 0, status: 'FAILED' }),
+      makeRow({ weight: 100, setIndex: 3, reps: 0, status: 'FAILED' }),
+      makeRow({ weight: 100, setIndex: 4, reps: 0, status: 'FAILED' }),
+      makeRow({ weight: 100, setIndex: 5, reps: 0, status: 'FAILED' }),
+    ];
+
+    const result = aggregateExerciseProgress(rows);
+
+    expect(result[0].points).toHaveLength(1);
+    expect(result[0].points[0].top_weight).toBe(100);
+    expect(result[0].points[0].reps).toEqual([2, 0, 0, 0, 0]);
+  });
+
+  it('should rank the failed sets among themselves when falling back', () => {
+    const rows = [
+      makeRow({ weight: 100, setIndex: 1, reps: 2, status: 'FAILED' }),
+      makeRow({ weight: 120, setIndex: 2, reps: 1, status: 'FAILED' }),
+      makeRow({ weight: 110, setIndex: 3, reps: null, status: 'SKIPPED' }),
+    ];
+
+    const result = aggregateExerciseProgress(rows);
+
+    expect(result[0].points[0].top_weight).toBe(120);
+  });
+
+  it('should produce no point for a session where the exercise was skipped outright', () => {
+    const rows = [
+      makeRow({ weight: 100, setIndex: 1, reps: null, status: 'SKIPPED' }),
       makeRow({ weight: 100, setIndex: 2, reps: null, status: 'SKIPPED' }),
     ];
 
     expect(aggregateExerciseProgress(rows)).toEqual([]);
+  });
+
+  it('should drop a series whose every session was skipped, keeping the others', () => {
+    const rows = [
+      makeRow({ exerciseId: SQUAT_ID, exerciseName: 'Squat', weight: 100, reps: null, status: 'SKIPPED' }),
+      makeRow({ exerciseId: BENCH_ID, exerciseName: 'Bench Press', weight: 80, reps: 2, status: 'FAILED' }),
+    ];
+
+    const result = aggregateExerciseProgress(rows);
+
+    expect(result.map(s => s.exercise_name)).toEqual(['Bench Press']);
   });
 
   it('should break weight ties by the higher rep count, treating null reps as lowest', () => {
