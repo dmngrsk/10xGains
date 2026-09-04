@@ -135,12 +135,29 @@ $material-color-role-tokens: (
  * navigation on the pages carrying one and the viewport edge on the pages that do not. Wrap the
  * button rather than positioning it directly - Material's own `position: relative` outranks a
  * single class on the button itself.
+ *
+ * Horizontally it hangs inside the content measure rather than at the viewport edge, so on a wide
+ * screen it stays with the column it acts on instead of drifting into the margin. The percentage
+ * resolves against the viewport, which is also what the measure centres on - see the
+ * `scrollbar-gutter` rule on the layout's scroller. Below the measure the max() falls back to the
+ * plain viewport inset, leaving narrow screens exactly as they were.
  */
 .txg-fab-anchor {
   position: fixed;
-  right: 1rem;
+  right: max(1rem, 50% - var(--txg-content-measure) / 2 + 1rem);
   bottom: calc(var(--txg-page-bottom-edge) + 1.5rem);
   z-index: 10;
+}
+
+/*
+ * Reserves the scrollbar's width on both sides of the scrolling column, so the content measure
+ * centres on the viewport rather than on the viewport minus a scrollbar. Without it the page
+ * column sits half a scrollbar left of the fixed chrome that frames it - the navigation bars and
+ * the FAB - which is visible on desktop, where scrollbars take real width. It also keeps the
+ * column still when a page grows past one screen and the scrollbar appears.
+ */
+.txg-scroll-gutter {
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Hide scrollbars dynamically - to be used with txgAutoHideScrollbar directive */

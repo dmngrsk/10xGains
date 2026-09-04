@@ -8,7 +8,7 @@
   @if (showProgressBar()) {
     <mat-progress-bar mode="indeterminate" color="accent" class="!fixed top-[var(--txg-top-bar-edge)] left-0 right-0 z-[99]"></mat-progress-bar>
   }
-  <div #scroller [class.txg-bottom-nav-offset]="showBottomNavigation()" class="pt-[var(--txg-top-bar-height)] h-screen overflow-y-auto">
+  <div #scroller [class.txg-bottom-nav-offset]="showBottomNavigation()" class="pt-[var(--txg-top-bar-height)] h-screen overflow-y-auto txg-scroll-gutter">
     <div class="txg-content-measure">
       <ng-content></ng-content>
     </div>
