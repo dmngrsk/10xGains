@@ -12,7 +12,7 @@ function makeDto(overrides: Partial<ExerciseProgressDto> = {}): ExerciseProgress
     exercise_id: 'ex-1',
     exercise_name: 'Squat',
     points: [
-      { session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, reps: [5, 5, 5] },
+      { session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, all_sets_completed: true, reps: [5, 5, 5] },
     ],
     ...overrides,
   };
@@ -47,7 +47,7 @@ describe('mapToExerciseSeriesViewModels', () => {
         colorToken: SERIES_COLOR_TOKENS[0],
         selected: true,
         points: [
-          { date: '2026-06-01T10:00:00.000Z', weight: 100, repsLabel: '3x5', planName: 'Starting Strength' },
+          { date: '2026-06-01T10:00:00.000Z', weight: 100, repsLabel: '3x5', planName: 'Starting Strength', completed: true },
         ],
       },
     ]);
@@ -75,9 +75,22 @@ describe('mapToExerciseSeriesViewModels', () => {
     expect(result.map(s => s.selected)).toEqual([false, true]);
   });
 
+  it('should carry the completion flag of every point', () => {
+    const dto = makeDto({
+      points: [
+        { session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, all_sets_completed: true, reps: [5, 5] },
+        { session_id: 's-2', session_date: '2026-06-03T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, all_sets_completed: false, reps: [5, 4] },
+      ],
+    });
+
+    const result = mapToExerciseSeriesViewModels([dto], PLANS, () => true);
+
+    expect(result[0].points.map(p => p.completed)).toEqual([true, false]);
+  });
+
   it('should fall back to a placeholder plan name for unknown plan ids', () => {
     const dto = makeDto({
-      points: [{ session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'gone', top_weight: 100, reps: [5] }],
+      points: [{ session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'gone', top_weight: 100, all_sets_completed: true, reps: [5] }],
     });
 
     const result = mapToExerciseSeriesViewModels([dto], PLANS, () => true);

@@ -1590,14 +1590,15 @@ Provides aggregated, per-exercise progress series for the authenticated user, bu
 
 #### GET /api/progress/exercises
 
-Returns one series per exercise, each holding one data point per completed session in which that exercise had at least one completed set.
+Returns one series per exercise, each holding one data point per completed session in which that exercise was attempted.
 
 For every `(exercise, session)` pair:
 
--   `top_weight` is the highest `actual_weight` among the sets with status `COMPLETED`, ties broken by the higher `actual_reps`. Non-completed sets never contribute, so a failed heavy attempt cannot inflate the plotted line.
+-   `top_weight` is the highest `actual_weight` among the sets with status `COMPLETED`, ties broken by the higher `actual_reps`. A `FAILED` set never outranks a completed one, so a failed heavy attempt cannot inflate the plotted line; only when the session holds no completed set at all is the top set taken from the failed ones, so a session the user fell short on still plots at the weight it was attempted with.
+-   `all_sets_completed` is `true` only when **every** set of that exercise in that session has status `COMPLETED`; a single `FAILED` or `SKIPPED` set makes it `false`. It lets a client mark a session the user did not get through in full — the progress chart draws those points as hollow dots and fully completed ones as filled dots.
 -   `reps` lists the `actual_reps` of **every** set of that exercise in that session, in set order, including `FAILED` and `SKIPPED` ones (a set with no recorded reps counts as `0`). This is what lets a client distinguish `5x5` from `5/5/4/0/0`.
 
-Sessions whose status is not `COMPLETED` are excluded entirely, and a pair with no completed set yields no point. Series are sorted by exercise name, points by `session_date` ascending. The response is not paginated — one point per exercise per session keeps it small regardless of set count — so no `totalCount` is returned.
+Sessions whose status is not `COMPLETED` are excluded entirely, and a pair whose sets were all `SKIPPED` yields no point. Series are sorted by exercise name, points by `session_date` ascending. The response is not paginated — one point per exercise per session keeps it small regardless of set count — so no `totalCount` is returned.
 
 The underlying read *is* paginated internally. PostgREST caps any single response at `max_rows` (1000), which a consistent lifter crosses at roughly six months of history, so the repository walks the matching sets a page at a time and aggregates the complete set. Without a `date_from` this spans the account's entire history; the request is correspondingly slower for a long-lived account, and a query needing more than 25 pages (25,000 sets) is rejected with a `500` rather than silently returning a partial series.
 
@@ -1620,6 +1621,7 @@ The underlying read *is* paginated internally. PostgREST caps any single respons
               "session_date": "2026-04-15T17:32:11.000Z",
               "plan_id": "uuid",
               "top_weight": 80,
+              "all_sets_completed": true,
               "reps": [5, 5, 5]
             },
             {
@@ -1627,6 +1629,7 @@ The underlying read *is* paginated internally. PostgREST caps any single respons
               "session_date": "2026-04-18T17:45:03.000Z",
               "plan_id": "uuid",
               "top_weight": 82.5,
+              "all_sets_completed": false,
               "reps": [5, 5, 4, 0, 0]
             }
           ]

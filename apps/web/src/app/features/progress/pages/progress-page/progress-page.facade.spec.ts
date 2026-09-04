@@ -18,7 +18,7 @@ function makeDto(exerciseId: string, exerciseName: string): ExerciseProgressDto 
     exercise_id: exerciseId,
     exercise_name: exerciseName,
     points: [
-      { session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, reps: [5, 5, 5] },
+      { session_id: 's-1', session_date: '2026-06-01T10:00:00.000Z', plan_id: 'plan-1', top_weight: 100, all_sets_completed: true, reps: [5, 5, 5] },
     ],
   };
 }
