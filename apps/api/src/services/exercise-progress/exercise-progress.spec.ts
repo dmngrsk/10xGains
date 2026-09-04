@@ -63,6 +63,7 @@ describe('aggregateExerciseProgress', () => {
       session_date: '2026-04-15T17:32:11.000Z',
       plan_id: PLAN_ID,
       top_weight: 110,
+      all_sets_completed: true,
       reps: [5, 3, 5],
     });
   });
@@ -120,6 +121,25 @@ describe('aggregateExerciseProgress', () => {
     expect(result[0].points).toHaveLength(1);
     expect(result[0].points[0].top_weight).toBe(100);
     expect(result[0].points[0].reps).toEqual([2, 0, 0, 0, 0]);
+  });
+
+  it('should report a session as fully completed only when every set was completed', () => {
+    const allCompleted = [
+      makeRow({ weight: 100, setIndex: 1, reps: 5 }),
+      makeRow({ weight: 100, setIndex: 2, reps: 5 }),
+    ];
+    const oneFailed = [
+      makeRow({ weight: 100, setIndex: 1, reps: 5 }),
+      makeRow({ weight: 100, setIndex: 2, reps: 4, status: 'FAILED' }),
+    ];
+    const oneSkipped = [
+      makeRow({ weight: 100, setIndex: 1, reps: 5 }),
+      makeRow({ weight: 100, setIndex: 2, reps: null, status: 'SKIPPED' }),
+    ];
+
+    expect(aggregateExerciseProgress(allCompleted)[0].points[0].all_sets_completed).toBe(true);
+    expect(aggregateExerciseProgress(oneFailed)[0].points[0].all_sets_completed).toBe(false);
+    expect(aggregateExerciseProgress(oneSkipped)[0].points[0].all_sets_completed).toBe(false);
   });
 
   it('should rank the failed sets among themselves when falling back', () => {

@@ -13,6 +13,7 @@ import {
   LinearScale,
   Plugin,
   PointElement,
+  ScriptableContext,
   TimeScale,
   Tooltip,
 } from 'chart.js';
@@ -22,6 +23,7 @@ import { ExerciseSeriesViewModel } from '@features/progress/models/progress-page
 import { toUtcDate } from '@shared/utils/dates/utc-date';
 
 const FALLBACK_SERIES_COLOR = '#49454f';
+const FALLBACK_SURFACE_COLOR = '#fef7ff';
 
 declare module 'chart.js' {
   interface InteractionModeMap {
@@ -62,6 +64,7 @@ interface ProgressChartDataPoint {
   y: number;
   repsLabel: string;
   planName: string;
+  completed: boolean;
 }
 
 @Component({
@@ -85,9 +88,13 @@ export class ProgressChartComponent implements OnChanges {
   private selectedDayLineColor = FALLBACK_SERIES_COLOR;
 
   ngOnChanges(): void {
+    const surfaceColor = this.getThemeColor('--mat-sys-surface', FALLBACK_SURFACE_COLOR);
+
     this.chartData = {
       datasets: this.series.map(s => {
         const color = this.getThemeColor(s.colorToken, FALLBACK_SERIES_COLOR);
+        const fillColor = (context: ScriptableContext<'line'>) =>
+          (context.raw as ProgressChartDataPoint | undefined)?.completed === false ? surfaceColor : color;
 
         return {
           label: s.exerciseName,
@@ -96,9 +103,16 @@ export class ProgressChartComponent implements OnChanges {
             y: p.weight,
             repsLabel: p.repsLabel,
             planName: p.planName,
+            completed: p.completed,
           })),
           borderColor: color,
           backgroundColor: color,
+          pointBackgroundColor: fillColor,
+          pointHoverBackgroundColor: fillColor,
+          pointBorderColor: color,
+          pointHoverBorderColor: color,
+          pointBorderWidth: 2,
+          pointHoverBorderWidth: 2,
           pointRadius: 3,
           pointHoverRadius: 5,
           borderWidth: 2,

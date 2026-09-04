@@ -30,6 +30,8 @@ export interface ExerciseProgressRow {
  * For every (exercise, session) pair one point is produced, carrying:
  * - top_weight: the highest actual_weight among the COMPLETED sets, ties broken by the
  *   higher actual_reps. A pair whose sets were all SKIPPED yields no point at all.
+ * - all_sets_completed: whether every set of the exercise was completed, so a session the
+ *   user got through in full can be told apart from one they fell short on or cut short.
  * - reps: the actual reps of every set in set order, so failed sets are visible too;
  *   a set with no recorded reps counts as 0.
  *
@@ -97,6 +99,7 @@ function toPoint(sessionRows: ExerciseProgressRow[]): ExerciseProgressPointDto |
     session_date: topSet.session.session_date!,
     plan_id: topSet.session.plan_id,
     top_weight: topSet.actual_weight,
+    all_sets_completed: sessionRows.every(row => row.status === 'COMPLETED'),
     reps,
   };
 }

@@ -84,6 +84,7 @@ export function mapToExerciseSeriesViewModels(
       weight: point.top_weight,
       repsLabel: formatRepsLabel(point.reps),
       planName: planNames.get(point.plan_id) ?? 'Unknown plan',
+      completed: point.all_sets_completed,
     })),
   }));
 }

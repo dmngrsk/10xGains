@@ -181,7 +181,8 @@ export interface ExerciseProgressPointDto {
   session_id: string;
   session_date: string; // ISO datetime
   plan_id: string;
-  top_weight: number; // max actual_weight among COMPLETED sets
+  top_weight: number; // max actual_weight among COMPLETED sets, or among FAILED ones when there are none
+  all_sets_completed: boolean; // false when any set of the exercise fell short or was skipped
   reps: number[]; // actual reps of every set in set order, including failed ones (0 when not performed)
 }
 
