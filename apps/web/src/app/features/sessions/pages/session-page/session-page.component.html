@@ -28,7 +28,8 @@
           <txg-session-timer
             [startTimestamp]="timerStartTimestamp"
             [allExercisesComplete]="allExercisesComplete()"
-            (sessionCompleted)="onSessionCompleted()">
+            (sessionCompleted)="onSessionCompleted()"
+            (finishOptionsRequested)="onFinishOptionsRequested()">
           </txg-session-timer>
         }
 

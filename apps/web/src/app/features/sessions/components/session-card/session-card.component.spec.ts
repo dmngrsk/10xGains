@@ -10,10 +10,16 @@ describe('SessionCardComponent', () => {
     component = new SessionCardComponent();
   });
 
-  const createMockSession = (status: SessionStatus, sessionDate: Date | null, exercises: SessionCardExerciseViewModel[] = []): SessionCardViewModel => ({
+  const createMockSession = (
+    status: SessionStatus,
+    sessionDate: Date | null,
+    exercises: SessionCardExerciseViewModel[] = [],
+    finishedAt: Date | null = null
+  ): SessionCardViewModel => ({
     id: 'test-session-id',
     title: 'Test Session Title',
     sessionDate: sessionDate,
+    finishedAt: finishedAt,
     status: status,
     notes: null,
     exercises: exercises,
@@ -94,7 +100,7 @@ describe('SessionCardComponent', () => {
         expect(component.sessionDateTimeText).toBe(expectedText);
       });
 
-      it('should show duration from earliest timestamp when a set was completed before sessionDate', () => {
+      it('should time the session from its own start, not from a set recorded before it', () => {
         const sessionTime = new Date(testMockDate); // 10:30
         const set1Time = new Date(testMockDate.getTime() - 30 * 60 * 1000); // 10:00
         const set2Time = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
@@ -105,8 +111,8 @@ describe('SessionCardComponent', () => {
         vi.setSystemTime(mockNow);
 
         const expectedDateStr = formattedDate(sessionTime);
-        const expectedStartTimeStr = formattedTime(set1Time);
-        const expectedDuration = 45; // from 10:00 to 10:45
+        const expectedStartTimeStr = formattedTime(sessionTime);
+        const expectedDuration = 15; // from 10:30 to 10:45
         const expectedText = `${expectedDateStr} | ${expectedStartTimeStr} - ... (${expectedDuration} min)`;
         expect(component.sessionDateTimeText).toBe(expectedText);
       });
@@ -138,28 +144,38 @@ describe('SessionCardComponent', () => {
         expect(component.sessionDateTimeText).toBe(`${expectedDateStr} | ${formattedTime(time)}`);
       });
 
-      it('should show duration from earliest to latest timestamp', () => {
+      it('should run from the session start to the finish it recorded', () => {
         const sessionTime = new Date(testMockDate); // 10:30
-        const startTime = new Date(testMockDate.getTime() - 60 * 60 * 1000); // 09:30
-        const endTime = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
-        const exercises = [createMockExercise([createMockSet(startTime), createMockSet(endTime)])];
-        component.sessionData = createMockSession('COMPLETED', sessionTime, exercises);
-        // Earliest is startTime (09:30), latest is sessionTime (10:30)
-        const duration = Math.round((sessionTime.getTime() - startTime.getTime()) / (1000 * 60)); // 60 min
+        const finishedAt = new Date(testMockDate.getTime() + 45 * 60 * 1000); // 11:15
+        const lastSetTime = new Date(testMockDate.getTime() + 15 * 60 * 1000); // 10:45
+        const exercises = [createMockExercise([createMockSet(lastSetTime)])];
+        component.sessionData = createMockSession('COMPLETED', sessionTime, exercises, finishedAt);
+
+        // The recorded finish wins over the last set, which is the point of storing it.
         const expectedDateStr = formattedDate(sessionTime);
-        const expectedText = `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(sessionTime)} (${duration} min)`;
+        const expectedText = `${expectedDateStr} | ${formattedTime(sessionTime)} - ${formattedTime(finishedAt)} (45 min)`;
         expect(component.sessionDateTimeText).toBe(expectedText);
       });
 
-      it('should show duration correctly for CANCELLED status', () => {
+      it('should fall back to the last recorded set when no finish was recorded', () => {
         const sessionTime = new Date(testMockDate); // 10:30
-        const startTime = new Date(testMockDate.getTime() - 60 * 60 * 1000); // 09:30
-        const endTime = new Date(testMockDate.getTime() - 15 * 60 * 1000); // 10:15
-        const exercises = [createMockExercise([createMockSet(startTime), createMockSet(endTime)])];
-        component.sessionData = createMockSession('CANCELLED', sessionTime, exercises);
-        const duration = Math.round((sessionTime.getTime() - startTime.getTime()) / (1000 * 60)); // 60 min
+        const lastSetTime = new Date(testMockDate.getTime() + 30 * 60 * 1000); // 11:00
+        const exercises = [createMockExercise([createMockSet(lastSetTime)])];
+        component.sessionData = createMockSession('COMPLETED', sessionTime, exercises);
+
         const expectedDateStr = formattedDate(sessionTime);
-        const expectedText = `${expectedDateStr} | ${formattedTime(startTime)} - ${formattedTime(sessionTime)} (${duration} min)`;
+        const expectedText = `${expectedDateStr} | ${formattedTime(sessionTime)} - ${formattedTime(lastSetTime)} (30 min)`;
+        expect(component.sessionDateTimeText).toBe(expectedText);
+      });
+
+      it('should show duration correctly for CANCELLED status, which never records a finish', () => {
+        const sessionTime = new Date(testMockDate); // 10:30
+        const lastSetTime = new Date(testMockDate.getTime() + 30 * 60 * 1000); // 11:00
+        const exercises = [createMockExercise([createMockSet(lastSetTime)])];
+        component.sessionData = createMockSession('CANCELLED', sessionTime, exercises);
+
+        const expectedDateStr = formattedDate(sessionTime);
+        const expectedText = `${expectedDateStr} | ${formattedTime(sessionTime)} - ${formattedTime(lastSetTime)} (30 min)`;
         expect(component.sessionDateTimeText).toBe(expectedText);
       });
 

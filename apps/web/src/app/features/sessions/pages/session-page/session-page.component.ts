@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnDestroy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatBottomSheet } from '@angular/material/bottom-sheet';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
-import { filter, map, switchMap } from 'rxjs/operators';
+import { filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { ServerClockService } from '@shared/services/server-clock.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
@@ -14,10 +16,12 @@ import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '../../components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './components/dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
+import { SessionFinishTimeDialogComponent, SessionFinishTimeDialogData } from './components/dialogs/session-finish-time-dialog/session-finish-time-dialog.component';
 import { SessionExerciseListComponent } from './components/session-exercise-list/session-exercise-list.component';
 import { SessionHeaderComponent } from './components/session-header/session-header.component';
 import { SessionNotesComponent } from './components/session-notes/session-notes.component';
 import { SessionTimerComponent } from './components/session-timer/session-timer.component';
+import { SessionFinishSheetComponent, SessionFinishSheetData, SessionFinishSheetResult } from './components/sheets/session-finish-sheet/session-finish-sheet.component';
 import { SessionPageFacade } from './session-page.facade';
 @Component({
   selector: 'txg-session-page',
@@ -36,11 +40,13 @@ import { SessionPageFacade } from './session-page.facade';
 })
 export class SessionPageComponent implements OnDestroy {
   private destroyRef = inject(DestroyRef);
+  private bottomSheet = inject(MatBottomSheet);
   private dialog = inject(MatDialog);
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
   private facade = inject(SessionPageFacade);
   private route = inject(ActivatedRoute);
+  private serverClock = inject(ServerClockService);
 
   readonly viewModel = this.facade.viewModel;
   readonly timerStartTimestamp = this.facade.timerStartTimestamp;
@@ -198,38 +204,117 @@ export class SessionPageComponent implements OnDestroy {
   onSessionCompleted(): void {
     if (this.isReadOnly()) return;
 
-    let confirmation$: Observable<boolean>;
-    if (this.allExercisesComplete()) {
-      confirmation$ = of(true);
-    } else {
-      const dialogData: ConfirmationDialogData = {
-        title: 'Complete Session',
-        message: 'Not all sets have been marked as completed or failed. Are you sure you want to complete this session now?',
-        confirmButtonText: 'Complete',
-        cancelButtonText: 'Cancel'
-      };
+    this.confirmAndComplete()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe();
+  }
 
-      confirmation$ = this.dialog
-        .open(ConfirmationDialogComponent, { width: '400px', data: dialogData })
-        .afterClosed().pipe(map(result => !!result));
-    }
+  onFinishOptionsRequested(): void {
+    if (this.isReadOnly()) return;
 
-    confirmation$.pipe(
-      takeUntilDestroyed(this.destroyRef),
-      filter(b => b),
-      switchMap(() => this.facade.completeSession().pipe(takeUntilDestroyed(this.destroyRef)))
-    ).subscribe(success => {
-      if (success) {
-        this.router.navigate(['/home']);
-        this.showSnackbar('Session completed. See you soon!', 5000);
-      } else if (!this.viewModel().error) {
-        this.showSnackbar('Failed to complete session. Please try again.', 5000);
-      }
-    });
+    const sheetData: SessionFinishSheetData = {
+      now: new Date(this.serverClock.now()),
+      lastSetCompletedAt: this.lastSetCompletedAt(),
+    };
+
+    this.bottomSheet
+      .open(SessionFinishSheetComponent, { data: sheetData })
+      .instance.choice
+      .pipe(
+        take(1),
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((result: SessionFinishSheetResult) => {
+          if (result.kind === 'pick') return this.pickEndTimeAndComplete();
+          return this.confirmAndComplete(result.kind === 'lastSet' ? result.endAt : undefined);
+        })
+      )
+      .subscribe();
   }
 
   ngOnDestroy(): void {
     this.facade.flushPendingSetUpdate();
+  }
+
+  private pickEndTimeAndComplete(): Observable<boolean | null> {
+    const session = this.viewModel();
+    const dialogData: SessionFinishTimeDialogData = {
+      now: new Date(this.serverClock.now()),
+      sessionDate: session.metadata?.date ?? null,
+      setTimestamps: this.recordedSetTimestamps(),
+    };
+
+    return this.dialog
+      .open(SessionFinishTimeDialogComponent, { width: '400px', data: dialogData, disableClose: true })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((endAt: string | undefined) => endAt ? this.confirmAndComplete(endAt) : of(null))
+      );
+  }
+
+  private confirmAndComplete(endAt?: string): Observable<boolean | null> {
+    if (this.allExercisesComplete()) {
+      return this.completeAndLeave(endAt);
+    }
+
+    const dialogData: ConfirmationDialogData = {
+      title: 'Complete Session',
+      message: 'Not all sets have been marked as completed or failed. Are you sure you want to complete this session now?',
+      confirmButtonText: 'Complete',
+      cancelButtonText: 'Cancel'
+    };
+
+    return this.dialog
+      .open(ConfirmationDialogComponent, { width: '400px', data: dialogData })
+      .afterClosed()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        map(result => !!result),
+        switchMap(confirmed => confirmed ? this.completeAndLeave(endAt) : of(null))
+      );
+  }
+
+  private completeAndLeave(endAt?: string): Observable<boolean> {
+    return this.facade.completeSession(endAt).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      tap(success => {
+        if (success) {
+          this.router.navigate(['/home']);
+          this.showSnackbar(this.completionMessage(endAt), 5000);
+        } else {
+          this.showSnackbar(this.facade.completionError() ?? 'Failed to complete session. Please try again.', 5000);
+        }
+      })
+    );
+  }
+
+  private completionMessage(endAt?: string): string {
+    const sessionDate = this.viewModel().metadata?.date;
+    if (!endAt || !sessionDate || this.isToday(sessionDate)) {
+      return 'Session completed. See you soon!';
+    }
+
+    const day = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(sessionDate);
+    return `Session completed on ${day}. See you soon!`;
+  }
+
+  private isToday(date: Date): boolean {
+    const now = new Date(this.serverClock.now());
+    return date.getFullYear() === now.getFullYear()
+      && date.getMonth() === now.getMonth()
+      && date.getDate() === now.getDate();
+  }
+
+  private recordedSetTimestamps(): Date[] {
+    return this.viewModel().exercises
+      .flatMap(exercise => exercise.sets)
+      .map(set => set.completedAt)
+      .filter((completedAt): completedAt is Date => !!completedAt);
+  }
+
+  private lastSetCompletedAt(): Date | null {
+    const timestamps = this.recordedSetTimestamps().map(date => date.getTime());
+    return timestamps.length > 0 ? new Date(Math.max(...timestamps)) : null;
   }
 
   private showSnackbar(message: string, duration: number = 3000): void {

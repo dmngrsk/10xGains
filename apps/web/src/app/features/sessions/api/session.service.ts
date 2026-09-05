@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
-import { CompleteSessionSetCommand,
+import { CompleteSessionCommand,
+  CompleteSessionSetCommand,
   CreateSessionSetCommand,
   CreateSessionCommand,
   FailSessionSetCommand,
@@ -118,15 +119,16 @@ export class SessionService {
   /**
    * Marks a session as complete.
    * @param sessionId The ID of the session to complete.
+   * @param endAt When training actually ended, as an ISO 8601 instant. Omit to finish as of now.
    * @returns An Observable emitting the updated session data.
    */
-  completeSession(sessionId: string): Observable<SessionServiceResponse<SessionDto>> {
+  completeSession(sessionId: string, endAt?: string): Observable<SessionServiceResponse<SessionDto>> {
     if (!sessionId) {
       return throwError(() => new Error('Session ID is required to complete the session.'));
     }
 
     const url = `/sessions/${sessionId}/complete`;
-    return this.apiService.post<Record<string, never>, SessionDto>(url, {});
+    return this.apiService.post<CompleteSessionCommand, SessionDto>(url, endAt ? { end_at: endAt } : {});
   }
 
   /**

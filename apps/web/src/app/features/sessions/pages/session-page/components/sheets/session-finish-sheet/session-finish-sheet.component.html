@@ -1,0 +1,23 @@
+<mat-nav-list data-cy="session-finish-sheet">
+  <h3 matSubheader data-cy="session-finish-sheet-title">Finish session</h3>
+
+  <a mat-list-item (click)="onFinishNow()" data-cy="session-finish-sheet-now">
+    <mat-icon matListItemIcon>check_circle</mat-icon>
+    <span matListItemTitle>Now</span>
+    <span matListItemMeta>{{ data.now | date:'HH:mm' }}</span>
+  </a>
+
+  @if (showLastSetOption) {
+    <a mat-list-item (click)="onFinishAtLastSet()" data-cy="session-finish-sheet-last-set">
+      <mat-icon matListItemIcon>schedule</mat-icon>
+      <span matListItemTitle>When the last set was logged</span>
+      <span matListItemMeta>{{ data.lastSetCompletedAt | date:'HH:mm' }}</span>
+    </a>
+  }
+
+  <a mat-list-item (click)="onPickDateTime()" data-cy="session-finish-sheet-pick">
+    <mat-icon matListItemIcon>event</mat-icon>
+    <span matListItemTitle>Pick date and time…</span>
+    <span matListItemMeta><mat-icon>chevron_right</mat-icon></span>
+  </a>
+</mat-nav-list>

@@ -332,6 +332,7 @@ export interface Database {
       }
       sessions: {
         Row: {
+          finished_at: string | null
           id: string
           notes: string | null
           plan_day_id: string | null
@@ -341,6 +342,7 @@ export interface Database {
           user_id: string
         }
         Insert: {
+          finished_at?: string | null
           id?: string
           notes?: string | null
           plan_day_id?: string | null
@@ -350,6 +352,7 @@ export interface Database {
           user_id: string
         }
         Update: {
+          finished_at?: string | null
           id?: string
           notes?: string | null
           plan_day_id?: string | null

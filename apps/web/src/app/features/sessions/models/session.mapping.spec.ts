@@ -66,6 +66,7 @@ const mockSessionDto: SessionDto = {
   plan_id: 'plan1',
   plan_day_id: 'day1',
   session_date: '2023-01-10T10:00:00Z',
+  finished_at: null,
   status: 'PENDING' as SessionStatus,
   notes: null,
   sets: [mockSetDto],
