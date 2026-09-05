@@ -18,11 +18,12 @@
             [isReadOnly]="isReadOnly()"
             (setClicked)="onSetClicked($event)"
             (setLongPressed)="onSetLongPressed($event)"
-            (setAdded)="onSetAdded($event)">
+            (setAdded)="onSetAdded($event)"
+            (warmupChanged)="onWarmupChanged($event)">
           </txg-session-exercise-list>
         </div>
 
-        <div class="bottom-spacer h-16"></div>
+        <div class="bottom-spacer" [class.h-16]="!showPlateCalculator()" [class.h-36]="showPlateCalculator()"></div>
 
         @if (!isReadOnly()) {
           <txg-session-timer
@@ -32,7 +33,11 @@
           </txg-session-timer>
         }
 
-        <txg-session-notes (notesClicked)="onNotesClicked()" />
+        <txg-session-actions
+          [showPlateCalculator]="showPlateCalculator()"
+          (notesClicked)="onNotesClicked()"
+          (plateCalculatorClicked)="onPlateCalculatorClicked()">
+        </txg-session-actions>
       </div>
     }
   }

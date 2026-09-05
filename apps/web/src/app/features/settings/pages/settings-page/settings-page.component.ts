@@ -13,6 +13,7 @@ import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { AccountSettingsCardComponent } from './components/account-settings-card/account-settings-card.component';
 import { ChangePasswordDialogComponent } from './components/dialogs/change-password-dialog/change-password-dialog.component';
 import { ProfileSettingsCardComponent } from './components/profile-settings-card/profile-settings-card.component';
+import { WorkoutSettingsCardComponent } from './components/workout-settings-card/workout-settings-card.component';
 import { SettingsPageFacade } from './settings-page.facade';
 
 @Component({
@@ -24,6 +25,7 @@ import { SettingsPageFacade } from './settings-page.facade';
     MatDialogModule,
     MatProgressSpinnerModule,
     MatDividerModule,
+    WorkoutSettingsCardComponent,
     ProfileSettingsCardComponent,
     AccountSettingsCardComponent,
     NoticeComponent
