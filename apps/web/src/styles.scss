@@ -120,6 +120,32 @@ $material-color-role-tokens: (
 }
 
 /*
+ * The app's chip rows. Material's filter chip is a grey outlined box until it is selected, which
+ * reads as a row of empty fields rather than a row of things to press - so an unselected chip here
+ * takes the primary colour for both its outline and its label, and sits on `--mat-sys-surface`
+ * rather than on nothing. No elevation: the outline already separates it from the surface behind,
+ * and a shadow under a bordered pill reads as two edges rather than one raised thing.
+ *
+ * A selected chip keeps Material's filled treatment and loses its outline through Material's own
+ * token, which is what makes it read as pressed in. Label and checkmark stay primary in both
+ * states, so the colour identifies the control rather than its state.
+ *
+ * Apply to the `mat-chip-listbox`; the tokens inherit down to the chips inside it.
+ */
+.txg-chips {
+  --mat-chip-outline-color: var(--mat-sys-primary);
+  --mat-chip-elevated-container-color: var(--mat-sys-surface);
+  --mat-chip-label-text-color: var(--mat-sys-primary);
+  --mat-chip-selected-label-text-color: var(--mat-sys-primary);
+  --mat-chip-with-icon-selected-icon-color: var(--mat-sys-primary);
+
+  /* Hover, focus and the focus ring default to a grey that belongs to neither state. */
+  --mat-chip-hover-state-layer-color: var(--mat-sys-primary);
+  --mat-chip-focus-state-layer-color: var(--mat-sys-primary);
+  --mat-chip-focus-outline-color: var(--mat-sys-primary);
+}
+
+/*
  * Fills what the layout leaves a page, so a notice shown on its own centres in that space
  * instead of sitting at the top of it. Put the page's own padding on this element rather than
  * an ancestor: padding inside the min-height costs nothing, padding around it overflows.

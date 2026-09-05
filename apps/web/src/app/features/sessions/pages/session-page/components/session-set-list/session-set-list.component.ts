@@ -7,6 +7,11 @@ import { SessionWarmupBubbleComponent } from '../session-warmup-bubble/session-w
 
 type WarmupDisplayState = 'collapsed' | 'expanded' | 'dismissed';
 
+export interface WarmupRampChange {
+  exerciseId: string;
+  nextWarmupWeightKg: number | null;
+}
+
 @Component({
   selector: 'txg-session-set-list',
   standalone: true,
@@ -25,6 +30,7 @@ export class SessionSetListComponent {
 
   @Input({ required: true }) set exercise(value: SessionExerciseViewModel) {
     this.exerciseSignal.set(value);
+    this.emitWarmupChange();
   }
   get exercise(): SessionExerciseViewModel {
     return this.exerciseSignal()!;
@@ -32,6 +38,7 @@ export class SessionSetListComponent {
 
   @Input() set isReadOnly(value: boolean) {
     this.readOnlySignal.set(value);
+    this.emitWarmupChange();
   }
   get isReadOnly(): boolean {
     return this.readOnlySignal();
@@ -40,9 +47,11 @@ export class SessionSetListComponent {
   @Output() setClicked = new EventEmitter<SessionSetViewModel>();
   @Output() setLongPressed = new EventEmitter<SessionSetViewModel>();
   @Output() setAdded = new EventEmitter<string>();
+  @Output() warmupChanged = new EventEmitter<WarmupRampChange>();
 
   private readonly expanded = signal<boolean>(false);
   private readonly removedWarmupSetIds = signal<readonly string[]>([]);
+  private lastEmittedWarmupWeightKg: number | null = null;
 
   readonly warmupSets = computed<SessionWarmupSetViewModel[]>(() => {
     const sets = this.exerciseSignal()?.sets ?? [];
@@ -59,12 +68,17 @@ export class SessionSetListComponent {
     return this.expanded() ? 'expanded' : 'collapsed';
   });
 
+  readonly nextWarmupWeightKg = computed<number | null>(() =>
+    this.warmupState() === 'expanded' ? this.warmupSets()[0]?.weight ?? null : null);
+
   onWarmupToggleClicked(): void {
     this.expanded.set(true);
+    this.emitWarmupChange();
   }
 
   onWarmupSetClicked(warmupSetId: string): void {
     this.removedWarmupSetIds.update(ids => [...ids, warmupSetId]);
+    this.emitWarmupChange();
   }
 
   onSetClicked(set: SessionSetViewModel): void {
@@ -77,5 +91,15 @@ export class SessionSetListComponent {
 
   onSetAdded(): void {
     this.setAdded.emit(this.exercise.planExerciseId);
+  }
+
+  private emitWarmupChange(): void {
+    const nextWarmupWeightKg = this.nextWarmupWeightKg();
+    if (nextWarmupWeightKg === this.lastEmittedWarmupWeightKg) {
+      return;
+    }
+
+    this.lastEmittedWarmupWeightKg = nextWarmupWeightKg;
+    this.warmupChanged.emit({ exerciseId: this.exercise.planExerciseId, nextWarmupWeightKg });
   }
 }

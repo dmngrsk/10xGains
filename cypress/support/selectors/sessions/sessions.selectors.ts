@@ -24,6 +24,21 @@ export const sessionsSelectors = {
       weightInput: 'add-edit-set-dialog-weight-input',
       saveButton: 'add-edit-set-dialog-save-button',
     },
+    plateCalculator: {
+      title: 'plate-calculator-dialog-title',
+      content: 'plate-calculator-dialog-content',
+      stepHint: 'plate-calculator-step-hint',
+      weightInput: 'plate-calculator-weight-input',
+      decrementButton: 'plate-calculator-decrement',
+      incrementButton: 'plate-calculator-increment',
+      loading: 'plate-calculator-loading',
+      shortfall: 'plate-calculator-shortfall',
+      chips: 'plate-calculator-chips',
+      chipPrefix: 'plate-calculator-chip-',
+      ladderToggle: 'plate-calculator-ladder-toggle',
+      unevenWarning: 'plate-calculator-uneven-warning',
+      closeButton: 'plate-calculator-close-button',
+    },
     notes: {
       title: 'session-notes-dialog-title',
       content: 'session-notes-dialog-content',
@@ -41,5 +56,6 @@ export const sessionsSelectors = {
   timer: 'session-timer',
   completeButton: 'complete-session-button',
   notesButton: 'session-notes-button',
+  plateCalculatorButton: 'session-plate-calculator-button',
   errorNotice: 'session-error-notice',
 };

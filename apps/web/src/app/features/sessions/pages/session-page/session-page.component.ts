@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, OnDestroy, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -7,6 +7,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import { CreateSessionSetCommand, UpdateSessionSetCommand } from '@txg/shared';
 import { filter, map, switchMap } from 'rxjs/operators';
+import { WorkoutPreferencesService } from '@shared/services/workout-preferences.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { ConfirmationDialogComponent, ConfirmationDialogData } from '@shared/ui/dialogs/confirmation-dialog/confirmation-dialog.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
@@ -14,11 +15,14 @@ import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { SessionNotesDialogComponent, SessionNotesDialogData, SessionNotesDialogResult } from '../../components/dialogs/session-notes-dialog/session-notes-dialog.component';
 import { SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { AddEditSetDialogComponent, AddEditSetDialogData, AddEditSetDialogCloseResult, DeleteSetResult } from './components/dialogs/add-edit-set-dialog/add-edit-set-dialog.component';
+import { PlateCalculatorDialogComponent, PlateCalculatorDialogData } from './components/dialogs/plate-calculator-dialog/plate-calculator-dialog.component';
+import { SessionActionsComponent } from './components/session-actions/session-actions.component';
 import { SessionExerciseListComponent } from './components/session-exercise-list/session-exercise-list.component';
 import { SessionHeaderComponent } from './components/session-header/session-header.component';
-import { SessionNotesComponent } from './components/session-notes/session-notes.component';
+import { WarmupRampChange } from './components/session-set-list/session-set-list.component';
 import { SessionTimerComponent } from './components/session-timer/session-timer.component';
 import { SessionPageFacade } from './session-page.facade';
+import { resolveSessionWeightKg } from './utils/plate-calculator.utils';
 @Component({
   selector: 'txg-session-page',
   standalone: true,
@@ -27,7 +31,7 @@ import { SessionPageFacade } from './session-page.facade';
     MainLayoutComponent,
     SessionHeaderComponent,
     SessionExerciseListComponent,
-    SessionNotesComponent,
+    SessionActionsComponent,
     SessionTimerComponent,
     NoticeComponent
   ],
@@ -41,16 +45,20 @@ export class SessionPageComponent implements OnDestroy {
   private snackBar = inject(MatSnackBar);
   private facade = inject(SessionPageFacade);
   private route = inject(ActivatedRoute);
+  private preferences = inject(WorkoutPreferencesService);
 
   readonly viewModel = this.facade.viewModel;
   readonly timerStartTimestamp = this.facade.timerStartTimestamp;
 
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
+  private readonly expandedWarmupWeights = signal<Record<string, number>>({});
 
   readonly isReadOnly = computed(() => {
     const status = this.viewModel().metadata?.status;
     return status === 'COMPLETED' || status === 'CANCELLED';
   });
+
+  readonly showPlateCalculator = computed(() => this.preferences.plateCalculatorEnabled() && !this.isReadOnly());
 
   readonly allExercisesComplete = computed(() => {
     const exercises = this.viewModel().exercises;
@@ -193,6 +201,26 @@ export class SessionPageComponent implements OnDestroy {
           this.showSnackbar('Failed to save notes. Please try again.');
         }
       });
+  }
+
+  onWarmupChanged(change: WarmupRampChange): void {
+    this.expandedWarmupWeights.update(weights => {
+      const next = { ...weights };
+      if (change.nextWarmupWeightKg === null) {
+        delete next[change.exerciseId];
+      } else {
+        next[change.exerciseId] = change.nextWarmupWeightKg;
+      }
+      return next;
+    });
+  }
+
+  onPlateCalculatorClicked(): void {
+    const dialogData: PlateCalculatorDialogData = {
+      initialWeightKg: resolveSessionWeightKg(this.viewModel().exercises ?? [], this.expandedWarmupWeights()),
+    };
+
+    this.dialog.open(PlateCalculatorDialogComponent, { width: '400px', maxHeight: '90vh', data: dialogData });
   }
 
   onSessionCompleted(): void {
