@@ -12,6 +12,8 @@ export default defineConfig({
   env: {
     CANARY_USER_EMAIL: process.env['APP_CANARY_USER_EMAIL'],
     CANARY_USER_PASSWORD: process.env['APP_CANARY_USER_PASSWORD'],
+    DEV_USER_EMAIL: process.env['APP_DEV_USER_EMAIL'],
+    DEV_USER_PASSWORD: process.env['APP_DEV_USER_PASSWORD'],
   },
   // Non-secret values exposed to the browser, read via Cypress.expose().
   expose: {

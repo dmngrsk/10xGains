@@ -52,7 +52,7 @@ function loginAsCanaryUser(): void {
         throw new Error('Canary user credentials not found in environment variables');
       }
 
-      cy.task<{ scaffolded: boolean; userId: string }>('users:ensureCanaryScaffolded', { email, password })
+      cy.task<{ userId: string | null; message: string }>('users:ensureUserScaffolded', { email, password, role: 'canary' }, { log: false })
         .then(({ userId }) => cy.wrap(userId).as('currentUserId'));
       fillLoginForm(email, password);
     });

@@ -155,12 +155,12 @@ sed \
 echo ""
 echo "Wrote .env, apps/api/local.settings.json and apps/web/src/environments/environment.development.ts."
 
-# Seed a known local dev account (dev@10xgains.com) with sample data. Idempotent and local
-# only - it uses the local service-role key that only exists here. Runs after the config
-# block above, since it reads the .env just generated. Non-fatal: a failed seed only costs
-# the sample data, not the environment, so warn and let the start finish.
+# Seed the known local accounts (dev@10xgains.com, canary@10xgains.com) with sample data.
+# Idempotent and local only - it uses the local service-role key that only exists here. Runs
+# after the config block above, since it reads the .env just generated. Non-fatal: a failed
+# seed only costs the sample data, not the environment, so warn and let the start finish.
 if ! pnpm seed; then
-  echo "Warning: seeding the dev account failed; the environment is still usable." >&2
+  echo "Warning: seeding the local accounts failed; the environment is still usable." >&2
   echo "Fix the cause (see the error above), then re-run 'pnpm seed' by hand." >&2
 fi
 
