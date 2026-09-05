@@ -25,7 +25,18 @@ const NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
  * notification afterwards, which is why every path below re-shows rather than updating in place.
  */
 self.addEventListener('notificationclick', event => {
-  event.waitUntil(handleClick(event));
+  event.waitUntil(handleClick(event).catch(async error => {
+    // TEMPORARY (staging diagnostic): an exception here otherwise leaves the notification closed and
+    // no trace of why - the same dead end the silent guard produced.
+    await self.registration.showNotification('Notification diagnostic', {
+      body: `error=${error && error.message ? error.message : String(error)}`,
+      tag: NOTIFICATION_TAG,
+      badge: NOTIFICATION_BADGE,
+      silent: true,
+      requireInteraction: true,
+      data: event.notification.data || {},
+    });
+  }));
 });
 
 importScripts('./ngsw-worker.js');
@@ -98,7 +109,11 @@ function show(content, data, includeCompleteAction) {
 }
 
 async function completeSet(data) {
-  if (!data || !data.apiBaseUrl || !data.token || !data.setId || !data.sessionId) {
+  // TEMPORARY (staging diagnostic): this guard returning silently is indistinguishable from the
+  // button doing nothing, which is what it looked like on Android. Report what is actually absent.
+  const missing = ['apiBaseUrl', 'token', 'setId', 'sessionId'].filter(field => !data || !data[field]);
+  if (missing.length > 0) {
+    await show({ title: 'Notification diagnostic', body: `missing=${missing.join(',')}` }, data || {}, false);
     return;
   }
 
@@ -115,16 +130,17 @@ async function completeSet(data) {
         body: JSON.stringify({ token: data.token }),
       }
     );
-  } catch {
+  } catch (error) {
     // Offline, most likely. Nothing was recorded, and the token is still good, so say so and
-    // leave the action in place.
-    await show({ title: data.title, body: "Couldn't save - tap to open" }, data, true);
+    // leave the action in place. The reason is TEMPORARY (staging diagnostic).
+    await show({ title: data.title, body: `Couldn't save - ${error && error.message ? error.message : 'tap to open'}` }, data, true);
     return;
   }
 
   // Spent token, finished session, or missing set: none retryable, so the notification goes away
-  // rather than misleading the user.
+  // rather than misleading the user. Reporting the status is TEMPORARY (staging diagnostic).
   if (!response.ok) {
+    await show({ title: 'Notification diagnostic', body: `http=${response.status}` }, data, false);
     return;
   }
 
