@@ -196,7 +196,7 @@ export class PlateCalculatorDialogComponent implements OnDestroy {
    */
   readonly stepHint = computed(() => {
     const step = round(nextLoadableKg(this.weightKg(), this.table()) - this.weightKg());
-    return step > 0 ? `Steps by ${step} kg from here.` : 'Nothing heavier can be loaded from this rack.';
+    return step > 0 ? `Steps by ${step} kg from here` : 'Nothing heavier can be loaded from this rack';
   });
 
   /** More than one distinct gap means the stepper jumps by different amounts; say so. */

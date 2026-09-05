@@ -94,7 +94,7 @@ describe('PlateCalculatorDialogComponent', () => {
   it('should state the current increment rather than the next weight', () => {
     const fixture = createFixture(100);
 
-    expect(query(fixture, 'plate-calculator-step-hint')?.textContent?.trim()).toBe('Steps by 2.5 kg from here.');
+    expect(query(fixture, 'plate-calculator-step-hint')?.textContent?.trim()).toBe('Steps by 2.5 kg from here');
   });
 
   it('should walk the loadable weights when stepped', () => {
