@@ -9,21 +9,20 @@ export interface SessionNotificationContent {
 /** A fixed tag replaces the notification already on screen rather than stacking a second one. */
 export const SESSION_NOTIFICATION_TAG = 'active-session';
 
+// Chrome fills this slot with a letter avatar generated from the origin when it is left unset, so
+// the app's own icon goes here to displace it.
+const SESSION_NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
+
 // Android keeps only this image's alpha channel and tints the result, so it is a stencil of the
 // mark rather than the logo: anything with colour in it would render as a solid blob.
 const SESSION_NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
-
-/** Action buttons are service-worker only, so TypeScript's DOM lib omits them from the options. */
-interface PersistentNotificationOptions extends NotificationOptions {
-  actions?: { action: string; title: string }[];
-}
 
 /**
  * Keeps a notification on screen for as long as a session is in progress.
  *
  * It belongs to the service worker registration rather than to a page, so it outlives the tab being
  * closed or the installed app being swiped away - which is the whole point of it. `ngsw-worker`
- * handles the click natively through its `onActionClick` protocol, so no custom service worker is
+ * handles the tap natively through its `onActionClick` protocol, so no custom service worker is
  * needed to route back into the session.
  */
 @Injectable({
@@ -70,25 +69,23 @@ export class SessionNotificationService {
       return;
     }
 
-    // `navigateLastFocusedOrOpen` focuses an already-open app and routes it to the session, and
-    // opens a window at that route when nothing is running. Registered for the button and for a tap
-    // on the notification body alike, since both should land in the same place.
-    const openAction = { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` };
-
-    const options: PersistentNotificationOptions = {
+    // No action buttons: tapping the notification already routes into the session, so a button
+    // beside it only repeats what the whole surface does. `navigateLastFocusedOrOpen` focuses an
+    // already-open app and routes it there, and opens a window when nothing is running.
+    await registration.showNotification(content.title, {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
+      icon: SESSION_NOTIFICATION_ICON,
       badge: SESSION_NOTIFICATION_BADGE,
       silent: true,
       requireInteraction: true,
-      actions: [{ action: 'open', title: 'View session' }],
       data: {
         sessionId,
-        onActionClick: { default: openAction, open: openAction },
+        onActionClick: {
+          default: { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` },
+        },
       },
-    };
-
-    await registration.showNotification(content.title, options);
+    });
   }
 
   async clear(): Promise<void> {

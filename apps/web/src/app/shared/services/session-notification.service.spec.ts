@@ -59,24 +59,31 @@ describe('SessionNotificationService', () => {
       }));
     });
 
-    it('should route both the button and a body tap back into the session', async () => {
+    it('should route a tap back into the session', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
-      const open = { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' };
       expect(showNotification.mock.calls[0][1].data).toMatchObject({
         sessionId: 'session-1',
-        onActionClick: { default: open, open },
+        onActionClick: { default: { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' } },
       });
     });
 
-    it('should offer a single action that returns to the session', async () => {
+    it('should offer no action buttons, since tapping the notification already returns there', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
-      expect(showNotification.mock.calls[0][1].actions).toEqual([{ action: 'open', title: 'View session' }]);
+      expect(showNotification.mock.calls[0][1].actions).toBeUndefined();
+    });
+
+    it('should carry the app icon, which Chrome otherwise fills with an origin avatar', async () => {
+      const service = createService();
+
+      await service.show('session-1', content);
+
+      expect(showNotification.mock.calls[0][1].icon).toBe('/assets/favicon/web-app-manifest-192x192.png');
     });
 
     it('should not re-show when the notification on screen already matches', async () => {
