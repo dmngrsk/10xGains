@@ -88,8 +88,8 @@ export class SessionNotificationService {
       silent: true,
       requireInteraction: true,
       actions: action
-        ? [{ action: 'complete-set', title: 'Complete set' }, { action: 'open', title: 'Open' }]
-        : [{ action: 'open', title: 'Open' }],
+        ? [{ action: 'complete-set', title: 'Complete' }, { action: 'open', title: 'View session' }]
+        : [{ action: 'open', title: 'View session' }],
       data: {
         sessionId,
         title: content.title,

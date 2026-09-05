@@ -77,7 +77,7 @@ describe('SessionNotificationService', () => {
 
       await service.show('session-1', content);
 
-      expect(showNotification.mock.calls[0][1].actions).toEqual([{ action: 'open', title: 'Open' }]);
+      expect(showNotification.mock.calls[0][1].actions).toEqual([{ action: 'open', title: 'View session' }]);
     });
 
     it('should offer the complete action once a token is available', async () => {
@@ -86,8 +86,8 @@ describe('SessionNotificationService', () => {
       await service.show('session-1', content, action);
 
       expect(showNotification.mock.calls[0][1].actions).toEqual([
-        { action: 'complete-set', title: 'Complete set' },
-        { action: 'open', title: 'Open' },
+        { action: 'complete-set', title: 'Complete' },
+        { action: 'open', title: 'View session' },
       ]);
     });
 

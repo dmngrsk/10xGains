@@ -42,9 +42,9 @@ function describeSet(nextSet) {
 }
 
 function show(content, data, includeCompleteAction) {
-  const actions = [{ action: 'open', title: 'Open' }];
+  const actions = [{ action: 'open', title: 'View session' }];
   if (includeCompleteAction) {
-    actions.unshift({ action: COMPLETE_SET_ACTION, title: 'Complete set' });
+    actions.unshift({ action: COMPLETE_SET_ACTION, title: 'Complete' });
   }
 
   return self.registration.showNotification(content.title, {

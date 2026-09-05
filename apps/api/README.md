@@ -1548,7 +1548,7 @@ Marks a specific set as completed.
 
 #### PATCH /api/sessions/{sessionId}/sets/{setId}/complete-with-token
 
-Marks a specific set as completed on the authority of a session action token instead of a user session. This is the endpoint the notification's "Complete set" action calls.
+Marks a specific set as completed on the authority of a session action token instead of a user session. This is the endpoint the notification's "Complete" action calls.
 
 **This endpoint is deliberately unauthenticated.** The caller is a service worker with no JWT to present; the token in the body is the entire authorisation, and it is validated in the database by `complete_session_set_with_action_token`, which resolves the owning user from the stored token row. An unknown, expired, revoked or wrong-session token all produce the same `401`, so a caller holding a bad token learns nothing about which it was.
 
