@@ -1,0 +1,139 @@
+<h2 mat-dialog-title class="text-xl font-semibold" data-cy="plate-calculator-dialog-title">Plate calculator</h2>
+
+<mat-dialog-content class="!pt-1" data-cy="plate-calculator-dialog-content">
+  <div class="h-22">
+    <svg
+      class="block w-full h-22"
+      [attr.viewBox]="drawing().viewBox"
+      preserveAspectRatio="xMidYMid meet"
+      role="img">
+      <title>{{ drawing().title }}</title>
+      @for (shape of drawing().rects; track $index) {
+        <rect
+          [attr.x]="shape.x"
+          [attr.y]="shape.y"
+          [attr.width]="shape.width"
+          [attr.height]="shape.height"
+          [attr.rx]="shape.rx"
+          [attr.fill]="shape.fill"
+          [attr.stroke]="shape.stroke"
+          [attr.stroke-width]="shape.stroke ? 1.5 : null" />
+      }
+      @for (marker of drawing().markers; track $index) {
+        <text
+          [attr.x]="marker.x"
+          [attr.y]="marker.y"
+          text-anchor="middle"
+          [attr.font-size]="markerFontSize"
+          fill="var(--mat-sys-on-surface-variant)">{{ marker.label }}</text>
+      }
+    </svg>
+  </div>
+
+  <div class="flex items-center justify-center gap-2 mt-1">
+    <button
+      mat-icon-button
+      class="step-button"
+      type="button"
+      aria-label="Decrease weight"
+      [disabled]="!canDecrement()"
+      (pointerdown)="onStepPressed(-1)"
+      (pointerup)="onStepReleased()"
+      (pointerleave)="onStepReleased()"
+      (pointercancel)="onStepReleased()"
+      data-cy="plate-calculator-decrement">
+      <mat-icon>remove</mat-icon>
+    </button>
+
+    <span class="inline-flex items-baseline gap-1 text-primary">
+      <input
+        #weightInput
+        class="w-[6ch] p-0 border-0 bg-transparent outline-none text-center text-[1.75rem] leading-none tabular-nums text-primary"
+        type="text"
+        inputmode="decimal"
+        aria-label="Weight in kilograms"
+        [value]="weightKg()"
+        (focus)="onWeightFocused(weightInput)"
+        (blur)="onWeightCommitted(weightInput)"
+        (keydown.enter)="onWeightSubmitted(weightInput)"
+        (keydown.escape)="onWeightReverted(weightInput, $event)"
+        (keydown.arrowup)="onWeightStepped(1, $event)"
+        (keydown.arrowdown)="onWeightStepped(-1, $event)"
+        data-cy="plate-calculator-weight-input" />
+      <span class="text-base">kg</span>
+    </span>
+
+    <button
+      mat-icon-button
+      class="step-button"
+      type="button"
+      aria-label="Increase weight"
+      [disabled]="!canIncrement()"
+      (pointerdown)="onStepPressed(1)"
+      (pointerup)="onStepReleased()"
+      (pointerleave)="onStepReleased()"
+      (pointercancel)="onStepReleased()"
+      data-cy="plate-calculator-increment">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+
+  <p class="flex flex-wrap items-baseline justify-center gap-2 mt-3 text-on-surface" data-cy="plate-calculator-loading">
+    @if (loading().length) {
+      @for (group of loading(); track group.denomination) {
+        <span class="font-medium">@if (group.count > 1) {{{ group.count }}&nbsp;×&nbsp;}{{ group.denomination }}</span>
+      }
+      <span class="text-sm text-on-surface-variant">per side</span>
+    } @else {
+      <span class="text-sm text-on-surface-variant">Empty bar — nothing to load</span>
+    }
+  </p>
+
+  @if (shortfallKg() > 0) {
+    <p class="mt-1 text-center text-sm text-error" data-cy="plate-calculator-shortfall">
+      {{ shortfallKg() }} kg short — closest loadable is {{ closestLoadableKg() }} kg
+    </p>
+  }
+
+  <p class="mt-2 text-center text-sm text-on-surface-variant" data-cy="plate-calculator-step-hint">{{ stepHint() }}</p>
+
+  <p class="mt-5 mb-2 text-sm text-on-surface-variant" id="plate-calculator-rack-label">Plates in the rack</p>
+
+  <p class="mb-2 text-sm text-error" role="status" [class.hidden]="!unevenMessage()">
+    @if (unevenMessage(); as message) {
+      <span id="plate-calculator-uneven" data-cy="plate-calculator-uneven-warning">{{ message }}</span>
+    }
+  </p>
+
+  <mat-chip-listbox
+    class="txg-chips"
+    multiple
+    required
+    aria-labelledby="plate-calculator-rack-label"
+    [attr.aria-describedby]="unevenMessage() ? 'plate-calculator-uneven' : null"
+    data-cy="plate-calculator-chips">
+    @for (denomination of visibleDenominations(); track denomination) {
+      <mat-chip-option
+        [selected]="isAvailable(denomination)"
+        (selectionChange)="onDenominationToggled(denomination, $event)"
+        [attr.data-cy]="'plate-calculator-chip-' + denomination">
+        {{ denomination }} kg
+      </mat-chip-option>
+    }
+  </mat-chip-listbox>
+
+  <button
+    mat-button
+    type="button"
+    class="mt-2"
+    [attr.aria-expanded]="isLadderExpanded()"
+    (click)="onLadderToggled()"
+    data-cy="plate-calculator-ladder-toggle">
+    <mat-icon>{{ isLadderExpanded() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    {{ isLadderExpanded() ? 'Fewer plates' : 'More plates' }}
+  </button>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close type="button" data-cy="plate-calculator-close-button">Close</button>
+</mat-dialog-actions>

@@ -4,6 +4,9 @@ export const settingsSelectors = {
     emailInput: 'settings-profile-email-input',
     saveButton: 'settings-profile-save-button',
   },
+  workout: {
+    plateCalculatorToggle: 'settings-plate-calculator-toggle',
+  },
   account: {
     changePasswordButton: 'settings-change-password-button',
     signOutButton: 'settings-sign-out-button',

@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { SessionExerciseViewModel, SessionSetViewModel } from '../../../../models/session-page.viewmodel';
-import { SessionSetListComponent } from '../session-set-list/session-set-list.component';
+import { SessionSetListComponent, WarmupRampChange } from '../session-set-list/session-set-list.component';
 
 @Component({
   selector: 'txg-session-exercise-item',
@@ -26,6 +26,7 @@ export class SessionExerciseItemComponent {
   @Output() setClicked = new EventEmitter<{ set: SessionSetViewModel; exerciseId: string }>();
   @Output() setLongPressed = new EventEmitter<{ set: SessionSetViewModel; exerciseId: string }>();
   @Output() setAdded = new EventEmitter<string>();
+  @Output() warmupChanged = new EventEmitter<WarmupRampChange>();
 
   get areAllSetsCompleted(): boolean {
     return this.exercise
@@ -57,5 +58,9 @@ export class SessionExerciseItemComponent {
 
   onSetAdded(exerciseId: string): void {
     this.setAdded.emit(exerciseId);
+  }
+
+  onWarmupChanged(change: WarmupRampChange): void {
+    this.warmupChanged.emit(change);
   }
 }

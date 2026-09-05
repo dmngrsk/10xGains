@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { SessionExerciseViewModel, SessionSetViewModel } from '../../../../models/session-page.viewmodel';
 import { SessionExerciseItemComponent } from '../session-exercise-item/session-exercise-item.component';
+import { WarmupRampChange } from '../session-set-list/session-set-list.component';
 
 @Component({
   selector: 'txg-session-exercise-list',
@@ -18,6 +19,7 @@ export class SessionExerciseListComponent {
   @Input() isReadOnly: boolean = false;
 
   @Output() setAdded = new EventEmitter<string>();
+  @Output() warmupChanged = new EventEmitter<WarmupRampChange>();
   @Output() setClicked = new EventEmitter<{ set: SessionSetViewModel; exerciseId: string }>();
   @Output() setLongPressed = new EventEmitter<{ set: SessionSetViewModel; exerciseId: string }>();
 
@@ -31,5 +33,9 @@ export class SessionExerciseListComponent {
 
   onSetAdded(planExerciseId: string): void {
     this.setAdded.emit(planExerciseId);
+  }
+
+  onWarmupChanged(change: WarmupRampChange): void {
+    this.warmupChanged.emit(change);
   }
 }

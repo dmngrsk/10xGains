@@ -188,3 +188,55 @@ describe('SessionSetListComponent', () => {
     });
   });
 });
+
+describe('SessionSetListComponent warmup announcements', () => {
+  let component: SessionSetListComponent;
+  let changes: { exerciseId: string; nextWarmupWeightKg: number | null }[];
+
+  beforeEach(() => {
+    component = new SessionSetListComponent();
+    changes = [];
+    component.warmupChanged.subscribe(change => changes.push(change));
+    component.exercise = createMockExercise();
+  });
+
+  it('should say nothing while the ramp is collapsed', () => {
+    expect(changes).toEqual([]);
+  });
+
+  it('should announce the lightest ramp set once the ramp is expanded', () => {
+    component.onWarmupToggleClicked();
+
+    expect(changes).toEqual([{ exerciseId: 'tpex1', nextWarmupWeightKg: 20 }]);
+  });
+
+  it('should announce the next ramp set as the user works through the ramp', () => {
+    component.onWarmupToggleClicked();
+    const [first, second] = component.warmupSets();
+
+    component.onWarmupSetClicked(first.id);
+    component.onWarmupSetClicked(second.id);
+
+    expect(changes.map(change => change.nextWarmupWeightKg)).toEqual([20, 32.5]);
+  });
+
+  it('should withdraw the ramp once it has been worked through', () => {
+    component.onWarmupToggleClicked();
+
+    for (const warmupSet of [...component.warmupSets()]) {
+      component.onWarmupSetClicked(warmupSet.id);
+    }
+
+    expect(changes[changes.length - 1]).toEqual({ exerciseId: 'tpex1', nextWarmupWeightKg: null });
+  });
+
+  it('should withdraw the ramp when the exercise stops qualifying for one', () => {
+    component.onWarmupToggleClicked();
+
+    component.exercise = createMockExercise({
+      sets: [createMockSet({ id: 'set1', status: 'COMPLETED' }), createMockSet({ id: 'set2' })],
+    });
+
+    expect(changes[changes.length - 1]).toEqual({ exerciseId: 'tpex1', nextWarmupWeightKg: null });
+  });
+});

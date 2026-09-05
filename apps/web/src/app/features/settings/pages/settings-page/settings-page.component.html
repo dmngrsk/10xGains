@@ -10,6 +10,9 @@
     } @else if (!viewModel.isLoading || initialLoadFinished()) {
       <div class="p-4 h-full">
         <div class="grid grid-cols-1 gap-6">
+          <txg-workout-settings-card>
+          </txg-workout-settings-card>
+
           <txg-profile-settings-card
             [profile]="viewModel.profile"
             (profileSaved)="onProfileSaved($event)">

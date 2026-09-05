@@ -1,0 +1,20 @@
+<div class="txg-fab-anchor flex flex-col gap-3">
+  @if (showPlateCalculator) {
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      aria-label="Plate calculator"
+      (click)="plateCalculatorClicked.emit()"
+      data-cy="session-plate-calculator-button">
+      <mat-icon>calculate</mat-icon>
+    </button>
+  }
+
+  <button
+    mat-mini-fab
+    class="txg-fab"
+    (click)="notesClicked.emit()"
+    data-cy="session-notes-button">
+    <mat-icon>edit_note</mat-icon>
+  </button>
+</div>
