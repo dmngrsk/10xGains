@@ -1,16 +1,14 @@
 import { DOCUMENT } from '@angular/common';
-import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MatDialog } from '@angular/material/dialog';
+import { Event as RouterEvent, NavigationEnd, NavigationStart, Router } from '@angular/router';
 import { SwUpdate, VersionEvent } from '@angular/service-worker';
-import { Observable, of, Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { AppUpdateDialogComponent } from '@shared/ui/dialogs/app-update-dialog/app-update-dialog.component';
-import { AppUpdateService, UPDATE_CHECK_INTERVAL_MS, UPDATE_DEFER_INTERVAL_MS } from './app-update.service';
+import { AppUpdateService, UPDATE_CHECK_MIN_INTERVAL_MS } from './app-update.service';
+import { KeyedDebouncerService } from './keyed-debouncer.service';
 
-class FakeDocument extends EventTarget {
-  visibilityState: DocumentVisibilityState = 'visible';
-  location = { reload: vi.fn() };
+class FakeDocument {
+  location = { assign: vi.fn(), reload: vi.fn() };
 }
 
 const versionReadyEvent: VersionEvent = {
@@ -21,20 +19,21 @@ const versionReadyEvent: VersionEvent = {
 
 describe('AppUpdateService', () => {
   let activateUpdate: Mock;
-  let afterClosed: Subject<boolean | undefined>;
   let checkForUpdate: Mock;
-  let dialogOpen: Mock;
   let document: FakeDocument;
-  let isStable: Observable<boolean>;
+  let flushCurrentActiveDebounce: Mock;
+  let navigationId: number;
+  let now: number;
+  let routerEvents: Subject<RouterEvent>;
   let unrecoverable: Subject<{ type: 'UNRECOVERABLE_STATE'; reason: string }>;
   let versionUpdates: Subject<VersionEvent>;
 
   function createService(isEnabled = true): AppUpdateService {
     TestBed.configureTestingModule({
       providers: [
-        { provide: ApplicationRef, useValue: { isStable } },
         { provide: DOCUMENT, useValue: document },
-        { provide: MatDialog, useValue: { open: dialogOpen } },
+        { provide: KeyedDebouncerService, useValue: { flushCurrentActiveDebounce } },
+        { provide: Router, useValue: { events: routerEvents.asObservable() } },
         {
           provide: SwUpdate,
           useValue: { isEnabled, versionUpdates, unrecoverable, checkForUpdate, activateUpdate },
@@ -45,230 +44,232 @@ describe('AppUpdateService', () => {
     return TestBed.inject(AppUpdateService);
   }
 
-  /**
-   * The dialog and its Material dependencies are imported on demand, so a prompt opens asynchronously.
-   * Awaiting the same imports lets a test observe the state the service settles into.
-   */
+  function navigate(url = '/home'): void {
+    routerEvents.next(new NavigationStart(++navigationId, url));
+  }
+
+  /** Lets the check's promise chain settle without leaning on timers. */
   async function settle(): Promise<void> {
-    await Promise.all([
-      import('@angular/material/dialog'),
-      import('@shared/ui/dialogs/app-update-dialog/app-update-dialog.component'),
-    ]);
-    await Promise.resolve();
-  }
-
-  async function waitForPrompts(count: number): Promise<void> {
-    await vi.waitFor(() => expect(dialogOpen).toHaveBeenCalledTimes(count));
-  }
-
-  function becomeVisible(visibilityState: DocumentVisibilityState = 'visible'): void {
-    document.visibilityState = visibilityState;
-    document.dispatchEvent(new Event('visibilitychange'));
+    for (let i = 0; i < 5; i++) {
+      await Promise.resolve();
+    }
   }
 
   beforeEach(() => {
     activateUpdate = vi.fn().mockResolvedValue(true);
-    afterClosed = new Subject();
     checkForUpdate = vi.fn().mockResolvedValue(true);
-    dialogOpen = vi.fn().mockReturnValue({ afterClosed: () => afterClosed });
     document = new FakeDocument();
-    isStable = of(true);
+    flushCurrentActiveDebounce = vi.fn().mockReturnValue(of(undefined));
+    navigationId = 0;
+    now = 1_000_000;
+    routerEvents = new Subject();
     unrecoverable = new Subject();
     versionUpdates = new Subject();
+
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
   });
 
   afterEach(() => {
     TestBed.resetTestingModule();
-    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
-  it('should stay inert when the service worker is disabled', () => {
+  it('should stay inert when the service worker is disabled', async () => {
     const service = createService(false);
 
     service.initialize();
+    navigate();
     versionUpdates.next(versionReadyEvent);
+    navigate('/plans');
 
+    await settle();
     expect(checkForUpdate).not.toHaveBeenCalled();
-    expect(dialogOpen).not.toHaveBeenCalled();
+    expect(document.location.assign).not.toHaveBeenCalled();
   });
 
-  it('should check for an update once the app is stable', () => {
-    const service = createService();
+  describe('checking for an update', () => {
+    it('should check for an update on navigation', async () => {
+      const service = createService();
 
-    service.initialize();
+      service.initialize();
+      navigate();
 
-    expect(checkForUpdate).toHaveBeenCalledTimes(1);
+      await settle();
+      expect(checkForUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not check before the first navigation', () => {
+      const service = createService();
+
+      service.initialize();
+
+      expect(checkForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should ignore router events other than a navigation start', async () => {
+      const service = createService();
+
+      service.initialize();
+      routerEvents.next(new NavigationEnd(1, '/home', '/home'));
+
+      await settle();
+      expect(checkForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should not check again within the minimum interval', async () => {
+      const service = createService();
+
+      service.initialize();
+      navigate();
+      await settle();
+
+      now += UPDATE_CHECK_MIN_INTERVAL_MS - 1;
+      navigate('/plans');
+      await settle();
+
+      expect(checkForUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should check again once the minimum interval has elapsed', async () => {
+      const service = createService();
+
+      service.initialize();
+      navigate();
+      await settle();
+
+      now += UPDATE_CHECK_MIN_INTERVAL_MS;
+      navigate('/plans');
+      await settle();
+
+      expect(checkForUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it('should retry at the next navigation when a check fails', async () => {
+      // The service worker has not registered yet on the very first navigation, so the first check
+      // rejects; suppressing checks for the whole interval would leave the app stale for no reason.
+      checkForUpdate.mockRejectedValueOnce(new Error('not registered'));
+      const service = createService();
+
+      service.initialize();
+      navigate();
+      await settle();
+
+      navigate('/plans');
+      await settle();
+
+      expect(checkForUpdate).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not run overlapping checks when navigations arrive together', async () => {
+      let resolveCheck: (value: boolean) => void = () => undefined;
+      checkForUpdate.mockReturnValueOnce(new Promise<boolean>(resolve => resolveCheck = resolve));
+      const service = createService();
+
+      service.initialize();
+      navigate();
+      navigate('/plans');
+      await settle();
+
+      expect(checkForUpdate).toHaveBeenCalledTimes(1);
+      resolveCheck(true);
+    });
   });
 
-  it('should not check for an update before the app is stable', () => {
-    isStable = of(false);
-    const service = createService();
+  describe('applying an update', () => {
+    it('should ignore version events other than a ready one', async () => {
+      const service = createService();
 
-    service.initialize();
+      service.initialize();
+      versionUpdates.next({ type: 'VERSION_DETECTED', version: { hash: 'new' } });
+      versionUpdates.next({ type: 'NO_NEW_VERSION_DETECTED', version: { hash: 'old' } });
+      navigate();
 
-    expect(checkForUpdate).not.toHaveBeenCalled();
+      await settle();
+      expect(activateUpdate).not.toHaveBeenCalled();
+      expect(document.location.assign).not.toHaveBeenCalled();
+    });
+
+    it('should leave the running version alone until the next navigation', async () => {
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+
+      await settle();
+      expect(activateUpdate).not.toHaveBeenCalled();
+      expect(document.location.assign).not.toHaveBeenCalled();
+    });
+
+    it('should activate the update and load the destination on the next navigation', async () => {
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+      navigate('/plans');
+
+      await vi.waitFor(() => expect(document.location.assign).toHaveBeenCalledWith('/plans'));
+      expect(activateUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should settle pending debounced work before loading', async () => {
+      const flushed = new Subject<void>();
+      flushCurrentActiveDebounce.mockReturnValue(flushed as unknown as Observable<void>);
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+      navigate('/plans');
+      await settle();
+
+      expect(flushCurrentActiveDebounce).toHaveBeenCalledTimes(1);
+      expect(document.location.assign).not.toHaveBeenCalled();
+
+      flushed.next();
+      await vi.waitFor(() => expect(document.location.assign).toHaveBeenCalledWith('/plans'));
+    });
+
+    it('should skip the update check once an update is pending', async () => {
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+      navigate('/plans');
+
+      await settle();
+      expect(checkForUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should load the destination even when activation fails', async () => {
+      activateUpdate.mockRejectedValue(new Error('activation failed'));
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+      navigate('/plans');
+
+      await vi.waitFor(() => expect(document.location.assign).toHaveBeenCalledWith('/plans'));
+    });
+
+    it('should not stack reloads across successive navigations', async () => {
+      const service = createService();
+
+      service.initialize();
+      versionUpdates.next(versionReadyEvent);
+      navigate('/plans');
+      navigate('/progress');
+
+      await vi.waitFor(() => expect(document.location.assign).toHaveBeenCalledTimes(1));
+      expect(document.location.assign).toHaveBeenCalledWith('/plans');
+    });
   });
 
-  it('should keep checking for an update on the poll interval', () => {
-    vi.useFakeTimers();
-    const service = createService();
-
-    service.initialize();
-    vi.advanceTimersByTime(UPDATE_CHECK_INTERVAL_MS * 2);
-
-    expect(checkForUpdate).toHaveBeenCalledTimes(3);
-  });
-
-  it('should check for an update when a backgrounded app becomes visible again', () => {
-    const service = createService();
-
-    service.initialize();
-    becomeVisible('hidden');
-    becomeVisible();
-
-    // One check on stability, one for becoming visible; the 'hidden' transition is ignored.
-    expect(checkForUpdate).toHaveBeenCalledTimes(2);
-  });
-
-  it('should swallow a failed check so later ones still run', async () => {
-    checkForUpdate.mockRejectedValueOnce(new Error('offline'));
-    const service = createService();
-
-    service.initialize();
-    await vi.waitFor(() => expect(checkForUpdate).toHaveBeenCalledTimes(1));
-    becomeVisible();
-
-    expect(checkForUpdate).toHaveBeenCalledTimes(2);
-  });
-
-  it('should prompt when a new version is ready', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-
-    await vi.waitFor(() =>
-      expect(dialogOpen).toHaveBeenCalledWith(AppUpdateDialogComponent, { disableClose: true, width: '400px' })
-    );
-  });
-
-  it('should ignore version events other than a ready one', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next({ type: 'VERSION_DETECTED', version: { hash: 'new' } });
-    versionUpdates.next({ type: 'NO_NEW_VERSION_DETECTED', version: { hash: 'old' } });
-
-    await settle();
-    expect(dialogOpen).not.toHaveBeenCalled();
-  });
-
-  it('should activate the update and reload when the user accepts', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await waitForPrompts(1);
-    afterClosed.next(true);
-
-    await vi.waitFor(() => expect(document.location.reload).toHaveBeenCalledTimes(1));
-    expect(activateUpdate).toHaveBeenCalledTimes(1);
-  });
-
-  it('should leave the running version alone when the user defers the update', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await waitForPrompts(1);
-    afterClosed.next(false);
-
-    expect(activateUpdate).not.toHaveBeenCalled();
-    expect(document.location.reload).not.toHaveBeenCalled();
-  });
-
-  it('should not stack prompts while one is already open', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    versionUpdates.next(versionReadyEvent);
-
-    await waitForPrompts(1);
-    await settle();
-    expect(dialogOpen).toHaveBeenCalledTimes(1);
-  });
-
-  it('should prompt again once a deferral has elapsed', async () => {
-    vi.useFakeTimers();
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await settle();
-    afterClosed.next(false);
-
-    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS);
-    await settle();
-
-    expect(dialogOpen).toHaveBeenCalledTimes(2);
-  });
-
-  it('should stay quiet for the length of the deferral', async () => {
-    vi.useFakeTimers();
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await settle();
-    afterClosed.next(false);
-
-    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS - 1);
-    await settle();
-
-    expect(dialogOpen).toHaveBeenCalledTimes(1);
-  });
-
-  it('should restart the wait when the user defers a second time', async () => {
-    vi.useFakeTimers();
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await settle();
-    afterClosed.next(false);
-
-    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS);
-    await settle();
-    afterClosed.next(false);
-
-    // Half of a fresh deferral is still short of the re-prompt, even though a full one has elapsed
-    // since the first deferral.
-    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS / 2);
-    await settle();
-
-    expect(dialogOpen).toHaveBeenCalledTimes(2);
-  });
-
-  it('should prompt again for a later version once the user has deferred', async () => {
-    const service = createService();
-
-    service.initialize();
-    versionUpdates.next(versionReadyEvent);
-    await waitForPrompts(1);
-    afterClosed.next(false);
-    versionUpdates.next(versionReadyEvent);
-
-    await waitForPrompts(2);
-  });
-
-  it('should reload without prompting when the cached app is unrecoverable', () => {
+  it('should reload immediately when the cached app is unrecoverable', () => {
     const service = createService();
 
     service.initialize();
     unrecoverable.next({ type: 'UNRECOVERABLE_STATE', reason: 'missing asset' });
 
-    expect(dialogOpen).not.toHaveBeenCalled();
     expect(document.location.reload).toHaveBeenCalledTimes(1);
+    expect(document.location.assign).not.toHaveBeenCalled();
   });
 });
