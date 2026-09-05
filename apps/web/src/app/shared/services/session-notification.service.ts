@@ -70,8 +70,13 @@ export class SessionNotificationService {
     }
 
     // No action buttons: tapping the notification already routes into the session, so a button
-    // beside it only repeats what the whole surface does. `navigateLastFocusedOrOpen` focuses an
-    // already-open app and routes it there, and opens a window when nothing is running.
+    // beside it only repeats what the whole surface does.
+    //
+    // `focusLastFocusedOrOpen` rather than `navigateLastFocusedOrOpen`: the latter is implemented as
+    // `client.navigate()`, which is a full page load even when the target matches where the app
+    // already is, so every tap reloaded the running session. Focusing keeps it instant and cannot
+    // discard set patches still waiting in the debouncer. The url is still what a cold start opens,
+    // so a tap with nothing running lands on the session either way.
     await registration.showNotification(content.title, {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
@@ -82,7 +87,7 @@ export class SessionNotificationService {
       data: {
         sessionId,
         onActionClick: {
-          default: { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` },
+          default: { operation: 'focusLastFocusedOrOpen', url: `sessions/${sessionId}` },
         },
       },
     });

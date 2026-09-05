@@ -59,14 +59,14 @@ describe('SessionNotificationService', () => {
       }));
     });
 
-    it('should route a tap back into the session', async () => {
+    it('should focus a running app rather than reloading it, and open at the session otherwise', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
       expect(showNotification.mock.calls[0][1].data).toMatchObject({
         sessionId: 'session-1',
-        onActionClick: { default: { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' } },
+        onActionClick: { default: { operation: 'focusLastFocusedOrOpen', url: 'sessions/session-1' } },
       });
     });
 
