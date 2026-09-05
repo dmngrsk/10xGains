@@ -15,8 +15,12 @@ import { resolveExerciseProgressions } from '../services/exercise-progressions/e
 import { buildSessionSets, cancelOutstandingSessions, resolveNextPlanDayId } from '../services/session-creation/session-creation';
 import {
   assertSessionCompletable,
+  assertSessionEndAfterPreviousSession,
+  assertSessionEndNotInFuture,
   extractPlanExercises,
   extractSessionSetContext,
+  resolveSessionFinishedAt,
+  retimeSessionToEnd,
   skipPendingSets
 } from '../services/session-completion/session-completion';
 import type { PlanDayWithExercisesRow, SessionSetWithExerciseRow } from '../services/session-completion/session-completion';
@@ -231,10 +235,17 @@ export class SessionRepository {
    * This is a critical operation that calculates progression for each exercise
    * in the completed session and updates the plan accordingly.
    *
+   * The session records when it finished either way: `endAt` when the caller named one, otherwise
+   * now. When `endAt` is given, the session is also retimed onto that end: whatever was recorded
+   * after it - a workout logged the next morning, a set marked hours late - moves back with it,
+   * keeping its spacing, while everything recorded earlier stays as it was. See
+   * `retimeSessionToEnd`.
+   *
    * @param {string} sessionId - The ID of the session to complete.
+   * @param {string} [endAt] - When training actually ended, as an ISO 8601 instant. Absent means now.
    * @returns {Promise<SessionDto | null>} A promise that resolves to the completed session.
    */
-  async complete(sessionId: string): Promise<SessionDto | null> {
+  async complete(sessionId: string, endAt?: string): Promise<SessionDto | null> {
     const userId = this.getUserId();
 
     // Step 1: Fetch the training session
@@ -254,6 +265,10 @@ export class SessionRepository {
     }
 
     assertSessionCompletable(existingSession);
+
+    if (endAt) {
+      assertSessionEndNotInFuture(endAt, new Date().toISOString());
+    }
 
     // Step 2: Fetch all session sets and associated plan exercise data
     const { data: setData, error: sessionSetsError } = await this.supabase
@@ -312,8 +327,6 @@ export class SessionRepository {
     );
 
     // Step 4: Fetch full session and update all data in a single atomic transaction
-    const sessionSetsToUpdate = skipPendingSets(sessionSets);
-
     const { data: fullSession, error: fullSessionError } = await this.supabase
       .from('sessions')
       .select('*')
@@ -328,9 +341,22 @@ export class SessionRepository {
       throw fullSessionError;
     }
 
+    const retiming = endAt ? retimeSessionToEnd(fullSession.session_date, sessionSets, endAt) : null;
+
+    if (retiming) {
+      const previousSessionEnd = await this.findPreviousCompletedSessionEnd(sessionId, existingSession.plan_id);
+      assertSessionEndAfterPreviousSession(retiming.sessionDate, previousSessionEnd);
+    }
+
+    const sessionSetsToUpdate = [...new Map(
+      [...(retiming?.sets ?? []), ...skipPendingSets(sessionSets)].map(set => [set.id, set])
+    ).values()];
+
     const completedSession = {
       ...fullSession,
-      status: 'COMPLETED' as const
+      status: 'COMPLETED' as const,
+      session_date: retiming ? retiming.sessionDate : fullSession.session_date,
+      finished_at: resolveSessionFinishedAt(endAt, new Date().toISOString())
     };
 
     const batchOperations = [
@@ -648,6 +674,7 @@ export class SessionRepository {
         plan_day_id: currentDayId,
         status: 'PENDING',
         session_date: null,
+        finished_at: null,
         notes: null
       }
     ];
@@ -695,6 +722,38 @@ export class SessionRepository {
     };
 
     return newlyCreatedSession as SessionDto;
+  }
+
+  /**
+   * Finds when the user last finished a session of the same plan.
+   *
+   * A retimed session has to start after that moment; see `assertSessionEndAfterPreviousSession`.
+   * The row is picked by `session_date`, which is the order the plan-day rotation reads, and its
+   * `finished_at` is what the caller compares against - falling back to its start for a row the
+   * column's backfill could not reach.
+   *
+   * @param {string} sessionId - The session being completed, excluded from the search.
+   * @param {string} planId - The plan whose history is searched.
+   * @returns {Promise<string | null>} When the latest completed session ended, or null if there is none.
+   */
+  private async findPreviousCompletedSessionEnd(sessionId: string, planId: string): Promise<string | null> {
+    const { data, error } = await this.supabase
+      .from('sessions')
+      .select('session_date, finished_at')
+      .eq('user_id', this.getUserId())
+      .eq('plan_id', planId)
+      .eq('status', 'COMPLETED')
+      .neq('id', sessionId)
+      .not('session_date', 'is', null)
+      .order('session_date', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      throw error;
+    }
+
+    const previous = data?.[0];
+    return previous?.finished_at ?? previous?.session_date ?? null;
   }
 
   /**

@@ -3,7 +3,11 @@
     {{ timerText }}
   </span>
   <mat-divider [vertical]="true" class="mx-2"></mat-divider>
-  <button mat-icon-button (click)="onCompleteSession()" data-cy="complete-session-button">
+  <button mat-icon-button txgLongPress
+    aria-label="Finish session"
+    (txgClick)="onCompleteSession()"
+    (txgLongPress)="onFinishOptionsRequested()"
+    data-cy="complete-session-button">
     <mat-icon>check</mat-icon>
   </button>
 </div>

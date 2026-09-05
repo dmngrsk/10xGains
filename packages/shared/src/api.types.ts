@@ -149,9 +149,11 @@ export type CreateSessionCommand = Pick<Database["public"]["Tables"]["sessions"]
 // At least one field must be present; status-only and notes-only updates are both valid.
 export type UpdateSessionCommand = Pick<Database["public"]["Tables"]["sessions"]["Update"], "status" | "notes">;
 
-// For PATCH /sessions/{sessionId}/complete
-// Request body is empty.
-export type CompleteSessionCommand = Record<string, never>; // Represents an empty request body
+// For POST /sessions/{sessionId}/complete
+// `end_at` is an ISO 8601 instant with an offset, saying when training actually ended. Absent means
+// "now", which is what the plain finish gesture sends; a value earlier than the last recorded set
+// moves that set - and everything recorded after it - back onto the given end.
+export type CompleteSessionCommand = { end_at?: string };
 
 // 9. Session Set DTO and Commands
 export type SessionSetDto = Database["public"]["Tables"]["session_sets"]["Row"];

@@ -161,7 +161,60 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 102.5 kg'); // Progression rules applied
     });
 
-    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-08'] }, () => {
+    it('finishes a session at a date and time picked from the finish options', { tags: ['SESS-08'] }, () => {
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const yesterdayTyped = new Intl.DateTimeFormat('en-US').format(yesterday);
+      const yesterdayShort = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(yesterday);
+      const yesterdayLong = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(yesterday);
+      const yesterdayPreview = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(yesterday);
+
+      cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
+      cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
+
+      cy.getBySel(dataCy.sessions.completeButton).longPress();
+      cy.getBySel(dataCy.sessions.finishSheet.container).should('be.visible');
+      cy.getBySel(dataCy.sessions.finishSheet.now).should('be.visible');
+      cy.getBySel(dataCy.sessions.finishSheet.lastSet).should('be.visible');
+      cy.getBySel(dataCy.sessions.finishSheet.pick).click();
+
+      cy.getBySel(dataCy.sessions.dialogs.finishTime.title).should('be.visible').and('contain.text', 'Finish session');
+      cy.getBySel(dataCy.sessions.dialogs.finishTime.dateInput).clear().type(yesterdayTyped);
+      // Asserted on the day rather than the hour count: the picked time keeps its wall clock, so
+      // across a DST boundary the elapsed shift is 23 or 25 hours, not 24.
+      cy.getBySel(dataCy.sessions.dialogs.finishTime.preview).should('contain.text', `Recorded as ${yesterdayPreview}`);
+      cy.getBySel(dataCy.sessions.dialogs.finishTime.preview).should('contain.text', 'sets move back by');
+      cy.getBySel(dataCy.sessions.dialogs.finishTime.saveButton).click();
+
+      cy.url().should('include', '/home');
+      cy.getMatSnackBar().should('contain.text', `Session completed on ${yesterdayShort}`);
+
+      // The whole session moved with the end that was picked, so history shows it a day back.
+      cy.visit('/history?view=list');
+      cy.getBySel(dataCy.history.sessionCard).first().should('contain.text', 'Workout A');
+      cy.getBySel(dataCy.history.sessionCard).first().should('contain.text', yesterdayLong);
+    });
+
+    it('confirms an early finish taken from the finish options', { tags: ['SESS-09'] }, () => {
+      cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
+      cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
+
+      // The finish options raise the same confirmation the plain tap does.
+      cy.getBySel(dataCy.sessions.completeButton).longPress();
+      cy.getBySel(dataCy.sessions.finishSheet.now).click();
+      cy.getBySel(dataCy.shared.dialogs.confirmation.content).should('be.visible').and('contain.text', 'Not all sets have been marked as completed or failed.');
+      cy.getBySel(dataCy.shared.dialogs.confirmation.cancelButton).click();
+
+      cy.url().should('not.include', '/home');
+      cy.getBySel(dataCy.sessions.header.status).should('contain.text', 'IN PROGRESS');
+
+      cy.getBySel(dataCy.sessions.completeButton).longPress();
+      cy.getBySel(dataCy.sessions.finishSheet.now).click();
+      cy.getBySel(dataCy.shared.dialogs.confirmation.confirmButton).click();
+
+      cy.url().should('include', '/home');
+    });
+
+    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-10'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -181,7 +234,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 100 kg'); // Progression rules not applied due to incomplete sets
     });
 
-    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-09'] }, () => {
+    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-11'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.title).should('be.visible').and('contain.text', 'Notes');
@@ -195,7 +248,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Felt strong on squats today.');
     });
 
-    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-10'] }, () => {
+    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-12'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
@@ -213,7 +266,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Cancel discarded it
     });
 
-    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-11'] }, () => {
+    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-13'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
@@ -234,7 +287,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
     });
 
-    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-12'] }, () => {
+    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-14'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
@@ -261,7 +314,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
     });
 
-    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-13'] }, () => {
+    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-15'] }, () => {
       let userId1: string;
       let userId2: string;
 
@@ -300,7 +353,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-14'] }, () => {
+    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-16'] }, () => {
       // Session sets are grouped by plan_exercise_id, which every session trained from the same
       // plan day shares. Editing a set used to pull in the sets of previous sessions of that day,
       // renumber the merged list and write it back - silently rewriting, and deleting, history.

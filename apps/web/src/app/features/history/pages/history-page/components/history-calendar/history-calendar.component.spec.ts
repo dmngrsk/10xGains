@@ -8,6 +8,7 @@ const session = (id: string, sessionDate: Date | null): SessionCardViewModel => 
   id,
   title: `Session ${id}`,
   sessionDate,
+  finishedAt: null,
   status: 'COMPLETED',
   notes: null,
   exercises: [],

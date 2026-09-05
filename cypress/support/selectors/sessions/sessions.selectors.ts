@@ -24,6 +24,16 @@ export const sessionsSelectors = {
       weightInput: 'add-edit-set-dialog-weight-input',
       saveButton: 'add-edit-set-dialog-save-button',
     },
+    finishTime: {
+      title: 'session-finish-time-dialog-title',
+      content: 'session-finish-time-dialog-content',
+      dateInput: 'session-finish-time-dialog-date-input',
+      timeInput: 'session-finish-time-dialog-time-input',
+      preview: 'session-finish-time-dialog-preview',
+      futureError: 'session-finish-time-dialog-future-error',
+      saveButton: 'session-finish-time-dialog-save-button',
+      cancelButton: 'session-finish-time-dialog-cancel-button',
+    },
     notes: {
       title: 'session-notes-dialog-title',
       content: 'session-notes-dialog-content',
@@ -36,6 +46,13 @@ export const sessionsSelectors = {
   sessionCard: {
     navigateButton: 'session-card-navigate-button',
     notesButton: 'session-card-notes-button',
+  },
+  finishSheet: {
+    container: 'session-finish-sheet',
+    title: 'session-finish-sheet-title',
+    now: 'session-finish-sheet-now',
+    lastSet: 'session-finish-sheet-last-set',
+    pick: 'session-finish-sheet-pick',
   },
   exerciseItem: 'session-exercise-item',
   timer: 'session-timer',

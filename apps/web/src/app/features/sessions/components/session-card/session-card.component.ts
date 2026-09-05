@@ -51,9 +51,7 @@ export class SessionCardComponent {
     const displayDate = this.formatDisplayDate(this.sessionData.sessionDate);
     if (!displayDate) return '';
 
-    const sessionTimestamps = [this.sessionData.sessionDate]
-      .concat(this.sessionData.exercises.flatMap(e => e.sets.map(s => s.completedAt)))
-      .filter(d => !!d && d instanceof Date);
+    const sessionStartTime = this.sessionData.sessionDate;
 
     switch (this.sessionData.status) {
       case 'PENDING': {
@@ -61,7 +59,6 @@ export class SessionCardComponent {
       }
 
       case 'IN_PROGRESS': {
-        const sessionStartTime = sessionTimestamps.sort((a, b) => a.getTime() - b.getTime())[0];
         const sessionStartTimeFormatted = this.formatDisplayTime(sessionStartTime);
 
         if (sessionStartTime && sessionStartTimeFormatted) {
@@ -75,8 +72,7 @@ export class SessionCardComponent {
 
       case 'COMPLETED':
       case 'CANCELLED': {
-        const sessionStartTime = sessionTimestamps.sort((a, b) => a.getTime() - b.getTime())[0];
-        const sessionEndTime = sessionTimestamps.sort((a, b) => b.getTime() - a.getTime())[0];
+        const sessionEndTime = this.sessionEndTime;
 
         if (sessionStartTime && sessionEndTime) {
           const sessionStartTimeFormatted = this.formatDisplayTime(sessionStartTime);
@@ -166,5 +162,22 @@ export class SessionCardComponent {
   private formatDisplayTime(date: Date | null): string | null {
     if (!date || !(date instanceof Date) || isNaN(date.getTime())) return null;
     return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  }
+  
+  private get sessionEndTime(): Date | null {
+    if (this.sessionData.finishedAt) {
+      return this.sessionData.finishedAt;
+    }
+
+    const setTimes = this.sessionData.exercises
+      .flatMap(e => e.sets.map(s => s.completedAt))
+      .filter((d): d is Date => !!d && d instanceof Date)
+      .map(d => d.getTime());
+
+    if (setTimes.length === 0) {
+      return this.sessionData.sessionDate;
+    }
+
+    return new Date(Math.max(...setTimes, this.sessionData.sessionDate?.getTime() ?? Number.NEGATIVE_INFINITY));
   }
 }

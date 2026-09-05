@@ -1104,6 +1104,7 @@ Lists all training sessions for the authenticated user. Supports pagination, sor
           "plan_day_id": "uuid",
           "user_id": "uuid",
           "session_date": "2023-01-01T00:00:00Z",
+          "finished_at": null,
           "status": "IN_PROGRESS",
           "sets": [
             {
@@ -1155,7 +1156,8 @@ Each new set carries **both** halves of the plan's prescription and is marked as
         "plan_id": "uuid", // As provided
         "plan_day_id": "uuid", // Provided or determined
         "user_id": "uuid", // ID of the authenticated user
-        "session_date": "2023-01-01T00:00:00Z", // Creation timestamp
+        "session_date": "2023-01-01T00:00:00Z", // Null until the first set is recorded
+        "finished_at": null, // Null until the session is completed
         "status": "PENDING", // Default status
         "sets": [ // Auto-created session sets
           {
@@ -1194,6 +1196,7 @@ Retrieves a specific training session by its ID, if it belongs to the authentica
         "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
+        "finished_at": null,
         "status": "IN_PROGRESS",
         "sets": [
           {
@@ -1240,6 +1243,7 @@ Updates the status and/or notes of an existing training session (e.g., to cancel
         "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
+        "finished_at": null,
         "status": "CANCELLED", // Updated status
         "notes": "User's session note.",
         "sets": [
@@ -1282,9 +1286,18 @@ Deletes a specific training session by its ID, if it belongs to the authenticate
 
 Marks a training session as completed and triggers exercise progression logic.
 
+Records `finished_at`: the `end_at` the caller named, or the moment of the request when it named none. This is what the session stores as its end, and it is written whether or not anything else moves.
+
+An `end_at` also retimes the session onto that end. Everything recorded *after* it - a workout logged the next morning, a set marked hours late - moves back onto it as one block, keeping its spacing, while everything recorded earlier keeps its timestamps. Set timestamps never move forward: an `end_at` later than the last recorded set is recorded as the finish without changing any of them. Sets left `PENDING` are marked `SKIPPED` and carry no timestamp, retimed or otherwise.
+
 -   **Authorization**: Bearer token required.
 -   **URL Path Parameter**: `sessionId` (UUID) - The ID of the training session to complete.
--   **Request Body**: Empty (`CompleteSessionCommand` is `Record<string, never>`).
+-   **Request Body**: Optional (`CompleteSessionCommand`). An absent or empty body means "now", which is what a plain finish sends.
+    ```json
+    {
+      "end_at": "2026-09-04T19:30:00.000Z" // optional, ISO 8601 instant; an offset is required
+    }
+    ```
 -   **Response (200 OK)**: The full, updated `SessionDto` object (including nested fields like `sets`) with status set to `COMPLETED`.
     ```json
     {
@@ -1294,6 +1307,7 @@ Marks a training session as completed and triggers exercise progression logic.
         "plan_day_id": "uuid",
         "user_id": "uuid",
         "session_date": "2023-01-01T00:00:00Z",
+        "finished_at": "2023-01-01T01:05:00Z",
         "status": "COMPLETED",
         "sets": [
           {
@@ -1313,9 +1327,10 @@ Marks a training session as completed and triggers exercise progression logic.
     }
     ```
 -   **Responses (Error)**:
-    -   `400 Bad Request`: If `sessionId` format is invalid or the session is not in a state that can be completed (e.g., already 'CANCELLED' or 'COMPLETED').
+    -   `400 Bad Request`: If `sessionId` format is invalid, `end_at` is not an ISO 8601 instant with an offset, the session is not in a state that can be completed (e.g., already 'CANCELLED' or 'COMPLETED'), or `end_at` lies more than 5 minutes in the future (`SESSION_END_IN_FUTURE`; the allowance absorbs a client clock running fast).
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `409 Conflict`: If the retimed session would start at or before the moment the previous session on the same plan finished (`SESSION_END_BEFORE_PREVIOUS`). Which plan day comes next is read off the most recent completed session, so an earlier or tied start would make the rotation repeat a day; comparing against the previous end also keeps two workouts on one plan from overlapping.
     -   `500 Internal Server Error`: For unexpected server issues, especially during progression logic.
 
 ### Session Sets API
