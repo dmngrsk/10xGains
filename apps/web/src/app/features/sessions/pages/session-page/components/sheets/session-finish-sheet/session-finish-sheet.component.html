@@ -10,7 +10,7 @@
   @if (showLastSetOption) {
     <a mat-list-item (click)="onFinishAtLastSet()" data-cy="session-finish-sheet-last-set">
       <mat-icon matListItemIcon>schedule</mat-icon>
-      <span matListItemTitle>When the last set was logged</span>
+      <span matListItemTitle>Last set</span>
       <span matListItemMeta>{{ data.lastSetCompletedAt | date:'HH:mm' }}</span>
     </a>
   }

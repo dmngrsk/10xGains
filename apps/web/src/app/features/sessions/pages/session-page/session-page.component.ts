@@ -272,7 +272,7 @@ export class SessionPageComponent implements OnDestroy {
     };
 
     return this.dialog
-      .open(SessionFinishTimeDialogComponent, { width: '400px', data: dialogData, disableClose: true })
+      .open(SessionFinishTimeDialogComponent, { width: '400px', data: dialogData, disableClose: true, autoFocus: 'dialog' })
       .afterClosed()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
