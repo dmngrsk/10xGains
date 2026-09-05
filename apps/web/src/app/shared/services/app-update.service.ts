@@ -70,8 +70,8 @@ export class AppUpdateService {
   }
 
   /**
-   * The prompt cannot be dismissed: an open client keeps being served the old version until it
-   * reloads, so reloading is the only way out of the dialog.
+   * Deferring leaves the downloaded version sitting ready: this client keeps being served the old
+   * one until it reloads, and the prompt does not come back until the next deployment.
    *
    * The dialog and Angular Material's dialog infrastructure are imported on demand: a prompt shown
    * once per deployment does not belong in the bundle every cold start has to download.

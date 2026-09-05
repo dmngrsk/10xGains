@@ -15,4 +15,8 @@ export class AppUpdateDialogComponent {
   onReload(): void {
     this.dialogRef.close(true);
   }
+
+  onLater(): void {
+    this.dialogRef.close(false);
+  }
 }

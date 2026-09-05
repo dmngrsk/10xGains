@@ -1,10 +1,13 @@
 <h2 mat-dialog-title data-cy="app-update-dialog-title">Update available</h2>
 
 <mat-dialog-content class="text-secondary" data-cy="app-update-dialog-content">
-  <span>A newer version of 10xGains is available. In order to continue using the app, please reload.</span>
+  <span>A newer version of 10xGains is available. Reload to start using it, or keep going and reload later.</span>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
+  <button mat-button (click)="onLater()" data-cy="app-update-dialog-later-button">
+    <span>Later</span>
+  </button>
   <button mat-flat-button color="primary" (click)="onReload()" data-cy="app-update-dialog-reload-button">
     <span>Reload</span>
   </button>

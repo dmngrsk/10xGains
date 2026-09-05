@@ -175,13 +175,13 @@ describe('AppUpdateService', () => {
     expect(activateUpdate).toHaveBeenCalledTimes(1);
   });
 
-  it('should leave the running version alone when the prompt closes without a reload', async () => {
+  it('should leave the running version alone when the user defers the update', async () => {
     const service = createService();
 
     service.initialize();
     versionUpdates.next(versionReadyEvent);
     await waitForPrompts(1);
-    afterClosed.next(undefined);
+    afterClosed.next(false);
 
     expect(activateUpdate).not.toHaveBeenCalled();
     expect(document.location.reload).not.toHaveBeenCalled();
@@ -199,13 +199,13 @@ describe('AppUpdateService', () => {
     expect(dialogOpen).toHaveBeenCalledTimes(1);
   });
 
-  it('should prompt again for a later version once a prompt has closed', async () => {
+  it('should prompt again for a later version once the user has deferred', async () => {
     const service = createService();
 
     service.initialize();
     versionUpdates.next(versionReadyEvent);
     await waitForPrompts(1);
-    afterClosed.next(undefined);
+    afterClosed.next(false);
     versionUpdates.next(versionReadyEvent);
 
     await waitForPrompts(2);
