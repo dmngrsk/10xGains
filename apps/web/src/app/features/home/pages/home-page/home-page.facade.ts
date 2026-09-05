@@ -147,12 +147,6 @@ export class HomePageFacade {
     this.createSession();
   }
 
-  /**
-   * Takes down a notification left behind by a session that was killed mid-workout or finished on
-   * another device. This query already asks for the only sessions that could own one, so it costs
-   * no extra request - and reconciling here rather than on startup is what stops an app launch from
-   * clearing and re-posting the notification of a workout that is genuinely still in progress.
-   */
   private clearNotificationWithoutSession(viewModel: HomePageViewModel): void {
     if (viewModel.sessions?.some(session => session.status === 'IN_PROGRESS')) {
       return;
