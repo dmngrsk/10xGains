@@ -1,17 +1,16 @@
 import { inject, signal, Injectable, DestroyRef, effect, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, forkJoin, EMPTY, firstValueFrom } from 'rxjs';
+import { Observable, of, forkJoin, EMPTY } from 'rxjs';
 import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionStatus } from '@txg/shared';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
-import { EnvironmentService } from '@shared/services/environment.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
-import { buildSessionNotificationContent, findNextPendingSet } from './utils/session-notification.utils';
+import { buildSessionNotificationContent } from './utils/session-notification.utils';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
@@ -41,10 +40,6 @@ export class SessionPageFacade {
   private readonly debouncerService = inject(KeyedDebouncerService);
   private readonly serverClock = inject(ServerClockService);
   private readonly sessionNotifications = inject(SessionNotificationService);
-  private readonly environmentService = inject(EnvironmentService);
-
-  private actionToken: { sessionId: string; token: string } | null = null;
-  private pendingActionTokenSessionId: string | null = null;
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
   readonly timerStartTimestamp = signal<number | null>(null);
@@ -406,68 +401,14 @@ export class SessionPageFacade {
 
   private syncNotification(session: SessionPageViewModel): void {
     if (!session.id || session.metadata?.status !== 'IN_PROGRESS') {
-      this.actionToken = null;
       void this.sessionNotifications.clear();
       return;
     }
 
-    const sessionId = session.id;
-    const nextSet = findNextPendingSet(session);
-
-    void this.sessionNotifications.show(
-      sessionId,
-      buildSessionNotificationContent(session),
-      this.actionToken?.sessionId === sessionId && nextSet
-        ? {
-            apiBaseUrl: `${this.environmentService.apiUrl.replace(/\/+$/, '')}/api`,
-            setId: nextSet.set.id,
-            token: this.actionToken.token,
-          }
-        : undefined
-    );
-
-    void this.ensureActionToken(sessionId);
-  }
-
-  /**
-   * Obtains the session's action token, once, and re-syncs so the notification gains its action.
-   *
-   * A token already attached to the notification on screen is adopted rather than replaced: minting
-   * revokes the session's previous token, so minting on every launch would strand the notification
-   * holding the old one. Skipped when notifications cannot be shown, since nothing would carry it.
-   */
-  private async ensureActionToken(sessionId: string): Promise<void> {
-    if (!this.sessionNotifications.isEnabled()) {
-      return;
-    }
-
-    if (this.actionToken?.sessionId === sessionId || this.pendingActionTokenSessionId === sessionId) {
-      return;
-    }
-
-    this.pendingActionTokenSessionId = sessionId;
-    try {
-      const adopted = await this.sessionNotifications.readActionToken(sessionId);
-      const token = adopted
-        ?? (await firstValueFrom(this.sessionService.createSessionActionToken(sessionId)))?.data?.token;
-
-      if (!token) {
-        return;
-      }
-
-      this.actionToken = { sessionId, token };
-      this.syncNotification(this.viewModel());
-    } catch (error) {
-      console.error(`Failed to obtain a session action token for session ${sessionId}:`, error);
-    } finally {
-      if (this.pendingActionTokenSessionId === sessionId) {
-        this.pendingActionTokenSessionId = null;
-      }
-    }
+    void this.sessionNotifications.show(session.id, buildSessionNotificationContent(session));
   }
 
   private clearUserScopedState(): void {
-    this.actionToken = null;
     this.viewModel.set(initialState);
     this.timerStartTimestamp.set(null);
   }

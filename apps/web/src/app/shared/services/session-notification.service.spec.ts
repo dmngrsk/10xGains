@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { SESSION_NOTIFICATION_TAG, SessionNotificationService } from './session-notification.service';
 
 const content = { title: 'Bench Press', body: 'Set 3/5 · 8 reps @ 60 kg' };
-const action = { apiBaseUrl: 'https://api.example.test/api', setId: 'set-3', token: 'token-abc' };
 
 describe('SessionNotificationService', () => {
   let close: Mock;
@@ -60,62 +59,24 @@ describe('SessionNotificationService', () => {
       }));
     });
 
-    it('should name the session the click should return to', async () => {
+    it('should route both the button and a body tap back into the session', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
-      expect(showNotification.mock.calls[0][1].data).toMatchObject({ sessionId: 'session-1' });
+      const open = { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' };
+      expect(showNotification.mock.calls[0][1].data).toMatchObject({
+        sessionId: 'session-1',
+        onActionClick: { default: open, open },
+      });
     });
 
-    it('should leave ngsw no click protocol to act on, so the worker owns every action', async () => {
-      const service = createService();
-
-      await service.show('session-1', content, action);
-
-      expect(showNotification.mock.calls[0][1].data.onActionClick).toBeUndefined();
-    });
-
-    it('should offer only the open action when there is no token yet', async () => {
+    it('should offer a single action that returns to the session', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
       expect(showNotification.mock.calls[0][1].actions).toEqual([{ action: 'open', title: 'View session' }]);
-    });
-
-    it('should offer the complete action once a token is available', async () => {
-      const service = createService();
-
-      await service.show('session-1', content, action);
-
-      expect(showNotification.mock.calls[0][1].actions).toEqual([
-        { action: 'complete-set', title: 'Complete' },
-        { action: 'open', title: 'View session' },
-      ]);
-    });
-
-    it('should carry everything the service worker needs to complete the set', async () => {
-      const service = createService();
-
-      await service.show('session-1', content, action);
-
-      expect(showNotification.mock.calls[0][1].data).toMatchObject({
-        sessionId: 'session-1',
-        title: 'Bench Press',
-        apiBaseUrl: 'https://api.example.test/api',
-        setId: 'set-3',
-        token: 'token-abc',
-      });
-    });
-
-    it('should show again once the set the action targets changes', async () => {
-      const service = createService();
-
-      await service.show('session-1', content, action);
-      await service.show('session-1', content, { ...action, setId: 'set-4' });
-
-      expect(showNotification).toHaveBeenCalledTimes(2);
     });
 
     it('should not re-show when the notification on screen already matches', async () => {
@@ -134,19 +95,6 @@ describe('SessionNotificationService', () => {
       const service = createService();
 
       await service.show('session-1', content);
-
-      expect(showNotification).toHaveBeenCalledTimes(1);
-    });
-
-    it('should re-show when the notification on screen carries a different token', async () => {
-      setExisting({
-        title: content.title,
-        body: content.body,
-        data: { sessionId: 'session-1', setId: 'set-3', token: 'stale-token' },
-      });
-      const service = createService();
-
-      await service.show('session-1', content, action);
 
       expect(showNotification).toHaveBeenCalledTimes(1);
     });
@@ -267,25 +215,4 @@ describe('SessionNotificationService', () => {
     });
   });
 
-  describe('readActionToken', () => {
-    it('should adopt the token the notification on screen already carries', async () => {
-      setExisting({ data: { sessionId: 'session-1', token: 'token-abc' } });
-      const service = createService();
-
-      await expect(service.readActionToken('session-1')).resolves.toBe('token-abc');
-    });
-
-    it('should ignore a token minted for a different session', async () => {
-      setExisting({ data: { sessionId: 'session-2', token: 'token-abc' } });
-      const service = createService();
-
-      await expect(service.readActionToken('session-1')).resolves.toBeNull();
-    });
-
-    it('should report nothing when no notification is on screen', async () => {
-      const service = createService();
-
-      await expect(service.readActionToken('session-1')).resolves.toBeNull();
-    });
-  });
 });

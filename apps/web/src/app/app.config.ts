@@ -10,7 +10,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideAppInitializer(() => inject(AppUpdateService).initialize()),
-    provideServiceWorker('sw.js', {
+    provideServiceWorker('ngsw-worker.js', {
       enabled: environment.enableServiceWorker,
       registrationStrategy: 'registerWhenStable:30000'
     })

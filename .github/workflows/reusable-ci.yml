@@ -196,16 +196,6 @@ jobs:
             -e "s|__SUPABASE_PUBLISHABLE_KEY__|${{ secrets.SUPABASE_PUBLISHABLE_KEY }}|g" \
             "$OUTPUT_FILE"
 
-          # The service worker is plain JavaScript outside the Angular build, so it cannot read the
-          # environment file. It gets the same substitution instead.
-          SW_FILE="apps/web/src/sw.js"
-          sed -i -e "s|__API_URL__|${{ vars.API_URL }}|g" "$SW_FILE"
-          echo "Generated ${SW_FILE}."
-          if grep -q '__[A-Z_]*__' "$SW_FILE"; then
-            echo "::error::Unsubstituted placeholders remain in ${SW_FILE}."
-            exit 1
-          fi
-
           echo "Generated ${OUTPUT_FILE}."
           if grep -q '__[A-Z_]*__' "$OUTPUT_FILE"; then
             echo "::error::Unsubstituted placeholders remain in ${OUTPUT_FILE}."

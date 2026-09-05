@@ -266,44 +266,6 @@ export interface Database {
           },
         ]
       }
-      session_action_tokens: {
-        Row: {
-          created_at: string
-          expires_at: string
-          id: string
-          revoked_at: string | null
-          session_id: string
-          token_hash: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          expires_at: string
-          id?: string
-          revoked_at?: string | null
-          session_id: string
-          token_hash: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          expires_at?: string
-          id?: string
-          revoked_at?: string | null
-          session_id?: string
-          token_hash?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "session_action_tokens_session_id_fkey"
-            columns: ["session_id"]
-            isOneToOne: false
-            referencedRelation: "sessions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       session_sets: {
         Row: {
           actual_reps: number | null
@@ -422,14 +384,6 @@ export interface Database {
           p_session_id: string
         }
         Returns: undefined
-      }
-      complete_session_set_with_action_token: {
-        Args: {
-          p_session_id: string
-          p_set_id: string
-          p_token: string
-        }
-        Returns: Json
       }
       create_session: {
         Args: {

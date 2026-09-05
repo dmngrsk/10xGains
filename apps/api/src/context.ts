@@ -5,7 +5,6 @@ import type { ExerciseRepository } from './repositories/exercise.repository';
 import type { ProfileRepository } from './repositories/profile.repository';
 import type { ProgressRepository } from './repositories/progress.repository';
 import type { SessionRepository } from './repositories/session.repository';
-import type { SessionActionTokenRepository } from './repositories/session-action-token.repository';
 
 /**
  * The authenticated caller, as established from the verified JWT claims.
@@ -48,6 +47,5 @@ export type AppContext = {
     profileRepository: ProfileRepository;
     progressRepository: ProgressRepository;
     sessionRepository: SessionRepository;
-    sessionActionTokenRepository: SessionActionTokenRepository;
   };
 };

@@ -5,7 +5,6 @@ import { ExerciseRepository } from '../repositories/exercise.repository';
 import { ProfileRepository } from '../repositories/profile.repository';
 import { ProgressRepository } from '../repositories/progress.repository';
 import { SessionRepository } from '../repositories/session.repository';
-import { SessionActionTokenRepository } from '../repositories/session-action-token.repository';
 
 /**
  * Middleware to initialize and inject repositories into the Hono context.
@@ -31,7 +30,6 @@ export async function repositoriesMiddleware(c: Context<AppContext>, next: Next)
   c.set('profileRepository', new ProfileRepository(supabase, getUserId));
   c.set('progressRepository', new ProgressRepository(supabase, getUserId));
   c.set('sessionRepository', new SessionRepository(supabase, getUserId));
-  c.set('sessionActionTokenRepository', new SessionActionTokenRepository(supabase, getUserId));
 
   await next();
 }
