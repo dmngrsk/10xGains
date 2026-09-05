@@ -2,6 +2,7 @@ import { ApplicationConfig, inject, provideAppInitializer, provideZoneChangeDete
 import { PreloadAllModules, provideRouter, withPreloading } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { AppUpdateService } from '@shared/services/app-update.service';
+import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { routes } from './app.routes';
 import { environment } from '../environments/environment';
 
@@ -10,6 +11,7 @@ export const appConfig: ApplicationConfig = {
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideAppInitializer(() => inject(AppUpdateService).initialize()),
+    provideAppInitializer(() => inject(SessionNotificationService).initialize()),
     provideServiceWorker('ngsw-worker.js', {
       enabled: environment.enableServiceWorker,
       registrationStrategy: 'registerWhenStable:30000'

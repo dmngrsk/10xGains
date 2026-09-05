@@ -1,4 +1,4 @@
-import { inject, signal, Injectable, DestroyRef } from '@angular/core';
+import { inject, signal, Injectable, DestroyRef, effect, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, EMPTY } from 'rxjs';
 import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionStatus } from '@txg/shared';
@@ -7,8 +7,10 @@ import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
+import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
+import { buildSessionNotificationContent } from './utils/session-notification.utils';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
@@ -37,12 +39,21 @@ export class SessionPageFacade {
   private readonly destroyRef = inject(DestroyRef);
   private readonly debouncerService = inject(KeyedDebouncerService);
   private readonly serverClock = inject(ServerClockService);
+  private readonly sessionNotifications = inject(SessionNotificationService);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
   readonly timerStartTimestamp = signal<number | null>(null);
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
+
+    // Derived from the view model rather than pushed from each call site: every path that changes a
+    // set - an optimistic patch, a reverted failure, a reload, completing the session - already ends
+    // up here, so the notification cannot drift out of step with what the page shows.
+    effect(() => {
+      const session = this.viewModel();
+      untracked(() => this.syncNotification(session));
+    });
   }
 
   loadSessionData(sessionId: string | null): void {
@@ -389,6 +400,15 @@ export class SessionPageFacade {
       });
       return { ...session, exercises: updatedExercises };
     });
+  }
+
+  private syncNotification(session: SessionPageViewModel): void {
+    if (!session.id || session.metadata?.status !== 'IN_PROGRESS') {
+      void this.sessionNotifications.clear();
+      return;
+    }
+
+    void this.sessionNotifications.show(session.id, buildSessionNotificationContent(session));
   }
 
   private clearUserScopedState(): void {
