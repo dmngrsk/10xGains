@@ -10,6 +10,7 @@ import { mapToSessionCardViewModel } from '@features/sessions/models/session.map
 import { ExerciseService } from '@shared/api/exercise.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { HomePageViewModel } from '../../models/home-page.viewmodel';
 
@@ -30,6 +31,7 @@ export class HomePageFacade {
   private readonly planService = inject(PlanService);
   private readonly profileService = inject(ProfileService);
   private readonly sessionService = inject(SessionService);
+  private readonly sessionNotifications = inject(SessionNotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly viewModel = signal<HomePageViewModel>(initialState);
@@ -116,6 +118,7 @@ export class HomePageFacade {
     ).subscribe(updatedViewModel => {
       if (updatedViewModel && typeof updatedViewModel.isLoading !== 'undefined') {
         this.viewModel.set(updatedViewModel as HomePageViewModel);
+        this.clearNotificationWithoutSession(updatedViewModel as HomePageViewModel);
       }
     });
   }
@@ -142,5 +145,19 @@ export class HomePageFacade {
 
   abandonSession() {
     this.createSession();
+  }
+
+  /**
+   * Takes down a notification left behind by a session that was killed mid-workout or finished on
+   * another device. This query already asks for the only sessions that could own one, so it costs
+   * no extra request - and reconciling here rather than on startup is what stops an app launch from
+   * clearing and re-posting the notification of a workout that is genuinely still in progress.
+   */
+  private clearNotificationWithoutSession(viewModel: HomePageViewModel): void {
+    if (viewModel.sessions?.some(session => session.status === 'IN_PROGRESS')) {
+      return;
+    }
+
+    void this.sessionNotifications.clear();
   }
 }

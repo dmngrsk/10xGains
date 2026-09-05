@@ -1,6 +1,6 @@
 import { inject, signal, Injectable, DestroyRef, effect, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, of, forkJoin, EMPTY } from 'rxjs';
+import { Observable, of, forkJoin, EMPTY, firstValueFrom } from 'rxjs';
 import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionStatus } from '@txg/shared';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
@@ -426,14 +426,17 @@ export class SessionPageFacade {
         : undefined
     );
 
-    this.ensureActionToken(sessionId);
+    void this.ensureActionToken(sessionId);
   }
 
   /**
-   * Mints the session's action token, once, and re-syncs so the notification gains its action.
-   * Skipped when notifications cannot be shown, since nothing would ever carry the token.
+   * Obtains the session's action token, once, and re-syncs so the notification gains its action.
+   *
+   * A token already attached to the notification on screen is adopted rather than replaced: minting
+   * revokes the session's previous token, so minting on every launch would strand the notification
+   * holding the old one. Skipped when notifications cannot be shown, since nothing would carry it.
    */
-  private ensureActionToken(sessionId: string): void {
+  private async ensureActionToken(sessionId: string): Promise<void> {
     if (!this.sessionNotifications.isEnabled()) {
       return;
     }
@@ -443,26 +446,24 @@ export class SessionPageFacade {
     }
 
     this.pendingActionTokenSessionId = sessionId;
-    this.sessionService.createSessionActionToken(sessionId).pipe(
-      takeUntilDestroyed(this.destroyRef),
-      finalize(() => {
-        if (this.pendingActionTokenSessionId === sessionId) {
-          this.pendingActionTokenSessionId = null;
-        }
-      }),
-      catchError(error => {
-        // The notification still works without its action, so this is not worth surfacing.
-        console.error(`Failed to mint a session action token for session ${sessionId}:`, error);
-        return EMPTY;
-      })
-    ).subscribe(response => {
-      if (!response?.data) {
+    try {
+      const adopted = await this.sessionNotifications.readActionToken(sessionId);
+      const token = adopted
+        ?? (await firstValueFrom(this.sessionService.createSessionActionToken(sessionId)))?.data?.token;
+
+      if (!token) {
         return;
       }
 
-      this.actionToken = { sessionId, token: response.data.token };
+      this.actionToken = { sessionId, token };
       this.syncNotification(this.viewModel());
-    });
+    } catch (error) {
+      console.error(`Failed to obtain a session action token for session ${sessionId}:`, error);
+    } finally {
+      if (this.pendingActionTokenSessionId === sessionId) {
+        this.pendingActionTokenSessionId = null;
+      }
+    }
   }
 
   private clearUserScopedState(): void {

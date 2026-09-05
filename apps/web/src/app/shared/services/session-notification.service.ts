@@ -19,6 +19,10 @@ export const SESSION_NOTIFICATION_TAG = 'active-session';
 
 const SESSION_NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
 
+// Android keeps only this image's alpha channel and tints the result, so it is a stencil of the
+// mark rather than the logo: anything with colour in it would render as a solid blob.
+const SESSION_NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
+
 /** Action buttons are service-worker only, so TypeScript's DOM lib omits them from the options. */
 interface PersistentNotificationOptions extends NotificationOptions {
   actions?: { action: string; title: string }[];
@@ -34,17 +38,6 @@ interface PersistentNotificationOptions extends NotificationOptions {
   providedIn: 'root',
 })
 export class SessionNotificationService {
-  private lastShownKey: string | null = null;
-
-  /**
-   * Clears anything left over from a session that was killed mid-workout or finished elsewhere. A
-   * session that really is in progress re-shows its notification as soon as it loads, so no state
-   * has to be persisted to tell the two apart.
-   */
-  initialize(): void {
-    void this.clear();
-  }
-
   /**
    * Permission has to be requested from a user gesture, and a denial is permanent, so this is called
    * when the user is on their way into a workout rather than on startup.
@@ -71,15 +64,17 @@ export class SessionNotificationService {
       return;
     }
 
-    // Callers re-derive this on every session change, most of which do not affect the text, and
-    // re-showing would bump the notification back to the top of the shade each time.
-    const key = `${sessionId}|${content.title}|${content.body}|${action?.setId ?? ''}|${action?.token ?? ''}`;
-    if (key === this.lastShownKey) {
+    const registration = await this.getRegistration();
+    if (!registration) {
       return;
     }
 
-    const registration = await this.getRegistration();
-    if (!registration) {
+    // Compared against the notification actually on screen rather than against a field on this
+    // service. An installed app is relaunched constantly, and in-memory state is empty every time,
+    // which had the notification re-posting itself - and jumping back to the top of the shade - on
+    // every launch instead of only when a set changed.
+    const [existing] = await registration.getNotifications({ tag: SESSION_NOTIFICATION_TAG });
+    if (existing && matches(existing, sessionId, content, action)) {
       return;
     }
 
@@ -92,6 +87,7 @@ export class SessionNotificationService {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
       icon: SESSION_NOTIFICATION_ICON,
+      badge: SESSION_NOTIFICATION_BADGE,
       silent: true,
       requireInteraction: true,
       actions: action
@@ -108,13 +104,27 @@ export class SessionNotificationService {
     };
 
     await registration.showNotification(content.title, options);
+  }
 
-    this.lastShownKey = key;
+  /**
+   * The action token the notification on screen is already carrying, if it belongs to this session.
+   *
+   * Minting revokes the session's previous token, so minting again on every launch would strand the
+   * notification holding the old one. Adopting what is already there keeps it spendable and avoids
+   * re-posting the notification just to swap in an identical-looking credential.
+   */
+  async readActionToken(sessionId: string): Promise<string | null> {
+    const registration = await this.getRegistration();
+    if (!registration) {
+      return null;
+    }
+
+    const [existing] = await registration.getNotifications({ tag: SESSION_NOTIFICATION_TAG });
+    const data = existing?.data as { sessionId?: string; token?: string } | undefined;
+    return data?.sessionId === sessionId && typeof data.token === 'string' ? data.token : null;
   }
 
   async clear(): Promise<void> {
-    this.lastShownKey = null;
-
     const registration = await this.getRegistration();
     if (!registration) {
       return;
@@ -143,4 +153,18 @@ export class SessionNotificationService {
   private isSupported(): boolean {
     return typeof Notification !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
   }
+}
+
+function matches(
+  existing: Notification,
+  sessionId: string,
+  content: SessionNotificationContent,
+  action?: SessionNotificationAction
+): boolean {
+  const data = existing.data as { sessionId?: string; setId?: string; token?: string } | undefined;
+  return existing.title === content.title
+    && existing.body === content.body
+    && data?.sessionId === sessionId
+    && data?.setId === action?.setId
+    && data?.token === action?.token;
 }

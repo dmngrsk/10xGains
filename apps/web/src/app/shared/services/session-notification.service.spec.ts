@@ -24,9 +24,14 @@ describe('SessionNotificationService', () => {
     );
   }
 
+  /** Stands in for the notification already on screen, which is what `show` now compares against. */
+  function setExisting(...notifications: Record<string, unknown>[]): void {
+    getNotifications.mockResolvedValue(notifications.map(n => ({ close, ...n })));
+  }
+
   beforeEach(() => {
     close = vi.fn();
-    getNotifications = vi.fn().mockResolvedValue([{ close }, { close }]);
+    getNotifications = vi.fn().mockResolvedValue([]);
     showNotification = vi.fn().mockResolvedValue(undefined);
     getRegistration = vi.fn().mockResolvedValue({ showNotification, getNotifications });
     requestPermission = vi.fn().mockResolvedValue('granted');
@@ -118,13 +123,45 @@ describe('SessionNotificationService', () => {
       expect(showNotification).toHaveBeenCalledTimes(2);
     });
 
-    it('should not re-show an identical notification', async () => {
+    it('should not re-show when the notification on screen already matches', async () => {
+      // Deliberately without a prior show(): a relaunched app has no in-memory state, and reposting
+      // on every launch was the bug this replaces.
+      setExisting({ title: content.title, body: content.body, data: { sessionId: 'session-1' } });
       const service = createService();
 
       await service.show('session-1', content);
+
+      expect(showNotification).not.toHaveBeenCalled();
+    });
+
+    it('should re-show when the body on screen is stale', async () => {
+      setExisting({ title: content.title, body: 'Set 2/5 · 8 reps @ 60 kg', data: { sessionId: 'session-1' } });
+      const service = createService();
+
       await service.show('session-1', content);
 
       expect(showNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('should re-show when the notification on screen carries a different token', async () => {
+      setExisting({
+        title: content.title,
+        body: content.body,
+        data: { sessionId: 'session-1', setId: 'set-3', token: 'stale-token' },
+      });
+      const service = createService();
+
+      await service.show('session-1', content, action);
+
+      expect(showNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('should carry a monochrome badge for the status bar', async () => {
+      const service = createService();
+
+      await service.show('session-1', content);
+
+      expect(showNotification.mock.calls[0][1].badge).toBe('/assets/favicon/notification-badge.png');
     });
 
     it('should show again once the text changes', async () => {
@@ -173,23 +210,21 @@ describe('SessionNotificationService', () => {
   });
 
   describe('clear', () => {
-    it('should close every notification carrying the tag', async () => {
+    it('should look notifications up by tag', async () => {
       const service = createService();
 
       await service.clear();
 
       expect(getNotifications).toHaveBeenCalledWith({ tag: SESSION_NOTIFICATION_TAG });
-      expect(close).toHaveBeenCalledTimes(2);
     });
 
-    it('should let identical content be shown again afterwards', async () => {
+    it('should close every notification it finds under the tag', async () => {
+      setExisting({}, {});
       const service = createService();
 
-      await service.show('session-1', content);
       await service.clear();
-      await service.show('session-1', content);
 
-      expect(showNotification).toHaveBeenCalledTimes(2);
+      expect(close).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -237,11 +272,25 @@ describe('SessionNotificationService', () => {
     });
   });
 
-  it('should clear a leftover notification on startup', async () => {
-    const service = createService();
+  describe('readActionToken', () => {
+    it('should adopt the token the notification on screen already carries', async () => {
+      setExisting({ data: { sessionId: 'session-1', token: 'token-abc' } });
+      const service = createService();
 
-    service.initialize();
+      await expect(service.readActionToken('session-1')).resolves.toBe('token-abc');
+    });
 
-    await vi.waitFor(() => expect(close).toHaveBeenCalledTimes(2));
+    it('should ignore a token minted for a different session', async () => {
+      setExisting({ data: { sessionId: 'session-2', token: 'token-abc' } });
+      const service = createService();
+
+      await expect(service.readActionToken('session-1')).resolves.toBeNull();
+    });
+
+    it('should report nothing when no notification is on screen', async () => {
+      const service = createService();
+
+      await expect(service.readActionToken('session-1')).resolves.toBeNull();
+    });
   });
 });

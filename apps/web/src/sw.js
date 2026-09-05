@@ -13,6 +13,7 @@
 const COMPLETE_SET_ACTION = 'complete-set';
 const NOTIFICATION_TAG = 'active-session';
 const NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
+const NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
 
 /*
  * Registered before ngsw is imported so it runs first, though ngsw's handler still closes the
@@ -51,6 +52,7 @@ function show(content, data, includeCompleteAction) {
     body: content.body,
     tag: NOTIFICATION_TAG,
     icon: NOTIFICATION_ICON,
+    badge: NOTIFICATION_BADGE,
     silent: true,
     requireInteraction: true,
     actions,
