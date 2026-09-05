@@ -279,7 +279,7 @@ describe('Session History', { tags: ['@history'] }, () => {
       cy.location('search').should('contain', 'notes=1');
       cy.visit('/history');
       cy.location('search').should('contain', 'notes=1');
-      cy.getBySel(dataCy.history.notesToggleButton).should('have.attr', 'aria-pressed', 'true');
+      cy.getBySel(dataCy.history.notesToggleButton).should('have.class', 'txg-fab-active');
       cy.getBySel(dataCy.history.notesToggleButton).click();
 
       // ...and so is switching to the calendar.

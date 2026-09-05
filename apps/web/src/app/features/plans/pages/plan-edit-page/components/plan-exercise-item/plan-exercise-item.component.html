@@ -21,9 +21,6 @@
           class="progression-chip"
           [class.progression-chip--unset]="!progression"
           (click)="onProgressionEdited()"
-          [attr.aria-label]="progression
-            ? 'Edit progression for ' + exercise.exerciseName + ': ' + progression.weightIncrement + ' kilograms per session'
-            : 'Set a progression for ' + exercise.exerciseName"
           [attr.data-cy]="progression ? 'plan-exercise-edit-progression-button' : 'plan-exercise-add-progression-button'">
           @if (progression) {
             <mat-icon>trending_up</mat-icon>
@@ -44,7 +41,6 @@
           mat-icon-button
           class="flex-none -mr-2"
           [matMenuTriggerFor]="exerciseMenu"
-          [attr.aria-label]="'Actions for ' + exercise.exerciseName"
           data-cy="plan-exercise-menu-button">
           <mat-icon>more_vert</mat-icon>
         </button>

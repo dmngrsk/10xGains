@@ -51,7 +51,6 @@
         mat-mini-fab
         class="txg-fab"
         [class.txg-fab-active]="viewModel().notesOnly"
-        [attr.aria-pressed]="viewModel().notesOnly"
         [matTooltip]="viewModel().notesOnly ? 'Showing the sessions with notes' : 'Show only the sessions with notes'"
         (click)="onNotesOnlyToggled()"
         data-cy="history-notes-toggle-button">

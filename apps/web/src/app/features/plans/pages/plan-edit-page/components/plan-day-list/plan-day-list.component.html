@@ -20,7 +20,6 @@
         mat-icon-button
         class="flex-none mr-2"
         [matMenuTriggerFor]="dayMenu"
-        aria-label="Actions for this training day"
         data-cy="plan-day-menu-button">
         <mat-icon>more_vert</mat-icon>
       </button>
@@ -28,7 +27,7 @@
   </div>
 
   @if (selectedDay; as day) {
-    <section class="p-4" [attr.aria-label]="day.name" data-cy="plan-day-item">
+    <section class="p-4" data-cy="plan-day-item">
       @if (day.description) {
         <p class="mb-3 text-sm text-secondary" data-cy="plan-edit-day-description">{{ day.description }}</p>
       }
