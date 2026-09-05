@@ -297,6 +297,77 @@ describe('LongPressDirective', () => {
     });
   });
 
+  describe('Trailing compatibility click', () => {
+    // A real click carries an unrelated listener's worth of consequence: dispatch one on the
+    // document and see whether it survives the capture-phase swallower.
+    function dispatchDocumentClick(): { defaultPrevented: boolean; sawEvent: boolean } {
+      let sawEvent = false;
+      const listener = () => { sawEvent = true; };
+      document.addEventListener('click', listener);
+      const event = new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 });
+      document.dispatchEvent(event);
+      document.removeEventListener('click', listener);
+      return { defaultPrevented: event.defaultPrevented, sawEvent };
+    }
+
+    it('should swallow the click that follows a tap', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      dispatchPointerUp(directiveElement, 10, 10);
+      expect(component.clickEvent).not.toBeNull();
+
+      const { defaultPrevented, sawEvent } = dispatchDocumentClick();
+
+      expect(sawEvent).toBe(false);
+      expect(defaultPrevented).toBe(true);
+    });
+
+    it('should swallow the click that follows a long press, however late the release', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      vi.advanceTimersByTime(component.duration());
+      expect(component.longPressEvent).not.toBeNull();
+
+      // The finger stays down well past the window a swallow armed at trigger time would cover.
+      vi.advanceTimersByTime(3000);
+      dispatchPointerUp(directiveElement, 10, 10);
+
+      expect(dispatchDocumentClick().sawEvent).toBe(false);
+      expect(component.clickEvent).toBeNull();
+    });
+
+    it('should swallow only one click', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      dispatchPointerUp(directiveElement, 10, 10);
+
+      expect(dispatchDocumentClick().sawEvent).toBe(false);
+      expect(dispatchDocumentClick().sawEvent).toBe(true);
+    });
+
+    it('should stop swallowing once the window has passed', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      dispatchPointerUp(directiveElement, 10, 10);
+      vi.advanceTimersByTime(1000);
+
+      expect(dispatchDocumentClick().sawEvent).toBe(true);
+    });
+
+    it('should not swallow when the gesture emitted nothing', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      dispatchPointerMove(directiveElement, 100, 100);
+      dispatchPointerUp(directiveElement, 100, 100);
+      expect(component.clickEvent).toBeNull();
+
+      expect(dispatchDocumentClick().sawEvent).toBe(true);
+    });
+
+    it('should stop swallowing when the directive is destroyed', () => {
+      dispatchPointerDown(directiveElement, 10, 10);
+      dispatchPointerUp(directiveElement, 10, 10);
+      fixture.destroy();
+
+      expect(dispatchDocumentClick().sawEvent).toBe(true);
+    });
+  });
+
   describe('ngOnDestroy', () => {
     it('should clear timeout on destroy', () => {
       const clearTimeoutSpy = vi.spyOn(global, 'clearTimeout');
