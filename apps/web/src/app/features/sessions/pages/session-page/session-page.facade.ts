@@ -43,12 +43,6 @@ export class SessionPageFacade {
   private readonly sessionNotifications = inject(SessionNotificationService);
   private readonly environmentService = inject(EnvironmentService);
 
-  /**
-   * The session action token in play, and the session a mint is currently in flight for. One token
-   * per session is enough - it completes any set in that session - so this is fetched once and
-   * reused, and the in-flight marker keeps the notification effect from firing off a second request
-   * while the first is still running.
-   */
   private actionToken: { sessionId: string; token: string } | null = null;
   private pendingActionTokenSessionId: string | null = null;
 
@@ -58,9 +52,6 @@ export class SessionPageFacade {
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
 
-    // Derived from the view model rather than pushed from each call site: every path that changes a
-    // set - an optimistic patch, a reverted failure, a reload, completing the session - already ends
-    // up here, so the notification cannot drift out of step with what the page shows.
     effect(() => {
       const session = this.viewModel();
       untracked(() => this.syncNotification(session));
@@ -423,9 +414,6 @@ export class SessionPageFacade {
     const sessionId = session.id;
     const nextSet = findNextPendingSet(session);
 
-    // Shown with whatever is available now. A token that has not arrived yet only costs the
-    // "Complete set" action, and the notification is re-synced once it does - waiting on the network
-    // before showing anything would leave the notification missing for the whole round trip.
     void this.sessionNotifications.show(
       sessionId,
       buildSessionNotificationContent(session),
@@ -443,9 +431,7 @@ export class SessionPageFacade {
 
   /**
    * Mints the session's action token, once, and re-syncs so the notification gains its action.
-   *
-   * Skipped entirely when notifications cannot be shown: the token exists only to be carried by one,
-   * so minting it for a user who declined notifications would be a request that can never be used.
+   * Skipped when notifications cannot be shown, since nothing would ever carry the token.
    */
   private ensureActionToken(sessionId: string): void {
     if (!this.sessionNotifications.isEnabled()) {

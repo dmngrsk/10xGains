@@ -4,9 +4,8 @@ import { ACTION_TOKEN_TTL_MS, hashToken } from './session-action-token.repositor
 describe('session action tokens', () => {
   describe('hashToken', () => {
     /**
-     * The API mints and hashes in Node; `complete_session_set_with_action_token` hashes the token it
-     * is given in SQL. Nothing works if the two digests disagree, and no other test would say why,
-     * so this pins the value Postgres produces for
+     * The API hashes in Node, the RPC hashes the same token in SQL. Nothing works if the two
+     * disagree, and no other test would say why, so this pins what Postgres produces for
      * `encode(sha256(convert_to('valid-token','UTF8')),'hex')`.
      */
     it('should match the digest Postgres computes for the same token', () => {

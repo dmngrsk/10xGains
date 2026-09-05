@@ -10,9 +10,6 @@ const PATH_SCHEMA = z.object({
   setId: z.string().uuid('Invalid setId format'),
 });
 
-// The token travels in the body rather than the path or a query string, so it stays out of access
-// logs and referrer headers - it is a bearer credential, and URLs are recorded in more places than
-// request bodies are.
 const BODY_SCHEMA = z.object({
   token: z.string().min(1, 'A session action token is required'),
 });
@@ -20,9 +17,8 @@ const BODY_SCHEMA = z.object({
 /**
  * Completes a set for a caller holding a session action token instead of a user session.
  *
- * Deliberately mounted without `requiredAuthMiddleware`: the request comes from a service worker
- * acting on a notification, which has no JWT to present. The token is the entire authorisation, and
- * the database is what validates it - see `complete_session_set_with_action_token`.
+ * Deliberately mounted without `requiredAuthMiddleware`: the caller is a service worker with no JWT
+ * to present. The token is the entire authorisation, validated in the database.
  */
 export async function handleCompleteSessionSetWithToken(c: Context<AppContext>) {
   const { path, error: pathError } = validatePathParams(c, PATH_SCHEMA);

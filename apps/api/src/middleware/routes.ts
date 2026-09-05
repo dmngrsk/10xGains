@@ -145,9 +145,6 @@ function createSessionSetRoutes(): Hono<AppContext> {
     .put('/:setId', requiredAuthMiddleware, handleUpdateSessionSetById)
     .delete('/:setId', requiredAuthMiddleware, handleDeleteSessionSetById)
     .patch('/:setId/complete', requiredAuthMiddleware, handleCompleteSessionSet)
-    // No auth middleware: the caller is a service worker acting on a notification, with no JWT to
-    // present. The session action token in the body is the whole authorisation, validated in the
-    // database by complete_session_set_with_action_token.
     .patch('/:setId/complete-with-token', handleCompleteSessionSetWithToken)
     .patch('/:setId/fail', requiredAuthMiddleware, handleFailSessionSet)
     .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);

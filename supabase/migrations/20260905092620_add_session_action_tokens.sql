@@ -2,32 +2,26 @@
 -- Description: Lets a set be completed from an OS notification while the app is not running.
 --
 --   A service worker cannot reach the user's Supabase session: it is held in localStorage, which
---   service workers cannot read, and the whole point of the feature is that no page is open to ask.
---   The API is also built to use only the publishable key plus the user's JWT, never the secret key,
---   so there is no service-role path either.
+--   service workers cannot read, and no page is open to ask. The API uses only the publishable key
+--   plus the user's JWT, never the secret key, so there is no service-role path either.
 --
---   The answer is a narrow, revocable credential. While the app is open and authenticated it mints
---   an opaque token scoped to one session and one operation - complete a set - and hands it to the
---   notification. The service worker spends it against a `security definer` function that
---   establishes ownership from the token row instead of from a JWT. The token cannot read anything,
---   cannot touch another session, and cannot outlive the workout: 12 hours, revoked when the
---   session completes, and rotated whenever a new one is minted.
---
---   Only the SHA-256 hash of a token is stored, and the function takes the raw token and hashes it
---   itself, so the stored value is not a usable credential if the table ever leaks.
+--   The answer is a narrow, revocable credential. The app mints an opaque token scoped to one
+--   session and one operation, and the service worker spends it against a `security definer`
+--   function that establishes ownership from the token row instead of from a JWT. The token reads
+--   nothing, reaches no other session, and lasts 12 hours - revoked when the session completes, and
+--   rotated whenever a new one is minted. Only its SHA-256 hash is stored, and the function hashes
+--   the raw token itself, so the stored value is not usable if the table ever leaks.
 --
 --   Affected: new table `session_action_tokens`; `patch_session_set` refactored around a new
 --   `internal_patch_session_set`; new `complete_session_set_with_action_token`; `complete_session`
 --   gains token revocation.
 --
 --   Special consideration: `patch_session_set` changes from `security invoker` to `security
---   definer`. It previously leaned on RLS to decide which session the caller could see. It now
---   resolves `auth.uid()` itself and passes it to the internal function, which filters on
---   `user_id` explicitly - the same restriction, stated rather than inherited. This is what lets the
---   token path reuse one implementation of the locking and status transitions instead of growing a
---   second copy of them. `internal_patch_session_set` is granted to no client role precisely because
---   it takes the user id as a parameter; both entry points are `security definer` functions that
---   determine that id themselves.
+--   definer`. It leaned on RLS to decide which session the caller could see; it now resolves
+--   `auth.uid()` itself and passes it to the internal function, which filters on `user_id`
+--   explicitly - the same restriction, stated rather than inherited. That is what lets the token
+--   path share one implementation of the locking and status transitions. `internal_patch_session_set`
+--   is granted to no client role precisely because it takes the user id as a parameter.
 -- Author: AI Assistant
 -- Created: 2026-09-05
 
@@ -51,25 +45,22 @@ alter table "public"."session_action_tokens"
 alter table "public"."session_action_tokens"
     add constraint session_action_tokens_token_hash_check check (char_length(token_hash) = 64);
 
--- The 12 hour ceiling is enforced here as well as in the API. A token has to outlive a long workout,
--- but it is a bearer credential sitting in the OS notification store, so nothing should be able to
--- mint one that lasts a week.
+-- Enforced here as well as in the API: a token has to outlive a long workout, but it is a bearer
+-- credential sitting in the OS notification store, so nothing should be able to mint a week-long one.
 alter table "public"."session_action_tokens"
     drop constraint if exists session_action_tokens_expiry_check;
 alter table "public"."session_action_tokens"
     add constraint session_action_tokens_expiry_check
     check (expires_at > created_at and expires_at <= created_at + interval '12 hours');
 
--- Minting revokes the session's previous tokens, and consuming looks a token up by hash; both want
--- the live rows for a session, which are a small minority once a user has trained for a while.
+-- Both minting and consuming want a session's live rows, a small minority once a user has trained.
 create index if not exists idx_session_action_tokens_live
     on public.session_action_tokens (session_id)
     where revoked_at is null;
 
 alter table "public"."session_action_tokens" enable row level security;
 
--- anon never touches this table directly. The consume path runs through a security definer function,
--- which is the only way an unauthenticated caller reaches a token row at all.
+-- anon reaches a token row only through the security definer function, never this table directly.
 create policy "session_action_tokens_anon_no_access" on "public"."session_action_tokens"
     for all to anon
     using (false);
@@ -96,10 +87,8 @@ grant select, insert, update on public.session_action_tokens to service_role;
 -- PHASE 2: One implementation of the set patch, two ways in
 -- ========================================
 
--- The body is `patch_session_set` as it stood in 20260720093000, with one change: ownership is a
--- parameter rather than something RLS applies on the caller's behalf. Everything else - the row
--- lock, the completed-session rejection, the PENDING -> IN_PROGRESS promotion, the
--- only-what-was-supplied update - is unchanged.
+-- `patch_session_set` as it stood in 20260720093000, with one change: ownership is a parameter
+-- rather than something RLS applies on the caller's behalf. Everything else is unchanged.
 create or replace function internal_patch_session_set(
     p_user_id uuid,
     p_session_id uuid,
@@ -115,9 +104,8 @@ declare
     session_status text;
     updated_set jsonb;
 begin
-    -- Lock the session for the duration of the transaction. Filtering on user_id here is what RLS
-    -- used to do for the invoker version, so a session belonging to someone else is "not found" -
-    -- the same 404 either way.
+    -- Lock the session for the duration of the transaction. Filtering on user_id is what RLS used to
+    -- do here, so a session belonging to someone else is "not found" - the same 404 either way.
     select status into session_status
     from public.sessions
     where id = p_session_id
@@ -142,8 +130,7 @@ begin
     end if;
 
     -- Only the columns a patch is allowed to touch are applied, and each is left alone unless the
-    -- caller actually supplied it, so a partial patch cannot blank a field by omission. The session
-    -- was verified above, so scoping to it is enough to keep this inside the caller's own data.
+    -- caller actually supplied it, so a partial patch cannot blank a field by omission.
     update public.session_sets t
     set status = case when p_updates ? 'status' then (p_updates->>'status')::varchar else t.status end,
         actual_reps = case when p_updates ? 'actual_reps' then (p_updates->>'actual_reps')::smallint else t.actual_reps end,
@@ -164,17 +151,15 @@ begin
 end;
 $$;
 
--- Granted to no client role. It takes the user id as a parameter, so any role able to execute it
--- could patch another user's sets; the two callers below are security definer functions that
--- establish that id themselves and run as the owner, so they need no grant to reach it.
+-- Granted to no client role: it takes the user id as a parameter, so any role able to execute it
+-- could patch another user's sets. Both callers are security definer and run as the owner.
 revoke execute on function public.internal_patch_session_set(uuid, uuid, uuid, jsonb) from public, anon, authenticated;
 
 comment on function internal_patch_session_set(uuid, uuid, uuid, jsonb) is
 'Shared implementation behind patch_session_set and complete_session_set_with_action_token. Locks the parent session, rejects a completed one, promotes PENDING to IN_PROGRESS, and applies only the supplied columns. Takes the owning user id as a parameter instead of reading auth.uid(), so it must never be granted to a client role. Raises SESSION_NOT_FOUND / SESSION_SET_NOT_FOUND (P0002) or SESSION_COMPLETED (P0001).';
 
--- Same signature and behaviour as before; now a wrapper. Security definer so the inner call runs as
--- the owner: were this still invoker, `authenticated` would need execute on the internal function
--- and could then pass any user id it liked.
+-- Same signature and behaviour as before, now a wrapper. Security definer so the inner call runs as
+-- the owner: were it still invoker, `authenticated` would need execute on the internal function.
 create or replace function patch_session_set(
     p_session_id uuid,
     p_set_id uuid,
@@ -199,9 +184,8 @@ comment on function patch_session_set(uuid, uuid, jsonb) is
 -- ========================================
 
 -- Returns everything the notification needs to redraw itself, so the service worker never needs a
--- read scope of its own: the set it just completed, the next set to work through with its position
--- in the exercise, and the session's resulting status. Deriving the next set here also means a
--- notification whose queue went stale - sets edited on another device - repairs itself on use.
+-- read scope of its own. Deriving the next set here also means a notification whose idea of the
+-- session went stale repairs itself on use.
 create or replace function complete_session_set_with_action_token(
     p_token text,
     p_session_id uuid,
@@ -219,8 +203,7 @@ declare
     next_set jsonb;
     session_status text;
 begin
-    -- Hashed here rather than by the caller: the stored value is then useless on its own, so a leak
-    -- of this table does not hand anyone a working token.
+    -- Hashed here rather than by the caller, so a leak of this table hands nobody a working token.
     select user_id into token_user_id
     from public.session_action_tokens
     where token_hash = pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(p_token, 'UTF8')), 'hex')
@@ -229,16 +212,13 @@ begin
       and expires_at > now()
     for update;
 
-    -- Expired, revoked, unknown, or minted for a different session all fail identically, so the
-    -- error tells an attacker nothing about which it was.
+    -- Expired, revoked, unknown and wrong-session all fail identically, revealing nothing.
     if token_user_id is null then
         raise exception 'ACTION_TOKEN_INVALID' using errcode = 'P0001';
     end if;
 
-    -- Completing a set records the prescribed reps as the reps performed, which is what the
-    -- authenticated endpoint does. Without it a set completed from a notification would be COMPLETED
-    -- with no actual_reps, and progress and history would read it differently from an identical set
-    -- completed in the app.
+    -- Records the prescribed reps as performed, as the authenticated endpoint does. Without it,
+    -- progress and history would read this set differently from one completed in the app.
     select expected_reps into set_expected_reps
     from public.session_sets
     where id = p_set_id
@@ -253,8 +233,7 @@ begin
         jsonb_build_object('status', 'COMPLETED', 'actual_reps', set_expected_reps, 'completed_at', now())
     );
 
-    -- Sets are numbered within their exercise, matching how the app presents them ("Set 3/5"), and
-    -- the next one is the first still pending in the order the user works through them.
+    -- Numbered within their exercise, matching how the app presents them ("Set 3/5").
     with ordered as (
         select ss.id,
                ss.status,
@@ -295,8 +274,8 @@ begin
 end;
 $$;
 
--- anon by design: the caller is a service worker with no user session, holding only the token. The
--- token is the entire authorisation, which is why it is scoped to one session and one operation.
+-- anon by design: the caller is a service worker holding only the token, which is why that token is
+-- scoped to one session and one operation.
 grant execute on function public.complete_session_set_with_action_token(text, uuid, uuid) to anon, authenticated, service_role;
 
 comment on function complete_session_set_with_action_token(text, uuid, uuid) is
@@ -306,9 +285,8 @@ comment on function complete_session_set_with_action_token(text, uuid, uuid) is
 -- PHASE 4: A finished workout has no live tokens
 -- ========================================
 
--- Unchanged from 20260720110000 apart from the revocation at the end: once a session is closed its
--- notification is gone and its token has no legitimate use left, so it should not remain spendable
--- for the rest of its 12 hours.
+-- Unchanged from 20260720110000 apart from the revocation at the end: a closed session's token has
+-- no legitimate use left, so it should not stay spendable for the rest of its 12 hours.
 create or replace function complete_session(
     p_session_id uuid,
     p_operations jsonb

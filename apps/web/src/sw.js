@@ -1,17 +1,13 @@
 /*
- * Custom service worker.
+ * Custom service worker: `ngsw-worker.js` is a build artifact and cannot be edited, so the one
+ * thing it cannot do is layered on here and the Angular worker imported underneath, unchanged.
  *
- * `ngsw-worker.js` is a build artifact and cannot be edited, so anything the app needs beyond it is
- * layered on here and the Angular worker is imported underneath. Everything ngsw does - caching,
- * updates, and the `onActionClick` protocol behind the notification's "Open" action - is unchanged.
+ * That one thing is the notification's "Complete set" action. ngsw's only network operation is
+ * `sendRequest`, a bare GET whose response is discarded, and completing a set is a PATCH carrying a
+ * session action token.
  *
- * The one addition is the notification's "Complete set" action, which ngsw cannot perform: its only
- * network operation is `sendRequest`, a bare GET with no headers whose response is discarded, and
- * completing a set is a PATCH carrying a session action token.
- *
- * This file is plain JavaScript outside the Angular build, so it has no access to `environment` and
- * no imports from the app. Everything it needs - the API base URL, the token, the set to complete -
- * travels in the notification's `data`, written by the page when the notification is shown.
+ * Being plain JavaScript outside the Angular build, this file cannot read `environment` or import
+ * from the app; everything it needs travels in the notification's `data`.
  */
 
 const COMPLETE_SET_ACTION = 'complete-set';
@@ -19,9 +15,8 @@ const NOTIFICATION_TAG = 'active-session';
 const NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
 
 /*
- * Registered before ngsw is imported, so it runs first. ngsw's own handler still runs afterwards and
- * unconditionally closes the notification, which is why every path below re-shows rather than trying
- * to update the notification in place.
+ * Registered before ngsw is imported so it runs first, though ngsw's handler still closes the
+ * notification afterwards - which is why every path below re-shows rather than updating in place.
  */
 self.addEventListener('notificationclick', event => {
   if (event.action !== COMPLETE_SET_ACTION) {
@@ -34,10 +29,8 @@ self.addEventListener('notificationclick', event => {
 importScripts('./ngsw-worker.js');
 
 /**
- * Mirrors `formatSetDescription` and `buildSessionNotificationContent` in the app
- * (`features/sessions/pages/session-page/utils/session-notification.utils.ts`), which are the
- * canonical versions and carry the tests. The duplication is unavoidable: a service worker cannot
- * import from the application bundle.
+ * Mirrors `session-notification.utils.ts`, which is canonical and carries the tests. A service
+ * worker cannot import from the app bundle, so the duplication is unavoidable.
  */
 function describeSet(nextSet) {
   const reps = `${nextSet.expected_reps} reps`;
@@ -70,8 +63,7 @@ async function completeSet(data) {
     return;
   }
 
-  // ngsw has already closed the notification by now, so something has to stand in for it while the
-  // request is on the wire - otherwise the shade is simply empty for as long as the round trip takes.
+  // ngsw has already closed the notification, so this stands in while the request is on the wire.
   await show({ title: data.title, body: 'Saving…' }, data, false);
 
   let response;
@@ -85,14 +77,14 @@ async function completeSet(data) {
       }
     );
   } catch {
-    // Offline, most likely. The set is not recorded, so the notification has to say so rather than
-    // move on; the token is still good, so opening the app is enough to recover.
+    // Offline, most likely. Nothing was recorded, and the token is still good, so say so and
+    // leave the action in place.
     await show({ title: data.title, body: "Couldn't save - tap to open" }, data, true);
     return;
   }
 
-  // The token is spent, the session is finished, or the set is gone. None of these are retryable and
-  // all of them mean this notification is stale, so it goes away rather than misleading the user.
+  // Spent token, finished session, or missing set: none retryable, so the notification goes away
+  // rather than misleading the user.
   if (!response.ok) {
     return;
   }

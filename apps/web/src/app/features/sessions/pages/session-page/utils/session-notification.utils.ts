@@ -10,9 +10,8 @@ export interface NextSessionSet {
 }
 
 /**
- * The first set still waiting to be performed, in the order the user works through them: exercises
- * by their order, then sets within an exercise. Warmup sets are held separately from
- * `exercise.sets`, so they are naturally out of scope here.
+ * The first set still waiting to be performed: exercises by their order, then sets within one.
+ * Warmup sets live outside `exercise.sets`, so they are out of scope here.
  */
 export function findNextPendingSet(session: SessionPageViewModel): NextSessionSet | null {
   const exercises = [...session.exercises].sort((a, b) => a.order - b.order);
@@ -28,19 +27,13 @@ export function findNextPendingSet(session: SessionPageViewModel): NextSessionSe
   return null;
 }
 
-/**
- * Describes the next set the way the rest of the app does: `8 reps @ 60 kg`, with the weight clause
- * dropped for bodyweight work, matching `SessionExerciseItemComponent.exerciseInfoText`.
- */
+/** `8 reps @ 60 kg`, matching `SessionExerciseItemComponent.exerciseInfoText`. */
 export function formatSetDescription(set: SessionSetViewModel): string {
   const repsText = `${set.expectedReps} reps`;
   return set.weight ? `${repsText} @ ${set.weight} kg` : repsText;
 }
 
-/**
- * The notification text for a session in progress. Sets are numbered within their exercise, so a
- * user reading `Set 3/5` sees how far through the current exercise they are.
- */
+/** The notification text for a session in progress. Sets are numbered within their exercise. */
 export function buildSessionNotificationContent(session: SessionPageViewModel): SessionNotificationContent {
   const next = findNextPendingSet(session);
   if (!next) {

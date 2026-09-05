@@ -127,13 +127,11 @@ describe('session notification utils', () => {
   });
 
   /**
-   * `sw.js` reformats the notification after completing a set, and cannot import any of this: a
-   * service worker has no access to the application bundle. Its copy of the rules is therefore
-   * duplicated, and duplication drifts silently.
+   * `sw.js` reformats the notification after completing a set and cannot import any of this, so its
+   * copy of the rules is duplicated - and duplication drifts silently.
    *
-   * The function is lifted out of the file as text rather than imported, because importing `sw.js`
-   * would run its top-level `importScripts`. Ugly, but it is the only thing standing between a
-   * change here and a notification that renders differently depending on where it was drawn.
+   * Lifted out as text rather than imported, because importing `sw.js` would run its top-level
+   * `importScripts`. Ugly, but it is what catches the drift.
    */
   describe('parity with the service worker copy', () => {
     const swSource = readFileSync(

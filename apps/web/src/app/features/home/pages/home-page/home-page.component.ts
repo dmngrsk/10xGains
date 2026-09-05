@@ -53,9 +53,6 @@ export class HomePageComponent implements OnInit {
   }
 
   onSessionNavigated(sessionId: string): void {
-    // Every workout is entered through here, so it is the one gesture that reliably precedes a
-    // session notification. Requesting permission is fire-and-forget: a browser that prompts does so
-    // over the session page, and one that has already answered resolves without showing anything.
     void this.sessionNotifications.requestPermission();
     this.router.navigate(['/sessions', sessionId]);
   }

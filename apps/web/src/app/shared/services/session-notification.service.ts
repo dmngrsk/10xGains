@@ -1,16 +1,12 @@
 import { Injectable } from '@angular/core';
 
-/** The text shown on the notification. Composed by the caller, which knows about sessions. */
+/** The text shown on the notification. */
 export interface SessionNotificationContent {
   title: string;
   body: string;
 }
 
-/**
- * What the service worker needs to complete a set on its own, with no page running and no user
- * session available to it. Omitted when the app has no token yet, in which case the notification is
- * shown without the action rather than not at all.
- */
+/** What the service worker needs to complete a set on its own, with no page running. */
 export interface SessionNotificationAction {
   /** Absolute, including the `/api` prefix: the worker cannot read `environment`. */
   apiBaseUrl: string;
@@ -18,31 +14,21 @@ export interface SessionNotificationAction {
   token: string;
 }
 
-/**
- * A fixed tag means a new notification replaces the one already on screen rather than stacking a
- * second one, and gives us a handle to close it by later.
- */
+/** A fixed tag replaces the notification already on screen rather than stacking a second one. */
 export const SESSION_NOTIFICATION_TAG = 'active-session';
 
 const SESSION_NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
 
-/**
- * Action buttons are only valid on a notification shown through a service worker registration, so
- * TypeScript's DOM lib leaves them off `NotificationOptions`. Narrowing the gap here keeps the call
- * site type-checked instead of casting the whole options object.
- */
+/** Action buttons are service-worker only, so TypeScript's DOM lib omits them from the options. */
 interface PersistentNotificationOptions extends NotificationOptions {
   actions?: { action: string; title: string }[];
 }
 
 /**
- * Keeps a notification on screen for as long as a session is in progress, so the next set is
- * readable without unlocking the phone.
+ * Keeps a notification on screen for as long as a session is in progress.
  *
- * The notification belongs to the service worker registration rather than to a page, so it outlives
- * the tab being closed or the installed app being swiped away - which is the whole point of it.
- * `ngsw-worker` handles the click natively through the `onActionClick` protocol, so no custom
- * service worker is needed to navigate back into the session.
+ * It belongs to the service worker registration rather than to a page, so it outlives the tab being
+ * closed or the installed app being swiped away - which is the whole point of it.
  */
 @Injectable({
   providedIn: 'root',
@@ -51,10 +37,9 @@ export class SessionNotificationService {
   private lastShownKey: string | null = null;
 
   /**
-   * Anything left over from a session that was killed mid-workout, completed on another device, or
-   * abandoned is cleared on startup; a session that really is in progress re-shows its notification
-   * as soon as it loads. That is cheaper and more reliable than persisting state to reconcile
-   * against, and the flicker is invisible because it only happens while the app is being opened.
+   * Clears anything left over from a session that was killed mid-workout or finished elsewhere. A
+   * session that really is in progress re-shows its notification as soon as it loads, so no state
+   * has to be persisted to tell the two apart.
    */
   initialize(): void {
     void this.clear();
@@ -86,9 +71,8 @@ export class SessionNotificationService {
       return;
     }
 
-    // Callers re-derive this from session state on every change, most of which do not affect the
-    // text. Re-showing an identical notification would keep bumping it back to the top of the
-    // notification shade for no reason.
+    // Callers re-derive this on every session change, most of which do not affect the text, and
+    // re-showing would bump the notification back to the top of the shade each time.
     const key = `${sessionId}|${content.title}|${content.body}|${action?.setId ?? ''}|${action?.token ?? ''}`;
     if (key === this.lastShownKey) {
       return;
@@ -99,14 +83,11 @@ export class SessionNotificationService {
       return;
     }
 
-    // `navigateLastFocusedOrOpen` focuses an already-open app and routes it to the session, and
-    // opens a new window at that route when nothing is running. The URL is resolved against the
-    // service worker's scope, so it stays relative here.
+    // Resolved against the service worker's scope, so the URL stays relative.
     const openAction = { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` };
 
-    // 'complete-set' is deliberately absent from onActionClick: ngsw would otherwise navigate, and
-    // the whole point of that action is that it works without opening the app. Our own listener in
-    // sw.js handles it.
+    // 'complete-set' is deliberately absent from onActionClick: ngsw would navigate for it, and not
+    // opening the app is the point. sw.js handles that action instead.
     const options: PersistentNotificationOptions = {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,

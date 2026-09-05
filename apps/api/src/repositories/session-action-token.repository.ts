@@ -3,11 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { CompleteSessionSetWithTokenResponseDto, Database, SessionActionTokenDto } from '@txg/shared';
 import { ConflictError, NotFoundError, UnauthorizedError } from '../utils/errors';
 
-/**
- * How long a minted token stays spendable. It has to outlive a long workout, since the notification
- * it travels in is only useful while the session is open; the database enforces the same ceiling, so
- * this cannot drift into minting something long-lived.
- */
+/** How long a minted token stays spendable. The schema enforces the same ceiling. */
 export const ACTION_TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
 
 /** 32 bytes of entropy, url-safe so it survives being embedded in a notification payload. */
@@ -16,9 +12,8 @@ const TOKEN_BYTES = 32;
 /**
  * Issues and spends session action tokens.
  *
- * The two halves run under different callers by design: minting happens with the user's JWT while
- * the app is open, and spending happens from a service worker with no session at all. Only `mint`
- * touches `getUserId`, so `consume` stays callable on an unauthenticated request.
+ * Minting happens with the user's JWT while the app is open; spending happens from a service worker
+ * with no session at all. Only `mint` touches `getUserId`, so `consume` stays callable unauthenticated.
  */
 export class SessionActionTokenRepository {
   constructor(
@@ -27,10 +22,8 @@ export class SessionActionTokenRepository {
   ) {}
 
   /**
-   * Mints a token for a session the caller owns, revoking any it already has for that session.
-   *
-   * One live token per session keeps a stale notification from staying spendable after a newer one
-   * replaced it, and bounds how many credentials exist for a workout to exactly one.
+   * Mints a token for a session the caller owns, revoking any it already has for that session, so a
+   * notification replaced by a newer one does not stay spendable.
    *
    * @param {string} sessionId - The session the token may complete sets in.
    * @returns {Promise<SessionActionTokenDto>} The raw token and its expiry. The token is not
@@ -39,9 +32,8 @@ export class SessionActionTokenRepository {
   async mint(sessionId: string): Promise<SessionActionTokenDto> {
     const userId = this.getUserId();
 
-    // RLS scopes this to the caller's own sessions, so a missing row is "not found or not yours".
-    // The token would be inert against someone else's session anyway - the database resolves
-    // ownership from the token row - but there is no reason to store a row that can never be spent.
+    // RLS scopes this to the caller's own sessions. A token is inert against someone else's session
+    // anyway, but there is no reason to store a row that can never be spent.
     const { data: session, error: sessionError } = await this.supabase
       .from('sessions')
       .select('id')
@@ -86,10 +78,8 @@ export class SessionActionTokenRepository {
   }
 
   /**
-   * Completes a set using a token rather than a user session.
-   *
-   * The token is passed through untouched: the database hashes it and resolves the owning user from
-   * the stored row, so nothing here needs - or is trusted with - an identity.
+   * Completes a set using a token rather than a user session. The token is passed through untouched:
+   * the database hashes it and resolves the owning user from the stored row.
    *
    * @param {string} token - The raw token, as minted.
    * @param {string} sessionId - The session the token was minted for.
@@ -114,10 +104,8 @@ export class SessionActionTokenRepository {
   /**
    * Translates the sentinel conditions raised by `complete_session_set_with_action_token`.
    *
-   * A token that is unknown, expired, revoked, or bound to a session its owner cannot reach are all
-   * the same answer to the caller: the credential does not work. Only a set that genuinely does not
-   * exist, and a session that has since been completed, are distinguished - the caller needs those
-   * to stop retrying and take the notification down.
+   * Every way of holding a bad token collapses to the same 401, so it reveals nothing. A missing set
+   * and an already-completed session stay distinct: the caller needs those to stop retrying.
    *
    * @param {string} message - The message from the Postgres error.
    * @returns {Error} The domain error to throw, or the original condition if it is unrecognised.

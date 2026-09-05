@@ -63,10 +63,8 @@ export class NotFoundError extends DomainError {
 /**
  * The caller presented no usable credential.
  *
- * Distinct from {@link NotFoundError}, which answers "you may not see this resource" for a caller
- * whose identity is established. This is for the session action token path, where the credential
- * *is* the request: an unknown, expired, revoked or wrong-session token all produce this same 401,
- * deliberately indistinguishable, so a caller holding a bad token learns nothing about why.
+ * For the session action token path, where the credential *is* the request: an unknown, expired,
+ * revoked or wrong-session token all produce this same 401, deliberately indistinguishable.
  */
 export class UnauthorizedError extends DomainError {
   constructor(message: string, code = 'UNAUTHORIZED', type = 'unauthorized_error') {

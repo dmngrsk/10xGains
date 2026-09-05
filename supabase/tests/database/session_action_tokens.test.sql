@@ -4,14 +4,12 @@
  *   - internal_patch_session_set(uuid, uuid, uuid, jsonb) - reachability only
  *   - complete_session(uuid, jsonb) - token revocation
  *
- * The point of this function is that it runs for a caller with no JWT, so most of it is exercised
- * as `anon`, which is the role a service worker's request arrives under. Seeding happens first as
- * superuser, and the few assertions that need a user session switch to `authenticated`.
+ * The function exists to run for a caller with no JWT, so most of it is exercised as `anon`, the
+ * role a service worker's request arrives under; seeding is done as superuser first.
  *
- * The security property under test is narrowness: a token completes one set in one session for one
- * user, and every way of holding the wrong token fails identically. The privilege check on
- * internal_patch_session_set matters just as much - it takes the owning user id as an argument, so
- * a client role able to execute it could patch anyone's sets.
+ * The property under test is narrowness: a token completes one set in one session for one user, and
+ * every way of holding the wrong token fails identically. The privilege check on
+ * internal_patch_session_set matters as much - it takes the owning user id as an argument.
  */
 
 begin;
@@ -73,9 +71,8 @@ insert into public.session_action_tokens (user_id, session_id, token_hash, creat
    encode(sha256(convert_to('expired-token', 'UTF8')), 'hex'),
    now() - interval '13 hours', now() - interval '1 hour');
 
--- A token whose owner does not own the session it names. Not reachable through the API, which mints
--- against the caller's own session, but it is what the ownership filter inside the shared patch
--- function exists to stop.
+-- A token whose owner does not own the session it names. Not reachable through the API, but it is
+-- what the ownership filter inside the shared patch function exists to stop.
 insert into public.session_action_tokens (user_id, session_id, token_hash, expires_at)
   values ('000000aa-0000-0000-0000-000000000001', '000000f2-0000-0000-0000-000000000002',
    encode(sha256(convert_to('wrong-owner-token', 'UTF8')), 'hex'), now() + interval '12 hours');
@@ -110,8 +107,8 @@ select throws_ok(
   'a token minted for one session cannot be spent on another'
 );
 
--- The stored value is a hash, and the function hashes what it is given, so presenting the hash
--- itself is just an unknown token. This is what makes a leak of the table useless on its own.
+-- The function hashes what it is given, so the stored hash is just an unknown token - which is what
+-- makes a leak of the table useless on its own.
 select throws_ok(
   format(
     $$ select complete_session_set_with_action_token(%L, '000000f1-0000-0000-0000-000000000001', '000000f1-0000-0000-0000-000000001001') $$,
@@ -138,8 +135,7 @@ select is(
   'spending a token completes the named set'
 );
 
--- anon holds no grant on these tables - reaching them only through the definer function is the
--- whole design - so the state assertions step back to the session role.
+-- anon holds no grant on these tables, by design, so state assertions step back to the session role.
 reset role;
 
 select is(
@@ -153,9 +149,8 @@ select ok(
   'the completed set is stamped'
 );
 
--- The authenticated endpoint records the prescribed reps as the reps performed. A set completed from
--- a notification has to look identical to one completed in the app, or progress and history read the
--- two differently.
+-- A set completed from a notification has to look identical to one completed in the app, or
+-- progress and history read the two differently.
 select is(
   (select actual_reps from public.session_sets where id = '000000f1-0000-0000-0000-000000001001'),
   8::smallint,

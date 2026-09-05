@@ -176,7 +176,7 @@ export type ResetSessionSetCommand = Record<string, never>; // Represents an emp
 
 // 9b. Session Action Token DTOs and Commands
 // A short-lived credential scoped to completing sets in one session, so a service worker can log a
-// set from a notification with no user session available to it. See the 20260905092620 migration.
+// set from a notification. See the 20260905092620 migration.
 
 // For POST /sessions/{sessionId}/action-token
 // Request body is empty; the token is returned once and only its hash is stored.
@@ -187,8 +187,7 @@ export interface SessionActionTokenDto {
   expires_at: string;
 }
 
-// The next set to work through, already positioned within its exercise, so the caller can render
-// "Set 3/5" without reading the session back.
+// Positioned within its exercise, so the caller can render "Set 3/5" without reading the session back.
 export interface SessionNextSetDto {
   id: string;
   exercise_name: string;
