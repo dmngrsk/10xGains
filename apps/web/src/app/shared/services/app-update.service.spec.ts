@@ -6,7 +6,7 @@ import { SwUpdate, VersionEvent } from '@angular/service-worker';
 import { Observable, of, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { AppUpdateDialogComponent } from '@shared/ui/dialogs/app-update-dialog/app-update-dialog.component';
-import { AppUpdateService, UPDATE_CHECK_INTERVAL_MS } from './app-update.service';
+import { AppUpdateService, UPDATE_CHECK_INTERVAL_MS, UPDATE_DEFER_INTERVAL_MS } from './app-update.service';
 
 class FakeDocument extends EventTarget {
   visibilityState: DocumentVisibilityState = 'visible';
@@ -197,6 +197,57 @@ describe('AppUpdateService', () => {
     await waitForPrompts(1);
     await settle();
     expect(dialogOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('should prompt again once a deferral has elapsed', async () => {
+    vi.useFakeTimers();
+    const service = createService();
+
+    service.initialize();
+    versionUpdates.next(versionReadyEvent);
+    await settle();
+    afterClosed.next(false);
+
+    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS);
+    await settle();
+
+    expect(dialogOpen).toHaveBeenCalledTimes(2);
+  });
+
+  it('should stay quiet for the length of the deferral', async () => {
+    vi.useFakeTimers();
+    const service = createService();
+
+    service.initialize();
+    versionUpdates.next(versionReadyEvent);
+    await settle();
+    afterClosed.next(false);
+
+    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS - 1);
+    await settle();
+
+    expect(dialogOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('should restart the wait when the user defers a second time', async () => {
+    vi.useFakeTimers();
+    const service = createService();
+
+    service.initialize();
+    versionUpdates.next(versionReadyEvent);
+    await settle();
+    afterClosed.next(false);
+
+    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS);
+    await settle();
+    afterClosed.next(false);
+
+    // Half of a fresh deferral is still short of the re-prompt, even though a full one has elapsed
+    // since the first deferral.
+    await vi.advanceTimersByTimeAsync(UPDATE_DEFER_INTERVAL_MS / 2);
+    await settle();
+
+    expect(dialogOpen).toHaveBeenCalledTimes(2);
   });
 
   it('should prompt again for a later version once the user has deferred', async () => {

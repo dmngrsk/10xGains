@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { ApplicationRef, DestroyRef, inject, Injectable, Injector } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
-import { concat, from, fromEvent, interval, merge } from 'rxjs';
+import { concat, from, fromEvent, interval, merge, Subject, timer } from 'rxjs';
 import { filter, switchMap, take } from 'rxjs/operators';
 
 /**
@@ -10,6 +10,13 @@ import { filter, switchMap, take } from 'rxjs/operators';
  * PWA is rarely closed, so without this poll the app would only ever check on a cold start.
  */
 export const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
+
+/**
+ * How long a deferred update stays quiet before asking again. Roughly twice a typical workout, so
+ * a user who defers mid-session is asked again once that session is well behind them rather than
+ * during it, and an update still lands the same day.
+ */
+export const UPDATE_DEFER_INTERVAL_MS = 2 * 60 * 60 * 1000;
 
 /**
  * Keeps an installed app from getting stuck on a stale build. The service worker downloads a new
@@ -25,6 +32,8 @@ export class AppUpdateService {
   private readonly document = inject(DOCUMENT);
   private readonly injector = inject(Injector);
   private readonly swUpdate = inject(SwUpdate);
+
+  private readonly deferrals = new Subject<void>();
 
   private isPrompting = false;
 
@@ -59,6 +68,14 @@ export class AppUpdateService {
         takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
+
+    // switchMap so that deferring again restarts the wait rather than stacking a second timer.
+    this.deferrals
+      .pipe(
+        switchMap(() => timer(UPDATE_DEFER_INTERVAL_MS)),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe(() => this.promptForReload());
   }
 
   private async checkForUpdate(): Promise<void> {
@@ -71,7 +88,7 @@ export class AppUpdateService {
 
   /**
    * Deferring leaves the downloaded version sitting ready: this client keeps being served the old
-   * one until it reloads, and the prompt does not come back until the next deployment.
+   * one until it reloads, and the prompt comes back once the deferral has elapsed.
    *
    * The dialog and Angular Material's dialog infrastructure are imported on demand: a prompt shown
    * once per deployment does not belong in the bundle every cold start has to download.
@@ -98,6 +115,7 @@ export class AppUpdateService {
       .subscribe(async shouldReload => {
         this.isPrompting = false;
         if (!shouldReload) {
+          this.deferrals.next();
           return;
         }
 
