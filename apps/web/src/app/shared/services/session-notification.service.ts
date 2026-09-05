@@ -76,11 +76,9 @@ export class SessionNotificationService {
       return;
     }
 
-    // Resolved against the service worker's scope, so the URL stays relative.
-    const openAction = { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` };
-
-    // 'complete-set' is deliberately absent from onActionClick: ngsw would navigate for it, and not
-    // opening the app is the point. sw.js handles that action instead.
+    // No `onActionClick`: sw.js owns every click, including opening the app. Leaving ngsw's protocol
+    // in place meant any action sw.js did not recognise silently fell through to it and navigated,
+    // which is indistinguishable from the button doing nothing.
     const options: PersistentNotificationOptions = {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
@@ -96,7 +94,6 @@ export class SessionNotificationService {
         apiBaseUrl: action?.apiBaseUrl,
         setId: action?.setId,
         token: action?.token,
-        onActionClick: { default: openAction, open: openAction },
       },
     };
 

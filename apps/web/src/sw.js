@@ -11,22 +11,61 @@
  */
 
 const COMPLETE_SET_ACTION = 'complete-set';
+const OPEN_ACTION = 'open';
 const NOTIFICATION_TAG = 'active-session';
 const NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
 
 /*
- * Registered before ngsw is imported so it runs first, though ngsw's handler still closes the
- * notification afterwards - which is why every path below re-shows rather than updating in place.
+ * Every click is handled here, including opening the app. ngsw could do that part through its
+ * `onActionClick` protocol, but then an action this worker does not recognise silently falls through
+ * to ngsw and navigates - which looks exactly like the button doing nothing, and hides which action
+ * was actually delivered. Owning the whole event keeps that observable.
+ *
+ * Registered before ngsw is imported so it runs first; ngsw's own handler still closes the
+ * notification afterwards, which is why every path below re-shows rather than updating in place.
  */
 self.addEventListener('notificationclick', event => {
-  if (event.action !== COMPLETE_SET_ACTION) {
-    return;
-  }
-
-  event.waitUntil(completeSet(event.notification.data));
+  event.waitUntil(handleClick(event));
 });
 
 importScripts('./ngsw-worker.js');
+
+async function handleClick(event) {
+  const data = event.notification.data || {};
+
+  if (event.action === COMPLETE_SET_ACTION) {
+    await completeSet(data);
+    return;
+  }
+
+  if (event.action === OPEN_ACTION) {
+    await openSession(data);
+    return;
+  }
+
+  // TEMPORARY (staging diagnostic): the completion request never reaches the API from Android, and
+  // the leading theory is that the action id arriving here is not the one that was registered. This
+  // reports what was actually delivered instead of guessing. Remove once that is settled - a body
+  // tap arrives as an empty action and should open the session, not land here.
+  await show(
+    { title: 'Notification diagnostic', body: `action=${JSON.stringify(event.action)}` },
+    data,
+    !!data.setId
+  );
+}
+
+async function openSession(data) {
+  const url = new URL(`sessions/${data.sessionId}`, self.registration.scope).href;
+  const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+
+  if (windows.length > 0) {
+    const client = await windows[0].navigate(url);
+    await (client || windows[0]).focus();
+    return;
+  }
+
+  await self.clients.openWindow(url);
+}
 
 /**
  * Mirrors `session-notification.utils.ts`, which is canonical and carries the tests. A service

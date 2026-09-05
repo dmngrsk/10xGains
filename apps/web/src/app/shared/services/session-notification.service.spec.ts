@@ -60,16 +60,20 @@ describe('SessionNotificationService', () => {
       }));
     });
 
-    it('should route a click back into the session', async () => {
+    it('should name the session the click should return to', async () => {
       const service = createService();
 
       await service.show('session-1', content);
 
-      const open = { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' };
-      expect(showNotification.mock.calls[0][1].data).toMatchObject({
-        sessionId: 'session-1',
-        onActionClick: { default: open, open },
-      });
+      expect(showNotification.mock.calls[0][1].data).toMatchObject({ sessionId: 'session-1' });
+    });
+
+    it('should leave ngsw no click protocol to act on, so the worker owns every action', async () => {
+      const service = createService();
+
+      await service.show('session-1', content, action);
+
+      expect(showNotification.mock.calls[0][1].data.onActionClick).toBeUndefined();
     });
 
     it('should offer only the open action when there is no token yet', async () => {
@@ -103,14 +107,6 @@ describe('SessionNotificationService', () => {
         setId: 'set-3',
         token: 'token-abc',
       });
-    });
-
-    it('should leave the complete action out of onActionClick, so ngsw does not navigate for it', async () => {
-      const service = createService();
-
-      await service.show('session-1', content, action);
-
-      expect(showNotification.mock.calls[0][1].data.onActionClick['complete-set']).toBeUndefined();
     });
 
     it('should show again once the set the action targets changes', async () => {
