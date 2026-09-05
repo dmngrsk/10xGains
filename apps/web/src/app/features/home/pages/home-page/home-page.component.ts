@@ -4,6 +4,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { SessionCardComponent } from '@features/sessions/components/session-card/session-card.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
+import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HomePageFacade } from './home-page.facade';
@@ -24,6 +25,7 @@ import { HomePageFacade } from './home-page.facade';
 export class HomePageComponent implements OnInit {
   private readonly facade = inject(HomePageFacade);
   private readonly router = inject(Router);
+  private readonly sessionNotifications = inject(SessionNotificationService);
 
   readonly viewModel = this.facade.viewModel;
 
@@ -51,6 +53,7 @@ export class HomePageComponent implements OnInit {
   }
 
   onSessionNavigated(sessionId: string): void {
+    void this.sessionNotifications.requestPermission();
     this.router.navigate(['/sessions', sessionId]);
   }
 

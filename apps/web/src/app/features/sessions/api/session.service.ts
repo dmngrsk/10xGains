@@ -8,8 +8,7 @@ import { CompleteSessionSetCommand,
   SessionSetDto,
   SessionDto,
   UpdateSessionCommand,
-  UpdateSessionSetCommand
-} from '@txg/shared';
+  UpdateSessionSetCommand } from '@txg/shared';
 import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 
 export interface GetSessionsParams {

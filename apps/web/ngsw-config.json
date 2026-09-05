@@ -17,6 +17,16 @@
       }
     },
     {
+      "name": "notification-icons",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/assets/favicon/web-app-manifest-192x192.png",
+          "/assets/favicon/notification-badge.png"
+        ]
+      }
+    },
+    {
       "name": "assets",
       "installMode": "lazy",
       "updateMode": "prefetch",

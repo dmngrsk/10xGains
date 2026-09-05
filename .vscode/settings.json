@@ -1,5 +1,10 @@
 {
   "css.customData": [".vscode/tailwind.json"],
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.expand": false,
+  "explorer.fileNesting.patterns": {
+    ".env": ".env.*"
+  },
   "files.associations": {
     ".env.*": "ini"
   }
