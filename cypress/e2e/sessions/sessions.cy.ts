@@ -150,7 +150,63 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('allows a user to complete a session', { tags: ['SESS-07'] }, () => {
+    it('opens the plate calculator on the next set, and re-solves the bar as the weight and rack change', { tags: ['SESS-07'] }, () => {
+      const plateCalculator = dataCy.sessions.dialogs.plateCalculator;
+
+      // The seeded session prescribes 100 kg of squat first, which is 40 kg a side.
+      cy.getBySel(dataCy.sessions.plateCalculatorButton).click();
+      cy.getBySel(plateCalculator.weightInput).should('have.value', '100');
+      cy.getBySel(plateCalculator.loading).should('contain.text', '2').and('contain.text', '20');
+      cy.getBySel(plateCalculator.stepHint).should('contain.text', 'Steps by 2.5 kg');
+
+      // The stepper walks the weights the rack can build rather than a fixed increment.
+      cy.getBySel(plateCalculator.incrementButton).click();
+      cy.getBySel(plateCalculator.weightInput).should('have.value', '102.5');
+      cy.getBySel(plateCalculator.loading).should('contain.text', '1.25');
+      cy.getBySel(plateCalculator.shortfall).should('not.exist');
+
+      // A weight the rack cannot build is answered and reported, never silently rounded.
+      cy.getBySel(plateCalculator.weightInput).clear().type('101{enter}');
+      cy.getBySel(plateCalculator.weightInput).should('have.value', '101');
+      cy.getBySel(plateCalculator.shortfall).should('contain.text', '1 kg short').and('contain.text', '100 kg');
+
+      // Taking the 20s out of the rack re-solves the bar, and re-snaps a weight it stranded.
+      cy.getBySel(`${plateCalculator.chipPrefix}20`).should('have.class', 'mat-mdc-chip-selected').click();
+      cy.getBySel(`${plateCalculator.chipPrefix}20`).should('not.have.class', 'mat-mdc-chip-selected');
+      cy.getBySel(plateCalculator.weightInput).should('have.value', '100');
+      cy.getBySel(plateCalculator.loading).should('contain.text', '4').and('contain.text', '10');
+
+      cy.getBySel(plateCalculator.closeButton).click();
+      cy.getBySel(plateCalculator.content).should('not.exist');
+    });
+
+    it('hides the plate calculator behind a setting, and brings it back', { tags: ['SESS-08'] }, () => {
+      const openSettings = () => {
+        cy.navigateBack();
+        cy.navigateTo('settings');
+      };
+      const openSession = () => {
+        cy.navigateTo('home');
+        cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
+      };
+
+      cy.getBySel(dataCy.sessions.plateCalculatorButton).should('be.visible');
+
+      openSettings();
+      cy.getBySel(dataCy.settings.workout.plateCalculatorToggle).click();
+      openSession();
+
+      cy.getBySel(dataCy.sessions.plateCalculatorButton).should('not.exist');
+      cy.getBySel(dataCy.sessions.notesButton).should('be.visible');
+
+      openSettings();
+      cy.getBySel(dataCy.settings.workout.plateCalculatorToggle).click();
+      openSession();
+
+      cy.getBySel(dataCy.sessions.plateCalculatorButton).should('be.visible');
+    });
+
+    it('allows a user to complete a session', { tags: ['SESS-09'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -161,7 +217,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 102.5 kg'); // Progression rules applied
     });
 
-    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-08'] }, () => {
+    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-10'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -181,7 +237,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 100 kg'); // Progression rules not applied due to incomplete sets
     });
 
-    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-09'] }, () => {
+    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-11'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.title).should('be.visible').and('contain.text', 'Notes');
@@ -195,7 +251,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Felt strong on squats today.');
     });
 
-    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-10'] }, () => {
+    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-12'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
@@ -213,7 +269,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Cancel discarded it
     });
 
-    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-11'] }, () => {
+    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-13'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
@@ -234,7 +290,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
     });
 
-    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-12'] }, () => {
+    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-14'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
@@ -261,7 +317,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
     });
 
-    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-13'] }, () => {
+    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-15'] }, () => {
       let userId1: string;
       let userId2: string;
 
@@ -300,7 +356,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-14'] }, () => {
+    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-16'] }, () => {
       // Session sets are grouped by plan_exercise_id, which every session trained from the same
       // plan day shares. Editing a set used to pull in the sets of previous sessions of that day,
       // renumber the merged list and write it back - silently rewriting, and deleting, history.

@@ -34,6 +34,7 @@ export const sessionsSelectors = {
       loading: 'plate-calculator-loading',
       shortfall: 'plate-calculator-shortfall',
       chips: 'plate-calculator-chips',
+      chipPrefix: 'plate-calculator-chip-',
       ladderToggle: 'plate-calculator-ladder-toggle',
       unevenWarning: 'plate-calculator-uneven-warning',
       closeButton: 'plate-calculator-close-button',

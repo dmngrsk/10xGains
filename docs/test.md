@@ -162,14 +162,16 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 |  | SESS-04 | The session timer starts and updates correctly after the first set interaction. | Critical | No |
 | *&nbsp;&nbsp;warmup sets* | SESS-05 | A user can expand ephemeral warmup sets from the warmup toggle and dismiss them one by one, without any network traffic. | Medium | No |
 |  | SESS-06 | Clicking a working set dismisses that exercise's warmup UI, and the dismissal persists per exercise across a reload. | Medium | No |
-| *&nbsp;&nbsp;completing a session* | SESS-07 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
-|  | SESS-08 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
-| *&nbsp;&nbsp;notes* | SESS-09 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
-|  | SESS-10 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
-|  | SESS-11 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
-|  | SESS-12 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
-|  | SESS-13 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
-| *&nbsp;&nbsp;history integrity* | SESS-14 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
+| *&nbsp;&nbsp;plate calculator* | SESS-07 | The plate calculator opens on the weight the session asks for next and shows how to load it, walks the weights the rack can build, reports one it cannot, and re-solves when a denomination is taken out of the rack. | High | No |
+|  | SESS-08 | The plate calculator FAB can be switched off from the settings page and switched back on, and the notes FAB it stacks above is unaffected. | Medium | No |
+| *&nbsp;&nbsp;completing a session* | SESS-09 | A user can successfully complete a session, after which a new session is available and they are redirected. | Critical | No |
+|  | SESS-10 | A user is prompted with a confirmation dialog if they try to complete a session with unfinished sets. | High | No |
+| *&nbsp;&nbsp;notes* | SESS-11 | A user can open the notes dialog via the FAB in the session view, enter a session note, close the dialog with 'Save', and see the note again after reopening. | High | No |
+|  | SESS-12 | The notes dialog is modal: a click outside neither closes it nor saves, and 'Cancel' discards the entered text. | High | No |
+|  | SESS-13 | A plan note entered in one session is displayed when the notes dialog is opened in another session of the same plan. | High | No |
+|  | SESS-14 | A plan note from one plan is never displayed in a session belonging to a different plan. | Critical | No |
+|  | SESS-15 | A user cannot read or modify another user's notes (RLS check). | Critical | No |
+| *&nbsp;&nbsp;history integrity* | SESS-16 | Editing a set in one session leaves the recorded sets of earlier completed sessions of the same plan day byte-for-byte unchanged. | Critical | No |
 | **History (List)**<br>*&nbsp;&nbsp;browsing the list* | HIST-01 | A completed session correctly appears in the session history list. | High | No |
 |  | HIST-02 | The session history list loads a further page of sessions when its end is scrolled to, and stops once every session is loaded. | Medium | No |
 | *&nbsp;&nbsp;filtering* | HIST-03 | A user can open the filter dialog and apply filters for date range, verifying the results. | Medium | No |
