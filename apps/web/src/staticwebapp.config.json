@@ -3,6 +3,9 @@
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/*.css", "/*.js", "/*.ico", "/*.png"]
   },
+  "mimeTypes": {
+    ".webmanifest": "application/manifest+json"
+  },
   "globalHeaders": {
     "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' __API_URL__ __SUPABASE_URL__; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'",
     "X-Content-Type-Options": "nosniff",
