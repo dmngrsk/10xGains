@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import { SESSION_NOTIFICATION_TAG, SessionNotificationService } from './session-notification.service';
 
 const content = { title: 'Bench Press', body: 'Set 3/5 · 8 reps @ 60 kg' };
+const action = { apiBaseUrl: 'https://api.example.test/api', setId: 'set-3', token: 'token-abc' };
 
 describe('SessionNotificationService', () => {
   let close: Mock;
@@ -60,12 +61,61 @@ describe('SessionNotificationService', () => {
 
       await service.show('session-1', content);
 
-      expect(showNotification.mock.calls[0][1].data).toEqual({
+      const open = { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' };
+      expect(showNotification.mock.calls[0][1].data).toMatchObject({
         sessionId: 'session-1',
-        onActionClick: {
-          default: { operation: 'navigateLastFocusedOrOpen', url: 'sessions/session-1' },
-        },
+        onActionClick: { default: open, open },
       });
+    });
+
+    it('should offer only the open action when there is no token yet', async () => {
+      const service = createService();
+
+      await service.show('session-1', content);
+
+      expect(showNotification.mock.calls[0][1].actions).toEqual([{ action: 'open', title: 'Open' }]);
+    });
+
+    it('should offer the complete action once a token is available', async () => {
+      const service = createService();
+
+      await service.show('session-1', content, action);
+
+      expect(showNotification.mock.calls[0][1].actions).toEqual([
+        { action: 'complete-set', title: 'Complete set' },
+        { action: 'open', title: 'Open' },
+      ]);
+    });
+
+    it('should carry everything the service worker needs to complete the set', async () => {
+      const service = createService();
+
+      await service.show('session-1', content, action);
+
+      expect(showNotification.mock.calls[0][1].data).toMatchObject({
+        sessionId: 'session-1',
+        title: 'Bench Press',
+        apiBaseUrl: 'https://api.example.test/api',
+        setId: 'set-3',
+        token: 'token-abc',
+      });
+    });
+
+    it('should leave the complete action out of onActionClick, so ngsw does not navigate for it', async () => {
+      const service = createService();
+
+      await service.show('session-1', content, action);
+
+      expect(showNotification.mock.calls[0][1].data.onActionClick['complete-set']).toBeUndefined();
+    });
+
+    it('should show again once the set the action targets changes', async () => {
+      const service = createService();
+
+      await service.show('session-1', content, action);
+      await service.show('session-1', content, { ...action, setId: 'set-4' });
+
+      expect(showNotification).toHaveBeenCalledTimes(2);
     });
 
     it('should not re-show an identical notification', async () => {
@@ -168,6 +218,22 @@ describe('SessionNotificationService', () => {
       const service = createService();
 
       await expect(service.requestPermission()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('isEnabled', () => {
+    it('should report enabled when permission is granted', () => {
+      expect(createService().isEnabled()).toBe(true);
+    });
+
+    it('should report disabled without permission, so callers can skip minting a token', () => {
+      setPermission('denied');
+      expect(createService().isEnabled()).toBe(false);
+    });
+
+    it('should report disabled when notifications are unsupported', () => {
+      setPermission(undefined);
+      expect(createService().isEnabled()).toBe(false);
     });
   });
 

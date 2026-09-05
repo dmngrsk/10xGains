@@ -7,12 +7,33 @@ export interface SessionNotificationContent {
 }
 
 /**
+ * What the service worker needs to complete a set on its own, with no page running and no user
+ * session available to it. Omitted when the app has no token yet, in which case the notification is
+ * shown without the action rather than not at all.
+ */
+export interface SessionNotificationAction {
+  /** Absolute, including the `/api` prefix: the worker cannot read `environment`. */
+  apiBaseUrl: string;
+  setId: string;
+  token: string;
+}
+
+/**
  * A fixed tag means a new notification replaces the one already on screen rather than stacking a
  * second one, and gives us a handle to close it by later.
  */
 export const SESSION_NOTIFICATION_TAG = 'active-session';
 
 const SESSION_NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
+
+/**
+ * Action buttons are only valid on a notification shown through a service worker registration, so
+ * TypeScript's DOM lib leaves them off `NotificationOptions`. Narrowing the gap here keeps the call
+ * site type-checked instead of casting the whole options object.
+ */
+interface PersistentNotificationOptions extends NotificationOptions {
+  actions?: { action: string; title: string }[];
+}
 
 /**
  * Keeps a notification on screen for as long as a session is in progress, so the next set is
@@ -55,15 +76,20 @@ export class SessionNotificationService {
     }
   }
 
-  async show(sessionId: string, content: SessionNotificationContent): Promise<void> {
-    if (!this.isSupported() || Notification.permission !== 'granted') {
+  /** Whether a notification would actually be shown, so callers can skip work that only feeds one. */
+  isEnabled(): boolean {
+    return this.isSupported() && Notification.permission === 'granted';
+  }
+
+  async show(sessionId: string, content: SessionNotificationContent, action?: SessionNotificationAction): Promise<void> {
+    if (!this.isEnabled()) {
       return;
     }
 
     // Callers re-derive this from session state on every change, most of which do not affect the
     // text. Re-showing an identical notification would keep bumping it back to the top of the
     // notification shade for no reason.
-    const key = `${sessionId}|${content.title}|${content.body}`;
+    const key = `${sessionId}|${content.title}|${content.body}|${action?.setId ?? ''}|${action?.token ?? ''}`;
     if (key === this.lastShownKey) {
       return;
     }
@@ -76,19 +102,31 @@ export class SessionNotificationService {
     // `navigateLastFocusedOrOpen` focuses an already-open app and routes it to the session, and
     // opens a new window at that route when nothing is running. The URL is resolved against the
     // service worker's scope, so it stays relative here.
-    await registration.showNotification(content.title, {
+    const openAction = { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` };
+
+    // 'complete-set' is deliberately absent from onActionClick: ngsw would otherwise navigate, and
+    // the whole point of that action is that it works without opening the app. Our own listener in
+    // sw.js handles it.
+    const options: PersistentNotificationOptions = {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
       icon: SESSION_NOTIFICATION_ICON,
       silent: true,
       requireInteraction: true,
+      actions: action
+        ? [{ action: 'complete-set', title: 'Complete set' }, { action: 'open', title: 'Open' }]
+        : [{ action: 'open', title: 'Open' }],
       data: {
         sessionId,
-        onActionClick: {
-          default: { operation: 'navigateLastFocusedOrOpen', url: `sessions/${sessionId}` },
-        },
+        title: content.title,
+        apiBaseUrl: action?.apiBaseUrl,
+        setId: action?.setId,
+        token: action?.token,
+        onActionClick: { default: openAction, open: openAction },
       },
-    });
+    };
+
+    await registration.showNotification(content.title, options);
 
     this.lastShownKey = key;
   }

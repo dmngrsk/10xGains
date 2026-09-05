@@ -5,12 +5,13 @@ import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSes
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
+import { EnvironmentService } from '@shared/services/environment.service';
 import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
-import { buildSessionNotificationContent } from './utils/session-notification.utils';
+import { buildSessionNotificationContent, findNextPendingSet } from './utils/session-notification.utils';
 import { SessionService } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 import { mapToSessionPageViewModel, mapToSessionSetViewModel } from '../../models/session.mapping';
@@ -40,6 +41,16 @@ export class SessionPageFacade {
   private readonly debouncerService = inject(KeyedDebouncerService);
   private readonly serverClock = inject(ServerClockService);
   private readonly sessionNotifications = inject(SessionNotificationService);
+  private readonly environmentService = inject(EnvironmentService);
+
+  /**
+   * The session action token in play, and the session a mint is currently in flight for. One token
+   * per session is enough - it completes any set in that session - so this is fetched once and
+   * reused, and the in-flight marker keeps the notification effect from firing off a second request
+   * while the first is still running.
+   */
+  private actionToken: { sessionId: string; token: string } | null = null;
+  private pendingActionTokenSessionId: string | null = null;
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
   readonly timerStartTimestamp = signal<number | null>(null);
@@ -404,14 +415,72 @@ export class SessionPageFacade {
 
   private syncNotification(session: SessionPageViewModel): void {
     if (!session.id || session.metadata?.status !== 'IN_PROGRESS') {
+      this.actionToken = null;
       void this.sessionNotifications.clear();
       return;
     }
 
-    void this.sessionNotifications.show(session.id, buildSessionNotificationContent(session));
+    const sessionId = session.id;
+    const nextSet = findNextPendingSet(session);
+
+    // Shown with whatever is available now. A token that has not arrived yet only costs the
+    // "Complete set" action, and the notification is re-synced once it does - waiting on the network
+    // before showing anything would leave the notification missing for the whole round trip.
+    void this.sessionNotifications.show(
+      sessionId,
+      buildSessionNotificationContent(session),
+      this.actionToken?.sessionId === sessionId && nextSet
+        ? {
+            apiBaseUrl: `${this.environmentService.apiUrl.replace(/\/+$/, '')}/api`,
+            setId: nextSet.set.id,
+            token: this.actionToken.token,
+          }
+        : undefined
+    );
+
+    this.ensureActionToken(sessionId);
+  }
+
+  /**
+   * Mints the session's action token, once, and re-syncs so the notification gains its action.
+   *
+   * Skipped entirely when notifications cannot be shown: the token exists only to be carried by one,
+   * so minting it for a user who declined notifications would be a request that can never be used.
+   */
+  private ensureActionToken(sessionId: string): void {
+    if (!this.sessionNotifications.isEnabled()) {
+      return;
+    }
+
+    if (this.actionToken?.sessionId === sessionId || this.pendingActionTokenSessionId === sessionId) {
+      return;
+    }
+
+    this.pendingActionTokenSessionId = sessionId;
+    this.sessionService.createSessionActionToken(sessionId).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => {
+        if (this.pendingActionTokenSessionId === sessionId) {
+          this.pendingActionTokenSessionId = null;
+        }
+      }),
+      catchError(error => {
+        // The notification still works without its action, so this is not worth surfacing.
+        console.error(`Failed to mint a session action token for session ${sessionId}:`, error);
+        return EMPTY;
+      })
+    ).subscribe(response => {
+      if (!response?.data) {
+        return;
+      }
+
+      this.actionToken = { sessionId, token: response.data.token };
+      this.syncNotification(this.viewModel());
+    });
   }
 
   private clearUserScopedState(): void {
+    this.actionToken = null;
     this.viewModel.set(initialState);
     this.timerStartTimestamp.set(null);
   }

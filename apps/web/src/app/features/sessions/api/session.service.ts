@@ -8,8 +8,7 @@ import { CompleteSessionSetCommand,
   SessionSetDto,
   SessionDto,
   UpdateSessionCommand,
-  UpdateSessionSetCommand
-} from '@txg/shared';
+  UpdateSessionSetCommand, SessionActionTokenDto } from '@txg/shared';
 import { ApiService, ApiServiceResponse } from '@shared/api/api.service';
 
 export interface GetSessionsParams {
@@ -185,6 +184,22 @@ export class SessionService {
 
     const url = `/sessions/${sessionId}/sets/${setId}`;
     return this.apiService.delete(url);
+  }
+
+  /**
+   * Mints a token that lets the service worker complete sets in this session without a user session.
+   *
+   * @param sessionId The ID of the session.
+   * @returns An Observable emitting the raw token and its expiry. The token is not recoverable
+   *   afterwards, so a caller that needs it again must mint a new one.
+   */
+  createSessionActionToken(sessionId: string): Observable<SessionServiceResponse<SessionActionTokenDto>> {
+    if (!sessionId) {
+      return throwError(() => new Error('Session ID is required.'));
+    }
+
+    const url = `/sessions/${sessionId}/action-token`;
+    return this.apiService.post<Record<string, never>, SessionActionTokenDto>(url, {});
   }
 
   /**

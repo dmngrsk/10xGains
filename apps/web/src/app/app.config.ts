@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withPreloading(PreloadAllModules)),
     provideAppInitializer(() => inject(AppUpdateService).initialize()),
     provideAppInitializer(() => inject(SessionNotificationService).initialize()),
-    provideServiceWorker('ngsw-worker.js', {
+    provideServiceWorker('sw.js', {
       enabled: environment.enableServiceWorker,
       registrationStrategy: 'registerWhenStable:30000'
     })

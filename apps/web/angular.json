@@ -26,6 +26,7 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
+              "src/sw.js",
               "src/assets",
               "src/manifest.webmanifest",
               "src/staticwebapp.config.json"

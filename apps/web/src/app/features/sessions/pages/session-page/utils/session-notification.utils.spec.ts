@@ -1,4 +1,7 @@
 import { SessionSetStatus } from '@txg/shared';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { buildSessionNotificationContent, findNextPendingSet, formatSetDescription } from './session-notification.utils';
 import { SessionExerciseViewModel, SessionPageViewModel, SessionSetViewModel } from '../../../models/session-page.viewmodel';
@@ -120,6 +123,49 @@ describe('session notification utils', () => {
         title: 'Workout in progress',
         body: 'All sets done - tap to finish',
       });
+    });
+  });
+
+  /**
+   * `sw.js` reformats the notification after completing a set, and cannot import any of this: a
+   * service worker has no access to the application bundle. Its copy of the rules is therefore
+   * duplicated, and duplication drifts silently.
+   *
+   * The function is lifted out of the file as text rather than imported, because importing `sw.js`
+   * would run its top-level `importScripts`. Ugly, but it is the only thing standing between a
+   * change here and a notification that renders differently depending on where it was drawn.
+   */
+  describe('parity with the service worker copy', () => {
+    const swSource = readFileSync(
+      resolve(dirname(fileURLToPath(import.meta.url)), '../../../../../../sw.js'),
+      'utf8'
+    );
+    const describeSetSource = swSource.match(/function describeSet\(nextSet\)\s*\{[\s\S]*?\n\}/)?.[0];
+    const describeSet = new Function(`${describeSetSource}; return describeSet;`)() as (
+      nextSet: Record<string, unknown>
+    ) => { title: string; body: string };
+
+    it.each([
+      { exerciseName: 'Bench Press', setNumber: 3, setCount: 5, expectedReps: 8, weight: 60 },
+      { exerciseName: 'Pull Up', setNumber: 1, setCount: 3, expectedReps: 8, weight: 0 },
+      { exerciseName: 'Squat', setNumber: 2, setCount: 2, expectedReps: 5, weight: 62.5 },
+    ])('should render $exerciseName identically in the app and the service worker', testCase => {
+      const session = createSession([
+        createExercise(1, testCase.exerciseName, [
+          ...Array.from({ length: testCase.setNumber - 1 }, (_, i) => createSet(i + 1, 'COMPLETED')),
+          ...Array.from({ length: testCase.setCount - testCase.setNumber + 1 }, (_, i) =>
+            createSet(testCase.setNumber + i, 'PENDING', { expectedReps: testCase.expectedReps, weight: testCase.weight })
+          ),
+        ]),
+      ]);
+
+      expect(describeSet({
+        exercise_name: testCase.exerciseName,
+        set_number: testCase.setNumber,
+        set_count: testCase.setCount,
+        expected_reps: testCase.expectedReps,
+        expected_weight: testCase.weight,
+      })).toEqual(buildSessionNotificationContent(session));
     });
   });
 });
