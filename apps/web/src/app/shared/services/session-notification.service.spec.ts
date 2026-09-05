@@ -55,6 +55,7 @@ describe('SessionNotificationService', () => {
       expect(showNotification).toHaveBeenCalledWith('Bench Press', expect.objectContaining({
         body: 'Set 3/5 · 8 reps @ 60 kg',
         tag: SESSION_NOTIFICATION_TAG,
+        icon: '/assets/favicon/web-app-manifest-192x192.png',
         silent: true,
         requireInteraction: true,
       }));

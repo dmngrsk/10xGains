@@ -17,6 +17,8 @@ export interface SessionNotificationAction {
 /** A fixed tag replaces the notification already on screen rather than stacking a second one. */
 export const SESSION_NOTIFICATION_TAG = 'active-session';
 
+const SESSION_NOTIFICATION_ICON = '/assets/favicon/web-app-manifest-192x192.png';
+
 // Android keeps only this image's alpha channel and tints the result, so it is a stencil of the
 // mark rather than the logo: anything with colour in it would render as a solid blob.
 const SESSION_NOTIFICATION_BADGE = '/assets/favicon/notification-badge.png';
@@ -84,6 +86,7 @@ export class SessionNotificationService {
     const options: PersistentNotificationOptions = {
       body: content.body,
       tag: SESSION_NOTIFICATION_TAG,
+      icon: SESSION_NOTIFICATION_ICON,
       badge: SESSION_NOTIFICATION_BADGE,
       silent: true,
       requireInteraction: true,
