@@ -1318,6 +1318,30 @@ Marks a training session as completed and triggers exercise progression logic.
     -   `404 Not Found`: If the session is not found or not accessible to the user.
     -   `500 Internal Server Error`: For unexpected server issues, especially during progression logic.
 
+#### POST /api/sessions/{sessionId}/action-token
+
+Mints a short-lived token that can complete sets in this session without a user session. It exists for the service worker behind the in-progress session notification, which cannot reach the user's Supabase session: that lives in `localStorage`, which service workers cannot read, and by the time the notification is acted on there is usually no page open to ask.
+
+The token is scoped to one session and one operation. It cannot read anything, cannot reach another session, and cannot be used after the session is completed. Minting revokes any token already live for the session, so exactly one exists at a time, and the raw value is returned only here - the database stores its SHA-256 hash.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**: `sessionId` (UUID) - The session the token may complete sets in.
+-   **Request Body**: Empty (`CreateSessionActionTokenCommand` is `Record<string, never>`).
+-   **Response (201 Created)**: A `SessionActionTokenDto`. `expires_at` is 12 hours out, a ceiling the schema enforces as well.
+    ```json
+    {
+      "data": {
+        "token": "opaque-url-safe-token",
+        "expires_at": "2023-01-01T12:00:00Z"
+      }
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `sessionId` format is invalid.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `404 Not Found`: If the session is not found or not accessible to the user.
+    -   `500 Internal Server Error`: For unexpected server issues.
+
 ### Session Sets API
 
 Manages sets within a specific training session.
@@ -1520,6 +1544,56 @@ Marks a specific set as completed.
     -   `400 Bad Request`: If path parameter formats are invalid.
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the training session or set is not found or not accessible.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PATCH /api/sessions/{sessionId}/sets/{setId}/complete-with-token
+
+Marks a specific set as completed on the authority of a session action token instead of a user session. This is the endpoint the notification's "Complete set" action calls.
+
+**This endpoint is deliberately unauthenticated.** The caller is a service worker with no JWT to present; the token in the body is the entire authorisation, and it is validated in the database by `complete_session_set_with_action_token`, which resolves the owning user from the stored token row. An unknown, expired, revoked or wrong-session token all produce the same `401`, so a caller holding a bad token learns nothing about which it was.
+
+The response carries the next set still pending, already positioned within its exercise, so the caller can redraw the notification without a read scope of its own - and a notification whose idea of the session went stale repairs itself on use.
+
+-   **Authorization**: None. The token is supplied in the request body.
+-   **URL Path Parameters**:
+    -   `sessionId` (UUID, required): The session the token was minted for.
+    -   `setId` (UUID, required): The ID of the session set to complete.
+-   **Request Body** (`CompleteSessionSetWithTokenCommand`): the token travels in the body rather than the URL so it stays out of access logs and referrer headers.
+    ```json
+    { "token": "opaque-url-safe-token" }
+    ```
+-   **Response (200 OK)**: A `CompleteSessionSetWithTokenResponseDto`. `next_set` is `null` once every set in the session is done.
+    ```json
+    {
+      "data": {
+        "set": {
+          "id": "uuid",
+          "session_id": "uuid",
+          "plan_exercise_id": "uuid",
+          "set_index": 1,
+          "expected_reps": 5,
+          "actual_reps": 5,
+          "actual_weight": 57.5,
+          "status": "COMPLETED",
+          "completed_at": "2023-01-01T00:00:00Z"
+        },
+        "next_set": {
+          "id": "uuid",
+          "exercise_name": "Bench Press",
+          "set_number": 3,
+          "set_count": 5,
+          "expected_reps": 8,
+          "expected_weight": 60.0
+        },
+        "session_status": "IN_PROGRESS"
+      }
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If path parameter formats are invalid or the body carries no token.
+    -   `401 Unauthorized`: If the token is unknown, expired, revoked, or was minted for a different session.
+    -   `404 Not Found`: If the set does not exist in this session.
+    -   `409 Conflict`: If the session has since been completed, so no further sets can be recorded.
     -   `500 Internal Server Error`: If an unexpected server error occurs.
 
 #### PATCH /api/sessions/{sessionId}/sets/{setId}/fail

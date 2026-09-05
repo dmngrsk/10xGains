@@ -19,6 +19,7 @@ import { handleGetSessionById } from '../handlers/sessions/get-id';
 import { handlePutSessionById } from '../handlers/sessions/put-id';
 import { handleDeleteSessionById } from '../handlers/sessions/delete-id';
 import { handleCompleteSession } from '../handlers/sessions/post-complete';
+import { handleCreateSessionActionToken } from '../handlers/sessions/post-action-token';
 import { handleGetPlanDays } from '../handlers/plan-days/get';
 import { handleCreatePlanDay } from '../handlers/plan-days/post';
 import { handleGetPlanDayById } from '../handlers/plan-days/get-id';
@@ -45,6 +46,7 @@ import { handleGetSessionSetById } from '../handlers/session-sets/get-id';
 import { handleUpdateSessionSetById } from '../handlers/session-sets/put-id';
 import { handleDeleteSessionSetById } from '../handlers/session-sets/delete-id';
 import { handleCompleteSessionSet } from '../handlers/session-sets/patch-complete';
+import { handleCompleteSessionSetWithToken } from '../handlers/session-sets/patch-complete-with-token';
 import { handleFailSessionSet } from '../handlers/session-sets/patch-fail';
 import { handleResetSessionSet } from '../handlers/session-sets/patch-reset';
 import type { AppContext } from '../context';
@@ -130,6 +132,7 @@ function createSessionRoutes(): Hono<AppContext> {
     .put('/:sessionId', requiredAuthMiddleware, handlePutSessionById)
     .delete('/:sessionId', requiredAuthMiddleware, handleDeleteSessionById)
     .post('/:sessionId/complete', requiredAuthMiddleware, handleCompleteSession)
+    .post('/:sessionId/action-token', requiredAuthMiddleware, handleCreateSessionActionToken)
     .route('/:sessionId/sets', createSessionSetRoutes());
 }
 
@@ -142,6 +145,10 @@ function createSessionSetRoutes(): Hono<AppContext> {
     .put('/:setId', requiredAuthMiddleware, handleUpdateSessionSetById)
     .delete('/:setId', requiredAuthMiddleware, handleDeleteSessionSetById)
     .patch('/:setId/complete', requiredAuthMiddleware, handleCompleteSessionSet)
+    // No auth middleware: the caller is a service worker acting on a notification, with no JWT to
+    // present. The session action token in the body is the whole authorisation, validated in the
+    // database by complete_session_set_with_action_token.
+    .patch('/:setId/complete-with-token', handleCompleteSessionSetWithToken)
     .patch('/:setId/fail', requiredAuthMiddleware, handleFailSessionSet)
     .patch('/:setId/reset', requiredAuthMiddleware, handleResetSessionSet);
 }
