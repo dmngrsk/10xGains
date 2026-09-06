@@ -120,9 +120,14 @@ resource "azurerm_function_app_flex_consumption" "main" {
     # `app_settings` above.
     application_insights_connection_string = azurerm_application_insights.main.connection_string
 
-    # Deliberately no `cors` block. Hono owns CORS (spec §4.4) — it knows about
-    # resolveAllowedOrigins(), it is unit-tested, and it lives with the routes it protects.
-    # Configuring the Azure layer as well produced two controls that already disagreed.
+    # Hono owns the response headers (spec §4.4), but it never sees a preflight: the Functions
+    # host answers OPTIONS itself and forwards the request only when the origin is listed here.
+    # Left empty, every preflight returns 204 with no Access-Control-Allow-Origin — simple GETs
+    # succeed and every authenticated call fails, which is the shape this omission produced.
+    # Origins only; methods, headers and credentials stay Hono's.
+    cors {
+      allowed_origins = [local.app_url]
+    }
   }
 
   tags = var.tags
