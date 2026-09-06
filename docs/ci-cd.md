@@ -8,50 +8,40 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 ### Environment Variables
 
+Values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are
+not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
+
 #### Staging Environment
 ```yaml
 # Variables (vars)
 APP_WEBMANIFEST_NAME: App name shown in the web manifest
 APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
-APP_URL: URL of the staging application
 AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
+AZURE_FUNCTIONAPP_NAME: Name of the Azure Function App resource
 AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
 CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
-SUPABASE_URL: URL of the staging Supabase instance
-SUPABASE_PROJECT_ID: Project ID of the staging Supabase instance
+SUPABASE_ORGANIZATION_ID: Supabase organization the project belongs to
+TF_STATE_STORAGE_ACCOUNT: Storage account holding this environment's Terraform state
 
 # Secrets
 APP_CANARY_USER_EMAIL: Email of the canary user for E2E tests
 APP_CANARY_USER_PASSWORD: Password of the canary user for E2E tests
 APP_DEV_USER_EMAIL: Email of the seeded dev user (optional; staging only)
 APP_DEV_USER_PASSWORD: Password of the seeded dev user (optional; staging only)
-AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
-SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
-SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
-SUPABASE_SECRET_KEY: Secret key for Supabase (used in E2E tests)
+AZURE_CLIENT_ID: Application id of this environment's CI identity (OIDC)
+AZURE_TENANT_ID: Entra tenant id
+AZURE_SUBSCRIPTION_ID: Azure subscription id
+SUPABASE_ACCESS_TOKEN: Access token for the Supabase CLI and Terraform provider
+SUPABASE_DB_PASSWORD: Database password for the Terraform-managed project
 ```
 
 #### Production Environment
-```yaml
-# Variables (vars)
-APP_WEBMANIFEST_NAME: App name shown in the web manifest
-APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
-APP_URL: URL of the production application
-AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
-AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
-CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
-SUPABASE_URL: URL of the production Supabase instance
-SUPABASE_PROJECT_ID: Project ID of the production Supabase instance
 
-# Secrets
-APP_CANARY_USER_EMAIL: Email of the canary user for smoke tests
-APP_CANARY_USER_PASSWORD: Password of the canary user for smoke tests
-AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
-SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
-SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
-```
+The same set, with production's own values. `APP_DEV_USER_*` is staging-only.
+
+`pnpm infra:apply <environment>` writes everything except `AZURE_TENANT_ID`,
+`AZURE_SUBSCRIPTION_ID` and `SUPABASE_ACCESS_TOKEN`, which are set once by hand — its preflight
+fails if they are missing.
 
 ### Technical Environments
 

@@ -1,0 +1,19 @@
+# Terraform working files. .terraform.lock.hcl is deliberately committed: without it, two runs
+# of the same commit can resolve different provider minors.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Backend configuration is never committed (spec §6.3.1) — this repository is public.
+*.tfbackend
+backend.hcl
+
+# Variable files may carry the Supabase database password.
+*.tfvars
+!*.tfvars.example
+
+# Saved plan files
+tfplan
+tfdestroy
+*.tfplan
