@@ -270,10 +270,14 @@ EOF
     | jq -r '.values.root_module.resources[]? | select(.address == "supabase_project.main") | .values.id')" \
     || die "could not read the Supabase project from state."
   [[ -n "$SUPABASE_PROJECT_REF" ]] || die "the Supabase project is missing from the state for $dir."
-  wait_for_supabase_project "$SUPABASE_PROJECT_REF"
-  ok "Supabase project $SUPABASE_PROJECT_REF is healthy"
+  ok "Supabase project $SUPABASE_PROJECT_REF"
 
+  wait_for_supabase_project "$SUPABASE_PROJECT_REF"
+  ok "project is healthy"
+
+  info "applying the Azure resources and the Supabase settings…"
   tf_retry "$dir" apply -auto-approve -input=false -no-color >/dev/null || die "terraform apply failed for $dir."
+  ok "$FUNCTIONAPP, $STATICWEBAPP and their supporting resources in $RESOURCE_GROUP"
 
   API_URL="$(tf_retry "$dir" output -raw api_url)" || die "could not read the api_url output."
   APP_URL="$(tf_retry "$dir" output -raw app_url)" || die "could not read the app_url output."
