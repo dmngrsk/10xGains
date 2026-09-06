@@ -35,9 +35,17 @@ missing_tools() { local t out=(); for t in "$@"; do command -v "$t" >/dev/null 2
 #
 # Shared because both scripts run terraform against roots that declare these variables — destroy
 # needs them just to build a plan.
+# Call AFTER load_env_files: an empty TF_VAR_ is not the same as an absent one. It overrides the
+# variable's null default, and the Supabase provider then sees an empty token rather than falling
+# back to SUPABASE_ACCESS_TOKEN — so an unset secret is unexported, not exported blank.
 export_tf_secrets() {
-  export TF_VAR_supabase_database_password="${SUPABASE_DB_PASSWORD:-}"
-  export TF_VAR_supabase_access_token="${SUPABASE_ACCESS_TOKEN:-}"
+  local var name
+  for var in supabase_database_password:SUPABASE_DB_PASSWORD \
+             supabase_access_token:SUPABASE_ACCESS_TOKEN; do
+    name="${var#*:}"
+    if [[ -n "${!name:-}" ]]; then export "TF_VAR_${var%%:*}=${!name}"
+    else unset "TF_VAR_${var%%:*}"; fi
+  done
 }
 
 # `.env.example` ships non-empty placeholders like <personal access token from ...>, so a bare

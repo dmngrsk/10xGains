@@ -33,7 +33,6 @@ case "$ENVIRONMENT" in
   *) die "usage: $(basename "$0") <staging|production> [--keep-bootstrap] [--check]" ;;
 esac
 env_dir "$ENVIRONMENT"
-export_tf_secrets
 
 # ─── preflight ────────────────────────────────────────────────────────────────────────────────
 
@@ -52,6 +51,7 @@ check "$ENVIRONMENT/resources is configured" \
   bash -c '[[ -f "$0/backend.hcl" && -f "$0/terraform.tfvars" ]]' "$DIR"
 
 preflight_failed && exit 1
+export_tf_secrets
 
 # Terraform's destroy leaves the Log Analytics workspace SOFT-deleted, which reserves its name for
 # 14 days — the next apply then fails on a name collision with a misleading error (spec §10).

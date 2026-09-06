@@ -36,7 +36,6 @@ case "$ENVIRONMENT" in
 esac
 LOCATION="westeurope"
 env_dir "$ENVIRONMENT"
-export_tf_secrets
 STAGES=5
 
 # ─── preflight: check EVERYTHING before doing ANY work ────────────────────────────────────────
@@ -314,6 +313,7 @@ stage_github() {
 
 # ─── run ──────────────────────────────────────────────────────────────────────────────────────
 preflight
+export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
 stage_bootstrap_create
 stage_bootstrap_adopt
