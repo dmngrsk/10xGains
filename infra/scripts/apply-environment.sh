@@ -105,20 +105,29 @@ tf_unlock() {
     --auth-mode login -o none 2>/dev/null || true
 }
 
-# Stdout is passed through so callers can capture it; the waiting notice goes to stderr.
+# Only the two failures above resolve on their own, so only they are retried; everything else is
+# reported immediately with its error. Retrying a deterministic failure buries the cause and
+# misattributes it — a fresh Supabase project rejecting its settings was read here as an RBAC
+# timeout, twenty times over.
+TF_TRANSIENT='AuthorizationPermissionMismatch|AuthorizationFailure|does not have permission|Error acquiring the state lock|blob is already locked'
+
+# Stdout is passed through so callers can capture it; notices and errors go to stderr.
 tf_retry() {
   local dir="$1"; shift
-  local i
+  local i err; err="$(mktemp)"
   for i in $(seq 1 20); do
-    tf "$dir" "$@" 2>/dev/null && return 0
+    tf "$dir" "$@" 2>"$err" && { rm -f "$err"; return 0; }
+    if ! grep -qE "$TF_TRANSIENT" "$err"; then
+      cat "$err" >&2; rm -f "$err"; return 1
+    fi
     ((i == 1)) && info "waiting for the role assignment to propagate…" >&2
     tf_unlock "$dir"
     sleep 15
   done
+  cat "$err" >&2; rm -f "$err"
   # Returns rather than dying: several callers run this in a pipeline or command substitution,
   # where `exit` would only leave the subshell and the failure would go unnoticed.
-  printf 'terraform could not reach %s after 5 minutes. The grant is in place — re-run the script.\n' \
-    "$dir" >&2
+  printf 'terraform could not reach %s after 5 minutes of RBAC 403s — re-run the script.\n' "$dir" >&2
   return 1
 }
 
@@ -221,9 +230,22 @@ EOF
   info "scoped to $RESOURCE_GROUP and its tfstate container only; no access to the other environment"
 }
 
-# ─── stage 3: identity ────────────────────────────────────────────────────────────────────────
+# ─── stage 3: the environment ─────────────────────────────────────────────────────────────────
+# A newly created project stays COMING_UP for several minutes, and the Management API rejects both
+# `supabase_settings` and the `supabase_apikeys` read until it reports ACTIVE_HEALTHY. Neither is a
+# retryable Terraform error, so the apply is split around this wait rather than left to fail.
+wait_for_supabase_project() {
+  local ref="$1" i status
+  for i in $(seq 1 40); do
+    status="$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+      "https://api.supabase.com/v1/projects/$ref" 2>/dev/null | jq -r '.status // empty' || true)"
+    [[ "$status" == "ACTIVE_HEALTHY" ]] && return 0
+    ((i == 1)) && info "project is ${status:-provisioning}; settings and API keys are rejected until it is healthy…"
+    sleep 15
+  done
+  die "Supabase project $ref did not become healthy within 10 minutes."
+}
 
-# ─── stage 4: the environment ─────────────────────────────────────────────────────────────────
 stage_resources() {
   stage "apply the Azure resources and the Supabase project"
   local dir="$ENV_DIR/resources"
@@ -236,16 +258,25 @@ supabase_organization_id = "$SUPABASE_ORGANIZATION_ID"
 EOF
 
   tf_retry "$dir" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null || die "terraform init failed for $dir."
+
+  tf_retry "$dir" apply -auto-approve -input=false -no-color -target=supabase_project.main >/dev/null \
+    || die "terraform could not create the Supabase project for $dir."
+  # Read from state rather than `output`, which -target leaves uncomputed on a fresh environment.
+  SUPABASE_PROJECT_REF="$(tf_retry "$dir" show -json \
+    | jq -r '.values.root_module.resources[]? | select(.address == "supabase_project.main") | .values.id')" \
+    || die "could not read the Supabase project from state."
+  [[ -n "$SUPABASE_PROJECT_REF" ]] || die "the Supabase project is missing from the state for $dir."
+  wait_for_supabase_project "$SUPABASE_PROJECT_REF"
+  ok "Supabase project $SUPABASE_PROJECT_REF is healthy"
+
   tf_retry "$dir" apply -auto-approve -input=false -no-color >/dev/null || die "terraform apply failed for $dir."
 
   API_URL="$(tf_retry "$dir" output -raw api_url)" || die "could not read the api_url output."
   APP_URL="$(tf_retry "$dir" output -raw app_url)" || die "could not read the app_url output."
   SUPABASE_URL="$(tf_retry "$dir" output -raw supabase_url)" || die "could not read the supabase_url output."
-  SUPABASE_PROJECT_REF="$(tf_retry "$dir" output -raw supabase_project_ref)" || die "could not read the supabase_project_ref output."
-  ok "Supabase project $SUPABASE_PROJECT_REF"
 }
 
-# ─── stage 5: database ────────────────────────────────────────────────────────────────────────
+# ─── stage 4: database ────────────────────────────────────────────────────────────────────────
 stage_database() {
   stage "push the migrations and run the database tests"
   ( cd "$REPO_ROOT" \
@@ -255,7 +286,7 @@ stage_database() {
   ok "migrations applied, database tests passing"
 }
 
-# ─── stage 6: GitHub environment ──────────────────────────────────────────────────────────────
+# ─── stage 5: GitHub environment ──────────────────────────────────────────────────────────────
 # The values below are all derived from Terraform outputs. Setting them by hand is where the
 # config-sync gap of spec §1.1 actually bites; writing them here closes it for the values this
 # script owns.
