@@ -19,6 +19,12 @@ die()  { printf '\n%serror:%s %s\n\n' "$RED" "$OFF" "$*" >&2; exit 1; }
 STAGE=0
 stage() { STAGE=$((STAGE + 1)); step "Stage $STAGE/$STAGES — $1"; }
 
+# Output from terraform, az and supabase is streamed one level deeper than the script's own
+# messages, so a long run reads as detail beneath its stage rather than competing with it.
+# `run` reports the command's status, not sed's; `indent` is the same for an existing pipeline.
+indent() { sed 's/^/      /'; }
+run()    { "$@" 2>&1 | indent; return "${PIPESTATUS[0]}"; }
+
 # Preflight reports each check as it runs and collects every failure, so one run shows everything
 # that is missing rather than stopping at the first.
 errors=()

@@ -75,10 +75,17 @@ purge_log_analytics() {
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
 
 step "Plan — what will be destroyed in '$ENVIRONMENT'"
+info "initialising the resources root…"
 terraform -chdir="$DIR" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null
 terraform -chdir="$DIR" plan -destroy -input=false -no-color -out=tfdestroy >/dev/null
 printf '\n'
-terraform -chdir="$DIR" show -no-color tfdestroy | grep -E '^  # |^Plan:' | sed 's/^/    /' || true
+# Terraform indents its own resource lines; strip that so both halves land at one level.
+PLAN="$(terraform -chdir="$DIR" show -no-color tfdestroy | grep -E '^  # |^Plan:' | sed 's/^ *//' || true)"
+if [[ -n "$PLAN" ]]; then
+  printf '%s\n' "$PLAN" | indent
+else
+  info "nothing to destroy — the resources root is already empty"
+fi
 
 # ─── confirm ──────────────────────────────────────────────────────────────────────────────────
 printf '\n%s%sThis deletes the Supabase project and all of its data.%s\n' "$BOLD" "$YEL" "$OFF"
@@ -97,8 +104,13 @@ read -r reply
 # ─── destroy ──────────────────────────────────────────────────────────────────────────────────
 STAGES=$(( DESTROY_ALL ? 4 : 2 ))
 stage "destroy the Azure resources and the Supabase project"
-terraform -chdir="$DIR" apply -input=false -no-color tfdestroy
+run terraform -chdir="$DIR" apply -input=false -no-color tfdestroy || die "terraform destroy failed for $DIR."
 rm -f "$DIR/tfdestroy"
+if [[ -n "$PLAN" ]]; then
+  ok "$(grep -c '^# ' <<<"$PLAN") resources destroyed"
+else
+  ok "nothing to destroy"
+fi
 
 stage "purge the Log Analytics workspace"
 purge_log_analytics
@@ -110,15 +122,17 @@ if ((DESTROY_ALL)); then
   stage "destroy the CI identity"
   BOOT="$ENV_DIR/bootstrap"
   if [[ -f "$BOOT/backend.hcl" ]]; then
+    info "initialising the bootstrap root…"
     terraform -chdir="$BOOT" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null
-    terraform -chdir="$BOOT" destroy -auto-approve -input=false -no-color \
-      -target=module.identity >/dev/null
+    run terraform -chdir="$BOOT" destroy -auto-approve -input=false -no-color -target=module.identity \
+      || die "could not destroy the CI identity."
     ok "application registration, federated credential and role assignments deleted"
   else
     info "no backend.hcl — nothing to destroy"
   fi
 
   stage "delete the resource group"
+  info "deleting rg-10xgains-$SUFFIX — this takes a few minutes…"
   az group delete -n "rg-10xgains-$SUFFIX" --yes -o none
   ok "rg-10xgains-$SUFFIX and its Terraform state deleted"
 

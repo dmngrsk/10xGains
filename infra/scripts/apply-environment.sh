@@ -124,7 +124,7 @@ tf_retry() {
     if ! grep -qE "$TF_TRANSIENT" "$err"; then
       cat "$err" >&2; rm -f "$err"; return 1
     fi
-    ((i == 1)) && info "waiting for the role assignment to propagate…" >&2
+    info "role assignment has not propagated yet — retry $i/20 in 15s…" >&2
     tf_unlock "$dir"
     sleep 15
   done
@@ -135,15 +135,18 @@ tf_retry() {
   return 1
 }
 
+IMPORTED=0; TRACKED=0
 tf_import_if_absent() {
   local dir="$1" address="$2" id="$3"
   local existing
+  TRACKED=$((TRACKED + 1))
   existing="$(tf_retry "$dir" state list)" || die "could not read the Terraform state for $dir."
   if grep -qxF "$address" <<<"$existing"; then
     info "already in state: $address"
   else
     info "importing $address"
     tf_retry "$dir" import -input=false -no-color "$address" "$id" >/dev/null || die "terraform import failed for $dir."
+    IMPORTED=$((IMPORTED + 1))
   fi
 }
 
@@ -212,7 +215,10 @@ subscription_id       = "$SUBSCRIPTION_ID"
 operator_principal_id = "$OPERATOR_OID"
 EOF
 
+  info "initialising the bootstrap root against the admin container…"
   tf_retry "$dir" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null || die "terraform init failed for $dir."
+  ok "backend initialised — state at admin/bootstrap.tfstate"
+
   tf_import_if_absent "$dir" "module.bootstrap.azurerm_resource_group.env"       "$rg_id"
   tf_import_if_absent "$dir" "module.bootstrap.azurerm_storage_account.state"    "$sa_id"
   tf_import_if_absent "$dir" "module.bootstrap.azurerm_storage_container.tfstate" "$sa_id/blobServices/default/containers/tfstate"
@@ -228,7 +234,10 @@ EOF
     [[ -n "$ra" ]] && tf_import_if_absent "$dir" "module.bootstrap.azurerm_role_assignment.operator_$c" "$ra"
   done
 
-  tf_retry "$dir" apply -auto-approve -input=false -no-color >/dev/null || die "terraform apply failed for $dir."
+  ok "$IMPORTED imported, $((TRACKED - IMPORTED)) already tracked ($TRACKED resources adopted)"
+
+  info "applying the bootstrap root — creates the CI identity and its federated credential…"
+  tf_retry "$dir" apply -auto-approve -input=false -no-color | indent || die "terraform apply failed for $dir."
   AZURE_CLIENT_ID="$(tf_retry "$dir" output -raw client_id)" || die "could not read the client_id output."
   ok "CI identity $APP_NAME ($AZURE_CLIENT_ID)"
   info "scoped to $RESOURCE_GROUP and its tfstate container only; no access to the other environment"
@@ -261,9 +270,12 @@ subscription_id          = "$SUBSCRIPTION_ID"
 supabase_organization_id = "$SUPABASE_ORGANIZATION_ID"
 EOF
 
+  info "initialising the resources root against the tfstate container…"
   tf_retry "$dir" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null || die "terraform init failed for $dir."
+  ok "backend initialised — state at tfstate/$ENVIRONMENT.tfstate"
 
-  tf_retry "$dir" apply -auto-approve -input=false -no-color -target=supabase_project.main >/dev/null \
+  info "creating the Supabase project ahead of everything that depends on it…"
+  tf_retry "$dir" apply -auto-approve -input=false -no-color -target=supabase_project.main | indent \
     || die "terraform could not create the Supabase project for $dir."
   # Read from state rather than `output`, which -target leaves uncomputed on a fresh environment.
   SUPABASE_PROJECT_REF="$(tf_retry "$dir" show -json \
@@ -276,7 +288,7 @@ EOF
   ok "project is healthy"
 
   info "applying the Azure resources and the Supabase settings…"
-  tf_retry "$dir" apply -auto-approve -input=false -no-color >/dev/null || die "terraform apply failed for $dir."
+  tf_retry "$dir" apply -auto-approve -input=false -no-color | indent || die "terraform apply failed for $dir."
   ok "$FUNCTIONAPP, $STATICWEBAPP and their supporting resources in $RESOURCE_GROUP"
 
   API_URL="$(tf_retry "$dir" output -raw api_url)" || die "could not read the api_url output."
@@ -287,11 +299,18 @@ EOF
 # ─── stage 4: database ────────────────────────────────────────────────────────────────────────
 stage_database() {
   stage "push the migrations and run the database tests"
-  ( cd "$REPO_ROOT" \
-    && pnpm supabase link --project-ref "$SUPABASE_PROJECT_REF" >/dev/null \
-    && pnpm supabase db push --yes \
-    && pnpm supabase db test --linked )
-  ok "migrations applied, database tests passing"
+  info "linking the Supabase CLI to $SUPABASE_PROJECT_REF…"
+  run bash -c 'cd "$1" && pnpm supabase link --project-ref "$2"' _ "$REPO_ROOT" "$SUPABASE_PROJECT_REF" \
+    || die "could not link the Supabase CLI to $SUPABASE_PROJECT_REF."
+  ok "linked"
+
+  info "pushing $(ls "$REPO_ROOT/supabase/migrations"/*.sql | wc -l) migrations…"
+  run bash -c 'cd "$1" && pnpm supabase db push --yes' _ "$REPO_ROOT" || die "supabase db push failed."
+  ok "migrations applied"
+
+  info "running the database tests…"
+  run bash -c 'cd "$1" && pnpm supabase db test --linked' _ "$REPO_ROOT" || die "database tests failed."
+  ok "database tests passing"
 }
 
 # ─── stage 5: GitHub environment ──────────────────────────────────────────────────────────────
