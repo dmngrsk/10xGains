@@ -123,12 +123,26 @@ Each container runs a full Supabase stack, so two containers cannot both publish
 
 6.  **Write the local configuration:**
 
-    Create the three files listed under [Local configuration](#local-configuration) from their committed templates, filling in the API URL, publishable key and secret key that step 4 printed:
+    Create the three files listed under [Local configuration](#local-configuration), filling in the API URL, publishable key and secret key that step 4 printed. Two have committed templates:
     ```bash
     cp .env.example .env
     cp apps/api/local.settings.json.example apps/api/local.settings.json
-    cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
     ```
+
+    The third, `apps/web/src/env.js`, has no template of its own — it holds the runtime
+    configuration the app reads in the browser, and needs the values step 4 printed:
+    ```js
+    window.__TXG_ENV__ = {
+      name: 'development',
+      apiUrl: 'http://localhost:7071',
+      supabaseUrl: 'http://localhost:54321',
+      supabasePublishableKey: '<the publishable key step 4 printed>',
+    };
+    ```
+
+    The dev container writes this for you, so it is only needed for a manual setup. Deployed
+    builds use the same file: CI copies `env.template.js` over it, and CD substitutes the real
+    addresses in — so local development exercises exactly the same code path as production.
 
 7.  **Seed a local dev account (optional):**
 
@@ -158,7 +172,7 @@ Three files hold local settings, and all three are gitignored:
 
 - `.env` — Supabase keys and the canary user credentials, read by Cypress.
 - `apps/api/local.settings.json` — settings for the local Azure Functions host.
-- `apps/web/src/environments/environment.development.ts` — the API and Supabase URLs the Angular dev build is compiled against.
+- `apps/web/src/env.js` — the API and Supabase URLs the web app reads at runtime, in the browser. Gitignored; deployed builds get the same file with values substituted by CD.
 
 In the dev container, `.devcontainer/post-start.sh` regenerates all three on every start from the keys the running Supabase stack reports, so they never drift. On a host setup you maintain them by hand, and must refresh the keys yourself after recreating the stack (`supabase stop --no-backup` followed by `supabase start`), because a fresh stack mints fresh ones.
 

@@ -1,7 +1,21 @@
 {
+  "routes": [
+    {
+      "route": "/env.js",
+      "headers": {
+        "Cache-Control": "no-store, must-revalidate"
+      }
+    }
+  ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/*.css", "/*.js", "/*.ico", "/*.png"]
+    "exclude": [
+      "/assets/*",
+      "/*.css",
+      "/*.js",
+      "/*.ico",
+      "/*.png"
+    ]
   },
   "mimeTypes": {
     ".webmanifest": "application/manifest+json"
