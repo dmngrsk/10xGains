@@ -108,7 +108,12 @@ tf_unlock() {
 # reported immediately with its error. Retrying a deterministic failure buries the cause and
 # misattributes it — a fresh Supabase project rejecting its settings was read here as an RBAC
 # timeout, twenty times over.
-TF_TRANSIENT='AuthorizationPermissionMismatch|AuthorizationFailure|does not have permission|Error acquiring the state lock|blob is already locked'
+#
+# Match the message, not the error code: the azurerm backend surfaces the data-plane 403 as
+#   Error writing state file: ... unexpected status 403 (403 This request is not authorized to
+#   perform this operation using this permission.) with EOF
+# with no AuthorizationPermissionMismatch anywhere in it. Verify any addition against real output.
+TF_TRANSIENT='unexpected status 403|AuthorizationPermissionMismatch|AuthorizationFailure|not authorized to perform this operation|does not have authorization to perform action|Error acquiring the state lock|blob is already locked'
 
 # Stdout is passed through so callers can capture it; notices and errors go to stderr.
 tf_retry() {
