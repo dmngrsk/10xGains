@@ -48,7 +48,6 @@ Additionally, each feature folder includes a `shared/` directory for storing mut
 - **Immutability**: Apply immutability principles and pure functions wherever possible, especially within services and state management.
 - **Composition**: Favor component composition over inheritance.
 - **Lazy loading**: Enable lazy loading for features to optimize initial load times.
-- **Accessibility**: Use semantic HTML and relevant ARIA attributes.
 - **Security**: Prevent XSS by relying on Angular's built-in sanitization; avoid `innerHTML`.
 - **Naming**: kebab-case filenames with Angular suffixes (`.component.ts`, `.service.ts`, `.directive.ts`, `.pipe.ts`, `.spec.ts`); descriptive identifiers like `isUserLoggedIn`, `fetchData()`.
 - **Style**: Single quotes, 2-space indentation, prefer `const`, template literals for interpolation; imports at the top ordered Angular core → RxJS → Angular modules → core app → shared → environment → relative.
@@ -61,7 +60,7 @@ Additionally, each feature folder includes a `shared/` directory for storing mut
 - Use theme mixins to customize component styles instead of overriding CSS.
 - Leverage the CDK (Component Development Kit) for custom component behaviors.
 - Use Material's form field components with reactive forms for consistent validation UX.
-- Implement accessibility attributes and ARIA labels for interactive components; use Material's built-in a11y features like focus indicators and keyboard navigation.
+- Use Material's built-in a11y features like focus indicators and keyboard navigation.
 - Use the Material 3 design system updates where available; leverage the Angular Material theming system and typography hierarchy.
 
 ## Charts

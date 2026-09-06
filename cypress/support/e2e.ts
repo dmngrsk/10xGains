@@ -7,6 +7,27 @@ beforeEach(() => {
   cy.viewport('samsung-s10');
 });
 
+// Stand up the two fixed-credential accounts once per run, before any spec touches them: the
+// canary user the specs sign in as, and the dev user, which nothing here uses - it is scaffolded
+// so the environment the suite just exercised is also left with a known login to open by hand.
+// One task, called once per role with that role's credentials; both memoise, so only the first
+// spec file of a run pays for them.
+before(() => {
+  cy.env<Record<string, string | undefined>>(['CANARY_USER_EMAIL', 'CANARY_USER_PASSWORD', 'DEV_USER_EMAIL', 'DEV_USER_PASSWORD'])
+    .then((env) => {
+      ensureUserScaffolded('canary', env['CANARY_USER_EMAIL'], env['CANARY_USER_PASSWORD']);
+      ensureUserScaffolded('dev', env['DEV_USER_EMAIL'], env['DEV_USER_PASSWORD']);
+    });
+
+  function ensureUserScaffolded(role: 'canary' | 'dev', email?: string, password?: string): void {
+    cy.task<{ userId: string | null; message: string }>(
+      'users:ensureUserScaffolded',
+      { email: email?.trim(), password: password?.trim(), role },
+      { log: false }
+    ).then(({ message }) => cy.log(message));
+  }
+});
+
 // A Material snackbar sits in an overlay pane with `pointer-events: auto`, spanning the bottom
 // of a handset viewport - straight over the bottom navigation, the actions bars and the session
 // FAB. Cypress reads that as the control being covered and retries until the snackbar times

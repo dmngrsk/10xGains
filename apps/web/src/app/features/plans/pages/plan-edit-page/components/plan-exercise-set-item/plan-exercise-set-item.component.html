@@ -1,6 +1,6 @@
 <td class="set-reps" data-cy="plan-exercise-set-reps">{{ set.expectedReps }}</td>
 
-<td class="set-times" aria-hidden="true">&times;</td>
+<td class="set-times"></td>
 
 <td class="set-weight">
   <span class="set-weight-value" data-cy="plan-exercise-set-weight">
@@ -16,7 +16,6 @@
           type="button"
           class="stepper-button"
           [disabled]="!canDecrease"
-          [attr.aria-label]="'Decrease weight of set ' + set.setIndex + ' by ' + step + ' kilograms'"
           (click)="onWeightStepped(-1)"
           data-cy="plan-exercise-set-weight-decrease">
           <mat-icon>remove</mat-icon>
@@ -24,7 +23,6 @@
         <button
           type="button"
           class="stepper-button"
-          [attr.aria-label]="'Increase weight of set ' + set.setIndex + ' by ' + step + ' kilograms'"
           (click)="onWeightStepped(1)"
           data-cy="plan-exercise-set-weight-increase">
           <mat-icon>add</mat-icon>
@@ -34,7 +32,6 @@
       <button
         mat-icon-button
         class="set-edit-button"
-        [attr.aria-label]="'Edit set ' + set.setIndex"
         (click)="onSetEdited()"
         data-cy="plan-exercise-set-edit-button">
         <mat-icon>edit</mat-icon>

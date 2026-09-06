@@ -35,6 +35,7 @@ export function mapToSessionCardViewModel(
     id: session.id,
     title: planDay?.name || 'N/A',
     sessionDate: toUtcDate(session.session_date),
+    finishedAt: toUtcDate(session.finished_at),
     status: session.status as SessionStatus,
     notes: session.notes ?? null,
     exercises: sessionExercises,

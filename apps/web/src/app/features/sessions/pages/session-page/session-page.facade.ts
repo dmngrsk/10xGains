@@ -9,6 +9,7 @@ import { KeyedDebouncerService, DebouncerSuccessEvent, DebouncerFailureEvent } f
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
+import { toUtcDate } from '@shared/utils/dates/utc-date';
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { buildSessionNotificationContent } from './utils/session-notification.utils';
 import { SessionService } from '../../api/session.service';
@@ -43,6 +44,7 @@ export class SessionPageFacade {
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
   readonly timerStartTimestamp = signal<number | null>(null);
+  readonly completionError = signal<string | null>(null);
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
@@ -215,8 +217,9 @@ export class SessionPageFacade {
     return this.handleSessionOperation(operation$, `Failed to delete set ${setId}`).pipe(map(s => !!s));
   }
 
-  completeSession(): Observable<boolean> {
+  completeSession(endAt?: string): Observable<boolean> {
     const originalSessionState = { ...this.viewModel() };
+    this.completionError.set(null);
     this.viewModel.update(s => ({ ...s, isLoading: true, error: null, metadata: { ...s.metadata!, status: 'COMPLETED' as SessionStatus } }));
 
     return this.debouncerService.flushCurrentActiveDebounce().pipe(
@@ -225,7 +228,13 @@ export class SessionPageFacade {
         const currentSessionData = this.viewModel();
         const sessionId = currentSessionData.id!;
 
-        return this.sessionService.completeSession(sessionId).pipe(
+        return this.sessionService.completeSession(sessionId, endAt).pipe(
+          tap(response => {
+            const completedDate = toUtcDate(response?.data?.session_date);
+            if (completedDate) {
+              this.viewModel.update(s => ({ ...s, metadata: { ...s.metadata, date: completedDate } }));
+            }
+          }),
           switchMap(() => {
             const planId = currentSessionData.metadata?.planId;
             if (planId) {
@@ -241,10 +250,11 @@ export class SessionPageFacade {
             return of(true);
           }),
           catchError(err => {
-            const errorMessage = `Failed to mark session ${sessionId} as completed.`;
-            console.error(errorMessage, err);
+            const errorMessage = (err as Error)?.message || `Failed to mark session ${sessionId} as completed.`;
+            console.error(`Failed to mark session ${sessionId} as completed.`, err);
             this.viewModel.set(originalSessionState);
-            this.viewModel.update(s => ({ ...s, error: errorMessage, isLoading: false }));
+            this.viewModel.update(s => ({ ...s, isLoading: false }));
+            this.completionError.set(errorMessage);
             return of(false);
           })
         );
@@ -254,9 +264,9 @@ export class SessionPageFacade {
         this.viewModel.update(s => ({
           ...s,
           isLoading: false,
-          error: 'Failed to save pending changes before completing session.',
           metadata: { ...s.metadata!, status: 'IN_PROGRESS' as SessionStatus }
         }));
+        this.completionError.set('Failed to save pending changes before completing session.');
         return of(false);
       }),
       finalize(() => {
@@ -411,5 +421,6 @@ export class SessionPageFacade {
   private clearUserScopedState(): void {
     this.viewModel.set(initialState);
     this.timerStartTimestamp.set(null);
+    this.completionError.set(null);
   }
 }

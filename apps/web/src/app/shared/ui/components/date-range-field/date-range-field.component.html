@@ -5,7 +5,7 @@
     <input matEndDate formControlName="end" placeholder="End date" data-cy="date-range-end-input">
   </mat-date-range-input>
   @if (showPresetLabel()) {
-    <span class="txg-preset-label" aria-hidden="true" data-cy="date-range-preset-display">{{ presetLabels[activePreset()!] }}</span>
+    <span class="txg-preset-label" data-cy="date-range-preset-display">{{ presetLabels[activePreset()!] }}</span>
   }
   <button
     mat-icon-button

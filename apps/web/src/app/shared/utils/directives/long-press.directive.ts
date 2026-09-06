@@ -2,6 +2,7 @@ import { Directive, EventEmitter, HostListener, Input, NgZone, OnDestroy, Output
 
 const DEFAULT_LONG_PRESS_DURATION = 500; // ms
 const DEFAULT_LONG_PRESS_MOVEMENT_THRESHOLD = 10; // px
+const COMPATIBILITY_CLICK_WINDOW = 400; // ms
 
 /**
  * `LongPressDirective` enhances a host element with long press and tap detection.
@@ -67,6 +68,7 @@ export class LongPressDirective implements OnDestroy {
   @Output() txgClick = new EventEmitter<MouseEvent>();
 
   private pressTimeout: ReturnType<typeof setTimeout> | null = null;
+  private disarmSwallow: (() => void) | null = null;
   private initialX?: number;
   private initialY?: number;
   private isPressing: boolean = false;
@@ -112,13 +114,20 @@ export class LongPressDirective implements OnDestroy {
     if (event.button !== 0) return;
 
     const wasPressing = this.isPressing;
+    const wasLongPress = this.isLongPressTriggered;
     this.clearPressTimeout();
 
-    if (wasPressing && !this.isLongPressTriggered && !this.txgLongPressDisabled) {
+    if (wasLongPress) {
+      // Whatever the press opened has been on screen since the duration elapsed, so it is what
+      // the finger is lifting off of. Arm here rather than when the long press fired: the click
+      // follows the release, which may be a good while later.
+      this.swallowCompatibilityClick();
+    } else if (wasPressing && !this.txgLongPressDisabled) {
       if (this.initialX !== undefined && this.initialY !== undefined) {
         const deltaX = Math.abs(event.clientX - this.initialX);
         const deltaY = Math.abs(event.clientY - this.initialY);
         if (deltaX <= this.txgLongPressMovementThreshold && deltaY <= this.txgLongPressMovementThreshold) {
+          this.swallowCompatibilityClick();
           this.txgClick.emit(event);
         }
       }
@@ -149,6 +158,38 @@ export class LongPressDirective implements OnDestroy {
 
   ngOnDestroy(): void {
     this.clearPressTimeout();
+    this.disarmSwallow?.();
+  }
+
+  /**
+   * A touch gesture is followed by a synthesized mouse sequence, and the browser hit-tests that
+   * trailing `click` against the DOM as it stands *then* - not as it stood when the finger went
+   * down. Whatever this press opened is by that point under the finger, so the click lands on a
+   * dialog's backdrop and dismisses it, or on a freshly drawn list item and activates it. The
+   * gesture has already been reported through `txgClick`/`txgLongPress`, so that click is
+   * redundant: swallow the next one, and disarm shortly after in case none arrives (a mouse
+   * gesture on an element the pointer has since left, or a cancelled touch, produces none).
+   */
+  private swallowCompatibilityClick(): void {
+    this.disarmSwallow?.();
+
+    this.ngZone.runOutsideAngular(() => {
+      const swallow = (event: MouseEvent) => {
+        event.stopPropagation();
+        event.preventDefault();
+        disarm();
+      };
+
+      const timeout = setTimeout(() => disarm(), COMPATIBILITY_CLICK_WINDOW);
+      const disarm = () => {
+        clearTimeout(timeout);
+        document.removeEventListener('click', swallow, true);
+        this.disarmSwallow = null;
+      };
+
+      document.addEventListener('click', swallow, true);
+      this.disarmSwallow = disarm;
+    });
   }
 
   private clearPressTimeout(): void {

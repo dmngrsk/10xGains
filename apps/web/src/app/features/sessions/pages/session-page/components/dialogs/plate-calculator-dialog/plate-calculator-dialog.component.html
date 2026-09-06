@@ -35,7 +35,6 @@
       mat-icon-button
       class="step-button"
       type="button"
-      aria-label="Decrease weight"
       [disabled]="!canDecrement()"
       (pointerdown)="onStepPressed(-1)"
       (pointerup)="onStepReleased()"
@@ -51,7 +50,6 @@
         class="w-[6ch] p-0 border-0 bg-transparent outline-none text-center text-[1.75rem] leading-none tabular-nums text-primary"
         type="text"
         inputmode="decimal"
-        aria-label="Weight in kilograms"
         [value]="weightKg()"
         (focus)="onWeightFocused(weightInput)"
         (blur)="onWeightCommitted(weightInput)"
@@ -67,7 +65,6 @@
       mat-icon-button
       class="step-button"
       type="button"
-      aria-label="Increase weight"
       [disabled]="!canIncrement()"
       (pointerdown)="onStepPressed(1)"
       (pointerup)="onStepReleased()"
@@ -97,11 +94,11 @@
 
   <p class="mt-2 text-center text-sm text-on-surface-variant" data-cy="plate-calculator-step-hint">{{ stepHint() }}</p>
 
-  <p class="mt-5 mb-2 text-sm text-on-surface-variant" id="plate-calculator-rack-label">Plates in the rack</p>
+  <p class="mt-5 mb-2 text-sm text-on-surface-variant">Plates in the rack</p>
 
   <p class="mb-2 text-sm text-error" role="status" [class.hidden]="!unevenMessage()">
     @if (unevenMessage(); as message) {
-      <span id="plate-calculator-uneven" data-cy="plate-calculator-uneven-warning">{{ message }}</span>
+      <span data-cy="plate-calculator-uneven-warning">{{ message }}</span>
     }
   </p>
 
@@ -109,8 +106,6 @@
     class="txg-chips"
     multiple
     required
-    aria-labelledby="plate-calculator-rack-label"
-    [attr.aria-describedby]="unevenMessage() ? 'plate-calculator-uneven' : null"
     data-cy="plate-calculator-chips">
     @for (denomination of visibleDenominations(); track denomination) {
       <mat-chip-option
@@ -126,7 +121,6 @@
     mat-button
     type="button"
     class="mt-2"
-    [attr.aria-expanded]="isLadderExpanded()"
     (click)="onLadderToggled()"
     data-cy="plate-calculator-ladder-toggle">
     <mat-icon>{{ isLadderExpanded() ? 'expand_less' : 'expand_more' }}</mat-icon>

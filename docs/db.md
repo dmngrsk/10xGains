@@ -66,7 +66,8 @@
 - user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
 - plan_id: UUID NOT NULL REFERENCES plans(id) ON DELETE CASCADE
 - plan_day_id: UUID REFERENCES plan_days(id) ON DELETE NO ACTION  -- See §5
-- session_date: TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+- session_date: TIMESTAMP WITHOUT TIME ZONE NULL  -- When training started; stamped by the first set to be recorded
+- finished_at: TIMESTAMP WITHOUT TIME ZONE NULL CHECK (finished_at IS NULL OR session_date IS NULL OR finished_at >= session_date)  -- When training ended; set on completion, null until then and on cancelled sessions
 - status: VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'))
 - notes: TEXT CHECK (char_length(notes) <= 5000)
 

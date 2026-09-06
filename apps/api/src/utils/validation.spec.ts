@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
-import { optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, withCoherentDateRange, withCompletedAtConsistency } from './validation';
+import { optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateOptionalCommandBody, withCoherentDateRange, withCompletedAtConsistency } from './validation';
 
 const UUID_A = '1f6a2c3e-9b4d-4e8f-a1b2-c3d4e5f6a7b8';
 const UUID_B = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -317,5 +317,61 @@ describe('withCompletedAtConsistency', () => {
 
   it('should accept an empty command, leaving the fields to the other rules', () => {
     expect(schema.safeParse({}).success).toBe(true);
+  });
+});
+
+describe('validateOptionalCommandBody', () => {
+  const schema = z.object({ end_at: z.string().datetime({ offset: true }).optional() });
+
+  const contextWithBody = (body: string) => {
+    const responses: { data: unknown; status: number }[] = [];
+    const c = {
+      req: { text: () => Promise.resolve(body) },
+      json: (data: unknown, status: number) => {
+        responses.push({ data, status });
+        return { status } as unknown as Response;
+      },
+    };
+    return { c: c as never, responses };
+  };
+
+  it.each([['an empty body', ''], ['a whitespace body', '  \n ']])(
+    'should read %s as an empty command',
+    async (_label, body) => {
+      const { c } = contextWithBody(body);
+
+      const { command, error } = await validateOptionalCommandBody(c, schema);
+
+      expect(error).toBeUndefined();
+      expect(command).toEqual({});
+    }
+  );
+
+  it('should parse a body that is present', async () => {
+    const { c } = contextWithBody('{"end_at":"2026-06-01T19:30:00.000Z"}');
+
+    const { command, error } = await validateOptionalCommandBody(c, schema);
+
+    expect(error).toBeUndefined();
+    expect(command).toEqual({ end_at: '2026-06-01T19:30:00.000Z' });
+  });
+
+  it('should reject a malformed body rather than treating it as absent', async () => {
+    const { c, responses } = contextWithBody('{"end_at":');
+
+    const { command, error } = await validateOptionalCommandBody(c, schema);
+
+    expect(command).toBeUndefined();
+    expect(error).toBeDefined();
+    expect(responses[0]!.status).toBe(400);
+  });
+
+  it('should reject a value the schema refuses', async () => {
+    const { c, responses } = contextWithBody('{"end_at":"yesterday evening"}');
+
+    const { error } = await validateOptionalCommandBody(c, schema);
+
+    expect(error).toBeDefined();
+    expect(responses[0]!.status).toBe(400);
   });
 });

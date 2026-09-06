@@ -23,6 +23,8 @@ SUPABASE_PROJECT_ID: Project ID of the staging Supabase instance
 # Secrets
 APP_CANARY_USER_EMAIL: Email of the canary user for E2E tests
 APP_CANARY_USER_PASSWORD: Password of the canary user for E2E tests
+APP_DEV_USER_EMAIL: Email of the seeded dev user (optional; staging only)
+APP_DEV_USER_PASSWORD: Password of the seeded dev user (optional; staging only)
 AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
 SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
 SUPABASE_DB_PASSWORD: Database password for Supabase
@@ -195,10 +197,10 @@ Process:
 
 ## Canary User Setup
 
-The pipeline uses a dedicated canary user (`APP_CANARY_USER_EMAIL` / `APP_CANARY_USER_PASSWORD`) for E2E tests. Before every canary login, the `users:ensureCanaryScaffolded` task (`cypress/support/tasks.ts`) signs in with the publishable key and checks its test data (`scaffoldTestUserData()` in `cypress/support/test-data/scaffold.ts`: two workouts, exercise definitions, progression rules, 14 historical sessions, a pending session).
+The pipeline uses a dedicated canary user (`APP_CANARY_USER_EMAIL` / `APP_CANARY_USER_PASSWORD`) for E2E tests. Once per run, before any spec touches it, the `users:ensureUserScaffolded` task (`cypress/support/tasks/users.ts`) signs in with the publishable key and checks its test data (`scaffoldTestUserData()` in `cypress/support/test-data/scaffold.ts`: two workouts, exercise definitions, progression rules, 14 historical sessions, a pending session).
 
 - **Local development & staging**: fully automatic. If the account or its data is missing, the task uses the secret-key client to create the user and/or scaffold the data. Requires a real, non-placeholder `APP_CANARY_USER_PASSWORD` - it refuses to auto-create an account with an empty or default password.
-- **Production**: create the account once, manually (e.g. via the Supabase Dashboard). Production only ever runs smoke tests, which intentionally never receive `SUPABASE_SECRET_KEY` (Cypress must not hold service-role access there), so it can't self-heal - `ensureCanaryScaffolded` fails with a readable error if the account or its data is missing.
+- **Production**: create the account once, manually (e.g. via the Supabase Dashboard). Production only ever runs smoke tests, which intentionally never receive `SUPABASE_SECRET_KEY` (Cypress must not hold service-role access there), so it can't self-heal - the task fails with a readable error if the account or its data is missing.
 
 ### Verifying the Setup
 

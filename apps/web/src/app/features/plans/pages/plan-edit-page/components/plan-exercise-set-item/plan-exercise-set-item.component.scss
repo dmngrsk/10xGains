@@ -21,6 +21,10 @@ td {
   padding-inline: 0.25rem;
   color: var(--mat-sys-outline);
   text-align: center;
+
+  &::before {
+    content: '\00d7';
+  }
 }
 
 .set-weight-value {

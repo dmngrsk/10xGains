@@ -288,6 +288,7 @@ function generateSessionHistory(
     const isWorkoutA = i % 2 === 0;
     const currentDayId = isWorkoutA ? dayAId : dayBId;
     const historicalSessionId = crypto.randomUUID();
+    const finishedAt = new Date(sessionDate.getTime() + (isWorkoutA ? 25 : 15) * 60 * 1000);
 
     sessions.push({
       id: historicalSessionId,
@@ -295,6 +296,7 @@ function generateSessionHistory(
       plan_id: planId,
       plan_day_id: currentDayId,
       session_date: sessionDate.toISOString(),
+      finished_at: finishedAt.toISOString(),
       status: 'COMPLETED'
     });
 

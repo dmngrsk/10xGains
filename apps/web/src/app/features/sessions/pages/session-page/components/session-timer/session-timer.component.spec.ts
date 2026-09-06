@@ -414,4 +414,30 @@ describe('SessionTimerComponent', () => {
       expect(component.testPulseTimeoutId).toBeNull();
     });
   });
+
+  describe('finish gestures', () => {
+    it('should finish straight away on a tap', () => {
+      const completed = vi.fn();
+      const optionsRequested = vi.fn();
+      component.sessionCompleted.subscribe(completed);
+      component.finishOptionsRequested.subscribe(optionsRequested);
+
+      component.onCompleteSession();
+
+      expect(completed).toHaveBeenCalledTimes(1);
+      expect(optionsRequested).not.toHaveBeenCalled();
+    });
+
+    it('should ask for the finish options on a hold, without finishing', () => {
+      const completed = vi.fn();
+      const optionsRequested = vi.fn();
+      component.sessionCompleted.subscribe(completed);
+      component.finishOptionsRequested.subscribe(optionsRequested);
+
+      component.onFinishOptionsRequested();
+
+      expect(optionsRequested).toHaveBeenCalledTimes(1);
+      expect(completed).not.toHaveBeenCalled();
+    });
+  });
 });

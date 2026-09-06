@@ -351,6 +351,61 @@ export async function validateCommandBody<T extends z.ZodTypeAny, U = z.infer<T>
     return { error: c.json(errorData, 400) };
   }
 
+  return validateParsedBody<T, U>(c, schema, rawBody);
+}
+
+/**
+ * Asynchronously validates the JSON body of a request whose body is optional.
+ *
+ * Endpoints that take no body at all - a completion, an archive toggle - are still called without
+ * one by clients written against that contract, and `c.req.json()` rejects on an empty body. This
+ * treats an absent or blank body as `{}` so the schema decides whether anything was required,
+ * while a body that is present but malformed still fails as it does everywhere else.
+ *
+ * @template T - The Zod schema type.
+ * @template U - The inferred type from the schema.
+ * @param {Context<AppContext>} c - The Hono context of the request.
+ * @param {T} schema - The Zod schema for validation.
+ * @returns {Promise<{ command?: U, error?: Response }>} A promise that resolves to an object containing either the validated body (command) or an error Response.
+ */
+export async function validateOptionalCommandBody<T extends z.ZodTypeAny, U = z.infer<T>>(
+  c: Context<AppContext>,
+  schema: T
+): Promise<{ command?: U, error?: Response }> {
+  let rawBody: unknown;
+
+  try {
+    const text = await c.req.text();
+    rawBody = text.trim() === '' ? {} : JSON.parse(text);
+  } catch (e) {
+    const errorData = createErrorDataWithLogging(
+      400,
+      'Invalid JSON body',
+      { details: (e as Error).message },
+      'INVALID_JSON',
+      e
+    );
+    return { error: c.json(errorData, 400) };
+  }
+
+  return validateParsedBody<T, U>(c, schema, rawBody);
+}
+
+/**
+ * Validates an already-parsed request body against a Zod schema.
+ *
+ * @template T - The Zod schema type.
+ * @template U - The inferred type from the schema.
+ * @param {Context<AppContext>} c - The Hono context of the request.
+ * @param {T} schema - The Zod schema for validation.
+ * @param {unknown} rawBody - The parsed body to validate.
+ * @returns {{ command?: U, error?: Response }} Either the validated body (command) or an error Response.
+ */
+function validateParsedBody<T extends z.ZodTypeAny, U = z.infer<T>>(
+  c: Context<AppContext>,
+  schema: T,
+  rawBody: unknown
+): { command?: U, error?: Response } {
   const validation = schema.safeParse(rawBody);
 
   if (!validation.success) {

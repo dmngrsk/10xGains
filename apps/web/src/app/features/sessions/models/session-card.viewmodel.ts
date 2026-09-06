@@ -4,6 +4,7 @@ export interface SessionCardViewModel {
   id: string;
   title: string;
   sessionDate: Date | null;
+  finishedAt: Date | null;
   status: SessionStatus;
   notes: string | null;
   exercises: SessionCardExerciseViewModel[];

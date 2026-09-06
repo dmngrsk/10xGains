@@ -5,11 +5,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { Subscription, Subject, takeUntil, timer } from 'rxjs';
 import { ServerClockService } from '@shared/services/server-clock.service';
+import { LongPressDirective } from '@shared/utils/directives/long-press.directive';
 
 @Component({
   selector: 'txg-session-timer',
   standalone: true,
-  imports: [CommonModule, MatIconModule, MatButtonModule, MatDividerModule],
+  imports: [CommonModule, MatIconModule, MatButtonModule, MatDividerModule, LongPressDirective],
   templateUrl: './session-timer.component.html',
   styleUrl: './session-timer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -19,6 +20,7 @@ export class SessionTimerComponent implements OnDestroy {
   @Input() @HostBinding('class.all-sets-complete-highlight') allExercisesComplete: boolean = false;
 
   @Output() readonly sessionCompleted = new EventEmitter<void>();
+  @Output() readonly finishOptionsRequested = new EventEmitter<void>();
 
   @HostBinding('class.pulsing') protected isPulsing = false;
 
@@ -64,6 +66,10 @@ export class SessionTimerComponent implements OnDestroy {
 
   onCompleteSession(): void {
     this.sessionCompleted.emit();
+  }
+
+  onFinishOptionsRequested(): void {
+    this.finishOptionsRequested.emit();
   }
 
   private applyTimestamp(timestamp: number | null): void {

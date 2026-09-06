@@ -24,6 +24,7 @@ function makeSession(overrides: Partial<SessionDto> = {}): SessionDto {
     plan_id: 'plan-1',
     plan_day_id: DAY_A,
     session_date: '2026-06-01T10:00:00.000Z',
+    finished_at: null,
     status: 'COMPLETED',
     notes: null,
     ...overrides,

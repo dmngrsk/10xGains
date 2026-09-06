@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject, firstValueFrom, of } from 'rxjs';
-import { SessionSetDto, SessionSetStatus } from '@txg/shared';
+import { Subject, firstValueFrom, of, throwError } from 'rxjs';
+import { SessionDto, SessionSetDto, SessionSetStatus } from '@txg/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
@@ -8,7 +8,7 @@ import { AuthService } from '@shared/services/auth.service';
 import { KeyedDebouncerService } from '@shared/services/keyed-debouncer.service';
 import { ServerClockService } from '@shared/services/server-clock.service';
 import { SessionPageFacade } from './session-page.facade';
-import { SessionService } from '../../api/session.service';
+import { SessionService, SessionServiceResponse } from '../../api/session.service';
 import { SessionPageViewModel, SessionSetViewModel } from '../../models/session-page.viewmodel';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,7 +61,7 @@ describe('SessionPageFacade', () => {
         SessionPageFacade,
         { provide: PlanService, useValue: { updatePlan: vi.fn() } },
         { provide: ExerciseService, useValue: {} },
-        { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn(), updateSession: vi.fn() } },
+        { provide: SessionService, useValue: { completeSet: vi.fn(), failSet: vi.fn(), resetSet: vi.fn(), updateSession: vi.fn(), completeSession: vi.fn(), createSession: vi.fn() } },
         { provide: KeyedDebouncerService, useValue: { enqueue: enqueueMock, flushCurrentActiveDebounce: () => of(undefined) } },
         { provide: ServerClockService, useValue: { now: () => SERVER_NOW } },
         { provide: AuthService, useValue: { currentUser$: of({ id: 'user1' }) } },
@@ -232,6 +232,65 @@ describe('SessionPageFacade', () => {
       seedViewModel([buildSet({ completedAt: null })]);
 
       expect(getLatestCompletionTime(facade.viewModel())).toBeNull();
+    });
+  });
+
+  describe('completeSession', () => {
+    const completionResponse = (sessionDate: string) =>
+      of({ data: { session_date: sessionDate } as SessionDto } as SessionServiceResponse<SessionDto>);
+
+    const seedCompletableSession = () => {
+      seedViewModel([buildSet({ status: 'COMPLETED', completedAt: new Date('2026-06-02T08:30:00.000Z') })]);
+      facade.viewModel.update(state => ({ ...state, metadata: { ...state.metadata, planId: 'plan1' } }));
+    };
+
+    it('should forward the chosen end and adopt the session date the API returns', async () => {
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.completeSession).mockReturnValue(completionResponse('2026-06-01T19:05:00'));
+      vi.mocked(sessionService.createSession).mockReturnValue(of({ data: null } as SessionServiceResponse<SessionDto>));
+      seedCompletableSession();
+
+      const success = await firstValueFrom(facade.completeSession('2026-06-01T19:30:00.000Z'));
+
+      expect(success).toBe(true);
+      expect(sessionService.completeSession).toHaveBeenCalledWith('session1', '2026-06-01T19:30:00.000Z');
+      expect(facade.viewModel().metadata?.date).toEqual(new Date('2026-06-01T19:05:00.000Z'));
+    });
+
+    it('should send no end at all for a plain finish', async () => {
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.completeSession).mockReturnValue(completionResponse('2026-06-02T08:00:00'));
+      vi.mocked(sessionService.createSession).mockReturnValue(of({ data: null } as SessionServiceResponse<SessionDto>));
+      seedCompletableSession();
+
+      await firstValueFrom(facade.completeSession());
+
+      expect(sessionService.completeSession).toHaveBeenCalledWith('session1', undefined);
+    });
+
+    it('should keep the API message and leave the session on screen when the end is rejected', async () => {
+      const rejection = 'This session would land before a workout you already finished on this plan. Pick a later time.';
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.completeSession).mockReturnValue(throwError(() => new Error(rejection)));
+      seedCompletableSession();
+
+      const success = await firstValueFrom(facade.completeSession('2020-01-01T19:30:00.000Z'));
+
+      expect(success).toBe(false);
+      expect(facade.viewModel().metadata?.status).toBe('IN_PROGRESS');
+      expect(facade.completionError()).toBe(rejection);
+      // Set apart from `error`, which the page renders instead of the session itself.
+      expect(facade.viewModel().error).toBeNull();
+    });
+
+    it('should fall back to a generic message when the failure carries none', async () => {
+      const sessionService = TestBed.inject(SessionService);
+      vi.mocked(sessionService.completeSession).mockReturnValue(throwError(() => new Error('')));
+      seedCompletableSession();
+
+      await firstValueFrom(facade.completeSession());
+
+      expect(facade.completionError()).toBe('Failed to mark session session1 as completed.');
     });
   });
 });

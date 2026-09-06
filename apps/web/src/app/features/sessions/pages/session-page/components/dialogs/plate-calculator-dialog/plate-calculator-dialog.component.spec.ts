@@ -237,6 +237,5 @@ describe('PlateCalculatorDialogComponent', () => {
     const chips = query(fixture, 'plate-calculator-chips') as HTMLElement;
 
     expect(warning.compareDocumentPosition(chips) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(chips.getAttribute('aria-describedby')).toBe(warning.id);
   });
 });

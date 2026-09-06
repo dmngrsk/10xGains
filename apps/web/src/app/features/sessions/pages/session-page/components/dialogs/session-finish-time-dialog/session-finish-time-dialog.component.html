@@ -1,0 +1,37 @@
+<h2 mat-dialog-title class="text-xl font-semibold" data-cy="session-finish-time-dialog-title">Finish session</h2>
+
+<mat-dialog-content [formGroup]="form" class="!pt-4" data-cy="session-finish-time-dialog-content">
+  <mat-form-field appearance="outline" class="w-full mb-3">
+    <mat-label>Date</mat-label>
+    <input matInput formControlName="date" [matDatepicker]="datePicker" [max]="maxDate" data-cy="session-finish-time-dialog-date-input">
+    <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+    <mat-datepicker #datePicker></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="w-full">
+    <mat-label>Time</mat-label>
+    <input matInput formControlName="time" [matTimepicker]="timePicker" data-cy="session-finish-time-dialog-time-input">
+    <mat-timepicker-toggle matIconSuffix [for]="timePicker"></mat-timepicker-toggle>
+    <mat-timepicker #timePicker [interval]="timeInterval"></mat-timepicker>
+  </mat-form-field>
+
+  @if (isInFuture()) {
+    <p class="text-sm text-error mb-4" data-cy="session-finish-time-dialog-future-error">
+      A session cannot end in the future.
+    </p>
+  } @else if (recordedAsText(); as recordedAs) {
+    <div class="mb-4" data-cy="session-finish-time-dialog-preview">
+      <p class="text-sm font-medium m-0">Recorded as {{ recordedAs }}</p>
+      <p class="text-sm text-secondary mt-1 mb-0">{{ consequenceText() }}</p>
+    </div>
+  }
+
+  <div class="flex flex-col flex-grow gap-2">
+    <button mat-flat-button color="primary" (click)="onSave()" [disabled]="form.invalid || isInFuture()" data-cy="session-finish-time-dialog-save-button">
+      <span>Finish Session</span>
+    </button>
+    <button mat-raised-button (click)="onCancel()" data-cy="session-finish-time-dialog-cancel-button">
+      <span>Cancel</span>
+    </button>
+  </div>
+</mat-dialog-content>

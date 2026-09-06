@@ -208,6 +208,8 @@ jobs:
         env:
           APP_CANARY_USER_EMAIL: ${{ secrets.APP_CANARY_USER_EMAIL }}
           APP_CANARY_USER_PASSWORD: ${{ secrets.APP_CANARY_USER_PASSWORD }}
+          APP_DEV_USER_EMAIL: ${{ secrets.APP_DEV_USER_EMAIL }}
+          APP_DEV_USER_PASSWORD: ${{ secrets.APP_DEV_USER_PASSWORD }}
           CYPRESS_BASE_URL: ${{ vars.APP_URL }}
           CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
           CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
