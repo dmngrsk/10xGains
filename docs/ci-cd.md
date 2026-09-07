@@ -20,6 +20,7 @@ AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
 AZURE_FUNCTIONAPP_NAME: Name of the Azure Function App resource
 AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
 CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
+SUPABASE_GOOGLE_CLIENT_ID: Google OAuth client id for Supabase sign-in (optional)
 SUPABASE_ORGANIZATION_ID: Supabase organization the project belongs to
 TF_STATE_STORAGE_ACCOUNT: Storage account holding this environment's Terraform state
 
@@ -33,30 +34,41 @@ AZURE_TENANT_ID: Entra tenant id
 AZURE_SUBSCRIPTION_ID: Azure subscription id
 SUPABASE_ACCESS_TOKEN: Access token for the Supabase CLI and Terraform provider
 SUPABASE_DB_PASSWORD: Database password for the Terraform-managed project
+SUPABASE_GOOGLE_CLIENT_SECRET: Google OAuth client secret (optional; paired with the id)
 ```
 
 #### Production Environment
 
 The same set, with production's own values. `APP_DEV_USER_*` is staging-only.
 
-`pnpm infra:apply <environment>` writes exactly these, and nothing else:
+#### Who writes these
 
-| Variables | Secrets |
-| --- | --- |
-| `AZURE_RESOURCE_GROUP`, `AZURE_FUNCTIONAPP_NAME`, `AZURE_STATIC_WEB_APP_NAME`, `TF_STATE_STORAGE_ACCOUNT`, `SUPABASE_ORGANIZATION_ID`, `SUPABASE_GOOGLE_CLIENT_ID` | `AZURE_CLIENT_ID`, `SUPABASE_DB_PASSWORD`, `SUPABASE_GOOGLE_CLIENT_SECRET` |
+`pnpm infra:apply <environment>` writes nine of the entries above, and nothing else:
 
-The `SUPABASE_GOOGLE_*` pair is written only when both are present in the environment; without
-them Terraform leaves the Google provider unmanaged rather than half-configured.
+```yaml
+# Variables
+AZURE_RESOURCE_GROUP, AZURE_FUNCTIONAPP_NAME, AZURE_STATIC_WEB_APP_NAME
+SUPABASE_GOOGLE_CLIENT_ID, SUPABASE_ORGANIZATION_ID, TF_STATE_STORAGE_ACCOUNT
 
-Everything else is set once by hand: `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` and
-`SUPABASE_ACCESS_TOKEN` (the preflight fails if these are missing), plus `APP_WEBMANIFEST_NAME`,
-`APP_WEBMANIFEST_SHORT_NAME`, `CYPRESS_DEFAULT_COMMAND_TIMEOUT` and the `APP_CANARY_USER_*` /
-`APP_DEV_USER_*` credentials. A fresh environment that skips those gets through `infrastructure`
-and `frontend`, then fails in `e2e` on a missing canary user.
+# Secrets
+AZURE_CLIENT_ID, SUPABASE_DB_PASSWORD, SUPABASE_GOOGLE_CLIENT_SECRET
+```
 
-**Do not add `SUPABASE_PUBLISHABLE_KEY` as an environment secret.** CD reads it from a Terraform
-output and passes it between jobs; a value that matches a registered secret is redacted to `***`
-on the way, so the web build would ship a masked key.
+The `SUPABASE_GOOGLE_*` pair is written only when both are present locally. Without them Terraform
+leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps
+whatever it already has.
+
+Everything else is set by hand, once per environment:
+
+- `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `SUPABASE_ACCESS_TOKEN` — the preflight fails without
+  them, so this is the one group you cannot forget.
+- `APP_WEBMANIFEST_NAME`, `APP_WEBMANIFEST_SHORT_NAME`, `CYPRESS_DEFAULT_COMMAND_TIMEOUT`,
+  `APP_CANARY_USER_*`, `APP_DEV_USER_*` — nothing checks for these. A fresh environment without
+  them gets through `infrastructure` and `frontend`, then fails in `e2e` on a missing canary user.
+
+**Never add `SUPABASE_PUBLISHABLE_KEY` as a secret here.** CD reads it from a Terraform output and
+passes it between jobs; a value matching a registered secret is redacted to `***` in transit, so
+the web build would ship a masked key.
 
 ### Technical Environments
 
