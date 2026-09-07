@@ -31,9 +31,10 @@
 # pasted in by hand (spec §9). Without both, the block is omitted rather than half-applied:
 # enabling the provider with no client would break sign-in outright.
 locals {
-  # An unset GitHub Actions var renders as "", which a null check would accept — and the provider
-  # would then be enabled with no client at all. Empty and null both mean "not configured".
-  google_configured = length(coalesce(var.google_client_id, "")) > 0 && length(coalesce(var.google_client_secret, "")) > 0
+  # An unset GitHub Actions var renders as "", which a null check alone would accept — and the
+  # provider would then be enabled with no client at all. Empty and null both mean "not configured".
+  # Compared explicitly rather than via coalesce, which errors when every argument is empty.
+  google_configured = alltrue([for v in [var.google_client_id, var.google_client_secret] : v != null && v != ""])
 
   # A zero-or-one list, not `cond ? {...} : {}`: that form unifies its branches into map(string) and
   # every bool here arrives at the API as "true"/"false", which it rejects. A list keeps the object
