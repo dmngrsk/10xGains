@@ -13,3 +13,11 @@ variable "redirect_urls" {
   type        = list(string)
   default     = []
 }
+
+# Staging cannot send mail — no custom SMTP, and the built-in sender only reaches project members —
+# so a verification requirement there is one nobody can satisfy, including AUTH-02.
+variable "email_autoconfirm" {
+  description = "Treat an address as verified at signup instead of mailing a confirmation link. Per-environment."
+  type        = bool
+  default     = false
+}

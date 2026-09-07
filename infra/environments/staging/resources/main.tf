@@ -62,6 +62,8 @@ module "supabase" {
   project_ref   = supabase_project.main.id
   site_url      = module.azure.app_url
   redirect_urls = ["${module.azure.app_url}/auth/callback"]
+
+  email_autoconfirm = true
 }
 
 module "azure" {

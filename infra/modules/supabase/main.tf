@@ -23,6 +23,13 @@
 # Arguments are serialised JSON matching the Management API, so this is config-shaped rather than
 # strongly typed — a wrong key name fails at apply, not at plan.
 
+# One group per colon-separated segment, and a password must contain a character from each. The
+# `\\:` in the symbol group is an escaped colon, not a separator — this is Supabase's own default
+# string, and the groups match passwordStrengthValidator in the web app.
+locals {
+  password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789:!@#$%^&*()_+-=[]{};'\\\\:\"|<>?,./`~"
+}
+
 resource "supabase_settings" "main" {
   project_ref = var.project_ref
 
@@ -32,9 +39,23 @@ resource "supabase_settings" "main" {
     max_rows             = 1000
   })
 
+  # A fresh project ships with none of this: passwords accepted at 6 characters with no character
+  # classes, and manual identity linking off — so the web app's own form is stricter than the
+  # service behind it, and the Google link/unlink controls in settings fail server-side.
   auth = jsonencode({
     site_url       = var.site_url
     uri_allow_list = join(",", concat([var.site_url], var.redirect_urls))
+
+    disable_signup     = false
+    mailer_autoconfirm = var.email_autoconfirm
+
+    password_min_length          = 8
+    password_required_characters = local.password_required_characters
+
+    mailer_secure_email_change_enabled    = true
+    refresh_token_rotation_enabled        = true
+    security_refresh_token_reuse_interval = 10
+    security_manual_linking_enabled       = true
   })
 }
 
