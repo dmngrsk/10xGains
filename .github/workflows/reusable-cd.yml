@@ -97,6 +97,33 @@ jobs:
             -backend-config="key=${{ inputs.environment }}.tfstate" \
             -backend-config="use_azuread_auth=true"
 
+      # A newly created project stays COMING_UP for several minutes, and the Management API rejects
+      # both `supabase_settings` and the `supabase_apikeys` read until it reports ACTIVE_HEALTHY.
+      # Neither is a retryable Terraform error, so the apply is split around this wait — exactly as
+      # apply-environment.sh does. `infra:apply --bootstrap-only` hands the resources root to CD, so
+      # a first apply against a brand-new project is a supported path, not a corner case.
+      #
+      # On an existing project the targeted apply is a no-op and the first poll returns at once.
+      - name: Ensure the Supabase project is healthy
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          set -euo pipefail
+          terraform apply -auto-approve -input=false -no-color -target=supabase_project.main
+          ref="$(terraform show -json | jq -r '
+            .values.root_module.resources[]?
+            | select(.address == "supabase_project.main") | .values.id')"
+          [ -n "$ref" ] || { echo "could not read the Supabase project ref from state"; exit 1; }
+
+          for i in $(seq 1 40); do
+            status="$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$ref" | jq -r '.status // empty' || true)"
+            [ "$status" = "ACTIVE_HEALTHY" ] && exit 0
+            echo "project $ref is ${status:-provisioning}; retrying in 15s ($i/40)"
+            sleep 15
+          done
+          echo "project $ref did not become healthy within 10 minutes"
+          exit 1
+
       - name: Terraform plan
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
