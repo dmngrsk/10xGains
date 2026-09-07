@@ -144,10 +144,14 @@ Triggered by:
 
 Process:
 1. **Deployment Approval** (via `staging-cd` environment)
-2. **Database Migration** (Supabase)
-3. **Backend Deployment** (Azure Functions)
-4. **Frontend Deployment** (Azure Static Web App)
-5. **E2E Testing**
+2. **Infrastructure** (Terraform, `infra/environments/<environment>/resources`)
+   - Waits for the Supabase project to report `ACTIVE_HEALTHY` before planning
+   - Applies a saved plan, so what runs is what the step summary showed
+   - Publishes the API and app URLs, the Supabase URL, publishable key and project ref
+3. **Database Migration** (Supabase)
+4. **Backend Deployment** (Azure Functions)
+5. **Frontend Deployment** (Azure Static Web App)
+6. **E2E Testing**
    - Full test suite
    - Tests against live staging environment
 
@@ -158,13 +162,18 @@ Triggered by:
 Process:
 1. **Staging Deployment** (must succeed first)
 2. **Deployment Approval** (via `production-cd` environment)
-3. **Database Migration** (Supabase)
-4. **Backend Deployment** (Azure Functions)
-5. **Frontend Deployment** (Azure Static Web App)
-6. **Smoke Testing**
+3. **Infrastructure** (Terraform) — as above
+4. **Database Migration** (Supabase)
+5. **Backend Deployment** (Azure Functions)
+6. **Frontend Deployment** (Azure Static Web App)
+7. **Smoke Testing**
    - Critical path testing only
    - Uses a predefined canary user
    - Verifies core functionality
+
+The numbering is the dependency chain, not just an order: every later job needs the one before it,
+and the frontend and E2E jobs additionally read the infrastructure outputs directly rather than
+from repository configuration. Nothing downstream runs if Terraform fails.
 
 ## Infrastructure
 
