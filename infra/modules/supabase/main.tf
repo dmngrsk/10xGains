@@ -35,13 +35,16 @@ locals {
   # would then be enabled with no client at all. Empty and null both mean "not configured".
   google_configured = length(coalesce(var.google_client_id, "")) > 0 && length(coalesce(var.google_client_secret, "")) > 0
 
-  google = local.google_configured ? {
+  # A zero-or-one list, not `cond ? {...} : {}`: that form unifies its branches into map(string) and
+  # every bool here arrives at the API as "true"/"false", which it rejects. A list keeps the object
+  # type intact, and merge() expands it below.
+  google = local.google_configured ? [{
     external_google_enabled          = true
     external_google_client_id        = var.google_client_id
     external_google_secret           = var.google_client_secret
     external_google_skip_nonce_check = false
     external_google_email_optional   = false
-  } : {}
+  }] : []
 
   password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789:!@#$%^&*()_+-=[]{};'\\\\:\"|<>?,./`~"
 }
@@ -74,7 +77,7 @@ resource "supabase_settings" "main" {
     refresh_token_rotation_enabled        = true
     security_refresh_token_reuse_interval = 10
     security_manual_linking_enabled       = true
-  }, local.google))
+  }, local.google...))
 }
 
 data "supabase_apikeys" "main" {
