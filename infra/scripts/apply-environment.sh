@@ -294,6 +294,8 @@ EOF
   API_URL="$(tf_retry "$dir" output -raw api_url)" || die "could not read the api_url output."
   APP_URL="$(tf_retry "$dir" output -raw app_url)" || die "could not read the app_url output."
   SUPABASE_URL="$(tf_retry "$dir" output -raw supabase_url)" || die "could not read the supabase_url output."
+  GOOGLE_CALLBACK_URL="$(tf_retry "$dir" output -raw supabase_google_callback_url)" \
+    || die "could not read the supabase_google_callback_url output."
 }
 
 # ─── stage 4: database ────────────────────────────────────────────────────────────────────────
@@ -362,6 +364,10 @@ info "api      $API_URL"
 info "web      $APP_URL"
 info "supabase $SUPABASE_URL"
 printf '\n'
-info "still manual (spec §9): DNS and custom domain, Google OAuth redirect URIs,"
-info "and deleting the retired github-dmngrsk-10xGains application after cutover."
+info "still manual (spec §9): DNS and custom domain, and deleting the retired"
+info "github-dmngrsk-10xGains application after cutover."
+printf '\n'
+info "Google OAuth: register this redirect URI on the client once — it only changes if the"
+info "Supabase project is rebuilt, which infra:destroy --keep-bootstrap avoids:"
+info "  $GOOGLE_CALLBACK_URL"
 printf '\n'
