@@ -46,14 +46,6 @@ locals {
     external_google_email_optional   = false
   }] : []
 
-  # The same files config.toml feeds the local stack, so local and remote cannot drift, and a
-  # rebuilt project comes up branded rather than on Supabase's stock templates. .gitattributes
-  # pins eol=lf, which is what makes file() produce the same string on every checkout.
-  mail_templates = {
-    confirmation = file("${path.module}/../../../supabase/templates/register.html")
-    recovery     = file("${path.module}/../../../supabase/templates/reset-password.html")
-  }
-
   password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789:!@#$%^&*()_+-=[]{};'\\\\:\"|<>?,./`~"
 }
 
@@ -80,14 +72,6 @@ resource "supabase_settings" "main" {
 
     password_min_length          = 8
     password_required_characters = local.password_required_characters
-
-    # Only the two subjects that are ours. The rest of production's differ from a new project's
-    # only because it predates a Supabase wording change — pinning those would freeze stale
-    # defaults we never chose.
-    mailer_subjects_confirmation          = "10xGains \u2013 Confirm Signup"
-    mailer_subjects_recovery              = "10xGains \u2013 Password Recovery"
-    mailer_templates_confirmation_content = local.mail_templates.confirmation
-    mailer_templates_recovery_content     = local.mail_templates.recovery
 
     mailer_secure_email_change_enabled    = true
     refresh_token_rotation_enabled        = true
