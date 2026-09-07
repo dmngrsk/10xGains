@@ -57,6 +57,9 @@ jobs:
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # Lower-case after the prefix, unlike every other name here: TF_VAR_ maps to a Terraform
+      # variable and the match is case-sensitive. TF_VAR_SUBSCRIPTION_ID does not set
+      # `subscription_id` — the plan fails with "No value for required variable".
       TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
       TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
