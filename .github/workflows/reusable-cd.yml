@@ -36,13 +36,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    # Consumed by `frontend` and `e2e`. These describe the environment Terraform just applied, so
-    # they are correct even on the run that creates it — unlike repository variables, which cannot
-    # be updated until after the fact.
-    #
-    # Safe as plain outputs: all three are public. The publishable key in particular is served to
-    # every browser, which is why it is a variable rather than a secret — a value matching a
-    # registered secret would be redacted out of a job output and arrive as ***.
     outputs:
       api_url: ${{ steps.tf_outputs.outputs.api_url }}
       app_url: ${{ steps.tf_outputs.outputs.app_url }}
@@ -50,22 +43,15 @@ jobs:
       supabase_publishable_key: ${{ steps.tf_outputs.outputs.supabase_publishable_key }}
       supabase_project_ref: ${{ steps.tf_outputs.outputs.supabase_project_ref }}
     env:
-      # OIDC — no client secret. The federated credential on this environment's application trusts
-      # `repo:<owner>/<repo>:environment:<environment>` and nothing else, so a workflow running in
-      # the other environment cannot obtain this token.
       ARM_USE_OIDC: "true"
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      # Lower-case after the prefix, unlike every other name here: TF_VAR_ maps to a Terraform
-      # variable and the match is case-sensitive. TF_VAR_SUBSCRIPTION_ID does not set
-      # `subscription_id` — the plan fails with "No value for required variable".
       TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
       TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
       TF_VAR_supabase_google_client_id: ${{ vars.SUPABASE_GOOGLE_CLIENT_ID }}
       TF_VAR_supabase_google_client_secret: ${{ secrets.SUPABASE_GOOGLE_CLIENT_SECRET }}
-      # The provider reads this when its access_token argument is null, which is the default.
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:
       - name: Validate environment value
@@ -82,14 +68,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
         with:
           terraform_wrapper: false
 
-      # The backend configuration is not committed (this repository is public), so it is assembled
-      # here from environment-scoped values. `use_azuread_auth` is required: the state account has
-      # shared-key access disabled, so there is no account key to fall back on — access comes from
-      # this environment's container-scoped role assignment alone.
       - name: Terraform init
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
@@ -100,13 +82,6 @@ jobs:
             -backend-config="key=${{ inputs.environment }}.tfstate" \
             -backend-config="use_azuread_auth=true"
 
-      # A newly created project stays COMING_UP for several minutes, and the Management API rejects
-      # both `supabase_settings` and the `supabase_apikeys` read until it reports ACTIVE_HEALTHY.
-      # Neither is a retryable Terraform error, so the apply is split around this wait — exactly as
-      # apply-environment.sh does. `infra:apply --bootstrap-only` hands the resources root to CD, so
-      # a first apply against a brand-new project is a supported path, not a corner case.
-      #
-      # On an existing project the targeted apply is a no-op and the first poll returns at once.
       - name: Ensure the Supabase project is healthy
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
@@ -138,7 +113,6 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Applying the saved plan rather than re-planning guarantees what runs is what was shown.
       - name: Terraform apply
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: terraform apply -input=false -no-color tfplan
@@ -257,12 +231,6 @@ jobs:
           name: dist-web-${{ inputs.environment }}
           path: apps/web/dist/
 
-      # CI builds the bundle before Terraform runs, so it cannot know the environment's addresses.
-      # They are supplied at runtime by env.js and applied here from the infrastructure job's
-      # outputs, so one artifact deploys to any environment.
-      #
-      # Only uncompiled files are touched: substituting inside the minified bundle would shift
-      # byte offsets and silently invalidate its source maps.
       - name: Apply environment configuration
         env:
           ENVIRONMENT_NAME: ${{ inputs.environment }}
@@ -370,10 +338,6 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      # Resolved at run time rather than stored: it belongs to whichever project Terraform just
-      # applied, so a stored secret goes stale the moment an environment is rebuilt. Unlike the
-      # publishable key this is genuinely secret, so it is masked and passed via the environment
-      # rather than through a job output.
       - name: Resolve the project's secret key
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
