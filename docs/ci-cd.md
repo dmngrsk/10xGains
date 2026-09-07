@@ -39,9 +39,24 @@ SUPABASE_DB_PASSWORD: Database password for the Terraform-managed project
 
 The same set, with production's own values. `APP_DEV_USER_*` is staging-only.
 
-`pnpm infra:apply <environment>` writes everything except `AZURE_TENANT_ID`,
-`AZURE_SUBSCRIPTION_ID` and `SUPABASE_ACCESS_TOKEN`, which are set once by hand — its preflight
-fails if they are missing.
+`pnpm infra:apply <environment>` writes exactly these, and nothing else:
+
+| Variables | Secrets |
+| --- | --- |
+| `AZURE_RESOURCE_GROUP`, `AZURE_FUNCTIONAPP_NAME`, `AZURE_STATIC_WEB_APP_NAME`, `TF_STATE_STORAGE_ACCOUNT`, `SUPABASE_ORGANIZATION_ID`, `SUPABASE_GOOGLE_CLIENT_ID` | `AZURE_CLIENT_ID`, `SUPABASE_DB_PASSWORD`, `SUPABASE_GOOGLE_CLIENT_SECRET` |
+
+The `SUPABASE_GOOGLE_*` pair is written only when both are present in the environment; without
+them Terraform leaves the Google provider unmanaged rather than half-configured.
+
+Everything else is set once by hand: `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` and
+`SUPABASE_ACCESS_TOKEN` (the preflight fails if these are missing), plus `APP_WEBMANIFEST_NAME`,
+`APP_WEBMANIFEST_SHORT_NAME`, `CYPRESS_DEFAULT_COMMAND_TIMEOUT` and the `APP_CANARY_USER_*` /
+`APP_DEV_USER_*` credentials. A fresh environment that skips those gets through `infrastructure`
+and `frontend`, then fails in `e2e` on a missing canary user.
+
+**Do not add `SUPABASE_PUBLISHABLE_KEY` as an environment secret.** CD reads it from a Terraform
+output and passes it between jobs; a value that matches a registered secret is redacted to `***`
+on the way, so the web build would ship a masked key.
 
 ### Technical Environments
 
