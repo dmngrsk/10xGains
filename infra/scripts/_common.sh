@@ -47,7 +47,9 @@ missing_tools() { local t out=(); for t in "$@"; do command -v "$t" >/dev/null 2
 export_tf_secrets() {
   local var name
   for var in supabase_database_password:SUPABASE_DB_PASSWORD \
-             supabase_access_token:SUPABASE_ACCESS_TOKEN; do
+             supabase_access_token:SUPABASE_ACCESS_TOKEN \
+             supabase_google_client_id:SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID \
+             supabase_google_client_secret:SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET; do
     name="${var#*:}"
     if [[ -n "${!name:-}" ]]; then export "TF_VAR_${var%%:*}=${!name}"
     else unset "TF_VAR_${var%%:*}"; fi

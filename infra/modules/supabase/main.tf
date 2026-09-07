@@ -26,7 +26,23 @@
 # One group per colon-separated segment, and a password must contain a character from each. The
 # `\\:` in the symbol group is an escaped colon, not a separator — this is Supabase's own default
 # string, and the groups match passwordStrengthValidator in the web app.
+# Google's own OAuth client is not Terraformable — there is no public GCP API for Web-application
+# client IDs — so the credentials arrive as variables and the authorized redirect URI is still
+# pasted in by hand (spec §9). Without both, the block is omitted rather than half-applied:
+# enabling the provider with no client would break sign-in outright.
 locals {
+  # An unset GitHub Actions var renders as "", which a null check would accept — and the provider
+  # would then be enabled with no client at all. Empty and null both mean "not configured".
+  google_configured = length(coalesce(var.google_client_id, "")) > 0 && length(coalesce(var.google_client_secret, "")) > 0
+
+  google = local.google_configured ? {
+    external_google_enabled          = true
+    external_google_client_id        = var.google_client_id
+    external_google_secret           = var.google_client_secret
+    external_google_skip_nonce_check = false
+    external_google_email_optional   = false
+  } : {}
+
   password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789:!@#$%^&*()_+-=[]{};'\\\\:\"|<>?,./`~"
 }
 
@@ -42,12 +58,14 @@ resource "supabase_settings" "main" {
   # A fresh project ships with none of this: passwords accepted at 6 characters with no character
   # classes, and manual identity linking off — so the web app's own form is stricter than the
   # service behind it, and the Google link/unlink controls in settings fail server-side.
-  auth = jsonencode({
+  auth = jsonencode(merge({
     site_url       = var.site_url
     uri_allow_list = join(",", concat([var.site_url], var.redirect_urls))
 
-    disable_signup     = false
-    mailer_autoconfirm = var.email_autoconfirm
+    disable_signup                   = false
+    external_email_enabled           = true
+    external_anonymous_users_enabled = false
+    mailer_autoconfirm               = var.email_autoconfirm
 
     password_min_length          = 8
     password_required_characters = local.password_required_characters
@@ -56,7 +74,7 @@ resource "supabase_settings" "main" {
     refresh_token_rotation_enabled        = true
     security_refresh_token_reuse_interval = 10
     security_manual_linking_enabled       = true
-  })
+  }, local.google))
 }
 
 data "supabase_apikeys" "main" {

@@ -67,6 +67,9 @@ module "supabase" {
   # Captured from the portal before the rebuild (spec §7 item 3) — previously unmanaged state.
   site_url      = "https://${local.custom_domain}"
   redirect_urls = ["https://${local.custom_domain}/auth/callback"]
+
+  google_client_id     = var.supabase_google_client_id
+  google_client_secret = var.supabase_google_client_secret
 }
 
 # The custom domain is NOT bound here — it is manual (spec §9 M2). The Cloudflare record is
@@ -109,6 +112,19 @@ variable "supabase_access_token" {
   default     = null
 }
 
+variable "supabase_google_client_id" {
+  description = "Google OAuth client ID. Null leaves the provider unmanaged on this project."
+  type        = string
+  default     = null
+}
+
+variable "supabase_google_client_secret" {
+  description = "Google OAuth client secret. Null leaves the provider unmanaged on this project."
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
 output "swa_default_hostname" {
@@ -122,3 +138,5 @@ output "supabase_publishable_key" {
 }
 
 output "supabase_project_ref" { value = supabase_project.main.id }
+
+output "supabase_google_callback_url" { value = module.supabase.google_callback_url }

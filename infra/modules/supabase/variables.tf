@@ -21,3 +21,18 @@ variable "email_autoconfirm" {
   type        = bool
   default     = false
 }
+
+# Both or neither: see the `google` local. Null on an environment whose redirect URI has not been
+# registered with Google yet, which leaves the project's provider settings untouched.
+variable "google_client_id" {
+  description = "Google OAuth client ID for Supabase sign-in."
+  type        = string
+  default     = null
+}
+
+variable "google_client_secret" {
+  description = "Google OAuth client secret. Read from the environment; never committed."
+  type        = string
+  sensitive   = true
+  default     = null
+}

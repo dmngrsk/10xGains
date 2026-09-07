@@ -60,6 +60,8 @@ jobs:
       TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
       TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TF_VAR_supabase_google_client_id: ${{ vars.SUPABASE_GOOGLE_CLIENT_ID }}
+      TF_VAR_supabase_google_client_secret: ${{ secrets.SUPABASE_GOOGLE_CLIENT_SECRET }}
       # The provider reads this when its access_token argument is null, which is the default.
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
     steps:

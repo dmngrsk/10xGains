@@ -334,6 +334,14 @@ stage_github() {
   set_secret AZURE_CLIENT_ID      "$AZURE_CLIENT_ID"
   set_secret SUPABASE_DB_PASSWORD "$SUPABASE_DB_PASSWORD"
 
+  # Only when supplied: CD's Terraform then leaves the provider untouched rather than disabling it.
+  if [[ -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID:-}" && -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET:-}" ]]; then
+    set_var    SUPABASE_GOOGLE_CLIENT_ID     "$SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID"
+    set_secret SUPABASE_GOOGLE_CLIENT_SECRET "$SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET"
+  else
+    info "no Google credentials in the environment — skipping SUPABASE_GOOGLE_*"
+  fi
+
   ok "GitHub environment '$ENVIRONMENT' on $repo"
   info "URLs and API keys are not stored — CD reads them from Terraform outputs at deploy time"
   info "unchanged: AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, SUPABASE_ACCESS_TOKEN, APP_*_USER_*"

@@ -64,6 +64,9 @@ module "supabase" {
   redirect_urls = ["${module.azure.app_url}/auth/callback"]
 
   email_autoconfirm = true
+
+  google_client_id     = var.supabase_google_client_id
+  google_client_secret = var.supabase_google_client_secret
 }
 
 module "azure" {
@@ -102,6 +105,19 @@ variable "supabase_access_token" {
   default     = null
 }
 
+variable "supabase_google_client_id" {
+  description = "Google OAuth client ID. Null leaves the provider unmanaged on this project."
+  type        = string
+  default     = null
+}
+
+variable "supabase_google_client_secret" {
+  description = "Google OAuth client secret. Null leaves the provider unmanaged on this project."
+  type        = string
+  sensitive   = true
+  default     = null
+}
+
 # Feed these into the GitHub environment variables the web build consumes.
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
@@ -112,3 +128,5 @@ output "supabase_publishable_key" {
 }
 
 output "supabase_project_ref" { value = supabase_project.main.id }
+
+output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
