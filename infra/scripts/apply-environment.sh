@@ -4,21 +4,26 @@
 # and the GitHub environment configuration.
 #
 #   pnpm infra:apply staging
+#   pnpm infra:apply staging --bootstrap-only   state backend, CI identity and GitHub config only
 #
 # NEVER RUN IN CI. It creates role assignments and Entra applications — the credentials CI itself
 # authenticates with. Every stage is idempotent; safe to re-run after a failure partway through.
+#
+# --bootstrap-only stops after exactly the things CI cannot do for itself, leaving the resources
+# root for CD to apply. Useful after a full destroy, which takes the identity and the state with it.
 
 set -euo pipefail
 
 source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 # ─── arguments ────────────────────────────────────────────────────────────────────────────────
-ENVIRONMENT=""; CHECK_ONLY=0
+ENVIRONMENT=""; CHECK_ONLY=0; BOOTSTRAP_ONLY=0
 for arg in "$@"; do
   case "$arg" in
-    --check) CHECK_ONLY=1 ;;
-    -*)      die "unknown option: $arg" ;;
-    *)       ENVIRONMENT="$arg" ;;
+    --check)          CHECK_ONLY=1 ;;
+    --bootstrap-only) BOOTSTRAP_ONLY=1 ;;
+    -*)               die "unknown option: $arg" ;;
+    *)                ENVIRONMENT="$arg" ;;
   esac
 done
 
@@ -32,11 +37,13 @@ case "$ENVIRONMENT" in
     APP_NAME="github-10xgains-production"
     FUNCTIONAPP="func-10xgains-prod";     STATICWEBAPP="swa-10xgains-prod" ;;
   *)
-    die "usage: $(basename "$0") <staging|production> [--check]" ;;
+    die "usage: $(basename "$0") <staging|production> [--bootstrap-only] [--check]" ;;
 esac
 LOCATION="westeurope"
 env_dir "$ENVIRONMENT"
-STAGES=5
+# Bootstrap-only still configures the GitHub environment: those entries are derived from stage 2's
+# identity and from static names, not from the resources root, so they are correct before it exists.
+STAGES=$(( BOOTSTRAP_ONLY ? 3 : 5 ))
 
 # ─── preflight: check EVERYTHING before doing ANY work ────────────────────────────────────────
 # Collect every failure rather than dying on the first, so one run tells you everything that is
@@ -355,6 +362,17 @@ export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
 stage_bootstrap_create
 stage_bootstrap_adopt
+
+if ((BOOTSTRAP_ONLY)); then
+  stage_github
+  step "Done — '$ENVIRONMENT' is bootstrapped"
+  info "state backend, CI identity and GitHub environment are in place"
+  info "the resources root is untouched — push to let CD apply it, or re-run without"
+  info "--bootstrap-only to build it here"
+  printf '\n'
+  exit 0
+fi
+
 stage_resources
 stage_database
 stage_github
