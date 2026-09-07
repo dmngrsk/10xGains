@@ -22,6 +22,17 @@ if (!runtime) {
   );
 }
 
+// `env:ensure` copies env.template.js, whose values are all placeholders. The object is truthy, so
+// the check above passes and the failures land far away: name is not 'development', which turns on
+// a service worker `ng serve` never emits, and createClient('__SUPABASE_URL__') throws Invalid URL.
+if (Object.values(runtime).some((v) => typeof v === 'string' && /^__.*__$/.test(v))) {
+  throw new Error(
+    'Runtime configuration still holds template placeholders: env.js was copied from ' +
+    'env.template.js but never filled in. Start the local stack (.devcontainer/post-start.sh ' +
+    'writes it), or edit apps/web/src/env.js with your local URLs.'
+  );
+}
+
 export const environment = {
   name: runtime?.name ?? '',
   // Only the production build emits ngsw-worker.js; registering it under `ng serve` fails.
