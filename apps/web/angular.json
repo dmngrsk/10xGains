@@ -67,7 +67,7 @@
                 },
                 "fonts": true
               },
-              "sourceMap": true
+              "sourceMap": false
             },
             "development": {
               "optimization": false,
