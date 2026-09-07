@@ -11,60 +11,45 @@ This document describes the Continuous Integration and Continuous Deployment pip
 Values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are
 not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
-#### Staging Environment
-```yaml
-# Variables (vars)
-APP_WEBMANIFEST_NAME: App name shown in the web manifest
-APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
-AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
-AZURE_FUNCTIONAPP_NAME: Name of the Azure Function App resource
-AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
-CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
-SUPABASE_GOOGLE_CLIENT_ID: Google OAuth client id for Supabase sign-in (optional)
-SUPABASE_ORGANIZATION_ID: Supabase organization the project belongs to
-TF_STATE_STORAGE_ACCOUNT: Storage account holding this environment's Terraform state
+Both environments take the same set with their own values; `APP_DEV_USER_*` is staging-only.
+"Set by" is who fills the entry in — `infra:apply` writes it, or you do.
 
-# Secrets
-APP_CANARY_USER_EMAIL: Email of the canary user for E2E tests
-APP_CANARY_USER_PASSWORD: Password of the canary user for E2E tests
-APP_DEV_USER_EMAIL: Email of the seeded dev user (optional; staging only)
-APP_DEV_USER_PASSWORD: Password of the seeded dev user (optional; staging only)
-AZURE_CLIENT_ID: Application id of this environment's CI identity (OIDC)
-AZURE_TENANT_ID: Entra tenant id
-AZURE_SUBSCRIPTION_ID: Azure subscription id
-SUPABASE_ACCESS_TOKEN: Access token for the Supabase CLI and Terraform provider
-SUPABASE_DB_PASSWORD: Database password for the Terraform-managed project
-SUPABASE_GOOGLE_CLIENT_SECRET: Google OAuth client secret (optional; paired with the id)
-```
+#### Variables
 
-#### Production Environment
+| Variable | Set by | Description |
+| --- | --- | --- |
+| `APP_WEBMANIFEST_NAME` | manual | App name shown in the web manifest |
+| `APP_WEBMANIFEST_SHORT_NAME` | manual | Short name shown on the home screen |
+| `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
+| `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
+| `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
+| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | manual | Timeout for Cypress commands (optional) |
+| `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
+| `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
+| `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
 
-The same set, with production's own values. `APP_DEV_USER_*` is staging-only.
+#### Secrets
 
-#### Who writes these
+| Secret | Set by | Description |
+| --- | --- | --- |
+| `APP_CANARY_USER_EMAIL` | manual | Email of the canary user for E2E tests |
+| `APP_CANARY_USER_PASSWORD` | manual | Password of the canary user for E2E tests |
+| `APP_DEV_USER_EMAIL` | manual | Email of the seeded dev user (optional; staging only) |
+| `APP_DEV_USER_PASSWORD` | manual | Password of the seeded dev user (optional; staging only) |
+| `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
+| `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
+| `AZURE_SUBSCRIPTION_ID` | **manual, preflight** | Azure subscription id |
+| `SUPABASE_ACCESS_TOKEN` | **manual, preflight** | Access token for the Supabase CLI and Terraform provider |
+| `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
+| `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |
 
-`pnpm infra:apply <environment>` writes nine of the entries above, and nothing else:
+The three marked **preflight** are the only ones anything checks for — `infra:apply` refuses to run
+without them. Nothing checks the rest, so a fresh environment missing the `APP_CANARY_USER_*` pair
+gets through `infrastructure` and `frontend`, then fails in `e2e`.
 
-```yaml
-# Variables
-AZURE_RESOURCE_GROUP, AZURE_FUNCTIONAPP_NAME, AZURE_STATIC_WEB_APP_NAME
-SUPABASE_GOOGLE_CLIENT_ID, SUPABASE_ORGANIZATION_ID, TF_STATE_STORAGE_ACCOUNT
-
-# Secrets
-AZURE_CLIENT_ID, SUPABASE_DB_PASSWORD, SUPABASE_GOOGLE_CLIENT_SECRET
-```
-
-The `SUPABASE_GOOGLE_*` pair is written only when both are present locally. Without them Terraform
+`SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform
 leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps
 whatever it already has.
-
-Everything else is set by hand, once per environment:
-
-- `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `SUPABASE_ACCESS_TOKEN` — the preflight fails without
-  them, so this is the one group you cannot forget.
-- `APP_WEBMANIFEST_NAME`, `APP_WEBMANIFEST_SHORT_NAME`, `CYPRESS_DEFAULT_COMMAND_TIMEOUT`,
-  `APP_CANARY_USER_*`, `APP_DEV_USER_*` — nothing checks for these. A fresh environment without
-  them gets through `infrastructure` and `frontend`, then fails in `e2e` on a missing canary user.
 
 **Never add `SUPABASE_PUBLISHABLE_KEY` as a secret here.** CD reads it from a Terraform output and
 passes it between jobs; a value matching a registered secret is redacted to `***` in transit, so
