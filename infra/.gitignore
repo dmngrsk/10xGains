@@ -16,4 +16,5 @@ backend.hcl
 # Saved plan files
 tfplan
 tfdestroy
+tfbootstrap
 *.tfplan

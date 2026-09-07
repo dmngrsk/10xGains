@@ -243,8 +243,26 @@ EOF
 
   ok "$IMPORTED imported, $((TRACKED - IMPORTED)) already tracked ($TRACKED resources adopted)"
 
+  # This root only ever adopts and creates, so a planned destroy means the state was written by a
+  # different configuration than the one running now — different module names, or resources split
+  # across state files. Left to -auto-approve, Terraform removes whatever the config no longer
+  # declares, and in this root that includes the resource group and the state account inside it.
+  # Reconcile the addresses (terraform state mv, or `moved` blocks) rather than bypassing this.
+  info "planning the bootstrap root…"
+  tf_retry "$dir" plan -input=false -no-color -out=tfbootstrap >/dev/null || die "terraform plan failed for $dir."
+
+  local destroys
+  destroys="$(tf "$dir" show -json tfbootstrap \
+    | jq -r '.resource_changes[]? | select(.change.actions | index("delete")) | .address')"
+  if [[ -n "$destroys" ]]; then
+    rm -f "$dir/tfbootstrap"
+    printf '%s\n' "$destroys" | indent >&2
+    die "the bootstrap plan would destroy the resources above — refusing. State and configuration disagree; see the note above this check in $(basename "${BASH_SOURCE[0]}")."
+  fi
+
   info "applying the bootstrap root — creates the CI identity and its federated credential…"
-  tf_retry "$dir" apply -auto-approve -input=false -no-color | indent || die "terraform apply failed for $dir."
+  tf_retry "$dir" apply -input=false -no-color tfbootstrap | indent || die "terraform apply failed for $dir."
+  rm -f "$dir/tfbootstrap"
   AZURE_CLIENT_ID="$(tf_retry "$dir" output -raw client_id)" || die "could not read the client_id output."
   ok "CI identity $APP_NAME ($AZURE_CLIENT_ID)"
   info "scoped to $RESOURCE_GROUP and its tfstate container only; no access to the other environment"
