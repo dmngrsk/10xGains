@@ -5,7 +5,6 @@
 #
 #   pnpm infra:apply staging
 #   pnpm infra:apply staging --bootstrap-only   state backend, CI identity and GitHub config only
-#   pnpm infra:apply staging --dns-only         the custom domain only, against what CD has built
 #
 # NEVER RUN IN CI. It creates role assignments and Entra applications — the credentials CI itself
 # authenticates with. Every stage is idempotent; safe to re-run after a failure partway through.
@@ -18,12 +17,11 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 # ─── arguments ────────────────────────────────────────────────────────────────────────────────
-ENVIRONMENT=""; CHECK_ONLY=0; BOOTSTRAP_ONLY=0; DNS_ONLY=0
+ENVIRONMENT=""; CHECK_ONLY=0; BOOTSTRAP_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --check)          CHECK_ONLY=1 ;;
     --bootstrap-only) BOOTSTRAP_ONLY=1 ;;
-    --dns-only)       DNS_ONLY=1 ;;
     -*)               die "unknown option: $arg" ;;
     *)                ENVIRONMENT="$arg" ;;
   esac
@@ -39,13 +37,13 @@ case "$ENVIRONMENT" in
     APP_NAME="github-10xgains-production"
     FUNCTIONAPP="func-10xgains-prod";     STATICWEBAPP="swa-10xgains-prod" ;;
   *)
-    die "usage: $(basename "$0") <staging|production> [--bootstrap-only] [--dns-only] [--check]" ;;
+    die "usage: $(basename "$0") <staging|production> [--bootstrap-only] [--check]" ;;
 esac
 LOCATION="westeurope"
 env_dir "$ENVIRONMENT"
 # Bootstrap-only still configures the GitHub environment: those entries are derived from stage 2's
 # identity and from static names, not from the resources root, so they are correct before it exists.
-STAGES=$(( DNS_ONLY ? 1 : BOOTSTRAP_ONLY ? 3 : 6 ))
+STAGES=$(( BOOTSTRAP_ONLY ? 3 : 5 ))
 
 # ─── preflight: check EVERYTHING before doing ANY work ────────────────────────────────────────
 # Collect every failure rather than dying on the first, so one run tells you everything that is
@@ -82,11 +80,11 @@ preflight() {
     "SUPABASE_DB_PASSWORD is unset or still a placeholder." \
     is_set "${SUPABASE_DB_PASSWORD:-}"
 
-  preflight_cloudflare "$DNS_ONLY"
+  preflight_cloudflare 0
 
   preflight_failed && exit 1
 
-  if ((! DNS_ONLY)) && ! is_set "${CLOUDFLARE_API_TOKEN:-}"; then
+  if ! is_set "${CLOUDFLARE_API_TOKEN:-}"; then
     warn "No Cloudflare credentials — '$ENVIRONMENT' will keep its generated hostname."
   fi
   if [[ "$ENVIRONMENT" == "production" ]]; then
@@ -328,49 +326,7 @@ EOF
     || die "could not read the supabase_google_callback_url output."
 }
 
-# ─── stage 4: dns ─────────────────────────────────────────────────────────────────────────────
-# Local only, and deliberately: a Cloudflare token scopes to a whole zone, so one that can write
-# this environment's hostname can rewrite every record in the zone. See modules/dns/main.tf.
-stage_dns() {
-  stage "bind the custom domain"
-  local dir="$ENV_DIR/dns"
-
-  if [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ZONE_ID:-}" ]]; then
-    info "no Cloudflare credentials — skipping; '$ENVIRONMENT' keeps its generated hostname"
-    return 0
-  fi
-
-  write_backend_config "$dir" admin dns.tfstate
-  cat > "$dir/terraform.tfvars" <<EOF
-subscription_id = "$SUBSCRIPTION_ID"
-EOF
-
-  # Read here rather than taken from stage 3, so --dns-only can rebind a domain against an
-  # environment CD already built.
-  local res="$ENV_DIR/resources"
-  [[ -f "$res/backend.hcl" ]] || die "$ENVIRONMENT/resources is not configured — run without --dns-only first."
-  tf_retry "$res" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null \
-    || die "terraform init failed for $res."
-  STATIC_WEB_APP_ID="$(tf_retry "$res" output -raw static_web_app_id)" \
-    || die "could not read the static_web_app_id output."
-  STATIC_WEB_APP_HOSTNAME="$(tf_retry "$res" output -raw static_web_app_default_hostname)" \
-    || die "could not read the static_web_app_default_hostname output."
-
-  export TF_VAR_static_web_app_id="$STATIC_WEB_APP_ID"
-  export TF_VAR_static_web_app_default_hostname="$STATIC_WEB_APP_HOSTNAME"
-
-  info "initialising the dns root…"
-  tf_retry "$dir" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null \
-    || die "terraform init failed for $dir."
-  tf_retry "$dir" apply -auto-approve -input=false -no-color | indent \
-    || die "terraform apply failed for $dir."
-
-  APP_HOSTNAME="$(tf_retry "$dir" output -raw url)" || die "could not read the url output."
-  ok "$APP_HOSTNAME → $STATIC_WEB_APP_HOSTNAME (proxied)"
-  info "Azure validates the TXT record asynchronously; the binding is live within a few minutes"
-}
-
-# ─── stage 5: database ────────────────────────────────────────────────────────────────────────
+# ─── stage 4: database ────────────────────────────────────────────────────────────────────────
 stage_database() {
   stage "push the migrations and run the database tests"
   info "linking the Supabase CLI to $SUPABASE_PROJECT_REF…"
@@ -416,6 +372,13 @@ stage_github() {
     info "no Google credentials in the environment — skipping SUPABASE_GOOGLE_*"
   fi
 
+  if [[ -n "${CLOUDFLARE_API_TOKEN:-}" && -n "${CLOUDFLARE_ZONE_ID:-}" ]]; then
+    set_var    CLOUDFLARE_ZONE_ID   "$CLOUDFLARE_ZONE_ID"
+    set_secret CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
+  else
+    info "no Cloudflare credentials — CD will leave DNS unmanaged"
+  fi
+
   ok "GitHub environment '$ENVIRONMENT' on $repo"
   info "URLs and API keys are not stored — CD reads them from Terraform outputs at deploy time"
   info "unchanged: AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, SUPABASE_ACCESS_TOKEN, APP_*_USER_*"
@@ -425,13 +388,6 @@ stage_github() {
 preflight
 export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
-if ((DNS_ONLY)); then
-  stage_dns
-  step "Done — the custom domain for '$ENVIRONMENT' is bound"
-  printf '\n'
-  exit 0
-fi
-
 stage_bootstrap_create
 stage_bootstrap_adopt
 
@@ -446,7 +402,6 @@ if ((BOOTSTRAP_ONLY)); then
 fi
 
 stage_resources
-stage_dns
 stage_database
 stage_github
 

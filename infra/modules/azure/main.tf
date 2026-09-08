@@ -108,7 +108,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
     # The Functions host answers OPTIONS itself and forwards only listed origins, so Hono never
     # sees a preflight (spec §4.4). Origins only; methods and headers stay Hono's.
     cors {
-      allowed_origins = [local.app_url]
+      allowed_origins = distinct(concat([local.app_url], var.extra_allowed_origins))
     }
   }
 

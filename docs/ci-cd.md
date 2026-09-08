@@ -23,6 +23,7 @@ Both environments take the same set with their own values. "Set by" is who fills
 | `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
 | `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
 | `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
+| `CLOUDFLARE_ZONE_ID` | `infra:apply` | Cloudflare zone holding the custom domain (optional) |
 | `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
 | `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
 | `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
@@ -34,6 +35,7 @@ Both environments take the same set with their own values. "Set by" is who fills
 | `APP_CANARY_USER_EMAIL` | **manual** | Email of the canary user for E2E tests |
 | `APP_CANARY_USER_PASSWORD` | **manual** | Password of the canary user for E2E tests |
 | `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
+| `CLOUDFLARE_API_TOKEN` | `infra:apply` | Zone:DNS:Edit, for the custom domain (optional) |
 | `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
 | `AZURE_SUBSCRIPTION_ID` | **manual, preflight** | Azure subscription id |
 | `SUPABASE_ACCESS_TOKEN` | **manual, preflight** | Access token for the Supabase CLI and Terraform provider |

@@ -2,8 +2,9 @@ terraform {
   required_version = ">= 1.9"
 
   required_providers {
-    azurerm  = { source = "hashicorp/azurerm", version = "~> 5.4" }
-    supabase = { source = "supabase/supabase", version = "~> 1.11" }
+    azurerm    = { source = "hashicorp/azurerm", version = "~> 5.4" }
+    supabase   = { source = "supabase/supabase", version = "~> 1.11" }
+    cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.24" }
   }
 
   backend "azurerm" {}
@@ -18,9 +19,17 @@ provider "supabase" {
   access_token = var.supabase_access_token
 }
 
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}
+
 locals {
   environment = "staging"
   location    = "westeurope"
+
+  # Absent credentials leave DNS unmanaged and the environment on its generated hostname.
+  dns_configured = var.cloudflare_api_token != "" && var.cloudflare_zone_id != ""
+  custom_domain  = "staging.10xgains.dmngrsk.pl"
 
   tags = {
     application = "10xgains"
@@ -46,15 +55,30 @@ resource "supabase_project" "main" {
 }
 
 module "supabase" {
-  source        = "../../../modules/supabase"
-  project_ref   = supabase_project.main.id
-  site_url      = module.azure.app_url
-  redirect_urls = ["${module.azure.app_url}/auth/callback"]
+  source      = "../../../modules/supabase"
+  project_ref = supabase_project.main.id
+  site_url    = module.azure.app_url
+  redirect_urls = concat(
+    ["${module.azure.app_url}/auth/callback"],
+    local.dns_configured ? ["https://staging.10xgains.dmngrsk.pl", "https://staging.10xgains.dmngrsk.pl/auth/callback"] : []
+  )
 
   email_autoconfirm = true
 
   google_client_id     = var.supabase_google_client_id
   google_client_secret = var.supabase_google_client_secret
+}
+
+module "dns" {
+  source = "../../../modules/dns"
+  count  = local.dns_configured ? 1 : 0
+
+  environment = local.environment
+  hostname    = "staging.10xgains.dmngrsk.pl"
+  zone_id     = var.cloudflare_zone_id
+
+  static_web_app_id               = module.azure.swa_id
+  static_web_app_default_hostname = module.azure.swa_default_hostname
 }
 
 module "azure" {
@@ -70,6 +94,8 @@ module "azure" {
   log_analytics_name   = "log-10xgains-staging"
   static_web_app_name  = "swa-10xgains-staging"
 
+  extra_allowed_origins = local.dns_configured ? ["https://${local.custom_domain}"] : []
+
   supabase_url             = module.supabase.url
   supabase_publishable_key = module.supabase.publishable_key
 
@@ -77,6 +103,18 @@ module "azure" {
 }
 
 variable "subscription_id" { type = string }
+
+variable "cloudflare_zone_id" {
+  type    = string
+  default = ""
+}
+
+variable "cloudflare_api_token" {
+  description = "Zone:DNS:Edit. Empty leaves DNS unmanaged."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
 variable "supabase_organization_id" { type = string }
 
 variable "supabase_database_password" {
