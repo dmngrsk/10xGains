@@ -8,7 +8,7 @@ output "app_url" {
 }
 
 output "swa_default_hostname" {
-  description = "The origin to point the Cloudflare record at when rebinding the domain (§9 M2)."
+  description = "Origin for the dns root's CNAME record."
   value       = azurerm_static_web_app.main.default_host_name
 }
 

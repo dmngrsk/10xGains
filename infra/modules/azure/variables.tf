@@ -42,9 +42,9 @@ variable "app_url_override" {
   description = <<-DESC
     Public URL of the web app, when it is not the Static Web App's own hostname.
 
-    Production is fronted by the custom domain 10xgains.dmngrsk.pl (bound manually — spec §9 M2),
-    so its APP_URL must be the domain, not the Azure-generated hostname. Staging leaves this null
-    and takes the SWA hostname, which changes on every rebuild and is picked up automatically.
+    Production is fronted by 10xgains.dmngrsk.pl, so its APP_URL must be the domain rather than
+    the Azure-generated hostname. Staging leaves this null and takes the SWA hostname, which
+    changes on every rebuild and is picked up automatically.
   DESC
   type        = string
   default     = null

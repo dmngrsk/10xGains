@@ -15,12 +15,8 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-# Passing the token explicitly rather than relying on the ambient environment: a `terraform apply`
-# run from a shell without SUPABASE_ACCESS_TOKEN exported fails partway through, after the Azure
-# resources have already been created.
-#
-# The variable defaults to null, and a null argument is the same as an unset one — so CI, which
-# has SUPABASE_ACCESS_TOKEN in its environment already, needs no tfvars entry.
+# Explicit rather than ambient: without it an apply fails partway, after the Azure resources
+# exist. Null is the same as unset, so CI needs no tfvars entry.
 provider "supabase" {
   access_token = var.supabase_access_token
 }
@@ -36,8 +32,8 @@ locals {
   }
 }
 
-# Owned by bootstrap/, read-only here. This is what makes it impossible for an environment plan to
-# destroy the resource group or the state account living inside it (spec §3.6.1).
+# Owned by bootstrap/, read-only here: an environment plan cannot destroy the resource group or
+# the state account inside it (spec §3.6.1).
 data "azurerm_resource_group" "env" {
   name = "rg-10xgains-staging"
 }

@@ -6,7 +6,7 @@ variable "hostname" {
 }
 
 variable "zone_id" {
-  description = "Cloudflare zone containing the hostname. Supplied rather than looked up, so the token needs only DNS:Edit and not Zone:Read."
+  description = "Cloudflare zone. Supplied rather than looked up so the token needs only DNS:Edit."
   type        = string
 }
 

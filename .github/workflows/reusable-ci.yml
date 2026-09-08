@@ -174,9 +174,6 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      # Only build metadata is baked in. Everything describing the environment — the API and
-      # Supabase addresses, the webmanifest name — is left as placeholders and applied by CD from
-      # that run's Terraform outputs, so one artifact deploys to any environment.
       - name: Stamp build metadata
         run: |
           ENV_FILE="apps/web/src/environments/environment.ts"
@@ -193,9 +190,6 @@ jobs:
           fi
           cat "$ENV_FILE"
 
-      # Unconditional by design. env.js is gitignored and written per machine for local
-      # development; if a developer's copy ever reached a build it would ship localhost URLs, and
-      # CD's placeholder guard could not catch it because there would be no placeholders left.
       - name: Write the runtime configuration template
         run: |
           cp -f apps/web/src/env.template.js apps/web/src/env.js

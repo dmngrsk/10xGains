@@ -1,19 +1,10 @@
 locals {
-  # Production pins this to the custom domain; staging follows the Static Web App's generated
-  # hostname, so a rebuild propagates automatically instead of being chased through the CSP,
-  # the CORS origins and the GitHub variables by hand.
+  # Override pins production to its custom domain; otherwise a rebuild's new generated hostname
+  # propagates on its own to the CSP, the CORS origins and the GitHub variables.
   app_url = coalesce(var.app_url_override, "https://${azurerm_static_web_app.main.default_host_name}")
 }
 
-# The custom domain is deliberately absent.
-#
-# `azurerm_static_web_app_custom_domain` exists, but the 10xgains.dmngrsk.pl binding is manual
-# (spec §9 M2): the Cloudflare record is *proxied*, so Azure's validation resolves Cloudflare's
-# addresses rather than the azurestaticapps.net origin. Binding it requires setting the record
-# DNS-only, validating, then re-proxying — a sequence that does not belong in a plan/apply loop.
-#
-# Note the default hostname is Azure-generated and will differ from the old one after a rebuild.
-# That is fine: every consumer of it is derived from the output below rather than hand-copied.
+# The custom domain binding lives in the dns root, which is applied locally rather than by CD.
 
 resource "azurerm_static_web_app" "main" {
   name                = var.static_web_app_name
@@ -49,8 +40,8 @@ resource "azurerm_application_insights" "main" {
   tags = var.tags
 }
 
-# Functions storage. Unlike the state accounts, this one keeps shared-key access: the Flex
-# Consumption app authenticates to its deployment container with `storage_access_key`.
+# Keeps shared-key access, unlike the state accounts: the Flex Consumption app authenticates to
+# its deployment container with `storage_access_key`.
 resource "azurerm_storage_account" "functions" {
   name                = var.storage_account_name
   resource_group_name = var.resource_group_name
@@ -100,14 +91,11 @@ resource "azurerm_function_app_flex_consumption" "main" {
   instance_memory_in_mb  = var.instance_memory_in_mb
   http_concurrency       = var.http_concurrency
 
-  # The observed apps accept plain HTTP. The SWA's HSTS header covers the web origin, not this
-  # hostname, so a bearer token sent here over HTTP is exposed. See spec §4.1.
+  # The SWA's HSTS header covers the web origin, not this hostname (spec §4.1).
   https_only = true
 
-  # The seam (spec §1.1). Both values are derived from the Supabase project rather than copied
-  # by hand. Platform settings — AzureWebJobsStorage, APPLICATIONINSIGHTS_CONNECTION_STRING — are
-  # injected by the provider from storage_access_key and application_insights_connection_string
-  # and must NOT be repeated here.
+  # The seam (spec §1.1). AzureWebJobsStorage and APPLICATIONINSIGHTS_CONNECTION_STRING are
+  # injected by the provider and must not be repeated here.
   app_settings = {
     SUPABASE_URL             = var.supabase_url
     SUPABASE_PUBLISHABLE_KEY = var.supabase_publishable_key
@@ -115,16 +103,10 @@ resource "azurerm_function_app_flex_consumption" "main" {
   }
 
   site_config {
-    # Belongs here, not at the top level: the provider maps it onto the
-    # APPLICATIONINSIGHTS_CONNECTION_STRING app setting, which is why that key must not appear in
-    # `app_settings` above.
     application_insights_connection_string = azurerm_application_insights.main.connection_string
 
-    # Hono owns the response headers (spec §4.4), but it never sees a preflight: the Functions
-    # host answers OPTIONS itself and forwards the request only when the origin is listed here.
-    # Left empty, every preflight returns 204 with no Access-Control-Allow-Origin — simple GETs
-    # succeed and every authenticated call fails, which is the shape this omission produced.
-    # Origins only; methods, headers and credentials stay Hono's.
+    # The Functions host answers OPTIONS itself and forwards only listed origins, so Hono never
+    # sees a preflight (spec §4.4). Origins only; methods and headers stay Hono's.
     cors {
       allowed_origins = [local.app_url]
     }

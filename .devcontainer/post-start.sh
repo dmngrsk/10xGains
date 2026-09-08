@@ -143,8 +143,7 @@ node -e '
 
 # Regenerated whole; edit env.js directly to point local development at another environment.
 # The web app reads its addresses at runtime from env.js — the same mechanism deployed builds
-# use, so `ng serve` exercises the same code path rather than a parallel one. This file is
-# gitignored; CI copies env.template.js over it instead.
+# use, so `ng serve` exercises the same code path rather than a parallel one.
 cat > apps/web/src/env.js <<EOF
 window.__TXG_ENV__ = {
   name: 'development',

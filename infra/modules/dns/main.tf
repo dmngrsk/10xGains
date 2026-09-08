@@ -1,30 +1,17 @@
-# The custom domain and the records that prove it, in one place.
-#
-# ┌─ WHY THIS IS NOT IN THE RESOURCES ROOT ─────────────────────────────────────────────────────┐
-# │ A Cloudflare API token scopes to a whole zone — there is no record- or subdomain-level      │
-# │ scoping, and the subdomain-zone setup that would provide one is Enterprise-only on the      │
-# │ parent zone. A token CI could use to write staging.10xgains.dmngrsk.pl could equally        │
-# │ rewrite the MX records for dmngrsk.pl.                                                      │
-# │                                                                                             │
-# │ So this root is applied locally by infra:apply, never by CD — the same boundary that        │
-# │ already keeps the state backend and the CI identity out of CI (spec §11.3).                 │
-# └─────────────────────────────────────────────────────────────────────────────────────────────┘
+# Applied by infra:apply, never by CD: a Cloudflare token scopes to a whole zone, so one that
+# could write this hostname could also rewrite the zone's MX records. Subdomain zones, which would
+# scope it properly, are Enterprise-only on the parent.
 
-# TXT rather than CNAME delegation. The record is proxied, so a CNAME check resolves to
-# Cloudflare's addresses rather than the azurestaticapps.net origin and never validates — the
-# manual dance in spec §9 M2 exists only to work around that. TXT validation ignores the CNAME
-# entirely, so the record stays proxied throughout.
-#
-# The provider does not poll for TXT completion ("terraform will not validate TXT validation
-# records are complete"), so this returns with its token instead of blocking on a record that
-# cannot exist yet. Azure validates asynchronously once the record below is in place.
+# TXT rather than cname-delegation: the record is proxied, so a CNAME check resolves to Cloudflare
+# rather than the origin and never validates (spec §9 M2). The provider does not poll for TXT
+# completion, so this returns with its token instead of blocking.
 resource "azurerm_static_web_app_custom_domain" "main" {
   static_web_app_id = var.static_web_app_id
   domain_name       = var.hostname
   validation_type   = "dns-txt-token"
 }
 
-# Proxied, so ttl must be 1 — Cloudflare assigns it and rejects an explicit value.
+# ttl must be 1 while proxied; Cloudflare rejects an explicit value.
 resource "cloudflare_dns_record" "app" {
   zone_id = var.zone_id
   name    = var.hostname

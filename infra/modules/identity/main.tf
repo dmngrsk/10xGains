@@ -1,14 +1,8 @@
-# One environment's CI deployment identity.
+# One environment's CI deployment identity. Never applied by CI: an identity able to write its own
+# federated credentials could add one trusting any repository and assume itself from there.
 #
-# NEVER APPLIED BY CI. An identity that can write its own federated credentials can add one
-# trusting any repository, branch or environment and assume itself from there. Granting a CD
-# principal the Graph permissions to manage this would make the per-environment split worthless,
-# because either principal could mint the other. Applied by a human with subscription Owner and
-# Microsoft Graph permissions.
-#
-# Scoped per environment on purpose. A single application carrying two federated credentials —
-# the arrangement this replaces — resolves to one service principal holding both resource groups'
-# role assignments, so a workflow running in staging received a token that could write production.
+# One application per environment, because a single application with two federated credentials
+# resolves to one service principal holding both resource groups' role assignments.
 
 resource "azuread_application_registration" "cd" {
   display_name = var.application_name
@@ -20,8 +14,7 @@ resource "azuread_service_principal" "cd" {
   client_id = azuread_application_registration.cd.client_id
 }
 
-# The subject must match the workflow's environment exactly. A typo surfaces as a CI auth failure
-# that reads like a missing secret rather than a wrong one.
+# Must match the workflow's environment exactly; a typo reads like a missing secret, not a wrong one.
 resource "azuread_application_federated_identity_credential" "github" {
   application_id = azuread_application_registration.cd.id
   display_name   = "github-10xgains-env-${var.environment}"
@@ -35,21 +28,16 @@ data "azurerm_resource_group" "env" {
   name = var.resource_group_name
 }
 
-# Scoped to one resource group. This is the boundary that stops a staging workflow reaching
-# production; never widen it to the subscription.
+# The boundary that stops a staging workflow reaching production. Never widen to the subscription.
 resource "azurerm_role_assignment" "contributor" {
   scope                = data.azurerm_resource_group.env.id
   role_definition_name = "Contributor"
   principal_id         = azuread_service_principal.cd.object_id
 }
 
-# Container scope, and deliberately only the `tfstate` container. The sibling `admin` container
-# holds bootstrap and identity state — including the storage account's own keys — and no CD
-# principal is ever granted it.
-#
-# Combined with `shared_access_key_enabled = false` on the account, this is the only path to
-# state: Contributor on the resource group cannot read blobs, and there is no account key to fall
-# back on.
+# `tfstate` only — the sibling `admin` container holds bootstrap, identity and dns state and is
+# never granted to CD. With `shared_access_key_enabled = false`, this is the only path to state:
+# Contributor cannot read blobs and there is no account key.
 resource "azurerm_role_assignment" "tfstate" {
   scope                = var.tfstate_container_id
   role_definition_name = "Storage Blob Data Contributor"

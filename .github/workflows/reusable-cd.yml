@@ -121,8 +121,6 @@ jobs:
         id: tf_outputs
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
-          # Assigned and checked rather than echoed inline: the runner's `bash -e` does not fail on a
-          # command substitution inside an argument, so a missing output would silently publish "".
           set -euo pipefail
           for o in api_url app_url supabase_url supabase_publishable_key supabase_project_ref; do
             v="$(terraform output -raw "$o")"
@@ -261,7 +259,6 @@ jobs:
             -e "s|__SUPABASE_PUBLISHABLE_KEY__|$SUPABASE_PUBLISHABLE_KEY|g" \
             "$ENV_JS" "$SWA_CONFIG"
 
-          # The webmanifest names the installed PWA, so staging and production must differ.
           MANIFEST=$(find apps/web/dist -name 'manifest.webmanifest' | head -1)
           if [ -n "$MANIFEST" ]; then
             jq --arg n "$WEBMANIFEST_NAME" --arg s "$WEBMANIFEST_SHORT_NAME" \
@@ -343,8 +340,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ needs.infrastructure.outputs.supabase_project_ref }}
         run: |
-          # `first` because a project may hold several secret keys; selecting them all would
-          # write a multi-line value into $GITHUB_ENV.
           key=$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             "https://api.supabase.com/v1/projects/$PROJECT_REF/api-keys?reveal=true" \
             | jq -r 'first(.[] | select(.type=="secret") | .api_key)')

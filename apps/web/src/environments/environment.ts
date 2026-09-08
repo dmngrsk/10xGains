@@ -14,17 +14,12 @@ interface RuntimeEnvironment {
 const runtime = (window as unknown as { __TXG_ENV__?: RuntimeEnvironment }).__TXG_ENV__;
 
 if (!runtime) {
-  // Nothing downstream can work without this, and an empty URL surfaces later as an opaque
-  // "supabaseUrl is required" from the Supabase client. Fail where the cause is visible.
   throw new Error(
     'Runtime configuration is missing: /env.js did not load. ' +
     'Locally, run `pnpm env:ensure` in apps/web; a deployed build has it substituted by CD.'
   );
 }
 
-// `env:ensure` copies env.template.js, whose values are all placeholders. The object is truthy, so
-// the check above passes and the failures land far away: name is not 'development', which turns on
-// a service worker `ng serve` never emits, and createClient('__SUPABASE_URL__') throws Invalid URL.
 if (Object.values(runtime).some((v) => typeof v === 'string' && /^__.*__$/.test(v))) {
   throw new Error(
     'Runtime configuration still holds template placeholders: env.js was copied from ' +
@@ -35,7 +30,6 @@ if (Object.values(runtime).some((v) => typeof v === 'string' && /^__.*__$/.test(
 
 export const environment = {
   name: runtime?.name ?? '',
-  // Only the production build emits ngsw-worker.js; registering it under `ng serve` fails.
   enableServiceWorker: runtime?.name !== undefined && runtime.name !== 'development',
   build: {
     name: '__BUILD_NAME__',

@@ -5,10 +5,8 @@ terraform {
     azuread = { source = "hashicorp/azuread", version = "~> 3.9" }
   }
 
-  # Self-hosting: this root's state lives in the `admin` container it creates. On a first run the
-  # block is commented out (local state), then restored and migrated with
-  # `terraform init -migrate-state`. Never commit the resulting local state — it records the
-  # storage account keys, and this repository is public.
+  # Self-hosting: this root's state lives in the `admin` container it creates. First run comments
+  # this out, then migrates with `terraform init -migrate-state`. Never commit that local state.
   backend "azurerm" {}
 }
 
@@ -21,12 +19,8 @@ provider "azurerm" {
 # Application.ReadWrite.All or ownership of the registration.
 provider "azuread" {}
 
-# Everything an Owner sets up once, and CI never touches: the resource group the environment
-# lives in, the Terraform state backend, and the identity CI authenticates as.
-#
-# One root rather than two because the split bought nothing — both are Owner-applied, applied
-# together and destroyed together — while forcing the container id to be passed between them by
-# hand. Here it is a direct reference.
+# Everything an Owner sets up once and CI never touches: the resource group, the state backend,
+# and the identity CI authenticates as. One root, so the container id is a direct reference.
 
 module "bootstrap" {
   source = "../../../modules/bootstrap"

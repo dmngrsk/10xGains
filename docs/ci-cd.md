@@ -8,22 +8,21 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 ### Environment Variables
 
-Values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are
+The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are
 not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
-Both environments take the same set with their own values; `APP_DEV_USER_*` is staging-only.
-"Set by" is who fills the entry in — `infra:apply` writes it, or you do.
+Both environments take the same set with their own values. "Set by" is who fills the entry in — `infra:apply` writes it, or you do.
 
 #### Variables
 
 | Variable | Set by | Description |
 | --- | --- | --- |
-| `APP_WEBMANIFEST_NAME` | manual | App name shown in the web manifest |
-| `APP_WEBMANIFEST_SHORT_NAME` | manual | Short name shown on the home screen |
+| `APP_WEBMANIFEST_NAME` | **manual** | App name shown in the web manifest |
+| `APP_WEBMANIFEST_SHORT_NAME` | **manual** | Short name shown on the home screen |
 | `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
 | `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
 | `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
-| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | manual | Timeout for Cypress commands (optional) |
+| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
 | `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
 | `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
 | `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
@@ -32,10 +31,8 @@ Both environments take the same set with their own values; `APP_DEV_USER_*` is s
 
 | Secret | Set by | Description |
 | --- | --- | --- |
-| `APP_CANARY_USER_EMAIL` | manual | Email of the canary user for E2E tests |
-| `APP_CANARY_USER_PASSWORD` | manual | Password of the canary user for E2E tests |
-| `APP_DEV_USER_EMAIL` | manual | Email of the seeded dev user (optional; staging only) |
-| `APP_DEV_USER_PASSWORD` | manual | Password of the seeded dev user (optional; staging only) |
+| `APP_CANARY_USER_EMAIL` | **manual** | Email of the canary user for E2E tests |
+| `APP_CANARY_USER_PASSWORD` | **manual** | Password of the canary user for E2E tests |
 | `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
 | `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
 | `AZURE_SUBSCRIPTION_ID` | **manual, preflight** | Azure subscription id |
@@ -50,10 +47,6 @@ gets through `infrastructure` and `frontend`, then fails in `e2e`.
 `SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform
 leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps
 whatever it already has.
-
-**Never add `SUPABASE_PUBLISHABLE_KEY` as a secret here.** CD reads it from a Terraform output and
-passes it between jobs; a value matching a registered secret is redacted to `***` in transit, so
-the web build would ship a masked key.
 
 ### Technical Environments
 
@@ -145,9 +138,6 @@ Triggered by:
 Process:
 1. **Deployment Approval** (via `staging-cd` environment)
 2. **Infrastructure** (Terraform, `infra/environments/<environment>/resources`)
-   - Waits for the Supabase project to report `ACTIVE_HEALTHY` before planning
-   - Applies a saved plan, so what runs is what the step summary showed
-   - Publishes the API and app URLs, the Supabase URL, publishable key and project ref
 3. **Database Migration** (Supabase)
 4. **Backend Deployment** (Azure Functions)
 5. **Frontend Deployment** (Azure Static Web App)
@@ -162,7 +152,7 @@ Triggered by:
 Process:
 1. **Staging Deployment** (must succeed first)
 2. **Deployment Approval** (via `production-cd` environment)
-3. **Infrastructure** (Terraform) — as above
+3. **Infrastructure** (Terraform)
 4. **Database Migration** (Supabase)
 5. **Backend Deployment** (Azure Functions)
 6. **Frontend Deployment** (Azure Static Web App)
