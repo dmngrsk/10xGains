@@ -3,8 +3,9 @@
 # Destroy one environment — the inverse of apply-environment.sh.
 #
 #   pnpm infra:destroy staging                      everything (default)
-#   pnpm infra:destroy staging --keep-bootstrap     the Azure resources only, keeping the state
-#                                                   backend, the CI identity and the Supabase project
+#   pnpm infra:destroy staging --keep-bootstrap     the Azure resources and DNS only, keeping the
+#                                                   state backend, the CI identity and the Supabase
+#                                                   project
 #
 # NEVER RUN IN CI. Destroying an environment is a human decision, and a full run deletes the
 # Supabase project and its data — free-tier projects have no point-in-time recovery. Production
@@ -121,7 +122,32 @@ read -r reply
 [[ "$reply" == "$ENVIRONMENT" ]] || { rm -f "$DIR/tfdestroy"; die "confirmation did not match — nothing has been changed."; }
 
 # ─── destroy ──────────────────────────────────────────────────────────────────────────────────
-STAGES=$(( DESTROY_ALL ? 4 : 2 ))
+STAGES=$(( DESTROY_ALL ? 5 : 3 ))
+
+# First, and before the resource group: dns state lives in the state account inside that group, so
+# deleting the group first would strand the Cloudflare records with nothing left to remove them by.
+# The Static Web App is also still present here, which is what the custom domain binding hangs off.
+stage "remove the custom domain and its DNS records"
+DNS_DIR="$ENV_DIR/dns"
+if [[ ! -f "$DNS_DIR/backend.hcl" ]]; then
+  info "no dns root configured for '$ENVIRONMENT' — nothing to remove"
+elif [[ -z "${CLOUDFLARE_API_TOKEN:-}" || -z "${CLOUDFLARE_ZONE_ID:-}" ]]; then
+  warn "Cloudflare credentials are unset — the records will be left pointing at a deleted app."
+  warn "Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID and re-run, or remove them by hand."
+else
+  # Required variables must be supplied even for a destroy; their values do not affect what is
+  # removed, so a placeholder is fine once the resources root can no longer answer.
+  export TF_VAR_static_web_app_id="$(terraform -chdir="$DIR" output -raw static_web_app_id 2>/dev/null || echo unknown)"
+  export TF_VAR_static_web_app_default_hostname="$(terraform -chdir="$DIR" output -raw static_web_app_default_hostname 2>/dev/null || echo unknown)"
+
+  info "initialising the dns root…"
+  terraform -chdir="$DNS_DIR" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null \
+    || die "terraform init failed for $DNS_DIR."
+  run terraform -chdir="$DNS_DIR" destroy -auto-approve -input=false -no-color \
+    || die "terraform destroy failed for $DNS_DIR."
+  ok "custom domain binding and Cloudflare records removed"
+fi
+
 if ((DESTROY_ALL)); then
   stage "destroy the Azure resources and the Supabase project"
 else
@@ -167,6 +193,7 @@ if ((DESTROY_ALL)); then
   printf '\n'
 else
   step "Done — '$ENVIRONMENT' destroyed"
+  info "the custom domain is unbound; the next apply recreates it against the new hostname"
   info "kept: the resource group, state account, both containers, the CI identity and the"
   info "      Supabase project ${PROJECT_REF:-} — its callback URL is unchanged, so the Google"
   info "      OAuth client needs no edit"
