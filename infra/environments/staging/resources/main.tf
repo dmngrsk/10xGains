@@ -31,7 +31,7 @@ locals {
   # nonsensitive: whether a token was supplied is not itself a secret, and without this the
   # app URL inherits the mark and every output derived from it fails to render.
   dns_configured = nonsensitive(var.cloudflare_api_token != "" && var.cloudflare_zone_id != "")
-  custom_domain  = "staging.10xgains.dmngrsk.pl"
+  custom_domain  = "staging-10xgains.dmngrsk.pl"
 
   tags = {
     application = "10xgains"
@@ -62,7 +62,7 @@ module "supabase" {
   site_url    = module.azure.app_url
   redirect_urls = concat(
     ["${module.azure.app_url}/auth/callback"],
-    local.dns_configured ? ["https://staging.10xgains.dmngrsk.pl", "https://staging.10xgains.dmngrsk.pl/auth/callback"] : []
+    local.dns_configured ? ["https://${local.custom_domain}", "https://${local.custom_domain}/auth/callback"] : []
   )
 
   email_autoconfirm = true
@@ -76,7 +76,7 @@ module "dns" {
   count  = local.dns_configured ? 1 : 0
 
   environment = local.environment
-  hostname    = "staging.10xgains.dmngrsk.pl"
+  hostname    = local.custom_domain
   zone_id     = var.cloudflare_zone_id
 
   static_web_app_id               = module.azure.swa_id
