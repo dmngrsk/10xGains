@@ -6,7 +6,6 @@ terraform {
     supabase = { source = "supabase/supabase", version = "~> 1.11" }
   }
 
-  # Values supplied at init time — never committed (spec §6.3.1).
   backend "azurerm" {}
 }
 
@@ -15,8 +14,6 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-# Explicit rather than ambient: without it an apply fails partway, after the Azure resources
-# exist. Null is the same as unset, so CI needs no tfvars entry.
 provider "supabase" {
   access_token = var.supabase_access_token
 }
@@ -43,7 +40,6 @@ resource "supabase_project" "main" {
   region            = "eu-central-1"
   database_password = var.supabase_database_password
 
-  # instance_size deliberately omitted — free tier by design (spec §3.4).
 
   lifecycle {
     # No point-in-time recovery on the free tier, and the two-project cap means a replace could
@@ -58,7 +54,6 @@ module "supabase" {
   source      = "../../../modules/supabase"
   project_ref = supabase_project.main.id
 
-  # Captured from the portal before the rebuild (spec §7 item 3) — previously unmanaged state.
   site_url      = "https://${local.custom_domain}"
   redirect_urls = ["https://${local.custom_domain}/auth/callback"]
 
@@ -66,7 +61,6 @@ module "supabase" {
   google_client_secret = var.supabase_google_client_secret
 }
 
-# The custom domain binding lives in the dns root, applied locally rather than by CD.
 module "azure" {
   source              = "../../../modules/azure"
   environment         = local.environment
@@ -80,7 +74,6 @@ module "azure" {
   log_analytics_name   = "log-10xgains-prod"
   static_web_app_name  = "swa-10xgains-prod"
 
-  # Pinned to the custom domain, which is stable across a Static Web App rebuild.
   app_url_override = "https://${local.custom_domain}"
 
   supabase_url             = module.supabase.url
@@ -134,6 +127,5 @@ output "supabase_project_ref" { value = supabase_project.main.id }
 
 output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
 
-# Consumed by the dns root, which is applied locally rather than by CD.
 output "static_web_app_id" { value = module.azure.swa_id }
 output "static_web_app_default_hostname" { value = module.azure.swa_default_hostname }

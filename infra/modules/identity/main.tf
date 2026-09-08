@@ -35,9 +35,8 @@ resource "azurerm_role_assignment" "contributor" {
   principal_id         = azuread_service_principal.cd.object_id
 }
 
-# `tfstate` only — the sibling `admin` container holds bootstrap, identity and dns state and is
-# never granted to CD. With `shared_access_key_enabled = false`, this is the only path to state:
-# Contributor cannot read blobs and there is no account key.
+# `tfstate` only, never `admin`. With `shared_access_key_enabled = false` this is the only path to
+# state: Contributor cannot read blobs and there is no account key.
 resource "azurerm_role_assignment" "tfstate" {
   scope                = var.tfstate_container_id
   role_definition_name = "Storage Blob Data Contributor"

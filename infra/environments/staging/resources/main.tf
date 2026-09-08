@@ -6,7 +6,6 @@ terraform {
     supabase = { source = "supabase/supabase", version = "~> 1.11" }
   }
 
-  # Values supplied at init time — never committed (spec §6.3.1).
   backend "azurerm" {}
 }
 
@@ -15,8 +14,6 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-# Explicit rather than ambient: without it an apply fails partway, after the Azure resources
-# exist. Null is the same as unset, so CI needs no tfvars entry.
 provider "supabase" {
   access_token = var.supabase_access_token
 }
@@ -32,21 +29,16 @@ locals {
   }
 }
 
-# Owned by bootstrap/, read-only here: an environment plan cannot destroy the resource group or
-# the state account inside it (spec §3.6.1).
 data "azurerm_resource_group" "env" {
   name = "rg-10xgains-staging"
 }
 
-# Declared here rather than in a module: `prevent_destroy` accepts only literals, and staging must
-# stay freely destroyable for the experimentation phase (spec §6.4) while production must not.
 resource "supabase_project" "main" {
   organization_id   = var.supabase_organization_id
   name              = "10xGains Staging"
   region            = "eu-central-1"
   database_password = var.supabase_database_password
 
-  # instance_size is deliberately omitted — free tier by design (spec §3.4).
 
   lifecycle {
     ignore_changes = [database_password]
@@ -78,7 +70,6 @@ module "azure" {
   log_analytics_name   = "log-10xgains-staging"
   static_web_app_name  = "swa-10xgains-staging"
 
-  # No override: staging follows the Static Web App's generated hostname.
   supabase_url             = module.supabase.url
   supabase_publishable_key = module.supabase.publishable_key
 
@@ -114,7 +105,6 @@ variable "supabase_google_client_secret" {
   default     = null
 }
 
-# Feed these into the GitHub environment variables the web build consumes.
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
 output "supabase_url" { value = module.supabase.url }
@@ -127,6 +117,5 @@ output "supabase_project_ref" { value = supabase_project.main.id }
 
 output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
 
-# Consumed by the dns root, which is applied locally rather than by CD.
 output "static_web_app_id" { value = module.azure.swa_id }
 output "static_web_app_default_hostname" { value = module.azure.swa_default_hostname }

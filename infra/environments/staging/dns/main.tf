@@ -6,8 +6,6 @@ terraform {
     cloudflare = { source = "cloudflare/cloudflare", version = "~> 5.24" }
   }
 
-  # State lives in the admin container, which the CI principal has no access to — this root is
-  # never applied by CD (see modules/dns/main.tf).
   backend "azurerm" {}
 }
 

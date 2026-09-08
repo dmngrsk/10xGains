@@ -5,8 +5,6 @@ terraform {
     azuread = { source = "hashicorp/azuread", version = "~> 3.9" }
   }
 
-  # Self-hosting: this root's state lives in the `admin` container it creates. First run comments
-  # this out, then migrates with `terraform init -migrate-state`. Never commit that local state.
   backend "azurerm" {}
 }
 
@@ -15,12 +13,8 @@ provider "azurerm" {
   subscription_id = var.subscription_id
 }
 
-# Authenticates against Microsoft Graph separately from azurerm. The applying user needs
-# Application.ReadWrite.All or ownership of the registration.
 provider "azuread" {}
 
-# Everything an Owner sets up once and CI never touches: the resource group, the state backend,
-# and the identity CI authenticates as. One root, so the container id is a direct reference.
 
 module "bootstrap" {
   source = "../../../modules/bootstrap"
