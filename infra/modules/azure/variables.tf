@@ -57,8 +57,8 @@ variable "supabase_publishable_key" {
   sensitive = true
 }
 
-variable "extra_allowed_origins" {
-  description = "Additional CORS origins. Lets a custom domain work without taking the generated hostname out of the allowlist."
+variable "allowed_origins" {
+  description = "CORS origins for the Function App. Must be known at plan time; see the cors block."
   type        = list(string)
   default     = []
 }

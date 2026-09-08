@@ -107,12 +107,16 @@ resource "azurerm_function_app_flex_consumption" "main" {
 
     # The Functions host answers OPTIONS itself and forwards only listed origins, so Hono never
     # sees a preflight (spec §4.4). Origins only; methods and headers stay Hono's.
-    cors {
-      # Anchored on the generated hostname rather than app_url, which is the custom domain on
-      # production and would duplicate the extra origin. distinct() would dedupe it, but its result
-      # has an unknown length while the app is being created, and the provider plans that as zero
-      # cors blocks then contradicts itself on apply.
-      allowed_origins = concat(["https://${azurerm_static_web_app.main.default_host_name}"], var.extra_allowed_origins)
+    # Every origin must be known at plan time. Given an unknown one the provider plans zero cors
+    # blocks and then returns one during apply, which Terraform rejects as an inconsistent final
+    # plan. That rules out the Static Web App's generated hostname, which does not exist until the
+    # apply that creates it — so origins are passed in as literals, and the block is omitted rather
+    # than emitted empty when there are none.
+    dynamic "cors" {
+      for_each = length(var.allowed_origins) > 0 ? [1] : []
+      content {
+        allowed_origins = var.allowed_origins
+      }
     }
   }
 

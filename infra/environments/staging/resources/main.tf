@@ -28,7 +28,9 @@ locals {
   location    = "westeurope"
 
   # Absent credentials leave DNS unmanaged and the environment on its generated hostname.
-  dns_configured = var.cloudflare_api_token != "" && var.cloudflare_zone_id != ""
+  # nonsensitive: whether a token was supplied is not itself a secret, and without this the
+  # app URL inherits the mark and every output derived from it fails to render.
+  dns_configured = nonsensitive(var.cloudflare_api_token != "" && var.cloudflare_zone_id != "")
   custom_domain  = "staging.10xgains.dmngrsk.pl"
 
   tags = {
@@ -94,7 +96,9 @@ module "azure" {
   log_analytics_name   = "log-10xgains-staging"
   static_web_app_name  = "swa-10xgains-staging"
 
-  extra_allowed_origins = local.dns_configured ? ["https://${local.custom_domain}"] : []
+  allowed_origins = local.dns_configured ? ["https://${local.custom_domain}"] : []
+
+  app_url_override = local.dns_configured ? "https://${local.custom_domain}" : null
 
   supabase_url             = module.supabase.url
   supabase_publishable_key = module.supabase.publishable_key
