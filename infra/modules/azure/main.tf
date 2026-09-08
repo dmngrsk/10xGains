@@ -108,7 +108,11 @@ resource "azurerm_function_app_flex_consumption" "main" {
     # The Functions host answers OPTIONS itself and forwards only listed origins, so Hono never
     # sees a preflight (spec §4.4). Origins only; methods and headers stay Hono's.
     cors {
-      allowed_origins = distinct(concat([local.app_url], var.extra_allowed_origins))
+      # Anchored on the generated hostname rather than app_url, which is the custom domain on
+      # production and would duplicate the extra origin. distinct() would dedupe it, but its result
+      # has an unknown length while the app is being created, and the provider plans that as zero
+      # cors blocks then contradicts itself on apply.
+      allowed_origins = concat(["https://${azurerm_static_web_app.main.default_host_name}"], var.extra_allowed_origins)
     }
   }
 
