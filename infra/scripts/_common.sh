@@ -85,6 +85,27 @@ preflight_base() {
     is_set "${SUPABASE_ACCESS_TOKEN:-}"
 }
 
+# Cloudflare is optional — an environment without it keeps its generated hostname — so this only
+# insists when DNS is the point of the run. Half a pair is always a mistake, though: the apply
+# would skip DNS silently and the destroy would leave records behind.
+preflight_cloudflare() {
+  # `have=$((have + 1))` rather than `((have++))`: post-increment returns the old value, so the
+  # first one exits 1 under `set -e` and takes the whole run with it.
+  local required="${1:-0}" have=0
+  is_set "${CLOUDFLARE_API_TOKEN:-}" && have=$((have + 1))
+  is_set "${CLOUDFLARE_ZONE_ID:-}" && have=$((have + 1))
+
+  if ((required)); then
+    check "Cloudflare credentials are set" \
+      "--dns-only manages DNS and nothing else, so it cannot run without CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID." \
+      test "$have" -eq 2
+  elif ((have == 1)); then
+    check "Cloudflare credentials are complete" \
+      "only one of CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID is set — DNS needs both or neither." \
+      false
+  fi
+}
+
 preflight_failed() {
   ((${#errors[@]})) || return 1
   printf '\n%spreflight failed — nothing has been changed:%s\n' "$RED" "$OFF" >&2

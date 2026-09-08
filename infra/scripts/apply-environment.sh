@@ -82,11 +82,14 @@ preflight() {
     "SUPABASE_DB_PASSWORD is unset or still a placeholder." \
     is_set "${SUPABASE_DB_PASSWORD:-}"
 
+  preflight_cloudflare "$DNS_ONLY"
+
   preflight_failed && exit 1
 
-  # Surfaced now rather than as a late failure.
+  if ((! DNS_ONLY)) && ! is_set "${CLOUDFLARE_API_TOKEN:-}"; then
+    warn "No Cloudflare credentials — '$ENVIRONMENT' will keep its generated hostname."
+  fi
   if [[ "$ENVIRONMENT" == "production" ]]; then
-    warn "DNS and the custom domain are manual (spec §9 M1-M2)."
     warn "Google OAuth redirect URIs are manual (spec §7) — add the new callback URL before cutover."
   fi
 }

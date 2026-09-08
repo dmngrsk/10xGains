@@ -52,7 +52,16 @@ check "$ENVIRONMENT/resources is configured" \
   "$DIR/backend.hcl or terraform.tfvars is missing — run 'pnpm infra:apply $ENVIRONMENT' to regenerate them." \
   bash -c '[[ -f "$0/backend.hcl" && -f "$0/terraform.tfvars" ]]' "$DIR"
 
+preflight_cloudflare 0
+
 preflight_failed && exit 1
+
+# Before the confirmation rather than after it: leaving live records pointing at a deleted app is
+# worth knowing while there is still a chance to fetch the token.
+if [[ -f "$ENV_DIR/dns/backend.hcl" ]] && ! is_set "${CLOUDFLARE_API_TOKEN:-}"; then
+  warn "'$ENVIRONMENT' has DNS records, and without CLOUDFLARE_API_TOKEN they will be left behind."
+fi
+
 export_tf_secrets
 
 # Terraform's destroy leaves the Log Analytics workspace SOFT-deleted, which reserves its name for
