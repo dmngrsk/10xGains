@@ -455,10 +455,10 @@ info "api      $API_URL"
 info "web      $APP_URL"
 info "supabase $SUPABASE_URL"
 printf '\n'
-info "still manual (spec §9): DNS and custom domain, and deleting the retired"
-info "github-dmngrsk-10xGains application after cutover."
+info "still manual: the Google OAuth redirect URI below, and deleting the retired"
+info "github-dmngrsk-10xGains application after cutover (spec §9)."
 printf '\n'
-info "Google OAuth: register this redirect URI on the client once — it only changes if the"
-info "Supabase project is rebuilt, which infra:destroy --keep-bootstrap avoids:"
+info "Register this redirect URI on the Google client. It only changes when the Supabase"
+info "project is rebuilt, which infra:destroy --keep-bootstrap avoids:"
 info "  $GOOGLE_CALLBACK_URL"
 printf '\n'
