@@ -5,6 +5,7 @@
 #
 #   pnpm infra:apply staging
 #   pnpm infra:apply staging --bootstrap-only   state backend, CI identity and GitHub config only
+#   pnpm infra:apply staging --dns-only         the custom domain only, against what CD has built
 #
 # NEVER RUN IN CI. It creates role assignments and Entra applications — the credentials CI itself
 # authenticates with. Every stage is idempotent; safe to re-run after a failure partway through.
@@ -17,11 +18,12 @@ set -euo pipefail
 source "$(dirname "${BASH_SOURCE[0]}")/_common.sh"
 
 # ─── arguments ────────────────────────────────────────────────────────────────────────────────
-ENVIRONMENT=""; CHECK_ONLY=0; BOOTSTRAP_ONLY=0
+ENVIRONMENT=""; CHECK_ONLY=0; BOOTSTRAP_ONLY=0; DNS_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     --check)          CHECK_ONLY=1 ;;
     --bootstrap-only) BOOTSTRAP_ONLY=1 ;;
+    --dns-only)       DNS_ONLY=1 ;;
     -*)               die "unknown option: $arg" ;;
     *)                ENVIRONMENT="$arg" ;;
   esac
@@ -37,13 +39,13 @@ case "$ENVIRONMENT" in
     APP_NAME="github-10xgains-production"
     FUNCTIONAPP="func-10xgains-prod";     STATICWEBAPP="swa-10xgains-prod" ;;
   *)
-    die "usage: $(basename "$0") <staging|production> [--bootstrap-only] [--check]" ;;
+    die "usage: $(basename "$0") <staging|production> [--bootstrap-only] [--dns-only] [--check]" ;;
 esac
 LOCATION="westeurope"
 env_dir "$ENVIRONMENT"
 # Bootstrap-only still configures the GitHub environment: those entries are derived from stage 2's
 # identity and from static names, not from the resources root, so they are correct before it exists.
-STAGES=$(( BOOTSTRAP_ONLY ? 3 : 6 ))
+STAGES=$(( DNS_ONLY ? 1 : BOOTSTRAP_ONLY ? 3 : 6 ))
 
 # ─── preflight: check EVERYTHING before doing ANY work ────────────────────────────────────────
 # Collect every failure rather than dying on the first, so one run tells you everything that is
@@ -321,10 +323,6 @@ EOF
   SUPABASE_URL="$(tf_retry "$dir" output -raw supabase_url)" || die "could not read the supabase_url output."
   GOOGLE_CALLBACK_URL="$(tf_retry "$dir" output -raw supabase_google_callback_url)" \
     || die "could not read the supabase_google_callback_url output."
-  STATIC_WEB_APP_ID="$(tf_retry "$dir" output -raw static_web_app_id)" \
-    || die "could not read the static_web_app_id output."
-  STATIC_WEB_APP_HOSTNAME="$(tf_retry "$dir" output -raw static_web_app_default_hostname)" \
-    || die "could not read the static_web_app_default_hostname output."
 }
 
 # ─── stage 4: dns ─────────────────────────────────────────────────────────────────────────────
@@ -343,6 +341,17 @@ stage_dns() {
   cat > "$dir/terraform.tfvars" <<EOF
 subscription_id = "$SUBSCRIPTION_ID"
 EOF
+
+  # Read here rather than taken from stage 3, so --dns-only can rebind a domain against an
+  # environment CD already built.
+  local res="$ENV_DIR/resources"
+  [[ -f "$res/backend.hcl" ]] || die "$ENVIRONMENT/resources is not configured — run without --dns-only first."
+  tf_retry "$res" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null \
+    || die "terraform init failed for $res."
+  STATIC_WEB_APP_ID="$(tf_retry "$res" output -raw static_web_app_id)" \
+    || die "could not read the static_web_app_id output."
+  STATIC_WEB_APP_HOSTNAME="$(tf_retry "$res" output -raw static_web_app_default_hostname)" \
+    || die "could not read the static_web_app_default_hostname output."
 
   export TF_VAR_static_web_app_id="$STATIC_WEB_APP_ID"
   export TF_VAR_static_web_app_default_hostname="$STATIC_WEB_APP_HOSTNAME"
@@ -413,6 +422,13 @@ stage_github() {
 preflight
 export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
+if ((DNS_ONLY)); then
+  stage_dns
+  step "Done — the custom domain for '$ENVIRONMENT' is bound"
+  printf '\n'
+  exit 0
+fi
+
 stage_bootstrap_create
 stage_bootstrap_adopt
 
