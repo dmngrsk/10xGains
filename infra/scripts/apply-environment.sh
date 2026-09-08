@@ -80,7 +80,7 @@ preflight() {
     "SUPABASE_DB_PASSWORD is unset or still a placeholder." \
     is_set "${SUPABASE_DB_PASSWORD:-}"
 
-  preflight_cloudflare 0
+  preflight_cloudflare "$ENVIRONMENT"
 
   preflight_failed && exit 1
 

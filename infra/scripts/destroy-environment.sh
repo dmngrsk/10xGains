@@ -51,7 +51,7 @@ check "$ENVIRONMENT/resources is configured" \
   "$DIR/backend.hcl or terraform.tfvars is missing — run 'pnpm infra:apply $ENVIRONMENT' to regenerate them." \
   bash -c '[[ -f "$0/backend.hcl" && -f "$0/terraform.tfvars" ]]' "$DIR"
 
-preflight_cloudflare 0
+preflight_cloudflare "$ENVIRONMENT"
 
 preflight_failed && exit 1
 

@@ -91,17 +91,33 @@ preflight_base() {
 preflight_cloudflare() {
   # `have=$((have + 1))` rather than `((have++))`: post-increment returns the old value, so the
   # first one exits 1 under `set -e` and takes the whole run with it.
-  local required="${1:-0}" have=0
+  local environment="$1" have=0
   is_set "${CLOUDFLARE_API_TOKEN:-}" && have=$((have + 1))
   is_set "${CLOUDFLARE_ZONE_ID:-}" && have=$((have + 1))
 
-  if ((required)); then
-    check "Cloudflare credentials are set" \
-      "--dns-only manages DNS and nothing else, so it cannot run without CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID." \
-      test "$have" -eq 2
-  elif ((have == 1)); then
+  if ((have == 1)); then
     check "Cloudflare credentials are complete" \
       "only one of CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID is set — DNS needs both or neither." \
+      false
+    return
+  fi
+  ((have == 2)) && { ok "Cloudflare credentials are set"; return; }
+
+  # Neither is set, which is fine for an environment that never had a custom domain. It is not fine
+  # for one that does: module.dns is count-gated on these, so Terraform would read the absence as
+  # "no DNS wanted" and destroy the records and the domain binding as part of an ordinary run.
+  #
+  # The GitHub variable is the cheap signal that CD manages DNS here. Skipped when gh is
+  # unavailable or unauthenticated rather than failing on it — destroy does not require gh.
+  local managed=""
+  if command -v gh >/dev/null 2>&1; then
+    managed="$(gh variable list --env "$environment" --json name -q '.[].name' 2>/dev/null \
+      | grep -x CLOUDFLARE_ZONE_ID || true)"
+  fi
+
+  if [[ -n "$managed" ]]; then
+    check "Cloudflare credentials are set" \
+      "'$environment' has a Terraform-managed custom domain, but CLOUDFLARE_API_TOKEN and CLOUDFLARE_ZONE_ID are unset here — this run would destroy its DNS records and unbind the domain." \
       false
   fi
 }
