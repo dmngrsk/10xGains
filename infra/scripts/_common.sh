@@ -49,7 +49,9 @@ export_tf_secrets() {
   for var in supabase_database_password:SUPABASE_DB_PASSWORD \
              supabase_access_token:SUPABASE_ACCESS_TOKEN \
              supabase_google_client_id:SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID \
-             supabase_google_client_secret:SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET; do
+             supabase_google_client_secret:SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET \
+             cloudflare_api_token:CLOUDFLARE_API_TOKEN \
+             cloudflare_zone_id:CLOUDFLARE_ZONE_ID; do
     name="${var#*:}"
     if [[ -n "${!name:-}" ]]; then export "TF_VAR_${var%%:*}=${!name}"
     else unset "TF_VAR_${var%%:*}"; fi

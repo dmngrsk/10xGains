@@ -11,3 +11,8 @@ output "swa_default_hostname" {
   description = "The origin to point the Cloudflare record at when rebinding the domain (§9 M2)."
   value       = azurerm_static_web_app.main.default_host_name
 }
+
+output "swa_id" {
+  description = "Target for azurerm_static_web_app_custom_domain, which lives in the dns root."
+  value       = azurerm_static_web_app.main.id
+}

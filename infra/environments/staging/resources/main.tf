@@ -130,3 +130,7 @@ output "supabase_publishable_key" {
 output "supabase_project_ref" { value = supabase_project.main.id }
 
 output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
+
+# Consumed by the dns root, which is applied locally rather than by CD.
+output "static_web_app_id" { value = module.azure.swa_id }
+output "static_web_app_default_hostname" { value = module.azure.swa_default_hostname }
