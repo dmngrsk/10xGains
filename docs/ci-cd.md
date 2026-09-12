@@ -6,11 +6,11 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 ## Required Configuration
 
-### Environment Variables
+### Environment Variables and Secrets
 
 The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
-Both environments take the same set with their own values. "Set by" is who fills the entry in — `infra:apply` writes it, or you do.
+Both environments take the same set with their own values, except `APP_DEV_USER_*`, which is staging-only. "Set by" is who fills the entry in — `infra:apply` writes it, or you do.
 
 #### Variables
 
@@ -18,14 +18,14 @@ Both environments take the same set with their own values. "Set by" is who fills
 | --- | --- | --- |
 | `APP_WEBMANIFEST_NAME` | **manual** | App name shown in the web manifest |
 | `APP_WEBMANIFEST_SHORT_NAME` | **manual** | Short name shown on the home screen |
-| `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
 | `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
+| `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
 | `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
-| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
 | `CLOUDFLARE_ZONE_ID` | `infra:apply` | Cloudflare zone holding the custom domain (optional) |
-| `TF_ALLOW_DESTROY` | manual | Set to `true` to let a deploy destroy resources; unset it afterwards |
+| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
 | `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
 | `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
+| `TF_ALLOW_DESTROY` | **manual** | Set to `true` to let a deploy destroy resources; unset it afterwards |
 | `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
 
 #### Secrets
@@ -34,10 +34,12 @@ Both environments take the same set with their own values. "Set by" is who fills
 | --- | --- | --- |
 | `APP_CANARY_USER_EMAIL` | **manual** | Email of the canary user for E2E tests |
 | `APP_CANARY_USER_PASSWORD` | **manual** | Password of the canary user for E2E tests |
+| `APP_DEV_USER_EMAIL` | **manual** | Email of the seeded dev user (optional; staging only) |
+| `APP_DEV_USER_PASSWORD` | **manual** | Password of the seeded dev user (optional; staging only) |
 | `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
-| `CLOUDFLARE_API_TOKEN` | `infra:apply` | Zone:DNS:Edit, for the custom domain (optional) |
-| `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
 | `AZURE_SUBSCRIPTION_ID` | **manual, preflight** | Azure subscription id |
+| `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
+| `CLOUDFLARE_API_TOKEN` | `infra:apply` | Zone:DNS:Edit, for the custom domain (optional) |
 | `SUPABASE_ACCESS_TOKEN` | **manual, preflight** | Access token for the Supabase CLI and Terraform provider |
 | `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
 | `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |

@@ -47,7 +47,7 @@ jobs:
         with:
           terraform_wrapper: false
 
-      - name: Plan
+      - name: Terraform plan
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
           terraform init -input=false \
