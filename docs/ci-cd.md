@@ -10,41 +10,76 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
-Both environments take the same set with their own values, except `APP_DEV_USER_*`, which is staging-only. "Set by" is who fills the entry in — `infra:apply` writes it, or you do.
+Both environments take the same set with their own values, except `APP_DEV_USER_*`, which is staging-only. "Set by" is who fills the entry in, and when:
+
+- **`infra:apply`** — written by stage 5 of the script; you never set these by hand.
+- **manual (bootstrap)** — must exist before `infra:apply` will start at all. Its preflight refuses to run without them, in either mode.
+- **manual (full)** — not checked by anything, but a full deploy needs them. Set them before the first release; see below for what breaks without each.
+- **manual (opt-in)** — never required. Set it when you want what it enables, and in the case of `TF_ALLOW_DESTROY`, unset it afterwards.
 
 #### Variables
 
 | Variable | Set by | Description |
 | --- | --- | --- |
-| `APP_WEBMANIFEST_NAME` | **manual** | App name shown in the web manifest |
-| `APP_WEBMANIFEST_SHORT_NAME` | **manual** | Short name shown on the home screen |
+| `APP_WEBMANIFEST_NAME` | **manual (full)** | App name shown in the web manifest |
+| `APP_WEBMANIFEST_SHORT_NAME` | **manual (full)** | Short name shown on the home screen |
 | `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
 | `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
 | `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
 | `CLOUDFLARE_ZONE_ID` | `infra:apply` | Cloudflare zone holding the custom domain (optional) |
-| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
+| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual (full)** | Timeout for Cypress commands (optional) |
 | `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
 | `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
-| `TF_ALLOW_DESTROY` | **manual** | Set to `true` to let a deploy destroy resources; unset it afterwards |
+| `TF_ALLOW_DESTROY` | **manual (opt-in)** | Set to `true` to let a deploy destroy resources; unset it afterwards |
 | `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
 
 #### Secrets
 
 | Secret | Set by | Description |
 | --- | --- | --- |
-| `APP_CANARY_USER_EMAIL` | **manual** | Email of the canary user for E2E tests |
-| `APP_CANARY_USER_PASSWORD` | **manual** | Password of the canary user for E2E tests |
-| `APP_DEV_USER_EMAIL` | **manual** | Email of the seeded dev user (optional; staging only) |
-| `APP_DEV_USER_PASSWORD` | **manual** | Password of the seeded dev user (optional; staging only) |
+| `APP_CANARY_USER_EMAIL` | **manual (full)** | Email of the canary user for E2E tests |
+| `APP_CANARY_USER_PASSWORD` | **manual (full)** | Password of the canary user for E2E tests |
+| `APP_DEV_USER_EMAIL` | **manual (opt-in)** | Email of the seeded dev user (optional; staging only) |
+| `APP_DEV_USER_PASSWORD` | **manual (opt-in)** | Password of the seeded dev user (optional; staging only) |
 | `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
-| `AZURE_SUBSCRIPTION_ID` | **manual, preflight** | Azure subscription id |
-| `AZURE_TENANT_ID` | **manual, preflight** | Entra tenant id |
+| `AZURE_SUBSCRIPTION_ID` | **manual (bootstrap)** | Azure subscription id |
+| `AZURE_TENANT_ID` | **manual (bootstrap)** | Entra tenant id |
 | `CLOUDFLARE_API_TOKEN` | `infra:apply` | Zone:DNS:Edit, for the custom domain (optional) |
-| `SUPABASE_ACCESS_TOKEN` | **manual, preflight** | Access token for the Supabase CLI and Terraform provider |
+| `SUPABASE_ACCESS_TOKEN` | **manual (bootstrap)** | Access token for the Supabase CLI and Terraform provider |
 | `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
 | `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |
 
-The three marked **preflight** are the only ones anything checks for — `infra:apply` refuses to run without them. Nothing checks the rest, so a fresh environment missing the `APP_CANARY_USER_*` pair gets through `infrastructure` and `frontend`, then fails in `e2e`.
+Nothing verifies the **manual (full)** entries, and they fail at different distances. Without the `APP_CANARY_USER_*` pair a run gets through `infrastructure`, `database` and both deploys before failing in `e2e`; without `APP_WEBMANIFEST_*` nothing fails at all and the installed app simply shows a blank name.
+
+### Setting them
+
+Omitting `--body` makes `gh` read the value from standard input, prompting for it in a terminal — so secrets never reach shell history. Variables are not sensitive, so those pass `--body` directly.
+
+```bash
+ENV=staging   # or production
+
+# manual (bootstrap) — before infra:apply will start
+gh secret set AZURE_TENANT_ID       --env "$ENV"
+gh secret set AZURE_SUBSCRIPTION_ID --env "$ENV"
+gh secret set SUPABASE_ACCESS_TOKEN --env "$ENV"
+
+# manual (full) — before the first release
+gh secret set APP_CANARY_USER_EMAIL    --env "$ENV"
+gh secret set APP_CANARY_USER_PASSWORD --env "$ENV"
+gh variable set APP_WEBMANIFEST_NAME            --env "$ENV" --body "10xGains"
+gh variable set APP_WEBMANIFEST_SHORT_NAME      --env "$ENV" --body "10xGains"
+gh variable set CYPRESS_DEFAULT_COMMAND_TIMEOUT --env "$ENV" --body "10000"
+
+# manual (opt-in) — a seeded dev account, staging only
+gh secret set APP_DEV_USER_EMAIL    --env "$ENV"
+gh secret set APP_DEV_USER_PASSWORD --env "$ENV"
+
+# manual (opt-in) — only when a deploy is meant to destroy something
+gh variable set TF_ALLOW_DESTROY --env "$ENV" --body "true"
+gh variable delete TF_ALLOW_DESTROY --env "$ENV"
+```
+
+Check what an environment already has with `gh variable list --env "$ENV"` and `gh secret list --env "$ENV"`, or run `pnpm infra:apply <env> --check`, which reports the missing **manual (bootstrap)** entries by name.
 
 `SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps whatever it already has.
 
