@@ -1,8 +1,6 @@
 variable "environment" { type = string }
 
 variable "hostname" {
-  # First-level under the zone: Cloudflare's Universal SSL covers the apex and one label, so a
-  # proxied `staging.10xgains.dmngrsk.pl` has no certificate and fails the TLS handshake.
   description = "Fully qualified name to bind, e.g. staging-10xgains.dmngrsk.pl."
   type        = string
 }

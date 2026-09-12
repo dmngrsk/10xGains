@@ -1,10 +1,6 @@
 locals {
-  # Override pins production to its custom domain; otherwise a rebuild's new generated hostname
-  # propagates on its own to the CSP, the CORS origins and the GitHub variables.
   app_url = coalesce(var.app_url_override, "https://${azurerm_static_web_app.main.default_host_name}")
 }
-
-# The custom domain binding lives in module.dns, ordered after this by the graph.
 
 resource "azurerm_static_web_app" "main" {
   name                = var.static_web_app_name
@@ -40,8 +36,6 @@ resource "azurerm_application_insights" "main" {
   tags = var.tags
 }
 
-# Keeps shared-key access, unlike the state accounts: the Flex Consumption app authenticates to
-# its deployment container with `storage_access_key`.
 resource "azurerm_storage_account" "functions" {
   name                = var.storage_account_name
   resource_group_name = var.resource_group_name
@@ -91,11 +85,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
   instance_memory_in_mb  = var.instance_memory_in_mb
   http_concurrency       = var.http_concurrency
 
-  # The SWA's HSTS header covers the web origin, not this hostname (spec §4.1).
   https_only = true
 
-  # The seam (spec §1.1). AzureWebJobsStorage and APPLICATIONINSIGHTS_CONNECTION_STRING are
-  # injected by the provider and must not be repeated here.
   app_settings = {
     SUPABASE_URL             = var.supabase_url
     SUPABASE_PUBLISHABLE_KEY = var.supabase_publishable_key
@@ -105,13 +96,6 @@ resource "azurerm_function_app_flex_consumption" "main" {
   site_config {
     application_insights_connection_string = azurerm_application_insights.main.connection_string
 
-    # The Functions host answers OPTIONS itself and forwards only listed origins, so Hono never
-    # sees a preflight (spec §4.4). Origins only; methods and headers stay Hono's.
-    # Every origin must be known at plan time. Given an unknown one the provider plans zero cors
-    # blocks and then returns one during apply, which Terraform rejects as an inconsistent final
-    # plan. That rules out the Static Web App's generated hostname, which does not exist until the
-    # apply that creates it — so origins are passed in as literals, and the block is omitted rather
-    # than emitted empty when there are none.
     dynamic "cors" {
       for_each = length(var.allowed_origins) > 0 ? [1] : []
       content {

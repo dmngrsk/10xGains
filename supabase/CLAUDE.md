@@ -2,10 +2,6 @@
 
 Supabase provides PostgreSQL and authentication. This directory contains database migrations, database tests, and the local stack configuration. The API compute layer lives in `apps/api`, not here.
 
-## Local Postgres version
-
-`config.toml` pins `major_version = 17` to match the remote projects. A volume created under an earlier major version will not start against it — `supabase start` fails on the data directory rather than saying so. Recover with `supabase stop --no-backup`, which discards the local volume, then start again and re-apply the migrations.
-
 ## Creating a Migration
 
 Migrations are managed by the Supabase CLI and live in `supabase/migrations/`.

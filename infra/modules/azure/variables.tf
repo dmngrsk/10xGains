@@ -9,7 +9,7 @@ variable "app_insights_name" { type = string }
 variable "log_analytics_name" { type = string }
 
 variable "maximum_instance_count" {
-  description = "Blast-radius ceiling on scale-out, not a capacity estimate. See api-rate-limiting.md §3.1."
+  description = "Blast-radius ceiling on scale-out, not a capacity estimate."
   type        = number
   default     = 10
 }

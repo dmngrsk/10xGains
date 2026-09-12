@@ -64,9 +64,7 @@ docs/specs/*
 .env.*
 !.env.example
 local.settings.json
-# Generated per machine by post-start.sh (or copied from env.template.js in CI).
 apps/web/src/env.js
-# Kept so a leftover file from before the runtime-config change stays ignored.
 apps/web/src/environments/environment.*.ts
 
 # System files

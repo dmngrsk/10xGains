@@ -14,16 +14,12 @@ variable "redirect_urls" {
   default     = []
 }
 
-# Staging cannot send mail — no custom SMTP, and the built-in sender only reaches project members —
-# so a verification requirement there is one nobody can satisfy, including AUTH-02.
 variable "email_autoconfirm" {
   description = "Treat an address as verified at signup instead of mailing a confirmation link. Per-environment."
   type        = bool
   default     = false
 }
 
-# Both or neither: see the `google` local. Null on an environment whose redirect URI has not been
-# registered with Google yet, which leaves the project's provider settings untouched.
 variable "google_client_id" {
   description = "Google OAuth client ID for Supabase sign-in."
   type        = string

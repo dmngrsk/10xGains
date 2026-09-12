@@ -26,12 +26,9 @@ provider "cloudflare" {
 locals {
   environment = "staging"
   location    = "westeurope"
-
-  # Absent credentials leave DNS unmanaged and the environment on its generated hostname.
-  # nonsensitive: whether a token was supplied is not itself a secret, and without this the
-  # app URL inherits the mark and every output derived from it fails to render.
-  dns_configured = nonsensitive(var.cloudflare_api_token != "" && var.cloudflare_zone_id != "")
   custom_domain  = "staging-10xgains.dmngrsk.pl"
+
+  dns_configured = nonsensitive(var.cloudflare_api_token != "" && var.cloudflare_zone_id != "")
 
   tags = {
     application = "10xgains"
@@ -49,7 +46,6 @@ resource "supabase_project" "main" {
   name              = "10xGains Staging"
   region            = "eu-central-1"
   database_password = var.supabase_database_password
-
 
   lifecycle {
     ignore_changes = [database_password]

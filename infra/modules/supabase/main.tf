@@ -1,16 +1,6 @@
-# Remote Supabase configuration. `supabase/config.toml` governs the local stack only and has no
-# effect here.
-#
-# `supabase_project` lives in each environment root, not here: `prevent_destroy` accepts only
-# literals, and production needs it while staging must stay destroyable (spec §6.4, §11.1).
-
 locals {
-  # Both or neither. An unset GitHub Actions var renders as "", and coalesce errors when every
-  # argument is empty, so each is compared explicitly.
   google_configured = alltrue([for v in [var.google_client_id, var.google_client_secret] : v != null && v != ""])
 
-  # Zero-or-one list, never `cond ? {...} : {}` — that unifies the branches to map(string) and
-  # every bool reaches the API quoted.
   google = local.google_configured ? [{
     external_google_enabled          = true
     external_google_client_id        = var.google_client_id
@@ -19,7 +9,6 @@ locals {
     external_google_email_optional   = false
   }] : []
 
-  # `\\:` is an escaped colon within the symbol group, not a separator.
   password_required_characters = "abcdefghijklmnopqrstuvwxyz:ABCDEFGHIJKLMNOPQRSTUVWXYZ:0123456789:!@#$%^&*()_+-=[]{};'\\\\:\"|<>?,./`~"
 }
 
