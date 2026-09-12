@@ -113,6 +113,7 @@ variable "cloudflare_api_token" {
   sensitive   = true
   default     = ""
 }
+
 variable "supabase_organization_id" { type = string }
 
 variable "supabase_database_password" {
@@ -143,15 +144,12 @@ variable "supabase_google_client_secret" {
 
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
+
 output "supabase_url" { value = module.supabase.url }
+output "supabase_project_ref" { value = supabase_project.main.id }
+output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
+
 output "supabase_publishable_key" {
   value     = module.supabase.publishable_key
   sensitive = true
 }
-
-output "supabase_project_ref" { value = supabase_project.main.id }
-
-output "supabase_google_callback_url" { value = module.supabase.google_callback_url }
-
-output "static_web_app_id" { value = module.azure.swa_id }
-output "static_web_app_default_hostname" { value = module.azure.swa_default_hostname }
