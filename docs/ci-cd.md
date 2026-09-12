@@ -47,7 +47,7 @@ Both environments take the same set with their own values, except `APP_DEV_USER_
 | `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
 | `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |
 
-Nothing verifies the manual (full) entries, and they fail at different distances. Without the `APP_CANARY_USER_*` pair a run gets through `infrastructure`, `database` and both deploys before failing in `e2e`; without `APP_WEBMANIFEST_*` nothing fails at all and the installed app simply shows a blank name.
+Nothing verifies the **manual (full)** entries, and they fail at different distances. Without the `APP_CANARY_USER_*` pair a run gets through `infrastructure`, `database` and both deploys before failing in `e2e`; without `APP_WEBMANIFEST_*` nothing fails at all and the installed app simply shows a blank name.
 
 ### Setting them
 
@@ -93,89 +93,41 @@ These environments should be configured in GitHub with required reviewers to ens
 ## Continuous Integration (CI) Flow
 
 ### Trigger Events
-- Pull requests to `main` branch
-- Release creation/editing
+- Pull requests to `main` (opened, synchronized, reopened)
+- Releases (published, edited) — staging and production CI run in parallel
+
+A merge to `main` creates a date-based release tag (`vYYYYMMDD.<n>`) but publishes nothing; the release itself is published by hand, which is what triggers a production deploy.
 
 ### Process Flow
-1. **Code Verification and Build**
-   - Linting using ESLint and TypeScript typechecks (per-package `lint` scripts)
-   - Unit testing with coverage reporting
-   - Building the Angular application
-   - Artifacts:
-     - Test coverage reports
-     - Build artifacts for deployment
+1. **Lint** - ESLint and TypeScript typechecks (per-package `lint` scripts)
+2. **Test** - unit tests with coverage reporting
+3. **Build** - the API (`apps/api`) and the web app (`apps/web`), in parallel
+
+Artifacts: the coverage report, and one build artifact per app.
 
 ### Build Information
 The CI process includes build metadata in the environment configuration:
 ```typescript
 {
   build: {
-    name: string;  // PR branch name or release tag
-    sha: string;   // Commit SHA
+    name: string;  // Branch name — the PR head ref, or the release's target branch
+    sha: string;   // Head commit of the pull request; empty on a release build
+    tag: string;   // Release tag; empty on a pull request
   }
 }
 ```
-
-### Optimization Potential
-Currently, lint, test, and build steps run sequentially in separate jobs. This could be optimized in two ways:
-
-1. **Current Approach (Separate Chained Jobs)**
-   - Better isolation
-   - Clear job-level status in GitHub UI
-   - Trade-off: Takes more time due to environment setup before each step, long job duration on a happy path
-
-2. **Potential Optimization (Single Job)**
-   - Faster execution
-   - Less GitHub Actions minutes
-   - Simpler configuration
-   - Trade-off: Less granular control, poor status visibility
-
-3. **Potential Optimization (Parallel Jobs)**
-   ```yaml
-   jobs:
-     lint:
-       name: Lint code
-       # ... lint job configuration ...
-
-     test:
-       name: Run unit tests
-       # Remove the 'needs: [lint]' dependency
-       # ... test job configuration ...
-
-     build:
-       name: Build application
-       # Remove the 'needs: [lint, test]' dependency
-       # ... build job configuration ...
-
-     verify:
-       name: Verify all checks
-       needs: [lint, test, build]
-       runs-on: ubuntu-latest
-       steps:
-         - run: |
-             echo "All checks passed!"
-   ```
-   - Better resource utilization
-   - Still maintains job isolation
-   - Trade-off: Higher concurrent GitHub Actions minutes usage, all jobs run even if one fails
-
-The current approach was chosen for better isolation and clearer status reporting, despite the slight time overhead.
 
 ## Continuous Deployment (CD) Flow
 
 ### Staging Deployment
 Triggered by:
 - Successful CI on pull requests
-- Release creation
+- Release publication/editing
 
 Process:
-1. **Deployment Approval** (via `staging-cd` environment)
-2. **Preview** (Terraform plan, before the gate)
-   - Writes the plan to the run summary so the approval is informed rather than blind
-   - Refuses a plan that destroys anything, so a bad plan costs no approval
-   - Advisory: on a first build there is no Supabase project yet, so the plan cannot resolve and
-     the job passes without one
-3. **Infrastructure** (Terraform, `infra/environments/<environment>/resources`)
+1. **Preview** (Terraform plan, before the gate)
+2. **Deployment Approval** (via `staging-cd` environment)
+3. **Infrastructure** (Terraform)
 4. **Database Migration** (Supabase)
 5. **Backend Deployment** (Azure Functions)
 6. **Frontend Deployment** (Azure Static Web App)
@@ -185,7 +137,7 @@ Process:
 
 ### Production Deployment
 Triggered by:
-- Release creation/editing
+- Release publication/editing
 
 Process:
 1. **Staging Deployment** (must succeed first)
@@ -203,14 +155,12 @@ The numbering is the dependency chain, not just an order: every later job needs 
 
 ## Infrastructure
 
-### Frontend Hosting
-- Azure Static Web App
-- Configuration in `apps/web/src/staticwebapp.config.json`
+Everything below is Terraform, under `infra/` — see `infra/README.md` for the layout and the local workflow. CD applies the resources root; the bootstrap root (resource group, state backend, CI identity) is applied by an Owner.
 
-### Backend Services
-- Azure Functions (API, `apps/api`)
-- Supabase Database
-- Supabase Authentication
+- Azure Static Web App (frontend), configured by `apps/web/src/staticwebapp.config.json`
+- Azure Functions (API, `apps/api`), with Application Insights and Log Analytics
+- Supabase project — database, authentication, API exposure
+- Cloudflare DNS and the Static Web App custom domain binding
 
 ## Best Practices
 
