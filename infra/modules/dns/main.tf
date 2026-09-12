@@ -1,6 +1,6 @@
-# Applied by infra:apply, never by CD: a Cloudflare token scopes to a whole zone, so one that
-# could write this hostname could also rewrite the zone's MX records. Subdomain zones, which would
-# scope it properly, are Enterprise-only on the parent.
+# Applied by CD as part of the resources root. A Cloudflare token scopes to a whole zone, so the
+# pipeline can write any record in dmngrsk.pl, MX included — accepted deliberately; subdomain
+# zones, which would scope it properly, are Enterprise-only on the parent.
 
 # TXT rather than cname-delegation: the record is proxied, so a CNAME check resolves to Cloudflare
 # rather than the origin and never validates (spec §9 M2). The provider does not poll for TXT

@@ -33,5 +33,9 @@ account's own keys.
 
 ## Not managed here
 
-DNS and the `10xgains.dmngrsk.pl` custom domain (Cloudflare, manual), and the `Failure Anomalies`
-alert rules Azure recreates with Application Insights. Full register: spec §9.
+The `Failure Anomalies` alert rules Azure recreates with Application Insights, and the Google OAuth
+redirect URI — there is no public API for Web-application OAuth clients. Full register: spec §9.
+
+DNS **is** managed here, in `modules/dns`: the Cloudflare records and the Static Web App custom
+domain binding, applied by CD with the rest of the resources root. Editing those records by hand
+will be reverted on the next deploy.

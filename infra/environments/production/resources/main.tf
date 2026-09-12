@@ -150,7 +150,7 @@ variable "supabase_google_client_secret" {
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
 output "swa_default_hostname" {
-  description = "Origin for the dns root's CNAME record."
+  description = "Origin for module.dns's CNAME record."
   value       = module.azure.swa_default_hostname
 }
 output "supabase_url" { value = module.supabase.url }

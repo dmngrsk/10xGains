@@ -108,6 +108,13 @@ jobs:
         working-directory: infra/environments/${{ inputs.environment }}/resources
         run: |
           terraform plan -input=false -no-color -out=tfplan
+          destroyed="$(terraform show -json tfplan \
+            | jq -r '.resource_changes[]? | select(.change.actions == ["delete"]) | .address')"
+          if [ -n "$destroyed" ]; then
+            echo "::error::this plan destroys resources; CD will not do that:"
+            printf '%s\n' "$destroyed"
+            exit 1
+          fi
           {
             echo "### Terraform plan — ${{ inputs.environment }}"
             echo '```'
@@ -338,6 +345,7 @@ jobs:
           pnpm install --frozen-lockfile
 
       - name: Resolve the project's secret key
+        if: inputs.e2e_scope == 'full'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ needs.infrastructure.outputs.supabase_project_ref }}

@@ -4,7 +4,7 @@ locals {
   app_url = coalesce(var.app_url_override, "https://${azurerm_static_web_app.main.default_host_name}")
 }
 
-# The custom domain binding lives in the dns root, which is applied locally rather than by CD.
+# The custom domain binding lives in module.dns, ordered after this by the graph.
 
 resource "azurerm_static_web_app" "main" {
   name                = var.static_web_app_name

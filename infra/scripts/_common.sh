@@ -107,12 +107,16 @@ preflight_cloudflare() {
   # for one that does: module.dns is count-gated on these, so Terraform would read the absence as
   # "no DNS wanted" and destroy the records and the domain binding as part of an ordinary run.
   #
-  # The GitHub variable is the cheap signal that CD manages DNS here. Skipped when gh is
-  # unavailable or unauthenticated rather than failing on it — destroy does not require gh.
+  # The GitHub variable is the cheap signal that CD manages DNS here. Both scripts require gh, so
+  # an unreadable answer means unauthenticated rather than not-applicable — hence the warning.
   local managed=""
   if command -v gh >/dev/null 2>&1; then
     managed="$(gh variable list --env "$environment" --json name -q '.[].name' 2>/dev/null \
       | grep -x CLOUDFLARE_ZONE_ID || true)"
+  fi
+
+  if [[ -z "$managed" ]] && ! gh auth status >/dev/null 2>&1; then
+    warn "Could not check whether '$environment' manages DNS — gh is not authenticated."
   fi
 
   if [[ -n "$managed" ]]; then
@@ -140,7 +144,9 @@ load_env_file() {
     [[ "$line" != *=* ]] && continue
     key="${line%%=*}"; key="${key#"${key%%[![:space:]]*}"}"; key="${key%"${key##*[![:space:]]}"}"
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-    value="${line#*=}"
+    # A CRLF-edited file would otherwise smuggle \r into the value: is_set passes, and the
+    # password reaches Terraform as $'secret\r', failing later as an opaque auth error.
+    value="${line#*=}"; value="${value%$'\r'}"
     if [[ "$value" == \"*\" || "$value" == \'*\' ]]; then value="${value:1:${#value}-2}"; fi
     printf -v "$key" '%s' "$value"
     export "${key?}"

@@ -61,7 +61,7 @@ resource "azurerm_storage_container" "tfstate" {
   lifecycle { prevent_destroy = true }
 }
 
-# Scaffolding state (bootstrap, identity, dns) — operator only. Separate from `tfstate` because
+# Scaffolding state (bootstrap, identity) — operator only. Separate from `tfstate` because
 # role assignments are container-scoped, and this state records the account's own keys.
 resource "azurerm_storage_container" "admin" {
   name                  = "admin"

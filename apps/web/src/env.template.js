@@ -1,9 +1,12 @@
 // Template for env.js, the runtime environment configuration.
 //
-// CI copies this to src/env.js before building (unconditionally — a developer's local env.js must
-// never reach a deployed artifact, since it holds localhost URLs and no placeholders for CD's
-// guard to catch). Locally, post-start.sh writes src/env.js directly with the running stack's
-// values, so `ng serve` exercises exactly the same runtime-config path as a deployed build.
+// CI overwrites src/env.js with this before every build, whether or not one exists: a developer's
+// copy holds localhost URLs and no placeholders, so CD's substitution guard could not catch it if
+// it ever reached a deployed artifact.
+//
+// The local `env:ensure` hook is the opposite — it only creates src/env.js when absent, so it never
+// clobbers your own. In the dev container post-start.sh writes it directly with the running stack's
+// values, so `ng serve` exercises the same runtime-config path as a deployed build.
 //
 // Deployment-specific values live here rather than inside the bundle, so that a single build can
 // be deployed to any environment — CD substitutes these placeholders in the built artifact.

@@ -40,7 +40,7 @@ env_dir "$ENVIRONMENT"
 step "Preflight — verify prerequisites for '$ENVIRONMENT'"
 
 preflight_base "Refusing to run in CI (\$CI is set). Destroying an environment is a human decision." \
-  az terraform jq
+  az terraform jq gh
 
 check "SUPABASE_DB_PASSWORD is set" \
   "SUPABASE_DB_PASSWORD is unset or still a placeholder; Terraform needs it to build a plan." \
