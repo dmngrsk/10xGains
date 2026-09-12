@@ -24,6 +24,7 @@ Both environments take the same set with their own values. "Set by" is who fills
 | `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
 | `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | **manual** | Timeout for Cypress commands (optional) |
 | `CLOUDFLARE_ZONE_ID` | `infra:apply` | Cloudflare zone holding the custom domain (optional) |
+| `TF_ALLOW_DESTROY` | manual | Set to `true` to let a deploy destroy resources; unset it afterwards |
 | `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
 | `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
 | `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
@@ -139,11 +140,16 @@ Triggered by:
 
 Process:
 1. **Deployment Approval** (via `staging-cd` environment)
-2. **Infrastructure** (Terraform, `infra/environments/<environment>/resources`)
-3. **Database Migration** (Supabase)
-4. **Backend Deployment** (Azure Functions)
-5. **Frontend Deployment** (Azure Static Web App)
-6. **E2E Testing**
+2. **Preview** (Terraform plan, before the gate)
+   - Writes the plan to the run summary so the approval is informed rather than blind
+   - Refuses a plan that destroys anything, so a bad plan costs no approval
+   - Advisory: on a first build there is no Supabase project yet, so the plan cannot resolve and
+     the job passes without one
+3. **Infrastructure** (Terraform, `infra/environments/<environment>/resources`)
+4. **Database Migration** (Supabase)
+5. **Backend Deployment** (Azure Functions)
+6. **Frontend Deployment** (Azure Static Web App)
+7. **E2E Testing**
    - Full test suite
    - Tests against live staging environment
 

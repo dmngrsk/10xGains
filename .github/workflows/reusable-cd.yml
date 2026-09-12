@@ -17,9 +17,90 @@ on:
         description: 'Scope of E2E tests to run (full or smoke)'
 
 jobs:
+  # Runs before the gate so the approver sees the plan instead of approving blind, and a plan that
+  # destroys something is refused without spending an approval on it.
+  #
+  # Advisory by design: a brand-new environment has no Supabase project yet, so the api-key data
+  # source cannot resolve and the plan legitimately fails. That must not block the gate — the plan
+  # after approval is the authoritative one, and it runs against the state the apply will use.
+  preview:
+    name: Preview the Terraform plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
+      TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TF_VAR_supabase_google_client_id: ${{ vars.SUPABASE_GOOGLE_CLIENT_ID }}
+      TF_VAR_supabase_google_client_secret: ${{ secrets.SUPABASE_GOOGLE_CLIENT_SECRET }}
+      TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ALLOW_DESTROY: ${{ vars.TF_ALLOW_DESTROY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Plan
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ inputs.environment }}.tfstate" \
+            -backend-config="use_azuread_auth=true"
+
+          if ! terraform plan -input=false -no-color -out=tfplan 2>plan.err; then
+            {
+              echo "### Terraform plan — ${{ inputs.environment }} (unavailable)"
+              echo "Expected on a first build. The plan after approval is authoritative."
+              echo '```'; tail -20 plan.err; echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "### Terraform plan — ${{ inputs.environment }}"
+            echo '```'
+            terraform show -no-color tfplan | grep -E '^  # |^Plan:|^No changes' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          destroyed="$(terraform show -json tfplan \
+            | jq -r '.resource_changes[]? | select(.change.actions == ["delete"]) | .address')"
+          [ -n "$destroyed" ] || exit 0
+
+          if [ "${ALLOW_DESTROY:-}" = "true" ]; then
+            {
+              echo "> **TF_ALLOW_DESTROY is set on ${{ inputs.environment }}.** These will be destroyed:"
+              echo '```'; printf '%s\n' "$destroyed"; echo '```'
+              echo "> Unset the variable once this deploy is done."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::TF_ALLOW_DESTROY is set; this deploy destroys resources"
+            exit 0
+          fi
+
+          echo "::error::this plan destroys resources; set TF_ALLOW_DESTROY=true on '${{ inputs.environment }}' to allow it:"
+          printf '%s\n' "$destroyed"
+          exit 1
+
   defer:
     name: Defer deployment
     runs-on: ubuntu-latest
+    needs: [preview]
     if: inputs.defer
     environment:
       name: ${{ inputs.environment }}-cd
@@ -55,6 +136,7 @@ jobs:
       TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ALLOW_DESTROY: ${{ vars.TF_ALLOW_DESTROY }}
     steps:
       - name: Validate environment value
         if: inputs.environment != 'staging' && inputs.environment != 'production'
@@ -110,8 +192,8 @@ jobs:
           terraform plan -input=false -no-color -out=tfplan
           destroyed="$(terraform show -json tfplan \
             | jq -r '.resource_changes[]? | select(.change.actions == ["delete"]) | .address')"
-          if [ -n "$destroyed" ]; then
-            echo "::error::this plan destroys resources; CD will not do that:"
+          if [ -n "$destroyed" ] && [ "${ALLOW_DESTROY:-}" != "true" ]; then
+            echo "::error::this plan destroys resources; set TF_ALLOW_DESTROY=true on '${{ inputs.environment }}' to allow it:"
             printf '%s\n' "$destroyed"
             exit 1
           fi
