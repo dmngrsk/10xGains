@@ -28,9 +28,6 @@ locals {
   location      = "westeurope"
   custom_domain = "10xgains.dmngrsk.pl"
 
-  # Absent credentials leave DNS unmanaged and the environment on its generated hostname.
-  # nonsensitive: whether a token was supplied is not itself a secret, and without this the
-  # app URL inherits the mark and every output derived from it fails to render.
   dns_configured = nonsensitive(var.cloudflare_api_token != "" && var.cloudflare_zone_id != "")
 
   tags = {
@@ -50,10 +47,7 @@ resource "supabase_project" "main" {
   region            = "eu-central-1"
   database_password = var.supabase_database_password
 
-
   lifecycle {
-    # No point-in-time recovery on the free tier, and the two-project cap means a replace could
-    # delete this one then fail to create its replacement. Deleting it is manual (spec §9 M14).
     prevent_destroy = true
 
     ignore_changes = [database_password]
@@ -149,10 +143,6 @@ variable "supabase_google_client_secret" {
 
 output "api_url" { value = module.azure.api_url }
 output "app_url" { value = module.azure.app_url }
-output "swa_default_hostname" {
-  description = "Origin for module.dns's CNAME record."
-  value       = module.azure.swa_default_hostname
-}
 output "supabase_url" { value = module.supabase.url }
 output "supabase_publishable_key" {
   value     = module.supabase.publishable_key

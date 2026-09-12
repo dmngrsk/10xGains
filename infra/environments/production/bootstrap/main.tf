@@ -15,7 +15,6 @@ provider "azurerm" {
 
 provider "azuread" {}
 
-
 module "bootstrap" {
   source = "../../../modules/bootstrap"
 

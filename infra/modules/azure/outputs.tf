@@ -3,9 +3,7 @@ output "api_url" {
   value       = "https://${azurerm_function_app_flex_consumption.main.default_hostname}"
 }
 
-output "app_url" {
-  value = local.app_url
-}
+output "app_url" { value = local.app_url }
 
 output "swa_default_hostname" {
   description = "Origin for module.dns's CNAME record."

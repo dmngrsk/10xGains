@@ -6,6 +6,4 @@ output "client_id" {
   value       = azuread_application_registration.cd.client_id
 }
 
-output "service_principal_object_id" {
-  value = azuread_service_principal.cd.object_id
-}
+output "service_principal_object_id" { value = azuread_service_principal.cd.object_id }

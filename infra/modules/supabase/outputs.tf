@@ -5,12 +5,8 @@ output "publishable_key" {
   sensitive = true
 }
 
-output "url" {
-  value = "https://${var.project_ref}.supabase.co"
-}
+output "url" { value = "https://${var.project_ref}.supabase.co" }
 
 # Register this against the Google OAuth client by hand. It carries the project ref, so a rebuilt
 # project needs a new entry — until then, Google sign-in fails with redirect_uri_mismatch.
-output "google_callback_url" {
-  value = "https://${var.project_ref}.supabase.co/auth/v1/callback"
-}
+output "google_callback_url" { value = "https://${var.project_ref}.supabase.co/auth/v1/callback" }
