@@ -8,8 +8,7 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 ### Environment Variables
 
-The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are
-not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
+The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
 Both environments take the same set with their own values. "Set by" is who fills the entry in — `infra:apply` writes it, or you do.
 
@@ -43,13 +42,9 @@ Both environments take the same set with their own values. "Set by" is who fills
 | `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
 | `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |
 
-The three marked **preflight** are the only ones anything checks for — `infra:apply` refuses to run
-without them. Nothing checks the rest, so a fresh environment missing the `APP_CANARY_USER_*` pair
-gets through `infrastructure` and `frontend`, then fails in `e2e`.
+The three marked **preflight** are the only ones anything checks for — `infra:apply` refuses to run without them. Nothing checks the rest, so a fresh environment missing the `APP_CANARY_USER_*` pair gets through `infrastructure` and `frontend`, then fails in `e2e`.
 
-`SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform
-leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps
-whatever it already has.
+`SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps whatever it already has.
 
 ### Technical Environments
 
@@ -169,9 +164,7 @@ Process:
    - Uses a predefined canary user
    - Verifies core functionality
 
-The numbering is the dependency chain, not just an order: every later job needs the one before it,
-and the frontend and E2E jobs additionally read the infrastructure outputs directly rather than
-from repository configuration. Nothing downstream runs if Terraform fails.
+The numbering is the dependency chain, not just an order: every later job needs the one before it, and the frontend and E2E jobs additionally read the infrastructure outputs directly rather than from repository configuration. Nothing downstream runs if Terraform fails.
 
 ## Infrastructure
 

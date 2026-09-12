@@ -17,12 +17,6 @@ on:
         description: 'Scope of E2E tests to run (full or smoke)'
 
 jobs:
-  # Runs before the gate so the approver sees the plan instead of approving blind, and a plan that
-  # destroys something is refused without spending an approval on it.
-  #
-  # Advisory by design: a brand-new environment has no Supabase project yet, so the api-key data
-  # source cannot resolve and the plan legitimately fails. That must not block the gate — the plan
-  # after approval is the authoritative one, and it runs against the state the apply will use.
   preview:
     name: Preview the Terraform plan
     runs-on: ubuntu-latest

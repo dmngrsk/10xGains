@@ -129,8 +129,7 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     cp apps/api/local.settings.json.example apps/api/local.settings.json
     ```
 
-    The third, `apps/web/src/env.js`, has no template of its own — it holds the runtime
-    configuration the app reads in the browser, and needs the values step 4 printed:
+    The third, `apps/web/src/env.js`, has no template of its own — it holds the runtime configuration the app reads in the browser, and needs the values step 4 printed:
     ```js
     window.__TXG_ENV__ = {
       name: 'development',
@@ -140,9 +139,7 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     };
     ```
 
-    The dev container writes this for you, so it is only needed for a manual setup. Deployed
-    builds use the same file: CI copies `env.template.js` over it, and CD substitutes the real
-    addresses in — so local development exercises exactly the same code path as production.
+    The dev container writes this for you, so it is only needed for a manual setup. Deployed builds use the same file: CI copies `env.template.js` over it, and CD substitutes the real addresses in — so local development exercises exactly the same code path as production.
 
 7.  **Seed a local dev account (optional):**
 
@@ -227,4 +224,4 @@ The current MVP scope includes:
 The project is currently in early development. Features are actively being developed and refined.
 
 ## License
-This project is licensed under the [MIT License](LICENSE.md). 
+This project is licensed under the [MIT License](LICENSE.md).
