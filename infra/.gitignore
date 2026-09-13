@@ -7,13 +7,14 @@ crash.log
 # Backend configuration is never committed
 *.tfbackend
 backend.hcl
- 
+
 # Variable files
 *.tfvars
 !*.tfvars.example
 
 # Saved plan files
 tfplan
+tfapply
 tfdestroy
 tfbootstrap
 *.tfplan

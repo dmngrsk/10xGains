@@ -66,6 +66,8 @@ That is also the shape a production rebuild takes, so it is worth rehearsing on 
 
 ## What `infra:apply` does
 
+Preflight runs first and checks everything before any work happens; `--check` stops there. Then it plans the resources root and prints what will change, stopping to confirm only if that plan destroys or replaces something. An environment that does not exist yet has nothing to plan against, so the plan is skipped.
+
 1. Create the resource group, state account and both containers, with the Azure CLI — Terraform needs the backend to exist before `init` can configure it.
 2. Import those into Terraform and create the CI identity.
 3. Apply the resources root: the Supabase project, then the Azure resources, DNS and settings.

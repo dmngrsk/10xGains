@@ -81,7 +81,7 @@ preflight() {
     warn "No Cloudflare credentials — '$ENVIRONMENT' will keep its generated hostname."
   fi
   if [[ "$ENVIRONMENT" == "production" ]]; then
-    warn "Google OAuth redirect URIs are manual (spec §7) — add the new callback URL before cutover."
+    warn "The Google OAuth redirect URI is manual — this run prints the value to register."
   fi
 }
 
@@ -141,6 +141,48 @@ container_name       = "$container"
 key                  = "$key"
 use_azuread_auth     = true
 EOF
+}
+
+# ─── plan the resources root ──────────────────────────────────────────────────────────────────
+plan_resources() {
+  step "Plan — what will change in '$ENVIRONMENT'"
+  local dir="$ENV_DIR/resources"
+
+  if ((BOOTSTRAP_ONLY)); then
+    info "--bootstrap-only: the resources root is left for CD, so there is nothing to plan"
+    return 0
+  fi
+  if [[ ! -f "$dir/backend.hcl" || ! -f "$dir/terraform.tfvars" ]]; then
+    info "no backend configuration yet — '$ENVIRONMENT' will be built from scratch"
+    return 0
+  fi
+
+  info "initialising the resources root…"
+  if ! tf "$dir" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null 2>&1 \
+    || ! tf "$dir" plan -input=false -no-color -out=tfapply >/dev/null 2>&1; then
+    rm -f "$dir/tfapply"
+    info "no reachable state — '$ENVIRONMENT' will be built from scratch"
+    return 0
+  fi
+
+  local plan reply
+  plan="$(tf "$dir" show -no-color tfapply | grep -E '^  # |^Plan:' | sed 's/^ *//' || true)"
+  rm -f "$dir/tfapply"
+  if [[ -z "$plan" ]]; then
+    ok "no changes — '$ENVIRONMENT' already matches the configuration"
+    return 0
+  fi
+  printf '\n'
+  printf '%s\n' "$plan" | indent
+
+  grep -qE '^# .* will be destroyed|^# .* must be replaced' <<<"$plan" || { printf '\n'; return 0; }
+
+  printf '\n%s%sThis plan destroys or replaces existing resources.%s\n' "$BOLD" "$YEL" "$OFF"
+  [[ "$ENVIRONMENT" == "production" ]] && \
+    printf '%sPRODUCTION. Free-tier projects have no point-in-time recovery. There is no undo.%s\n' "$RED" "$OFF"
+  printf '\nType the environment name to confirm: '
+  read -r reply
+  [[ "$reply" == "$ENVIRONMENT" ]] || die "confirmation did not match — nothing has been changed."
 }
 
 # ─── stage 1: state backend ───────────────────────────────────────────────────────────────────
@@ -225,7 +267,7 @@ EOF
   if [[ -n "$destroys" ]]; then
     rm -f "$dir/tfbootstrap"
     printf '%s\n' "$destroys" | indent >&2
-    die "the bootstrap plan would destroy the resources above — refusing. State and configuration disagree; see the note above this check in $(basename "${BASH_SOURCE[0]}")."
+    die "the bootstrap plan would destroy the resources above — refusing. State and configuration disagree; reconcile them by hand before re-running."
   fi
 
   info "applying the bootstrap root — creates the CI identity and its federated credential…"
@@ -347,6 +389,7 @@ stage_github() {
 preflight
 export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
+plan_resources
 stage_bootstrap_create
 stage_bootstrap_adopt
 
@@ -369,10 +412,7 @@ info "api      $API_URL"
 info "web      $APP_URL"
 info "supabase $SUPABASE_URL"
 printf '\n'
-info "still manual: the Google OAuth redirect URI below, and deleting the retired"
-info "github-dmngrsk-10xGains application after cutover (spec §9)."
-printf '\n'
-info "Register this redirect URI on the Google client. It only changes when the Supabase"
-info "project is rebuilt, which infra:destroy --keep-bootstrap avoids:"
+info "Register this redirect URI on the Google client — it carries the Supabase project ref,"
+info "so it changes every time the project is rebuilt:"
 info "  $GOOGLE_CALLBACK_URL"
 printf '\n'
