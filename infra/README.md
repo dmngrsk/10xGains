@@ -66,7 +66,7 @@ That is also the shape a production rebuild takes, so it is worth rehearsing on 
 
 ## What `infra:apply` does
 
-Preflight runs first and checks everything before any work happens; `--check` stops there. Then it plans the resources root and prints what will change, stopping to confirm only if that plan destroys or replaces something. An environment that does not exist yet has nothing to plan against, so the plan is skipped.
+Preflight runs first and checks everything before any work happens; `--check` stops there. Then it plans the resources root, prints what will change, and asks you to type the environment name before anything is applied — the same gate as `infra:destroy`. An environment that does not exist yet has nothing to plan against, so the plan is empty and the prompt still stands.
 
 1. Create the resource group, state account and both containers, with the Azure CLI — Terraform needs the backend to exist before `init` can configure it.
 2. Import those into Terraform and create the CI identity.

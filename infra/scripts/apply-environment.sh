@@ -144,6 +144,7 @@ EOF
 }
 
 # ─── plan the resources root ──────────────────────────────────────────────────────────────────
+PLAN=""
 plan_resources() {
   step "Plan — what will change in '$ENVIRONMENT'"
   local dir="$ENV_DIR/resources"
@@ -165,19 +166,32 @@ plan_resources() {
     return 0
   fi
 
-  local plan reply
-  plan="$(tf "$dir" show -no-color tfapply | grep -E '^  # |^Plan:' | sed 's/^ *//' || true)"
+  PLAN="$(tf "$dir" show -no-color tfapply | grep -E '^  # |^Plan:' | sed 's/^ *//' || true)"
   rm -f "$dir/tfapply"
-  if [[ -z "$plan" ]]; then
+  if [[ -z "$PLAN" ]]; then
     ok "no changes — '$ENVIRONMENT' already matches the configuration"
     return 0
   fi
   printf '\n'
-  printf '%s\n' "$plan" | indent
+  printf '%s\n' "$PLAN" | indent
+}
 
-  grep -qE '^# .* will be destroyed|^# .* must be replaced' <<<"$plan" || { printf '\n'; return 0; }
+# ─── confirm ──────────────────────────────────────────────────────────────────────────────────
+confirm_apply() {
+  local reply
+  printf '\n'
+  grep -qE '^# .* will be destroyed|^# .* must be replaced' <<<"$PLAN" && \
+    printf '%s%sThis plan destroys or replaces existing resources.%s\n' "$BOLD" "$YEL" "$OFF"
 
-  printf '\n%s%sThis plan destroys or replaces existing resources.%s\n' "$BOLD" "$YEL" "$OFF"
+  if ((BOOTSTRAP_ONLY)); then
+    printf '%sThis creates the resource group, state backend and CI identity for %s, and writes\n' "$YEL" "$ENVIRONMENT"
+    printf 'its GitHub environment.%s\n' "$OFF"
+  elif [[ -n "$PLAN" ]]; then
+    printf '%sThis applies the plan above to %s.%s\n' "$YEL" "$ENVIRONMENT" "$OFF"
+  else
+    printf '%sThis builds %s and pushes its migrations.%s\n' "$YEL" "$ENVIRONMENT" "$OFF"
+  fi
+
   [[ "$ENVIRONMENT" == "production" ]] && \
     printf '%sPRODUCTION. Free-tier projects have no point-in-time recovery. There is no undo.%s\n' "$RED" "$OFF"
   printf '\nType the environment name to confirm: '
@@ -390,6 +404,7 @@ preflight
 export_tf_secrets
 ((CHECK_ONLY)) && { step "Preflight only — nothing was changed"; exit 0; }
 plan_resources
+confirm_apply
 stage_bootstrap_create
 stage_bootstrap_adopt
 
