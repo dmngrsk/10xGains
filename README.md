@@ -211,6 +211,14 @@ Below are the most important scripts defined in `package.json`.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 
+### Infrastructure
+
+These provision the deployed environments and are not needed for local development. See [`infra/README.md`](infra/README.md) for the layout, the required credentials, and what is deliberately left unmanaged.
+
+- `pnpm infra:apply <staging|production>` - Provisions or converges an entire environment: the Azure resources, the Supabase project, Cloudflare DNS, the database migrations, and this environment's GitHub variables and secrets. Add `--check` to run the preflight checks and stop, which reports what is missing without changing anything.
+- `pnpm infra:apply <staging|production> --bootstrap-only` - Creates only the resource group, Terraform state backend and CI identity - the set CI cannot create for itself - and writes the GitHub environment. Use this when you want CD to build the rest.
+- `pnpm infra:destroy <staging|production>` - Tears an environment down. Add `--keep-bootstrap` to leave the state backend, CI identity and Supabase project in place.
+
 ## Project Scope
 The current MVP scope includes:
 - **User Account System**: Secure user registration and login.
