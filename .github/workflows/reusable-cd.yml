@@ -17,9 +17,84 @@ on:
         description: 'Scope of E2E tests to run (full or smoke)'
 
 jobs:
+  preview:
+    name: Preview the Terraform plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
+      TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TF_VAR_supabase_google_client_id: ${{ vars.SUPABASE_GOOGLE_CLIENT_ID }}
+      TF_VAR_supabase_google_client_secret: ${{ secrets.SUPABASE_GOOGLE_CLIENT_SECRET }}
+      TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ALLOW_DESTROY: ${{ vars.TF_ALLOW_DESTROY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform plan
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ inputs.environment }}.tfstate" \
+            -backend-config="use_azuread_auth=true"
+
+          if ! terraform plan -input=false -no-color -out=tfplan 2>plan.err; then
+            {
+              echo "### Terraform plan — ${{ inputs.environment }} (unavailable)"
+              echo "Expected on a first build. The plan after approval is authoritative."
+              echo '```'; tail -20 plan.err; echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "### Terraform plan — ${{ inputs.environment }}"
+            echo '```'
+            terraform show -no-color tfplan | grep -E '^  # |^Plan:|^No changes' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          destroyed="$(terraform show -json tfplan \
+            | jq -r '.resource_changes[]? | select(.change.actions == ["delete"]) | .address')"
+          [ -n "$destroyed" ] || exit 0
+
+          if [ "${ALLOW_DESTROY:-}" = "true" ]; then
+            {
+              echo "> **TF_ALLOW_DESTROY is set on ${{ inputs.environment }}.** These will be destroyed:"
+              echo '```'; printf '%s\n' "$destroyed"; echo '```'
+              echo "> Unset the variable once this deploy is done."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::TF_ALLOW_DESTROY is set; this deploy destroys resources"
+            exit 0
+          fi
+
+          echo "::error::this plan destroys resources; set TF_ALLOW_DESTROY=true on '${{ inputs.environment }}' to allow it:"
+          printf '%s\n' "$destroyed"
+          exit 1
+
   defer:
     name: Defer deployment
     runs-on: ubuntu-latest
+    needs: [preview]
     if: inputs.defer
     environment:
       name: ${{ inputs.environment }}-cd
@@ -28,10 +103,120 @@ jobs:
         run: |
           echo "Approval received, deploying to ${{ inputs.environment }} environment..."
 
+  infrastructure:
+    name: Apply infrastructure with Terraform
+    runs-on: ubuntu-latest
+    needs: [defer]
+    environment: ${{ inputs.environment }}
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      api_url: ${{ steps.tf_outputs.outputs.api_url }}
+      app_url: ${{ steps.tf_outputs.outputs.app_url }}
+      supabase_url: ${{ steps.tf_outputs.outputs.supabase_url }}
+      supabase_publishable_key: ${{ steps.tf_outputs.outputs.supabase_publishable_key }}
+      supabase_project_ref: ${{ steps.tf_outputs.outputs.supabase_project_ref }}
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_subscription_id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_supabase_organization_id: ${{ vars.SUPABASE_ORGANIZATION_ID }}
+      TF_VAR_supabase_database_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TF_VAR_supabase_google_client_id: ${{ vars.SUPABASE_GOOGLE_CLIENT_ID }}
+      TF_VAR_supabase_google_client_secret: ${{ secrets.SUPABASE_GOOGLE_CLIENT_SECRET }}
+      TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      ALLOW_DESTROY: ${{ vars.TF_ALLOW_DESTROY }}
+    steps:
+      - name: Validate environment value
+        if: inputs.environment != 'staging' && inputs.environment != 'production'
+        run: |
+          echo "Error: environment must be either 'staging' or 'production'"
+          exit 1
+
+      - name: Set git default branch
+        run: |
+          git config --global init.defaultBranch main
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          terraform init -input=false \
+            -backend-config="resource_group_name=${{ vars.AZURE_RESOURCE_GROUP }}" \
+            -backend-config="storage_account_name=${{ vars.TF_STATE_STORAGE_ACCOUNT }}" \
+            -backend-config="container_name=tfstate" \
+            -backend-config="key=${{ inputs.environment }}.tfstate" \
+            -backend-config="use_azuread_auth=true"
+
+      - name: Ensure the Supabase project is healthy
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          set -euo pipefail
+          terraform apply -auto-approve -input=false -no-color -target=supabase_project.main
+          ref="$(terraform show -json | jq -r '
+            .values.root_module.resources[]?
+            | select(.address == "supabase_project.main") | .values.id')"
+          [ -n "$ref" ] || { echo "could not read the Supabase project ref from state"; exit 1; }
+
+          for i in $(seq 1 40); do
+            status="$(curl -fsS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+              "https://api.supabase.com/v1/projects/$ref" | jq -r '.status // empty' || true)"
+            [ "$status" = "ACTIVE_HEALTHY" ] && exit 0
+            echo "project $ref is ${status:-provisioning}; retrying in 15s ($i/40)"
+            sleep 15
+          done
+          echo "project $ref did not become healthy within 10 minutes"
+          exit 1
+
+      - name: Terraform plan
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          terraform plan -input=false -no-color -out=tfplan
+          destroyed="$(terraform show -json tfplan \
+            | jq -r '.resource_changes[]? | select(.change.actions == ["delete"]) | .address')"
+          if [ -n "$destroyed" ] && [ "${ALLOW_DESTROY:-}" != "true" ]; then
+            echo "::error::this plan destroys resources; set TF_ALLOW_DESTROY=true on '${{ inputs.environment }}' to allow it:"
+            printf '%s\n' "$destroyed"
+            exit 1
+          fi
+          {
+            echo "### Terraform plan — ${{ inputs.environment }}"
+            echo '```'
+            terraform show -no-color tfplan | grep -E '^  # |^Plan:|^No changes' || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Terraform apply
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: terraform apply -input=false -no-color tfplan
+
+      - name: Publish environment addresses
+        id: tf_outputs
+        working-directory: infra/environments/${{ inputs.environment }}/resources
+        run: |
+          set -euo pipefail
+          for o in api_url app_url supabase_url supabase_publishable_key supabase_project_ref; do
+            v="$(terraform output -raw "$o")"
+            [ -n "$v" ] || { echo "terraform output $o is empty"; exit 1; }
+            printf '%s=%s\n' "$o" "$v" >> "$GITHUB_OUTPUT"
+          done
+
   database:
     name: Deploy database migrations to Supabase
     runs-on: ubuntu-latest
-    needs: [defer]
+    needs: [infrastructure]
     environment: ${{ inputs.environment }}
     steps:
       - name: Validate environment value
@@ -57,14 +242,14 @@ jobs:
         uses: supabase/setup-cli@v2
         with:
           # Pinned to the version in package.json.
-          version: 2.109.0
+          version: 2.116.0
 
       - name: Deploy database migrations
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: |
-          supabase link --project-ref ${{ vars.SUPABASE_PROJECT_ID }}
+          supabase link --project-ref ${{ needs.infrastructure.outputs.supabase_project_ref }}
           supabase db push
           supabase db test --linked
 
@@ -100,7 +285,7 @@ jobs:
 
   frontend:
     name: Deploy web app to Azure Static Web Apps
-    needs: [backend-api]
+    needs: [backend-api, infrastructure]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     permissions:
@@ -128,6 +313,51 @@ jobs:
         with:
           name: dist-web-${{ inputs.environment }}
           path: apps/web/dist/
+
+      - name: Apply environment configuration
+        env:
+          ENVIRONMENT_NAME: ${{ inputs.environment }}
+          API_URL: ${{ needs.infrastructure.outputs.api_url }}
+          SUPABASE_URL: ${{ needs.infrastructure.outputs.supabase_url }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ needs.infrastructure.outputs.supabase_publishable_key }}
+          WEBMANIFEST_NAME: ${{ vars.APP_WEBMANIFEST_NAME }}
+          WEBMANIFEST_SHORT_NAME: ${{ vars.APP_WEBMANIFEST_SHORT_NAME }}
+        run: |
+          for v in ENVIRONMENT_NAME API_URL SUPABASE_URL SUPABASE_PUBLISHABLE_KEY; do
+            if [ -z "${!v}" ]; then
+              echo "::error::$v is empty — the infrastructure job did not publish it."
+              exit 1
+            fi
+          done
+
+          ENV_JS=$(find apps/web/dist -name 'env.js' | head -1)
+          SWA_CONFIG=$(find apps/web/dist -name 'staticwebapp.config.json' | head -1)
+          if [ -z "$ENV_JS" ] || [ -z "$SWA_CONFIG" ]; then
+            echo "::error::env.js or staticwebapp.config.json is missing from the artifact."
+            exit 1
+          fi
+
+          sed -i \
+            -e "s|__ENVIRONMENT_NAME__|$ENVIRONMENT_NAME|g" \
+            -e "s|__API_URL__|$API_URL|g" \
+            -e "s|__SUPABASE_URL__|$SUPABASE_URL|g" \
+            -e "s|__SUPABASE_PUBLISHABLE_KEY__|$SUPABASE_PUBLISHABLE_KEY|g" \
+            "$ENV_JS" "$SWA_CONFIG"
+
+          MANIFEST=$(find apps/web/dist -name 'manifest.webmanifest' | head -1)
+          if [ -n "$MANIFEST" ]; then
+            jq --arg n "$WEBMANIFEST_NAME" --arg s "$WEBMANIFEST_SHORT_NAME" \
+              '(if $n != "" then .name = $n else . end) | (if $s != "" then .short_name = $s else . end)' \
+              "$MANIFEST" > "$MANIFEST.tmp" && mv "$MANIFEST.tmp" "$MANIFEST"
+          fi
+
+          if grep -qE '__(ENVIRONMENT_NAME|API_URL|SUPABASE_URL|SUPABASE_PUBLISHABLE_KEY)__' "$ENV_JS" "$SWA_CONFIG"; then
+            echo "::error::Placeholders remain after substitution."
+            exit 1
+          fi
+
+          echo "Applied ${{ inputs.environment }} configuration:"
+          cat "$ENV_JS"
 
       - name: Log in to Azure via OIDC
         uses: azure/login@v3
@@ -164,7 +394,7 @@ jobs:
 
   e2e:
     name: Run E2E Tests
-    needs: [frontend]
+    needs: [frontend, infrastructure]
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
     steps:
@@ -190,16 +420,32 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
+      - name: Resolve the project's secret key
+        if: inputs.e2e_scope == 'full'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ needs.infrastructure.outputs.supabase_project_ref }}
+        run: |
+          key=$(curl -sS -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/api-keys?reveal=true" \
+            | jq -r 'first(.[] | select(.type=="secret") | .api_key)')
+          if [ -z "$key" ] || [ "$key" = "null" ]; then
+            echo "::error::Could not resolve the secret key for project $PROJECT_REF."
+            exit 1
+          fi
+          echo "::add-mask::$key"
+          echo "SUPABASE_SECRET_KEY=$key" >> "$GITHUB_ENV"
+
       - name: Run smoke E2E tests
         if: inputs.e2e_scope == 'smoke'
         env:
           APP_CANARY_USER_EMAIL: ${{ secrets.APP_CANARY_USER_EMAIL }}
           APP_CANARY_USER_PASSWORD: ${{ secrets.APP_CANARY_USER_PASSWORD }}
-          CYPRESS_BASE_URL: ${{ vars.APP_URL }}
+          CYPRESS_BASE_URL: ${{ needs.infrastructure.outputs.app_url }}
           CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
           CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_URL: ${{ needs.infrastructure.outputs.supabase_url }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ needs.infrastructure.outputs.supabase_publishable_key }}
         run: |
           pnpm e2e:smoke
 
@@ -210,12 +456,11 @@ jobs:
           APP_CANARY_USER_PASSWORD: ${{ secrets.APP_CANARY_USER_PASSWORD }}
           APP_DEV_USER_EMAIL: ${{ secrets.APP_DEV_USER_EMAIL }}
           APP_DEV_USER_PASSWORD: ${{ secrets.APP_DEV_USER_PASSWORD }}
-          CYPRESS_BASE_URL: ${{ vars.APP_URL }}
+          CYPRESS_BASE_URL: ${{ needs.infrastructure.outputs.app_url }}
           CYPRESS_DEFAULT_COMMAND_TIMEOUT: ${{ vars.CYPRESS_DEFAULT_COMMAND_TIMEOUT }}
           CYPRESS_ENVIRONMENT: ${{ inputs.environment }}
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_URL: ${{ needs.infrastructure.outputs.supabase_url }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ needs.infrastructure.outputs.supabase_publishable_key }}
         run: |
           pnpm e2e:run
 

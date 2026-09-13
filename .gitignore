@@ -64,6 +64,7 @@ docs/specs/*
 .env.*
 !.env.example
 local.settings.json
+apps/web/src/env.js
 apps/web/src/environments/environment.*.ts
 
 # System files

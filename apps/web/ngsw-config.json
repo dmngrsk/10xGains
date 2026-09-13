@@ -10,9 +10,9 @@
           "/assets/favicon/favicon.ico",
           "/index.csr.html",
           "/index.html",
-          "/manifest.webmanifest",
           "/*.css",
-          "/*.js"
+          "/*.js",
+          "!/env.js"
         ]
       }
     },
@@ -34,6 +34,20 @@
         "files": [
           "/**/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"
         ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "runtime-config",
+      "urls": [
+        "/env.js"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 1,
+        "maxAge": "1h",
+        "timeout": "3s"
       }
     }
   ]

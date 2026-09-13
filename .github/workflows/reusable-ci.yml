@@ -174,76 +174,30 @@ jobs:
         run: |
           pnpm install --frozen-lockfile
 
-      - name: Generate environment file
+      - name: Stamp build metadata
         run: |
-          TEMPLATE_FILE="apps/web/src/environments/environment.ts"
-          OUTPUT_FILE="apps/web/src/environments/environment.${{ inputs.environment }}.ts"
-
-          cp "$TEMPLATE_FILE" "$OUTPUT_FILE"
-
-          if [[ "${{ inputs.environment }}" == "production" ]]; then
-            echo "Setting 'production' flag to true for production environment."
-            sed -i 's/production: false,/production: true,/' "$OUTPUT_FILE"
-          fi
+          ENV_FILE="apps/web/src/environments/environment.ts"
 
           sed -i \
-            -e "s|enableServiceWorker: false,|enableServiceWorker: true,|g" \
             -e "s|__BUILD_NAME__|${{ inputs.build_name }}|g" \
             -e "s|__BUILD_SHA__|${{ inputs.build_sha }}|g" \
             -e "s|__BUILD_TAG__|${{ inputs.build_tag }}|g" \
-            -e "s|__API_URL__|${{ vars.API_URL }}|g" \
-            -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
-            -e "s|__SUPABASE_PUBLISHABLE_KEY__|${{ secrets.SUPABASE_PUBLISHABLE_KEY }}|g" \
-            "$OUTPUT_FILE"
+            "$ENV_FILE"
 
-          echo "Generated ${OUTPUT_FILE}."
-          if grep -q '__[A-Z_]*__' "$OUTPUT_FILE"; then
-            echo "::error::Unsubstituted placeholders remain in ${OUTPUT_FILE}."
-            grep -o '__[A-Z_]*__' "$OUTPUT_FILE" | sort -u
+          if grep -qE '__BUILD_[A-Z]+__' "$ENV_FILE"; then
+            echo "::error::Unsubstituted build placeholders remain in ${ENV_FILE}."
             exit 1
           fi
+          cat "$ENV_FILE"
 
-      - name: Generate webmanifest file
+      - name: Write the runtime configuration template
         run: |
-          WEBMANIFEST_FILE="apps/web/src/manifest.webmanifest"
-
-          jq \
-            --arg name "${{ vars.APP_WEBMANIFEST_NAME }}" \
-            --arg short_name "${{ vars.APP_WEBMANIFEST_SHORT_NAME }}" \
-            '
-              (if $name != "" then .name = $name else . end) |
-              (if $short_name != "" then .short_name = $short_name else . end)
-            ' \
-            "$WEBMANIFEST_FILE" > "${WEBMANIFEST_FILE}.tmp"
-
-          mv "${WEBMANIFEST_FILE}.tmp" "$WEBMANIFEST_FILE"
-
-          echo "Generated ${WEBMANIFEST_FILE}:"
-          echo ""
-          cat "${WEBMANIFEST_FILE}"
-
-      - name: Generate Static Web Apps config
-        run: |
-          SWA_CONFIG_FILE="apps/web/src/staticwebapp.config.json"
-
-          sed -i \
-            -e "s|__API_URL__|${{ vars.API_URL }}|g" \
-            -e "s|__SUPABASE_URL__|${{ vars.SUPABASE_URL }}|g" \
-            "$SWA_CONFIG_FILE"
-
-          echo "Generated ${SWA_CONFIG_FILE}:"
-          echo ""
-          cat "$SWA_CONFIG_FILE"
-
-          if grep -q '__[A-Z_]*__' "$SWA_CONFIG_FILE"; then
-            echo "::error::Unsubstituted placeholders remain in ${SWA_CONFIG_FILE}."
-            grep -o '__[A-Z_]*__' "$SWA_CONFIG_FILE" | sort -u
-            exit 1
-          fi
+          cp -f apps/web/src/env.template.js apps/web/src/env.js
+          cat apps/web/src/env.js
 
       - name: Build web app
         run: |
-          pnpm build:${{ inputs.environment }}
+          pnpm build
 
       - name: Upload build artifacts for staging
         if: inputs.environment == 'staging'
