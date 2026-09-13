@@ -41,7 +41,7 @@ export_tf_secrets() {
              cloudflare_api_token:CLOUDFLARE_API_TOKEN \
              cloudflare_zone_id:CLOUDFLARE_ZONE_ID; do
     name="${var#*:}"
-    if [[ -n "${!name:-}" ]]; then export "TF_VAR_${var%%:*}=${!name}"
+    if is_set "${!name:-}"; then export "TF_VAR_${var%%:*}=${!name}"
     else unset "TF_VAR_${var%%:*}"; fi
   done
 }

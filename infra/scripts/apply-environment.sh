@@ -380,14 +380,14 @@ stage_github() {
   set_secret AZURE_CLIENT_ID      "$AZURE_CLIENT_ID"
   set_secret SUPABASE_DB_PASSWORD "$SUPABASE_DB_PASSWORD"
 
-  if [[ -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID:-}" && -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET:-}" ]]; then
+  if is_set "${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID:-}" && is_set "${SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET:-}"; then
     set_var    SUPABASE_GOOGLE_CLIENT_ID     "$SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID"
     set_secret SUPABASE_GOOGLE_CLIENT_SECRET "$SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET"
   else
     info "no Google credentials in the environment — skipping SUPABASE_GOOGLE_*"
   fi
 
-  if [[ -n "${CLOUDFLARE_API_TOKEN:-}" && -n "${CLOUDFLARE_ZONE_ID:-}" ]]; then
+  if is_set "${CLOUDFLARE_API_TOKEN:-}" && is_set "${CLOUDFLARE_ZONE_ID:-}"; then
     set_var    CLOUDFLARE_ZONE_ID   "$CLOUDFLARE_ZONE_ID"
     set_secret CLOUDFLARE_API_TOKEN "$CLOUDFLARE_API_TOKEN"
   else

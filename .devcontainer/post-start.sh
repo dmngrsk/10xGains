@@ -36,6 +36,8 @@ fi
 # `supabase stop && supabase start` to take effect.
 SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=//p' .env | tr -d '\r')"
 SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=//p' .env | tr -d '\r')"
+case "$SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID" in *"<"*">"*) SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="" ;; esac
+case "$SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET"    in *"<"*">"*) SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET="" ;; esac
 export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
 
 # `supabase status` exits 0 even when only some services are up, so probe the DB and the
