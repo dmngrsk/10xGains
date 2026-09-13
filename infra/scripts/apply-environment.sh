@@ -41,14 +41,9 @@ case "$ENVIRONMENT" in
 esac
 LOCATION="westeurope"
 env_dir "$ENVIRONMENT"
-# Bootstrap-only still configures the GitHub environment: those entries are derived from stage 2's
-# identity and from static names, not from the resources root, so they are correct before it exists.
 STAGES=$(( BOOTSTRAP_ONLY ? 3 : 5 ))
 
 # ─── preflight: check EVERYTHING before doing ANY work ────────────────────────────────────────
-# Collect every failure rather than dying on the first, so one run tells you everything that is
-# missing. Provisioning half an environment and then stopping for a missing token is the outcome
-# this section exists to prevent.
 preflight() {
   step "Preflight — verify prerequisites for '$ENVIRONMENT'"
 
@@ -62,8 +57,6 @@ preflight() {
 
   check "GitHub CLI authenticated" "GitHub CLI is not authenticated. Run: gh auth login" gh auth status
 
-  # Stage 5 writes the rest, but these are never written by this script — on a fresh environment
-  # their absence surfaces as a failed `azure/login` several minutes into the first deploy.
   local missing_secrets
   missing_secrets="$(
     comm -23 <(printf '%s\n' AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID SUPABASE_ACCESS_TOKEN | sort) \
@@ -95,15 +88,6 @@ preflight() {
 # ─── terraform helpers ────────────────────────────────────────────────────────────────────────
 tf() { terraform -chdir="$1" "${@:2}"; }
 
-# Adopt a pre-existing resource only when it is not already tracked, so re-runs are no-ops.
-# Azure RBAC is eventually consistent across storage frontend nodes. For the first minutes after
-# stage 1 creates the role assignments, individual requests 403 while others succeed — so it is not
-# enough to wait once and proceed: every call that touches state has to tolerate it. Observed on a
-# fresh account: init succeeded, three imports succeeded, then a lock release 403'd.
-#
-# A failed release strands the lease, which then blocks the next call with "already locked", so the
-# lease is broken before each retry. Safe here because the only process using this state is this
-# script, and the preflight refuses to run in CI.
 tf_unlock() {
   local dir="$1" account container key
   [[ -f "$dir/backend.hcl" ]] || return 0
@@ -114,18 +98,8 @@ tf_unlock() {
     --auth-mode login -o none 2>/dev/null || true
 }
 
-# Only the two failures above resolve on their own, so only they are retried; everything else is
-# reported immediately with its error. Retrying a deterministic failure buries the cause and
-# misattributes it — a fresh Supabase project rejecting its settings was read here as an RBAC
-# timeout, twenty times over.
-#
-# Match the message, not the error code: the azurerm backend surfaces the data-plane 403 as
-#   Error writing state file: ... unexpected status 403 (403 This request is not authorized to
-#   perform this operation using this permission.) with EOF
-# with no AuthorizationPermissionMismatch anywhere in it. Verify any addition against real output.
 TF_TRANSIENT='unexpected status 403|AuthorizationPermissionMismatch|AuthorizationFailure|not authorized to perform this operation|does not have authorization to perform action|Error acquiring the state lock|blob is already locked'
 
-# Stdout is passed through so callers can capture it; notices and errors go to stderr.
 tf_retry() {
   local dir="$1"; shift
   local i err; err="$(mktemp)"
@@ -139,8 +113,6 @@ tf_retry() {
     sleep 15
   done
   cat "$err" >&2; rm -f "$err"
-  # Returns rather than dying: several callers run this in a pipeline or command substitution,
-  # where `exit` would only leave the subshell and the failure would go unnoticed.
   printf 'terraform could not reach %s after 5 minutes of RBAC 403s — re-run the script.\n' "$dir" >&2
   return 1
 }
@@ -207,8 +179,6 @@ stage_bootstrap_create() {
     az role assignment create --assignee-object-id "$OPERATOR_OID" --assignee-principal-type User \
       --role "Storage Blob Data Contributor" --scope "$sa_id/blobServices/default/containers/$c" -o none 2>/dev/null || true
   done
-  # Not verified here: Azure RBAC is eventually consistent across storage frontends, so a probe
-  # can succeed while the next request to a different node still 403s. Stage 2 retries instead.
   ok "operator data-plane access (Owner alone does not confer it)"
 }
 
@@ -246,11 +216,6 @@ EOF
 
   ok "$IMPORTED imported, $((TRACKED - IMPORTED)) already tracked ($TRACKED resources adopted)"
 
-  # This root only ever adopts and creates, so a planned destroy means the state was written by a
-  # different configuration than the one running now — different module names, or resources split
-  # across state files. Left to -auto-approve, Terraform removes whatever the config no longer
-  # declares, and in this root that includes the resource group and the state account inside it.
-  # Reconcile the addresses (terraform state mv, or `moved` blocks) rather than bypassing this.
   info "planning the bootstrap root…"
   tf_retry "$dir" plan -input=false -no-color -out=tfbootstrap >/dev/null || die "terraform plan failed for $dir."
 
@@ -305,7 +270,6 @@ EOF
   info "creating the Supabase project ahead of everything that depends on it…"
   tf_retry "$dir" apply -auto-approve -input=false -no-color -target=supabase_project.main | indent \
     || die "terraform could not create the Supabase project for $dir."
-  # Read from state rather than `output`, which -target leaves uncomputed on a fresh environment.
   SUPABASE_PROJECT_REF="$(tf_retry "$dir" show -json \
     | jq -r '.values.root_module.resources[]? | select(.address == "supabase_project.main") | .values.id')" \
     || die "could not read the Supabase project from state."
@@ -344,15 +308,11 @@ stage_database() {
 }
 
 # ─── stage 5: GitHub environment ──────────────────────────────────────────────────────────────
-# The values below are all derived from Terraform outputs. Setting them by hand is where the
-# config-sync gap of spec §1.1 actually bites; writing them here closes it for the values this
-# script owns.
 stage_github() {
   stage "configure the GitHub environment"
   local repo; repo="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 
   set_var()    { gh variable set "$1" --env "$ENVIRONMENT" --repo "$repo" --body "$2" >/dev/null && info "var    $1"; }
-  # Piped rather than passed as an argument, so secret values never appear in the process list.
   set_secret() { printf '%s' "$2" | gh secret set "$1" --env "$ENVIRONMENT" --repo "$repo" >/dev/null && info "secret $1"; }
 
   set_var AZURE_RESOURCE_GROUP      "$RESOURCE_GROUP"
@@ -364,7 +324,6 @@ stage_github() {
   set_secret AZURE_CLIENT_ID      "$AZURE_CLIENT_ID"
   set_secret SUPABASE_DB_PASSWORD "$SUPABASE_DB_PASSWORD"
 
-  # Only when supplied: CD's Terraform then leaves the provider untouched rather than disabling it.
   if [[ -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID:-}" && -n "${SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET:-}" ]]; then
     set_var    SUPABASE_GOOGLE_CLIENT_ID     "$SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID"
     set_secret SUPABASE_GOOGLE_CLIENT_SECRET "$SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET"

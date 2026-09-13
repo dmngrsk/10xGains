@@ -3,12 +3,13 @@
 # Destroy one environment — the inverse of apply-environment.sh.
 #
 #   pnpm infra:destroy staging                      everything (default)
-#   pnpm infra:destroy staging --keep-bootstrap     the Azure resources and DNS only, keeping the
-#                                                   state backend, CI identity and Supabase project
+#   pnpm infra:destroy staging --keep-bootstrap     the resources root only, keeping the resource
+#                                                   group, state backend and CI identity
 #
-# NEVER RUN IN CI. Destroying an environment is a human decision, and a full run deletes the
+# NEVER RUN IN CI. Destroying an environment is a human decision, and either mode deletes the
 # Supabase project and its data — free-tier projects have no point-in-time recovery. Production
-# carries prevent_destroy and Terraform will refuse; that refusal is the design working.
+# carries prevent_destroy on that project, so Terraform refuses both modes there; that refusal is
+# the design working.
 #
 # Step 4 deletes the resource group via the CLI rather than `terraform destroy` on bootstrap/,
 # because bootstrap keeps its state inside the storage account it manages: Terraform would delete
@@ -36,11 +37,10 @@ esac
 env_dir "$ENVIRONMENT"
 
 # ─── preflight ────────────────────────────────────────────────────────────────────────────────
-
 step "Preflight — verify prerequisites for '$ENVIRONMENT'"
 
 preflight_base "Refusing to run in CI (\$CI is set). Destroying an environment is a human decision." \
-  az terraform jq gh
+  az terraform gh
 
 check "SUPABASE_DB_PASSWORD is set" \
   "SUPABASE_DB_PASSWORD is unset or still a placeholder; Terraform needs it to build a plan." \
@@ -57,12 +57,6 @@ preflight_failed && exit 1
 
 export_tf_secrets
 
-# Terraform's destroy leaves the Log Analytics workspace SOFT-deleted, which reserves its name for
-# 14 days — the next apply then fails on a name collision with a misleading error (spec §10).
-# Purging is therefore part of destroying the environment, not an optional follow-up.
-#
-# Handles all three states: still present (force-delete), already soft-deleted (recover, then
-# force-delete), or genuinely absent.
 purge_log_analytics() {
   local rg="rg-10xgains-$SUFFIX" ws="log-10xgains-$SUFFIX"
   if az monitor log-analytics workspace delete -g "$rg" -n "$ws" --force --yes -o none 2>/dev/null; then
@@ -81,25 +75,9 @@ purge_log_analytics() {
 step "Plan — what will be destroyed in '$ENVIRONMENT'"
 info "initialising the resources root…"
 terraform -chdir="$DIR" init -reconfigure -backend-config=backend.hcl -input=false -no-color >/dev/null
-# --keep-bootstrap keeps the Supabase project, so its ref — and the Google OAuth callback URL built
-# from it — survives the rebuild, and that redirect URI stays a one-time registration instead of a
-# step in every loop. Retention is tied to this flag rather than offered on its own: a full run
-# deletes the state account, and a project kept there would be stranded, with nothing tracking it
-# and the next apply creating a second one against the two-project cap.
-#
-# Terraform has no -exclude (that is OpenTofu), so this names what should go rather than what should
-# stay: -target=module.azure takes that module and everything depending on it, which picks up
-# module.supabase.supabase_settings and leaves supabase_project untouched. Those settings only leave
-# Terraform's state — the Management API has nothing to delete — and the next apply re-asserts them.
-# Anything added to this root outside module.azure must be named here too.
-PROJECT_REF="$(terraform -chdir="$DIR" show -json 2>/dev/null \
-  | jq -r '.values.root_module.resources[]? | select(.address == "supabase_project.main") | .values.id' || true)"
-
-TARGET=()
-((DESTROY_ALL)) || TARGET=(-target=module.azure)
-terraform -chdir="$DIR" plan -destroy "${TARGET[@]}" -input=false -no-color -out=tfdestroy >/dev/null
+terraform -chdir="$DIR" plan -destroy -input=false -no-color -out=tfdestroy >/dev/null
 printf '\n'
-# Terraform indents its own resource lines; strip that so both halves land at one level.
+
 PLAN="$(terraform -chdir="$DIR" show -no-color tfdestroy | grep -E '^  # |^Plan:' | sed 's/^ *//' || true)"
 if [[ -n "$PLAN" ]]; then
   printf '%s\n' "$PLAN" | indent
@@ -109,13 +87,14 @@ fi
 
 # ─── confirm ──────────────────────────────────────────────────────────────────────────────────
 printf '\n'
+printf '%s%sThis deletes the Supabase project and all of its data.%s\n' "$BOLD" "$YEL" "$OFF"
 if ((DESTROY_ALL)); then
-  printf '%s%sThis deletes the Supabase project and all of its data.%s\n' "$BOLD" "$YEL" "$OFF"
   printf '%sAlso removing the CI identity and the state backend — nothing for this environment\n' "$YEL"
   printf 'will remain, including its Terraform state. Rebuilding needs an Owner to run infra:apply.%s\n' "$OFF"
 else
-  printf '%s%sThe Supabase project and its data are kept.%s\n' "$BOLD" "$YEL" "$OFF"
-  printf '%s--keep-bootstrap: the bootstrap root stays too, so the next apply reuses this state.%s\n' "$YEL" "$OFF"
+  printf '%s--keep-bootstrap: the resource group, state backend and CI identity stay, so the next\n' "$YEL"
+  printf 'apply reuses this state. The rebuilt project gets a new ref — re-register the Google\n'
+  printf 'OAuth redirect URI afterwards.%s\n' "$OFF"
 fi
 [[ "$ENVIRONMENT" == "production" ]] && \
   printf '%sPRODUCTION. Free-tier projects have no point-in-time recovery. There is no undo.%s\n' "$RED" "$OFF"
@@ -126,11 +105,7 @@ read -r reply
 # ─── destroy ──────────────────────────────────────────────────────────────────────────────────
 STAGES=$(( DESTROY_ALL ? 4 : 2 ))
 
-if ((DESTROY_ALL)); then
-  stage "destroy the Azure resources, DNS records and the Supabase project"
-else
-  stage "destroy the Azure resources and DNS records"
-fi
+stage "destroy the Azure resources, DNS records and the Supabase project"
 run terraform -chdir="$DIR" apply -input=false -no-color tfdestroy || die "terraform destroy failed for $DIR."
 rm -f "$DIR/tfdestroy"
 if [[ -n "$PLAN" ]]; then
@@ -143,9 +118,6 @@ stage "purge the Log Analytics workspace"
 purge_log_analytics
 
 if ((DESTROY_ALL)); then
-  # The bootstrap root holds both the state backend and the CI identity; destroying it removes
-  # the app registration and role assignments. The storage account goes with the resource group
-  # below, which also takes this root's own state.
   stage "destroy the CI identity"
   BOOT="$ENV_DIR/bootstrap"
   if [[ -f "$BOOT/backend.hcl" ]]; then
@@ -171,10 +143,11 @@ if ((DESTROY_ALL)); then
   printf '\n'
 else
   step "Done — '$ENVIRONMENT' destroyed"
-  info "kept: the resource group, state account, both containers, the CI identity and the"
-  info "      Supabase project ${PROJECT_REF:-} — its callback URL is unchanged, so the Google"
-  info "      OAuth client needs no edit"
+  info "kept: the resource group, state account, both containers and the CI identity"
   info "the workspace was purged, so a rebuild will not collide on its name"
   info "rebuild with: pnpm infra:apply $ENVIRONMENT"
+  printf '\n'
+  info "the rebuilt Supabase project gets a new ref, so the Google OAuth redirect URI must be"
+  info "re-registered — infra:apply prints the value it needs"
   printf '\n'
 fi

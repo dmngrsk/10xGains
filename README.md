@@ -123,23 +123,12 @@ Each container runs a full Supabase stack, so two containers cannot both publish
 
 6.  **Write the local configuration:**
 
-    Create the three files listed under [Local configuration](#local-configuration), filling in the API URL, publishable key and secret key that step 4 printed. Two have committed templates:
+    Create the three files listed under [Local configuration](#local-configuration) from their committed templates, filling in the API URL, publishable key and secret key that step 4 printed:
     ```bash
     cp .env.example .env
     cp apps/api/local.settings.json.example apps/api/local.settings.json
+    cp apps/web/src/env.template.js apps/web/src/env.js
     ```
-
-    The third, `apps/web/src/env.js`, has no template of its own — it holds the runtime configuration the app reads in the browser, and needs the values step 4 printed:
-    ```js
-    window.__TXG_ENV__ = {
-      name: 'development',
-      apiUrl: 'http://localhost:7071',
-      supabaseUrl: 'http://localhost:54321',
-      supabasePublishableKey: '<the publishable key step 4 printed>',
-    };
-    ```
-
-    The dev container writes this for you, so it is only needed for a manual setup. Deployed builds use the same file: CI copies `env.template.js` over it, and CD substitutes the real addresses in — so local development exercises exactly the same code path as production.
 
 7.  **Seed a local dev account (optional):**
 
@@ -217,7 +206,7 @@ These provision the deployed environments and are not needed for local developme
 
 - `pnpm infra:apply <staging|production>` - Provisions or converges an entire environment: the Azure resources, the Supabase project, Cloudflare DNS, the database migrations, and this environment's GitHub variables and secrets. Add `--check` to run the preflight checks and stop, which reports what is missing without changing anything.
 - `pnpm infra:apply <staging|production> --bootstrap-only` - Creates only the resource group, Terraform state backend and CI identity - the set CI cannot create for itself - and writes the GitHub environment. Use this when you want CD to build the rest.
-- `pnpm infra:destroy <staging|production>` - Tears an environment down. Add `--keep-bootstrap` to leave the state backend, CI identity and Supabase project in place.
+- `pnpm infra:destroy <staging|production>` - Tears an environment down, Supabase project and all of its data included. Add `--keep-bootstrap` to leave the resource group, Terraform state backend and CI identity in place, so a rebuild does not need an Owner. Production carries `prevent_destroy` on its Supabase project and Terraform refuses both modes there.
 
 ## Project Scope
 The current MVP scope includes:

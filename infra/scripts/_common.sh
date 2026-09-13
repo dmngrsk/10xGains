@@ -32,18 +32,6 @@ fail()  { printf '    %s✗%s %s\n' "$RED" "$OFF" "$1"; errors+=("$2"); }
 check() { local label="$1" hint="$2"; shift 2; if "$@" >/dev/null 2>&1; then ok "$label"; else fail "$label" "$hint"; fi; }
 missing_tools() { local t out=(); for t in "$@"; do command -v "$t" >/dev/null 2>&1 || out+=("$t"); done; printf '%s' "${out[*]}"; }
 
-# The checks both scripts need: $1 explains why CI is refused, the rest are the required tools.
-# Sets SUBSCRIPTION_ID as a side effect, which both scripts report so it is obvious which
-# subscription is about to be changed.
-# Secrets reach Terraform through TF_VAR_* rather than a generated tfvars file: interpolating them
-# into double-quoted HCL breaks on a value containing " or \, and silently applies the wrong value
-# for one containing ${, which HCL evaluates. It also keeps them off disk in a public repo.
-#
-# Shared because both scripts run terraform against roots that declare these variables — destroy
-# needs them just to build a plan.
-# Call AFTER load_env_files: an empty TF_VAR_ is not the same as an absent one. It overrides the
-# variable's null default, and the Supabase provider then sees an empty token rather than falling
-# back to SUPABASE_ACCESS_TOKEN — so an unset secret is unexported, not exported blank.
 export_tf_secrets() {
   local var name
   for var in supabase_database_password:SUPABASE_DB_PASSWORD \
@@ -58,9 +46,6 @@ export_tf_secrets() {
   done
 }
 
-# `.env.example` ships non-empty placeholders like <personal access token from ...>, so a bare
-# `test -n` passes for a value the user never filled in — and the run then fails several stages
-# deep, which is what preflight exists to prevent.
 is_set() { [[ -n "${1:-}" && "$1" != *"<"*">"* ]]; }
 
 preflight_base() {
@@ -85,12 +70,7 @@ preflight_base() {
     is_set "${SUPABASE_ACCESS_TOKEN:-}"
 }
 
-# Cloudflare is optional — an environment without it keeps its generated hostname — so this only
-# insists when DNS is the point of the run. Half a pair is always a mistake, though: the apply
-# would skip DNS silently and the destroy would leave records behind.
 preflight_cloudflare() {
-  # `have=$((have + 1))` rather than `((have++))`: post-increment returns the old value, so the
-  # first one exits 1 under `set -e` and takes the whole run with it.
   local environment="$1" have=0
   is_set "${CLOUDFLARE_API_TOKEN:-}" && have=$((have + 1))
   is_set "${CLOUDFLARE_ZONE_ID:-}" && have=$((have + 1))
@@ -103,12 +83,6 @@ preflight_cloudflare() {
   fi
   ((have == 2)) && { ok "Cloudflare credentials are set"; return; }
 
-  # Neither is set, which is fine for an environment that never had a custom domain. It is not fine
-  # for one that does: module.dns is count-gated on these, so Terraform would read the absence as
-  # "no DNS wanted" and destroy the records and the domain binding as part of an ordinary run.
-  #
-  # The GitHub variable is the cheap signal that CD manages DNS here. Both scripts require gh, so
-  # an unreadable answer means unauthenticated rather than not-applicable — hence the warning.
   local managed=""
   if command -v gh >/dev/null 2>&1; then
     managed="$(gh variable list --env "$environment" --json name -q '.[].name' 2>/dev/null \
@@ -134,9 +108,6 @@ preflight_failed() {
   return 0
 }
 
-# Reads KEY=VALUE without evaluating it. `source` would be shorter, but these files hold secrets
-# and are hand-edited: a value containing <, >, backticks or $(...) is either a syntax error or
-# arbitrary command execution. The stock .env.staging already trips it.
 load_env_file() {
   local file="$1" line key value
   while IFS= read -r line || [[ -n "$line" ]]; do
@@ -144,8 +115,6 @@ load_env_file() {
     [[ "$line" != *=* ]] && continue
     key="${line%%=*}"; key="${key#"${key%%[![:space:]]*}"}"; key="${key%"${key##*[![:space:]]}"}"
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
-    # A CRLF-edited file would otherwise smuggle \r into the value: is_set passes, and the
-    # password reaches Terraform as $'secret\r', failing later as an opaque auth error.
     value="${line#*=}"; value="${value%$'\r'}"
     if [[ "$value" == \"*\" || "$value" == \'*\' ]]; then value="${value:1:${#value}-2}"; fi
     printf -v "$key" '%s' "$value"
@@ -153,7 +122,6 @@ load_env_file() {
   done < "$file"
 }
 
-# `.env` holds what both environments share; `.env.<environment>` overrides it.
 load_env_files() {
   local environment="$1" f loaded=()
   for f in "$REPO_ROOT/.env" "$REPO_ROOT/.env.$environment"; do

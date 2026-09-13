@@ -7,7 +7,7 @@ pnpm infra:apply <staging|production>                        # provision or conv
 pnpm infra:apply <staging|production> --bootstrap-only       # only what CI cannot create for itself
 pnpm infra:apply <staging|production> --check                # run preflight and stop
 pnpm infra:destroy <staging|production>                      # tear one down
-pnpm infra:destroy <staging|production> --keep-bootstrap     # keep the state backend, identity and Supabase project
+pnpm infra:destroy <staging|production> --keep-bootstrap     # keep the resource group, state backend and identity
 ```
 
 ## Layout
@@ -76,7 +76,7 @@ That is also the shape a production rebuild takes, so it is worth rehearsing on 
 
 ## Not managed here
 
-- The **Google OAuth redirect URI**. There is no public API for Web-application OAuth clients — the IAP-scoped one refuses redirect-URI updates — so the callback URL is registered by hand. It carries the Supabase project ref, so it changes whenever that project is rebuilt; `infra:apply` prints the current value when it finishes.
+- The **Google OAuth redirect URI**. There is no public API for Web-application OAuth clients — the IAP-scoped one refuses redirect-URI updates — so the callback URL is registered by hand. It carries the Supabase project ref, so it changes on every rebuild, including after `infra:destroy --keep-bootstrap`; `infra:apply` prints the current value when it finishes.
 - The **`Failure Anomalies` alert rules** Azure recreates alongside Application Insights.
 - The **Supabase auth email templates**, which the Management API rejects on a project without custom SMTP.
 
