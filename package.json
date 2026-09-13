@@ -5,11 +5,10 @@
   "scripts": {
     "dev": "pnpm -r --parallel --if-present dev",
     "seed": "tsx cypress/support/seed.ts",
+    "preng": "pnpm --filter @txg/web env:ensure",
     "ng": "pnpm --filter @txg/web ng",
     "build": "pnpm --filter @txg/web build",
     "build:development": "pnpm --filter @txg/web build:development",
-    "build:staging": "pnpm --filter @txg/web build:staging",
-    "build:production": "pnpm --filter @txg/web build:production",
     "lint": "pnpm -r --if-present lint",
     "lint:fix": "pnpm -r --if-present lint:fix",
     "test": "pnpm -r --if-present test",
@@ -17,7 +16,9 @@
     "test:coverage": "pnpm -r --if-present test:coverage",
     "e2e": "cypress open",
     "e2e:run": "cypress run",
-    "e2e:smoke": "cypress run --expose grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true"
+    "e2e:smoke": "cypress run --expose grepTags=@smoke,grepFilterSpecs=true,grepOmitFiltered=true",
+    "infra:apply": "bash infra/scripts/apply-environment.sh",
+    "infra:destroy": "bash infra/scripts/destroy-environment.sh"
   },
   "devDependencies": {
     "@cypress/grep": "^6.0.2",
@@ -27,7 +28,7 @@
     "dotenv": "^16.5.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.1",
-    "supabase": "2.109.0",
+    "supabase": "2.116.0",
     "tsx": "^4.20.6",
     "typescript": "~6.0.3"
   },

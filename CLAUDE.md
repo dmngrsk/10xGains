@@ -2,12 +2,6 @@
 
 10xGains is a training plan and workout tracking application (see `README.md` for the product description).
 
-## Tech Stack
-
-- Angular 22, Angular Material Design 3, Tailwind CSS 4 (frontend)
-- Hono on Azure Functions, Node.js 24 (API)
-- Supabase (PostgreSQL with RLS, authentication)
-
 ## Project Structure
 
 This is a pnpm workspace monorepo:
@@ -29,15 +23,6 @@ Use `pnpm` (never `npm` or `yarn`) for all package-related commands. Run package
 - Implement proper error logging and user-friendly error messages.
 - Consider using custom error types or error factories for consistent error handling.
 
-## Unit Testing (Vitest)
-
-- Leverage the `vi` object for test doubles - `vi.fn()` for function mocks, `vi.spyOn()` to monitor existing functions, and `vi.stubGlobal()` for global mocks. Prefer spies over mocks when you only need to verify interactions without changing behavior.
-- Master `vi.mock()` factory patterns - place mock factory functions at the top level of your test file, return typed mock implementations, and use `mockImplementation()` or `mockReturnValue()` for dynamic control during tests. Remember the factory runs before imports are processed.
-- Use inline snapshots (`toMatchInlineSnapshot()`) for readable assertions of complex values.
-- Run `vitest --watch` during development, filtering tests with `-t` to focus on specific areas.
-- Structure tests for maintainability - group related tests with descriptive `describe` blocks, use explicit assertion messages, and follow the Arrange-Act-Assert pattern.
-- Leverage TypeScript type checking in tests - use `expectTypeOf()` for type-level assertions, and ensure mocks preserve the original type signatures.
-
 ## Commit Messages
 
 Use the Conventional Commits format: `<type>(<optional scope>): <Description>`
@@ -54,4 +39,5 @@ Examples: `feat(settings): Add profile image upload feature`, `fix(auth): Resolv
 ## Additional Notes
 
 - When not sure about a solution to a problem, ask for feedback — do not make anything up.
+- Keep documentation and comments minimal: section headings and the non-obvious, not prose. If the name, value, or surrounding code already says it, leave it out.
 - Place draft documents (work-in-progress specs, design notes) in `docs/specs/`, which is git-ignored; only finished documentation belongs directly in `docs/`.

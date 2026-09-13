@@ -36,6 +36,8 @@ fi
 # `supabase stop && supabase start` to take effect.
 SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=//p' .env | tr -d '\r')"
 SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET="$(sed -n 's/^SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=//p' .env | tr -d '\r')"
+case "$SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID" in *"<"*">"*) SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="" ;; esac
+case "$SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET"    in *"<"*">"*) SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET="" ;; esac
 export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
 
 # `supabase status` exits 0 even when only some services are up, so probe the DB and the
@@ -80,7 +82,7 @@ alias_port "${TXG_MAIL_PORT:-54324}" 54324
 #
 #   .env                                                   (Cypress)
 #   apps/api/local.settings.json                           (Azure Functions host)
-#   apps/web/src/environments/environment.development.ts   (Angular dev build)
+#   apps/web/src/env.js                                    (Angular runtime config)
 
 WEB_PORT="${TXG_WEB_PORT:-4200}"
 API_PORT="${TXG_API_PORT:-7071}"
@@ -141,19 +143,20 @@ node -e '
   fs.writeFileSync(path, JSON.stringify(settings, null, 2) + "\n");
 '
 
-# No local settings here - this file is a build input, regenerated whole. Use start:staging
-# or start:production to run against another environment.
-sed \
-  -e "s|__BUILD_NAME__||g" \
-  -e "s|__BUILD_SHA__||g" \
-  -e "s|__BUILD_TAG__||g" \
-  -e "s|__API_URL__|http://localhost:${API_PORT}|g" \
-  -e "s|__SUPABASE_URL__|http://localhost:${SUPABASE_PORT}|g" \
-  -e "s|__SUPABASE_PUBLISHABLE_KEY__|${PUBLISHABLE_KEY}|g" \
-  apps/web/src/environments/environment.ts > apps/web/src/environments/environment.development.ts
+# Regenerated whole; edit env.js directly to point local development at another environment.
+# The web app reads its addresses at runtime from env.js — the same mechanism deployed builds
+# use, so `ng serve` exercises the same code path rather than a parallel one.
+cat > apps/web/src/env.js <<EOF
+window.__TXG_ENV__ = {
+  name: 'development',
+  apiUrl: 'http://localhost:${API_PORT}',
+  supabaseUrl: 'http://localhost:${SUPABASE_PORT}',
+  supabasePublishableKey: '${PUBLISHABLE_KEY}',
+};
+EOF
 
 echo ""
-echo "Wrote .env, apps/api/local.settings.json and apps/web/src/environments/environment.development.ts."
+echo "Wrote .env, apps/api/local.settings.json and apps/web/src/env.js."
 
 # Seed the known local accounts (dev@10xgains.com, canary@10xgains.com) with sample data.
 # Idempotent and local only - it uses the local service-role key that only exists here. Runs

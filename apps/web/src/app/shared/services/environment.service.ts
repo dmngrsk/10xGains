@@ -1,11 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment';
 
-/**
- * Service to provide access to environment variables
- * Angular automatically swaps the environment.ts import with the appropriate
- * environment file based on the build configuration through fileReplacements
- */
+/** Access to the runtime environment configuration supplied by `env.js`. */
 @Injectable({
   providedIn: 'root'
 })
@@ -13,7 +9,7 @@ export class EnvironmentService {
   private env = environment;
 
   get production(): boolean {
-    return this.env.production;
+    return this.env.name === 'production';
   }
 
   get apiUrl(): string {

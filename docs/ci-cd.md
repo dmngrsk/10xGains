@@ -6,52 +6,80 @@ This document describes the Continuous Integration and Continuous Deployment pip
 
 ## Required Configuration
 
-### Environment Variables
+The values Terraform derives — the API and app URLs, the Supabase project ref and its API keys — are not configured here; CD reads them from the `infrastructure` job's outputs at deploy time.
 
-#### Staging Environment
-```yaml
-# Variables (vars)
-APP_WEBMANIFEST_NAME: App name shown in the web manifest
-APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
-APP_URL: URL of the staging application
-AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
-AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
-CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
-SUPABASE_URL: URL of the staging Supabase instance
-SUPABASE_PROJECT_ID: Project ID of the staging Supabase instance
+Both environments take the same set with their own values, except `APP_DEV_USER_*`, which is staging-only. "Set by" is who fills the entry in, and when:
 
-# Secrets
-APP_CANARY_USER_EMAIL: Email of the canary user for E2E tests
-APP_CANARY_USER_PASSWORD: Password of the canary user for E2E tests
-APP_DEV_USER_EMAIL: Email of the seeded dev user (optional; staging only)
-APP_DEV_USER_PASSWORD: Password of the seeded dev user (optional; staging only)
-AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
-SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
-SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
-SUPABASE_SECRET_KEY: Secret key for Supabase (used in E2E tests)
+- `infra:apply` — written by stage 5 of the script; you never set these by hand.
+- manual (bootstrap) — must exist before `infra:apply` will start at all. Its preflight refuses to run without them, in either mode.
+- manual (full) — not checked by anything, but a full deploy needs them. Set them before the first release; see below for what breaks without each.
+- manual (opt-in) — never required. Set it when you want what it enables, and in the case of `TF_ALLOW_DESTROY`, unset it afterwards.
+
+### Variables
+
+| Variable | Set by | Description |
+| --- | --- | --- |
+| `APP_WEBMANIFEST_NAME` | manual (full) | App name shown in the web manifest |
+| `APP_WEBMANIFEST_SHORT_NAME` | manual (full) | Short name shown on the home screen |
+| `AZURE_FUNCTIONAPP_NAME` | `infra:apply` | Name of the Azure Function App resource |
+| `AZURE_RESOURCE_GROUP` | `infra:apply` | Name of the Azure resource group |
+| `AZURE_STATIC_WEB_APP_NAME` | `infra:apply` | Name of the Azure Static Web App resource |
+| `CLOUDFLARE_ZONE_ID` | `infra:apply` | Cloudflare zone holding the custom domain (optional) |
+| `CYPRESS_DEFAULT_COMMAND_TIMEOUT` | manual (full) | Timeout for Cypress commands (optional) |
+| `SUPABASE_GOOGLE_CLIENT_ID` | `infra:apply` | Google OAuth client id for Supabase sign-in (optional) |
+| `SUPABASE_ORGANIZATION_ID` | `infra:apply` | Supabase organization the project belongs to |
+| `TF_ALLOW_DESTROY` | manual (opt-in) | Set to `true` to let a deploy destroy resources; unset it afterwards |
+| `TF_STATE_STORAGE_ACCOUNT` | `infra:apply` | Storage account holding this environment's Terraform state |
+
+### Secrets
+
+| Secret | Set by | Description |
+| --- | --- | --- |
+| `APP_CANARY_USER_EMAIL` | manual (full) | Email of the canary user for E2E tests |
+| `APP_CANARY_USER_PASSWORD` | manual (full) | Password of the canary user for E2E tests |
+| `APP_DEV_USER_EMAIL` | manual (opt-in) | Email of the seeded dev user (optional; staging only) |
+| `APP_DEV_USER_PASSWORD` | manual (opt-in) | Password of the seeded dev user (optional; staging only) |
+| `AZURE_CLIENT_ID` | `infra:apply` | Application id of this environment's CI identity (OIDC) |
+| `AZURE_SUBSCRIPTION_ID` | manual (bootstrap) | Azure subscription id |
+| `AZURE_TENANT_ID` | manual (bootstrap) | Entra tenant id |
+| `CLOUDFLARE_API_TOKEN` | `infra:apply` | Zone:DNS:Edit, for the custom domain (optional) |
+| `SUPABASE_ACCESS_TOKEN` | manual (bootstrap) | Access token for the Supabase CLI and Terraform provider |
+| `SUPABASE_DB_PASSWORD` | `infra:apply` | Database password for the Terraform-managed project |
+| `SUPABASE_GOOGLE_CLIENT_SECRET` | `infra:apply` | Google OAuth client secret (optional; paired with the id) |
+
+Nothing verifies the **manual (full)** entries, and they fail at different distances. Without the `APP_CANARY_USER_*` pair a run gets through `infrastructure`, `database` and both deploys before failing in `e2e`; without `APP_WEBMANIFEST_*` nothing fails at all and the installed app simply shows a blank name.
+
+### Setting them
+
+Omitting `--body` makes `gh` read the value from standard input, prompting for it in a terminal — so secrets never reach shell history. Variables are not sensitive, so those pass `--body` directly.
+
+```bash
+ENV=staging   # or production
+
+# manual (bootstrap) — before infra:apply will start
+gh secret set AZURE_TENANT_ID       --env "$ENV"
+gh secret set AZURE_SUBSCRIPTION_ID --env "$ENV"
+gh secret set SUPABASE_ACCESS_TOKEN --env "$ENV"
+
+# manual (full) — before the first release
+gh secret set APP_CANARY_USER_EMAIL    --env "$ENV"
+gh secret set APP_CANARY_USER_PASSWORD --env "$ENV"
+gh variable set APP_WEBMANIFEST_NAME            --env "$ENV" --body "10xGains"
+gh variable set APP_WEBMANIFEST_SHORT_NAME      --env "$ENV" --body "10xGains"
+gh variable set CYPRESS_DEFAULT_COMMAND_TIMEOUT --env "$ENV" --body "10000"
+
+# manual (opt-in) — a seeded dev account, staging only
+gh secret set APP_DEV_USER_EMAIL    --env "$ENV"
+gh secret set APP_DEV_USER_PASSWORD --env "$ENV"
+
+# manual (opt-in) — only when a deploy is meant to destroy something
+gh variable set TF_ALLOW_DESTROY --env "$ENV" --body "true"
+gh variable delete TF_ALLOW_DESTROY --env "$ENV"
 ```
 
-#### Production Environment
-```yaml
-# Variables (vars)
-APP_WEBMANIFEST_NAME: App name shown in the web manifest
-APP_WEBMANIFEST_SHORT_NAME: Short name shown on home screen
-APP_URL: URL of the production application
-AZURE_RESOURCE_GROUP: Name of the Azure Resource Group
-AZURE_STATIC_WEB_APP_NAME: Name of the Azure Static Web App resource
-CYPRESS_DEFAULT_COMMAND_TIMEOUT: Timeout for Cypress commands (optional)
-SUPABASE_URL: URL of the production Supabase instance
-SUPABASE_PROJECT_ID: Project ID of the production Supabase instance
+Check what an environment already has with `gh variable list --env "$ENV"` and `gh secret list --env "$ENV"`, or run `pnpm infra:apply <env> --check`, which reports the missing manual (bootstrap) entries by name.
 
-# Secrets
-APP_CANARY_USER_EMAIL: Email of the canary user for smoke tests
-APP_CANARY_USER_PASSWORD: Password of the canary user for smoke tests
-AZURE_STATIC_WEB_APP_DEPLOYMENT_TOKEN: Deployment token for Azure Static Web App
-SUPABASE_ACCESS_TOKEN: Access token for Supabase CLI operations
-SUPABASE_DB_PASSWORD: Database password for Supabase
-SUPABASE_PUBLISHABLE_KEY: Publishable key for Supabase client
-```
+`SUPABASE_GOOGLE_*` is written only when both halves are present locally. Without them Terraform leaves the Google provider unmanaged rather than half-configured, so a rebuilt project keeps whatever it already has.
 
 ### Technical Environments
 
@@ -65,115 +93,74 @@ These environments should be configured in GitHub with required reviewers to ens
 ## Continuous Integration (CI) Flow
 
 ### Trigger Events
-- Pull requests to `main` branch
-- Release creation/editing
+- Pull requests to `main` (opened, synchronized, reopened)
+- Releases (published, edited) — staging and production CI run in parallel
+
+A merge to `main` creates a date-based release tag (`vYYYYMMDD.<n>`) but publishes nothing; the release itself is published by hand, which is what triggers a production deploy.
 
 ### Process Flow
-1. **Code Verification and Build**
-   - Linting using ESLint and TypeScript typechecks (per-package `lint` scripts)
-   - Unit testing with coverage reporting
-   - Building the Angular application
-   - Artifacts:
-     - Test coverage reports
-     - Build artifacts for deployment
+1. **Lint** - ESLint and TypeScript typechecks (per-package `lint` scripts)
+2. **Test** - unit tests with coverage reporting
+3. **Build** - the API (`apps/api`) and the web app (`apps/web`), in parallel
+
+Artifacts: the coverage report, and one build artifact per app.
 
 ### Build Information
 The CI process includes build metadata in the environment configuration:
 ```typescript
 {
   build: {
-    name: string;  // PR branch name or release tag
-    sha: string;   // Commit SHA
+    name: string;  // Branch name — the PR head ref, or the release's target branch
+    sha: string;   // Head commit of the pull request; empty on a release build
+    tag: string;   // Release tag; empty on a pull request
   }
 }
 ```
-
-### Optimization Potential
-Currently, lint, test, and build steps run sequentially in separate jobs. This could be optimized in two ways:
-
-1. **Current Approach (Separate Chained Jobs)**
-   - Better isolation
-   - Clear job-level status in GitHub UI
-   - Trade-off: Takes more time due to environment setup before each step, long job duration on a happy path
-
-2. **Potential Optimization (Single Job)**
-   - Faster execution
-   - Less GitHub Actions minutes
-   - Simpler configuration
-   - Trade-off: Less granular control, poor status visibility
-
-3. **Potential Optimization (Parallel Jobs)**
-   ```yaml
-   jobs:
-     lint:
-       name: Lint code
-       # ... lint job configuration ...
-
-     test:
-       name: Run unit tests
-       # Remove the 'needs: [lint]' dependency
-       # ... test job configuration ...
-
-     build:
-       name: Build application
-       # Remove the 'needs: [lint, test]' dependency
-       # ... build job configuration ...
-
-     verify:
-       name: Verify all checks
-       needs: [lint, test, build]
-       runs-on: ubuntu-latest
-       steps:
-         - run: |
-             echo "All checks passed!"
-   ```
-   - Better resource utilization
-   - Still maintains job isolation
-   - Trade-off: Higher concurrent GitHub Actions minutes usage, all jobs run even if one fails
-
-The current approach was chosen for better isolation and clearer status reporting, despite the slight time overhead.
 
 ## Continuous Deployment (CD) Flow
 
 ### Staging Deployment
 Triggered by:
 - Successful CI on pull requests
-- Release creation
+- Release publication/editing
 
 Process:
-1. **Deployment Approval** (via `staging-cd` environment)
-2. **Database Migration** (Supabase)
-3. **Backend Deployment** (Azure Functions)
-4. **Frontend Deployment** (Azure Static Web App)
-5. **E2E Testing**
+1. **Preview** (Terraform plan, before the gate)
+2. **Deployment Approval** (via `staging-cd` environment)
+3. **Infrastructure** (Terraform)
+4. **Database Migration** (Supabase)
+5. **Backend Deployment** (Azure Functions)
+6. **Frontend Deployment** (Azure Static Web App)
+7. **E2E Testing**
    - Full test suite
    - Tests against live staging environment
 
 ### Production Deployment
 Triggered by:
-- Release creation/editing
+- Release publication/editing
 
 Process:
 1. **Staging Deployment** (must succeed first)
 2. **Deployment Approval** (via `production-cd` environment)
-3. **Database Migration** (Supabase)
-4. **Backend Deployment** (Azure Functions)
-5. **Frontend Deployment** (Azure Static Web App)
-6. **Smoke Testing**
+3. **Infrastructure** (Terraform)
+4. **Database Migration** (Supabase)
+5. **Backend Deployment** (Azure Functions)
+6. **Frontend Deployment** (Azure Static Web App)
+7. **Smoke Testing**
    - Critical path testing only
    - Uses a predefined canary user
    - Verifies core functionality
 
+The numbering is the dependency chain, not just an order: every later job needs the one before it, and the frontend and E2E jobs additionally read the infrastructure outputs directly rather than from repository configuration. Nothing downstream runs if Terraform fails.
+
 ## Infrastructure
 
-### Frontend Hosting
-- Azure Static Web App
-- Configuration in `apps/web/src/staticwebapp.config.json`
+Everything below is Terraform, under `infra/` — see `infra/README.md` for the layout and the local workflow. CD applies the resources root; the bootstrap root (resource group, state backend, CI identity) is applied by an Owner.
 
-### Backend Services
-- Azure Functions (API, `apps/api`)
-- Supabase Database
-- Supabase Authentication
+- Azure Static Web App (frontend), configured by `apps/web/src/staticwebapp.config.json`
+- Azure Functions (API, `apps/api`), with Application Insights and Log Analytics
+- Supabase project — database, authentication, API exposure
+- Cloudflare DNS and the Static Web App custom domain binding
 
 ## Best Practices
 

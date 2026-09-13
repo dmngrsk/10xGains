@@ -91,14 +91,15 @@ jobs:
             const cdJobPrefix = 'CD / ';
             const cdCurrentJobName = 'CD / Add status comment';
             const cdDeferJobName = 'CD / Defer deployment';
+
+            const deferJob = jobs.find(job => job.name === cdDeferJobName);
+            if (deferJob && deferJob.conclusion !== 'success' && deferJob.conclusion !== 'skipped') return;
+
             const cdJobs = jobs
               .filter(job => job.name.includes(cdJobPrefix) && job.name !== cdCurrentJobName && job.name !== cdDeferJobName)
               .sort((a, b) => a.created_at.localeCompare(b.created_at) || a.name.localeCompare(b.name));
 
             if (cdJobs.length === 0) return;
-
-            // A manually cancelled run marks every CD job as cancelled (or skipped); there is nothing to report.
-            if (cdJobs.every(job => job.conclusion === 'cancelled' || job.conclusion === 'skipped')) return;
 
             let commentBody = '### CD Job Results\n\n';
             commentBody += '| Job | Status | Details |\n';

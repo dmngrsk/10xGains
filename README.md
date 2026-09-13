@@ -127,7 +127,7 @@ Each container runs a full Supabase stack, so two containers cannot both publish
     ```bash
     cp .env.example .env
     cp apps/api/local.settings.json.example apps/api/local.settings.json
-    cp apps/web/src/environments/environment.ts apps/web/src/environments/environment.development.ts
+    cp apps/web/src/env.template.js apps/web/src/env.js
     ```
 
 7.  **Seed a local dev account (optional):**
@@ -158,7 +158,7 @@ Three files hold local settings, and all three are gitignored:
 
 - `.env` — Supabase keys and the canary user credentials, read by Cypress.
 - `apps/api/local.settings.json` — settings for the local Azure Functions host.
-- `apps/web/src/environments/environment.development.ts` — the API and Supabase URLs the Angular dev build is compiled against.
+- `apps/web/src/env.js` — the API and Supabase URLs the web app reads at runtime, in the browser. Gitignored; deployed builds get the same file with values substituted by CD.
 
 In the dev container, `.devcontainer/post-start.sh` regenerates all three on every start from the keys the running Supabase stack reports, so they never drift. On a host setup you maintain them by hand, and must refresh the keys yourself after recreating the stack (`supabase stop --no-backup` followed by `supabase start`), because a fresh stack mints fresh ones.
 
@@ -200,6 +200,14 @@ Below are the most important scripts defined in `package.json`.
 - `pnpm e2e:run` - Runs the entire E2E test suite headlessly (in the terminal). This is the command used in CI/CD pipelines.
 - `pnpm e2e:smoke` - Runs a specific subset of E2E tests tagged as `@smoke`. Useful for quick sanity checks during development or in a CI/CD pipeline.
 
+### Infrastructure
+
+These provision the deployed environments and are not needed for local development. See [`infra/README.md`](infra/README.md) for the layout, the required credentials, and what is deliberately left unmanaged.
+
+- `pnpm infra:apply <staging|production>` - Provisions or converges an entire environment: the Azure resources, the Supabase project, Cloudflare DNS, the database migrations, and this environment's GitHub variables and secrets. Add `--check` to run the preflight checks and stop, which reports what is missing without changing anything.
+- `pnpm infra:apply <staging|production> --bootstrap-only` - Creates only the resource group, Terraform state backend and CI identity - the set CI cannot create for itself - and writes the GitHub environment. Use this when you want CD to build the rest.
+- `pnpm infra:destroy <staging|production>` - Tears an environment down, Supabase project and all of its data included. Add `--keep-bootstrap` to leave the resource group, Terraform state backend and CI identity in place, so a rebuild does not need an Owner. Production carries `prevent_destroy` on its Supabase project and Terraform refuses both modes there.
+
 ## Project Scope
 The current MVP scope includes:
 - **User Account System**: Secure user registration and login.
@@ -213,4 +221,4 @@ The current MVP scope includes:
 The project is currently in early development. Features are actively being developed and refined.
 
 ## License
-This project is licensed under the [MIT License](LICENSE.md). 
+This project is licensed under the [MIT License](LICENSE.md).
