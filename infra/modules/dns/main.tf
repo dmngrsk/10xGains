@@ -1,3 +1,7 @@
+locals {
+  validation_token = azurerm_static_web_app_custom_domain.main.validation_token
+}
+
 resource "azurerm_static_web_app_custom_domain" "main" {
   static_web_app_id = var.static_web_app_id
   domain_name       = var.hostname
@@ -18,8 +22,15 @@ resource "cloudflare_dns_record" "validation" {
   zone_id = var.zone_id
   name    = "_dnsauth.${var.hostname}"
   type    = "TXT"
-  content = azurerm_static_web_app_custom_domain.main.validation_token
+  content = local.validation_token == null ? null : "\"${local.validation_token}\""
   proxied = false
   ttl     = 300
   comment = "Azure Static Web App domain validation for ${var.hostname}"
+
+  # Azure clears the token once the domain validates, and Cloudflare rejects an empty TXT record.
+  # A rebinding issues a new token, so the record is replaced along with the domain instead.
+  lifecycle {
+    ignore_changes       = [content]
+    replace_triggered_by = [azurerm_static_web_app_custom_domain.main]
+  }
 }
