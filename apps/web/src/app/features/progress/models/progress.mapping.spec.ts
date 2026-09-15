@@ -27,6 +27,10 @@ describe('formatRepsLabel', () => {
     expect(formatRepsLabel([5, 5, 4, 0, 0])).toBe('5/5/4/0/0');
   });
 
+  it('should mark skipped sets with a dash', () => {
+    expect(formatRepsLabel([4, 3, 0, null, null])).toBe('4/3/0/-/-');
+  });
+
   it('should handle a single set', () => {
     expect(formatRepsLabel([5])).toBe('1x5');
   });

@@ -33,7 +33,7 @@ export interface ExerciseProgressRow {
  * - all_sets_completed: whether every set of the exercise was completed, so a session the
  *   user got through in full can be told apart from one they fell short on or cut short.
  * - reps: the actual reps of every set in set order, so failed sets are visible too;
- *   a set with no recorded reps counts as 0.
+ *   a SKIPPED set is null, and any other set with no recorded reps counts as 0.
  *
  * Rows without a session date are skipped, as they cannot be plotted. Series are sorted
  * by exercise name, points by session date ascending.
@@ -92,7 +92,7 @@ function toPoint(sessionRows: ExerciseProgressRow[]): ExerciseProgressPointDto |
 
   const reps = [...sessionRows]
     .sort((a, b) => a.plan_exercise_id.localeCompare(b.plan_exercise_id) || a.set_index - b.set_index)
-    .map(row => row.actual_reps ?? 0);
+    .map(row => (row.status === 'SKIPPED' ? null : row.actual_reps ?? 0));
 
   return {
     session_id: topSet.session.id,

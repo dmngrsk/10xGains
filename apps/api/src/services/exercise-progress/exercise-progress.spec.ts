@@ -80,7 +80,7 @@ describe('aggregateExerciseProgress', () => {
     expect(result[0].points[0].reps).toEqual([5, 5, 4]);
   });
 
-  it('should include failed sets and count unperformed sets as zero reps', () => {
+  it('should include failed sets and report skipped sets as null', () => {
     const rows = [
       makeRow({ weight: 100, setIndex: 1, reps: 5 }),
       makeRow({ weight: 100, setIndex: 2, reps: 5 }),
@@ -91,7 +91,7 @@ describe('aggregateExerciseProgress', () => {
 
     const result = aggregateExerciseProgress(rows);
 
-    expect(result[0].points[0].reps).toEqual([5, 5, 4, 0, 0]);
+    expect(result[0].points[0].reps).toEqual([5, 5, 4, 0, null]);
     expect(result[0].points[0].top_weight).toBe(100);
   });
 
