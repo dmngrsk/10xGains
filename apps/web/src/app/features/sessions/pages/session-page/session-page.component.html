@@ -15,6 +15,7 @@
         <div class="mt-4">
           <txg-session-exercise-list
             [exercises]="viewModel.exercises!"
+            [startedExerciseIds]="startedExerciseIds()"
             [isReadOnly]="isReadOnly()"
             (setClicked)="onSetClicked($event)"
             (setLongPressed)="onSetLongPressed($event)"

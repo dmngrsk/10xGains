@@ -16,6 +16,7 @@ import { WarmupRampChange } from '../session-set-list/session-set-list.component
 })
 export class SessionExerciseListComponent {
   @Input() exercises: SessionExerciseViewModel[] = [];
+  @Input() startedExerciseIds: ReadonlySet<string> = new Set();
   @Input() isReadOnly: boolean = false;
 
   @Output() setAdded = new EventEmitter<string>();
