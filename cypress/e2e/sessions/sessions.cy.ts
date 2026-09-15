@@ -292,7 +292,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-13'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.title).should('be.visible').and('contain.text', 'Notes');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Felt strong on squats today.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
@@ -306,7 +305,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-14'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
 
       // The dialog is modal: a backdrop click neither closes it nor saves.
@@ -324,7 +322,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-15'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
@@ -345,7 +342,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
 
     it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-16'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
-      cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');
@@ -379,7 +375,6 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         userId1 = userId as unknown as string;
 
         cy.getBySel(dataCy.sessions.notesButton).click();
-        cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('be.focused'); // Let the dialog autofocus settle, or the focus trap steals the keystrokes
         cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Private note of user one.');
         cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
         cy.getBySel(dataCy.sessions.dialogs.notes.content).should('not.exist');

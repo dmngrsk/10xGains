@@ -55,6 +55,7 @@ export class SessionPageComponent implements OnDestroy {
 
   readonly viewModel = this.facade.viewModel;
   readonly timerStartTimestamp = this.facade.timerStartTimestamp;
+  readonly startedExerciseIds = this.facade.startedExerciseIds;
 
   readonly isLoadingSignal = computed(() => this.viewModel().isLoading);
   private readonly expandedWarmupWeights = signal<Record<string, number>>({});
@@ -272,7 +273,7 @@ export class SessionPageComponent implements OnDestroy {
     };
 
     return this.dialog
-      .open(SessionFinishTimeDialogComponent, { width: '400px', data: dialogData, disableClose: true, autoFocus: 'dialog' })
+      .open(SessionFinishTimeDialogComponent, { width: '400px', data: dialogData, disableClose: true })
       .afterClosed()
       .pipe(
         takeUntilDestroyed(this.destroyRef),

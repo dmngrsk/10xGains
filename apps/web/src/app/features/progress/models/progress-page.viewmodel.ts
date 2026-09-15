@@ -8,7 +8,7 @@ export interface ProgressFilterPlan {
 export interface ProgressChartPointViewModel {
   date: string; // ISO datetime (x)
   weight: number; // kg (y)
-  repsLabel: string; // reps of every set, e.g. "5x5" or "5/5/4/0/0"
+  repsLabel: string; // reps of every set, e.g. "5x5" or "5/5/4/0/-"
   planName: string;
   completed: boolean; // true only when every set of the exercise was completed in that session
 }

@@ -226,13 +226,23 @@ describe('SessionCardComponent', () => {
       expect(component.getExerciseSummaryText(sets)).toBe('10/8/6 @ 50 kg');
     });
 
-    it('should use 0 reps for SKIPPED sets if actualReps is null', () => {
+    it('should mark SKIPPED sets with a dash', () => {
       const sets = [
-        createMockSet(new Date(), 10, 10, 50, 'COMPLETED'),
-        createMockSet(null, null, 8, null, 'SKIPPED'),
-        createMockSet(new Date(), 6, 6, 50, 'COMPLETED'),
+        createMockSet(new Date(), 4, 5, 50, 'FAILED'),
+        createMockSet(new Date(), 3, 5, 50, 'FAILED'),
+        createMockSet(new Date(), 0, 5, 50, 'FAILED'),
+        createMockSet(null, null, 5, null, 'SKIPPED'),
+        createMockSet(null, null, 5, null, 'SKIPPED'),
       ];
-      expect(component.getExerciseSummaryText(sets)).toBe('10/0/6 @ 50 kg');
+      expect(component.getExerciseSummaryText(sets)).toBe('4/3/0/-/- @ 50 kg');
+    });
+
+    it('should list every set rather than collapse when all sets were SKIPPED', () => {
+      const sets = [
+        createMockSet(null, null, 5, null, 'SKIPPED'),
+        createMockSet(null, null, 5, null, 'SKIPPED'),
+      ];
+      expect(component.getExerciseSummaryText(sets)).toBe('-/-');
     });
 
     it('should include weight summary if weights are defined and same', () => {

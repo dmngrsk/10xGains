@@ -110,14 +110,14 @@ export class SessionCardComponent {
     let repsSummaryStr = '';
     let weightSummaryStr = '';
 
-    const repCounts: number[] = sets
-      .map(s => s.actualReps ?? (s.status === 'SKIPPED' ? 0 : s.expectedReps))
-      .filter(r => r !== null && r !== undefined) as number[];
+    const repCounts = sets
+      .map(s => s.status === 'SKIPPED' ? '-' : s.actualReps ?? s.expectedReps)
+      .filter((r): r is number | '-' => r !== null && r !== undefined);
 
     if (repCounts.length === 0) {
       return 'No reps defined';
     } else {
-      const allRepsSame = repCounts.every(r => r === repCounts[0]);
+      const allRepsSame = repCounts.every(r => r === repCounts[0]) && repCounts[0] !== '-';
       if (allRepsSame) {
         repsSummaryStr = `${repCounts.length}x${repCounts[0]}`;
       } else {

@@ -1,7 +1,7 @@
-import { inject, signal, Injectable, DestroyRef, effect, untracked } from '@angular/core';
+import { inject, signal, Injectable, DestroyRef, computed, effect, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, of, forkJoin, EMPTY } from 'rxjs';
-import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionStatus } from '@txg/shared';
+import { ExerciseDto, PlanDto, SessionSetDto, CreateSessionSetCommand, UpdateSessionSetCommand, SessionSetStatus, SessionStatus } from '@txg/shared';
 import { catchError, map, switchMap, tap, finalize } from 'rxjs/operators';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ExerciseService } from '@shared/api/exercise.service';
@@ -41,10 +41,18 @@ export class SessionPageFacade {
   private readonly debouncerService = inject(KeyedDebouncerService);
   private readonly serverClock = inject(ServerClockService);
   private readonly sessionNotifications = inject(SessionNotificationService);
+  private readonly debouncingSet = signal<{ setId: string; committedStatus: SessionSetStatus } | null>(null);
 
   readonly viewModel = signal<SessionPageViewModel>(initialState);
   readonly timerStartTimestamp = signal<number | null>(null);
   readonly completionError = signal<string | null>(null);
+  readonly startedExerciseIds = computed<ReadonlySet<string>>(() => {
+    const debouncing = this.debouncingSet();
+    return new Set(this.viewModel().exercises
+      .filter(exercise => exercise.sets.some(set =>
+        (set.id === debouncing?.setId ? debouncing.committedStatus : set.status) !== 'PENDING'))
+      .map(exercise => exercise.planExerciseId));
+  });
 
   constructor() {
     resetOnUserChange(() => this.clearUserScopedState());
@@ -115,6 +123,9 @@ export class SessionPageFacade {
 
   enqueueSetPatch(setPayload: SessionSetViewModel, exerciseId: string, originalSetSnapshotForRevert: SessionSetViewModel): void {
     const currentSessionId = this.viewModel().id!;
+    if (this.debouncingSet()?.setId !== setPayload.id) {
+      this.debouncingSet.set({ setId: setPayload.id, committedStatus: originalSetSnapshotForRevert.status });
+    }
     this.updateSessionViewModelWithUpsertedSet(setPayload, exerciseId);
 
     this.timerStartTimestamp.set(this.serverClock.now());
@@ -160,7 +171,10 @@ export class SessionPageFacade {
       string | Error
     >(
       setId,
-      apiCallProvider,
+      () => {
+        this.releaseDebouncingSet(setId);
+        return apiCallProvider();
+      },
       successContext,
       failureContext,
       (data, context, key) => ({ data, context, key }),
@@ -418,9 +432,16 @@ export class SessionPageFacade {
     void this.sessionNotifications.show(session.id, buildSessionNotificationContent(session));
   }
 
+  private releaseDebouncingSet(setId: string): void {
+    if (this.debouncingSet()?.setId === setId) {
+      this.debouncingSet.set(null);
+    }
+  }
+
   private clearUserScopedState(): void {
     this.viewModel.set(initialState);
     this.timerStartTimestamp.set(null);
     this.completionError.set(null);
+    this.debouncingSet.set(null);
   }
 }
