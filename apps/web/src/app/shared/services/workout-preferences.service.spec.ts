@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkoutPreferencesService } from './workout-preferences.service';
 
 const ENABLED_KEY = 'txg.sessions.plate-calculator-enabled';
+const WARMUP_KEY = 'txg.sessions.warmup-sets-enabled';
 const INVENTORY_KEY = 'txg.sessions.plate-inventory';
 
 describe('WorkoutPreferencesService', () => {
@@ -38,6 +39,25 @@ describe('WorkoutPreferencesService', () => {
 
     expect(service.plateCalculatorEnabled()).toBe(false);
     expect(window.localStorage.getItem(ENABLED_KEY)).toBe('0');
+  });
+
+  it('should default warmup sets to on', () => {
+    expect(createService().warmupSetsEnabled()).toBe(true);
+  });
+
+  it('should read a stored warmup sets opt-out', () => {
+    window.localStorage.setItem(WARMUP_KEY, '0');
+
+    expect(createService().warmupSetsEnabled()).toBe(false);
+  });
+
+  it('should persist the warmup sets toggle', () => {
+    const service = createService();
+
+    service.setWarmupSetsEnabled(false);
+
+    expect(service.warmupSetsEnabled()).toBe(false);
+    expect(window.localStorage.getItem(WARMUP_KEY)).toBe('0');
   });
 
   it('should report no inventory until one is stored', () => {

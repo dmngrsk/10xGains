@@ -90,6 +90,16 @@ describe('CallbackComponent', () => {
     });
   });
 
+  describe('type=reset-password', () => {
+    it('should navigate to the user settings with the change password action', () => {
+      const fixture = createComponent('reset-password');
+
+      fixture.detectChanges();
+
+      expect(navigateMock).toHaveBeenCalledWith(['/settings'], { queryParams: { view: 'user' }, state: { action: 'changePassword' } });
+    });
+  });
+
   describe('type=oauth-link', () => {
     it('should confirm the connection and navigate to settings without any profile work', () => {
       const fixture = createComponent('oauth-link');
@@ -99,7 +109,7 @@ describe('CallbackComponent', () => {
       expect(getProfileMock).not.toHaveBeenCalled();
       expect(upsertProfileMock).not.toHaveBeenCalled();
       expect(snackBarOpenMock).toHaveBeenCalledWith('Google account connected.', 'Close', { duration: 5000 });
-      expect(navigateMock).toHaveBeenCalledWith(['/settings']);
+      expect(navigateMock).toHaveBeenCalledWith(['/settings'], { queryParams: { view: 'user' } });
     });
   });
 

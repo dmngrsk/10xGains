@@ -2,6 +2,7 @@ import { Injectable, Signal, inject, signal } from '@angular/core';
 import { LocalStorageService } from './local-storage.service';
 
 const PLATE_CALCULATOR_ENABLED_KEY = 'txg.sessions.plate-calculator-enabled';
+const WARMUP_SETS_ENABLED_KEY = 'txg.sessions.warmup-sets-enabled';
 const PLATE_INVENTORY_KEY = 'txg.sessions.plate-inventory';
 
 /**
@@ -24,10 +25,13 @@ export class WorkoutPreferencesService {
   private readonly storage = inject(LocalStorageService);
 
   private readonly plateCalculatorEnabledSignal = signal(this.readPlateCalculatorEnabled());
+  private readonly warmupSetsEnabledSignal = signal(this.readWarmupSetsEnabled());
   private readonly plateInventorySignal = signal(this.readPlateInventory());
 
   /** Defaults to on: a utility nobody has discovered yet cannot be judged. */
   readonly plateCalculatorEnabled: Signal<boolean> = this.plateCalculatorEnabledSignal.asReadonly();
+
+  readonly warmupSetsEnabled: Signal<boolean> = this.warmupSetsEnabledSignal.asReadonly();
 
   /** Null until the user picks a rack, which is what makes the consumer's default apply. */
   readonly plateInventory: Signal<number[] | null> = this.plateInventorySignal.asReadonly();
@@ -35,6 +39,11 @@ export class WorkoutPreferencesService {
   setPlateCalculatorEnabled(enabled: boolean): void {
     this.plateCalculatorEnabledSignal.set(enabled);
     this.storage.setItem(PLATE_CALCULATOR_ENABLED_KEY, enabled ? '1' : '0');
+  }
+
+  setWarmupSetsEnabled(enabled: boolean): void {
+    this.warmupSetsEnabledSignal.set(enabled);
+    this.storage.setItem(WARMUP_SETS_ENABLED_KEY, enabled ? '1' : '0');
   }
 
   setPlateInventory(plates: readonly number[]): void {
@@ -45,6 +54,10 @@ export class WorkoutPreferencesService {
 
   private readPlateCalculatorEnabled(): boolean {
     return this.storage.getItem(PLATE_CALCULATOR_ENABLED_KEY) !== '0';
+  }
+
+  private readWarmupSetsEnabled(): boolean {
+    return this.storage.getItem(WARMUP_SETS_ENABLED_KEY) !== '0';
   }
 
   private readPlateInventory(): number[] | null {

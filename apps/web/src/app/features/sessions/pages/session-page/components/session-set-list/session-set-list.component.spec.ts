@@ -1,4 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { WorkoutPreferencesService } from '@shared/services/workout-preferences.service';
 import { SessionSetListComponent } from './session-set-list.component';
 import { SessionExerciseViewModel, SessionSetViewModel } from '../../../../models/session-page.viewmodel';
 
@@ -26,11 +28,21 @@ const createMockExercise = (overrides: Partial<SessionExerciseViewModel> = {}): 
   ...overrides,
 });
 
+const createComponent = (): SessionSetListComponent =>
+  TestBed.runInInjectionContext(() => new SessionSetListComponent());
+
+beforeEach(() => {
+  window.localStorage.clear();
+  TestBed.resetTestingModule();
+});
+
+afterEach(() => window.localStorage.clear());
+
 describe('SessionSetListComponent', () => {
   let component: SessionSetListComponent;
 
   beforeEach(() => {
-    component = new SessionSetListComponent();
+    component = createComponent();
     component.exercise = createMockExercise();
   });
 
@@ -44,6 +56,15 @@ describe('SessionSetListComponent', () => {
         { reps: 3, weight: 45 },
         { reps: 2, weight: 57.5 },
       ]);
+    });
+
+    it('should be dismissed when warmup sets are switched off in settings', () => {
+      TestBed.inject(WorkoutPreferencesService).setWarmupSetsEnabled(false);
+      component = createComponent();
+      component.exercise = createMockExercise();
+
+      expect(component.warmupState()).toBe('dismissed');
+      expect(component.nextWarmupWeightKg()).toBeNull();
     });
 
     it('should be dismissed when the exercise has started', () => {
@@ -190,13 +211,24 @@ describe('SessionSetListComponent warmup announcements', () => {
   let changes: { exerciseId: string; nextWarmupWeightKg: number | null }[];
 
   beforeEach(() => {
-    component = new SessionSetListComponent();
+    component = createComponent();
     changes = [];
     component.warmupChanged.subscribe(change => changes.push(change));
     component.exercise = createMockExercise();
   });
 
   it('should say nothing while the ramp is collapsed', () => {
+    expect(changes).toEqual([]);
+  });
+
+  it('should announce nothing when warmup sets are switched off in settings', () => {
+    TestBed.inject(WorkoutPreferencesService).setWarmupSetsEnabled(false);
+    component = createComponent();
+    component.warmupChanged.subscribe(change => changes.push(change));
+    component.exercise = createMockExercise();
+
+    component.onWarmupToggleClicked();
+
     expect(changes).toEqual([]);
   });
 

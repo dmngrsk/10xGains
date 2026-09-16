@@ -1,4 +1,8 @@
 export const settingsSelectors = {
+  tabs: {
+    workout: 'settings-tab-workout',
+    user: 'settings-tab-user',
+  },
   profile: {
     nameInput: 'settings-profile-name-input',
     emailInput: 'settings-profile-email-input',
@@ -6,6 +10,7 @@ export const settingsSelectors = {
   },
   workout: {
     plateCalculatorToggle: 'settings-plate-calculator-toggle',
+    warmupSetsToggle: 'settings-warmup-sets-toggle',
   },
   account: {
     changePasswordButton: 'settings-change-password-button',

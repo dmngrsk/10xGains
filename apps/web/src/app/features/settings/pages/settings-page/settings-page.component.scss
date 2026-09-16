@@ -1,0 +1,5 @@
+:host {
+  --txg-settings-content-offset: calc(
+    var(--txg-top-bar-edge) + var(--txg-tabs-bar-height) - var(--txg-top-bar-height)
+  );
+}

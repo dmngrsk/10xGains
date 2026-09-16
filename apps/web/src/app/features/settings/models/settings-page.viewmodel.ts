@@ -15,3 +15,5 @@ export interface AccountSettingsCardViewModel {
   googleLinked: boolean | null;
   identityCount: number;
 }
+
+export type SettingsViewMode = 'workout' | 'user';
