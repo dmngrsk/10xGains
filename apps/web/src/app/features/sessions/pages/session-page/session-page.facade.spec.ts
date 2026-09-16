@@ -184,6 +184,43 @@ describe('SessionPageFacade', () => {
     });
   });
 
+  describe('startedExerciseIds', () => {
+    beforeEach(() => {
+      const sessionService = TestBed.inject(SessionService) as unknown as Record<string, ReturnType<typeof vi.fn>>;
+      for (const method of ['completeSet', 'failSet', 'resetSet']) {
+        sessionService[method].mockReturnValue(of({ data: buildSet(), error: null }));
+      }
+    });
+
+    it('should include an exercise with a recorded set on load', () => {
+      seedViewModel([buildSet({ status: 'COMPLETED', actualReps: 10 }), buildSet({ id: 'set2' })]);
+
+      expect(facade.startedExerciseIds().has('tpe1')).toBe(true);
+    });
+
+    it('should not start the exercise until the debounce of the first tap fires', () => {
+      seedViewModel([buildSet(), buildSet({ id: 'set2' })]);
+
+      facade.enqueueSetPatch(buildSet({ status: 'COMPLETED', actualReps: 10 }), 'tpe1', buildSet());
+      facade.enqueueSetPatch(buildSet({ status: 'FAILED', actualReps: 9 }), 'tpe1', buildSet({ status: 'COMPLETED', actualReps: 10 }));
+      expect(facade.startedExerciseIds().has('tpe1')).toBe(false);
+
+      captured.apiCall();
+
+      expect(facade.startedExerciseIds().has('tpe1')).toBe(true);
+    });
+
+    it('should not start the exercise when the taps cycle back to PENDING', () => {
+      seedViewModel([buildSet()]);
+
+      facade.enqueueSetPatch(buildSet({ status: 'FAILED', actualReps: 0 }), 'tpe1', buildSet());
+      facade.enqueueSetPatch(buildSet(), 'tpe1', buildSet({ status: 'FAILED', actualReps: 0 }));
+      captured.apiCall();
+
+      expect(facade.startedExerciseIds().has('tpe1')).toBe(false);
+    });
+  });
+
   describe('enqueueSetPatch missing set handling', () => {
     it.each<[SessionSetStatus, string]>([
       ['COMPLETED', 'completeSet'],

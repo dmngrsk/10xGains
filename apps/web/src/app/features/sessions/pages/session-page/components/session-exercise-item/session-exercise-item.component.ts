@@ -21,6 +21,7 @@ import { SessionSetListComponent, WarmupRampChange } from '../session-set-list/s
 })
 export class SessionExerciseItemComponent {
   @Input() exercise!: SessionExerciseViewModel;
+  @Input() isStarted: boolean = false;
   @Input() isReadOnly: boolean = false;
 
   @Output() setClicked = new EventEmitter<{ set: SessionSetViewModel; exerciseId: string }>();

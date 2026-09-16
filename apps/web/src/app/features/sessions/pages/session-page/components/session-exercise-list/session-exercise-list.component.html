@@ -1,6 +1,7 @@
 @for (exercise of exercises; track exercise.planExerciseId) {
   <txg-session-exercise-item
     [exercise]="exercise"
+    [isStarted]="startedExerciseIds.has(exercise.planExerciseId)"
     [isReadOnly]="isReadOnly"
     (setClicked)="onSetClicked($event)"
     (setLongPressed)="onSetLongPressed($event)"

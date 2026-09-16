@@ -16,15 +16,15 @@ export const SERIES_COLOR_TOKENS = Array.from(
  * Formats the reps of every set of one exercise in one session.
  *
  * A uniform session collapses to "sets x reps" (e.g. "5x5"); anything else is listed set
- * by set so failed sets stay visible (e.g. "5/5/4/0/0").
+ * by set so failed and skipped sets stay visible (e.g. "5/5/4/0/-").
  */
-export function formatRepsLabel(reps: number[]): string {
+export function formatRepsLabel(reps: (number | null)[]): string {
   if (reps.length === 0) {
     return '';
   }
 
   const isUniform = reps.every(r => r === reps[0]);
-  return isUniform ? `${reps.length}x${reps[0]}` : reps.join('/');
+  return isUniform ? `${reps.length}x${reps[0]}` : reps.map(r => r ?? '-').join('/');
 }
 
 /**

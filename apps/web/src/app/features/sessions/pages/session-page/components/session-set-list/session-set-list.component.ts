@@ -26,6 +26,7 @@ export interface WarmupRampChange {
 })
 export class SessionSetListComponent {
   private readonly exerciseSignal = signal<SessionExerciseViewModel | null>(null);
+  private readonly startedSignal = signal<boolean>(false);
   private readonly readOnlySignal = signal<boolean>(false);
 
   @Input({ required: true }) set exercise(value: SessionExerciseViewModel) {
@@ -34,6 +35,14 @@ export class SessionSetListComponent {
   }
   get exercise(): SessionExerciseViewModel {
     return this.exerciseSignal()!;
+  }
+
+  @Input() set isStarted(value: boolean) {
+    this.startedSignal.set(value);
+    this.emitWarmupChange();
+  }
+  get isStarted(): boolean {
+    return this.startedSignal();
   }
 
   @Input() set isReadOnly(value: boolean) {
@@ -61,8 +70,7 @@ export class SessionSetListComponent {
   });
 
   readonly warmupState = computed<WarmupDisplayState>(() => {
-    const hasInteractedSets = (this.exerciseSignal()?.sets ?? []).some(s => s.status !== 'PENDING');
-    if (this.readOnlySignal() || hasInteractedSets || this.warmupSets().length === 0) {
+    if (this.readOnlySignal() || this.startedSignal() || this.warmupSets().length === 0) {
       return 'dismissed';
     }
     return this.expanded() ? 'expanded' : 'collapsed';

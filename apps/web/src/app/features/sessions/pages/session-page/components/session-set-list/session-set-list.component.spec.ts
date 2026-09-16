@@ -46,14 +46,17 @@ describe('SessionSetListComponent', () => {
       ]);
     });
 
-    it('should be dismissed when any set has a non-PENDING status', () => {
-      for (const status of ['COMPLETED', 'FAILED', 'SKIPPED'] as const) {
-        component.exercise = createMockExercise({
-          sets: [createMockSet({ id: 'set1', status }), createMockSet({ id: 'set2' })],
-        });
+    it('should be dismissed when the exercise has started', () => {
+      component.isStarted = true;
+      expect(component.warmupState()).toBe('dismissed');
+    });
 
-        expect(component.warmupState(), `should be dismissed for status ${status}`).toBe('dismissed');
-      }
+    it('should stay collapsed while a tapped set has not been recorded yet', () => {
+      component.exercise = createMockExercise({
+        sets: [createMockSet({ id: 'set1', status: 'COMPLETED', actualReps: 5 }), createMockSet({ id: 'set2' })],
+      });
+
+      expect(component.warmupState()).toBe('collapsed');
     });
 
     it('should be dismissed when the session is read-only', () => {
@@ -136,32 +139,25 @@ describe('SessionSetListComponent', () => {
       expect(spy).toHaveBeenCalledWith(clickedSet);
     });
 
-    it('should dismiss when the optimistic update marks a set non-PENDING', () => {
+    it('should dismiss when the exercise starts', () => {
       component.onWarmupToggleClicked();
       expect(component.warmupState()).toBe('expanded');
 
-      // The facade applies the optimistic set update by re-binding a new exercise object.
-      component.exercise = createMockExercise({
-        sets: [createMockSet({ id: 'set1', status: 'COMPLETED', actualReps: 5 }), createMockSet({ id: 'set2' })],
-      });
+      component.isStarted = true;
 
       expect(component.warmupState()).toBe('dismissed');
     });
 
-    it('should restore the warmup UI when a failed patch reverts the set to PENDING', () => {
+    it('should restore the warmup UI when a failed patch un-starts the exercise', () => {
       component.onWarmupToggleClicked();
       const removedId = component.warmupSets()[0].id;
       component.onWarmupSetClicked(removedId);
 
-      component.exercise = createMockExercise({
-        sets: [createMockSet({ id: 'set1', status: 'COMPLETED', actualReps: 5 }), createMockSet({ id: 'set2' })],
-      });
+      component.isStarted = true;
       expect(component.warmupState()).toBe('dismissed');
 
       // The API rejects the update and the facade restores the PENDING snapshot.
-      component.exercise = createMockExercise({
-        sets: [createMockSet({ id: 'set1' }), createMockSet({ id: 'set2' })],
-      });
+      component.isStarted = false;
 
       expect(component.warmupState()).toBe('expanded');
       expect(component.warmupSets().map(s => s.id)).not.toContain(removedId);
@@ -233,9 +229,7 @@ describe('SessionSetListComponent warmup announcements', () => {
   it('should withdraw the ramp when the exercise stops qualifying for one', () => {
     component.onWarmupToggleClicked();
 
-    component.exercise = createMockExercise({
-      sets: [createMockSet({ id: 'set1', status: 'COMPLETED' }), createMockSet({ id: 'set2' })],
-    });
+    component.isStarted = true;
 
     expect(changes[changes.length - 1]).toEqual({ exerciseId: 'tpex1', nextWarmupWeightKg: null });
   });
