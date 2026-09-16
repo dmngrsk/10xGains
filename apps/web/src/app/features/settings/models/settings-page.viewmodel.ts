@@ -8,7 +8,6 @@ export interface SettingsPageViewModel {
 export interface ProfileSettingsCardViewModel {
   firstName: string | null;
   email: string | null;
-  aiSuggestionsRemaining: number | null;
 }
 
 export interface AccountSettingsCardViewModel {

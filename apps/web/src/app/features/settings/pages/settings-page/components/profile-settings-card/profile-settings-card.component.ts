@@ -38,7 +38,6 @@ export class ProfileSettingsCardComponent implements OnInit, OnChanges {
     this.profileForm = this.fb.group({
       firstName: [this.profile?.firstName || '', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       email: [{ value: this.profile?.email || '', disabled: true }],
-      aiSuggestionsRemaining: [{ value: this.profile?.aiSuggestionsRemaining || 0, disabled: true }]
     });
   }
 
@@ -46,7 +45,6 @@ export class ProfileSettingsCardComponent implements OnInit, OnChanges {
     if (changes['profile'] && this.profileForm) {
       this.profileForm.get('firstName')?.setValue(this.profile.firstName || '', { emitEvent: false });
       this.profileForm.get('email')?.setValue(this.profile.email || '', { emitEvent: false });
-      this.profileForm.get('aiSuggestionsRemaining')?.setValue(this.profile.aiSuggestionsRemaining || 0, { emitEvent: false });
       this.profileForm.markAsPristine();
     }
   }

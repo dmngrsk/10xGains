@@ -87,7 +87,6 @@ export class ProfileRepository {
       active_plan_id: command.active_plan_id !== undefined
         ? command.active_plan_id
         : existingProfile?.active_plan_id ?? null,
-      ai_suggestions_remaining: existingProfile?.ai_suggestions_remaining ?? 0,
       created_at: existingProfile?.created_at ?? new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };

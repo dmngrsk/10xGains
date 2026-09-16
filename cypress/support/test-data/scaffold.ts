@@ -143,7 +143,6 @@ export async function scaffoldTestUserData(
     id: userId,
     first_name: 'Test User',
     active_plan_id: planId,
-    ai_suggestions_remaining: 0,
     created_at: planCreatedAtISOString,
     updated_at: planCreatedAtISOString
   }];

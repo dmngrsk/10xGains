@@ -6,7 +6,6 @@
 - id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
 - first_name: VARCHAR(255) NOT NULL
 - active_plan_id: UUID NULL REFERENCES plans(id)
-- ai_suggestions_remaining: INTEGER NOT NULL DEFAULT 0 CHECK (ai_suggestions_remaining >= 0)
 - created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 - updated_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
