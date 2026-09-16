@@ -112,7 +112,7 @@ export function createPlanExercise({ name, createGlobal, expectProgressionDialog
     if (skipProgression) {
       cy.getBySel(dataCy.plans.dialogs.exerciseProgression.cancelButton).click();
     } else {
-      cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).type('2.5');
+      cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).focus().type('2.5');
       cy.getBySel(dataCy.plans.dialogs.exerciseProgression.saveButton).click();
     }
 

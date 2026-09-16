@@ -175,7 +175,7 @@ describe('Plan Management', { tags: ['@plans'] }, () => {
         // Setting the rule from the chip clears the blocker. The chip flipping from its unset state to
         // the increment is what says the plan has reloaded, so activating cannot outrun that.
         cy.getBySel(dataCy.plans.planEdit.exercises.addProgressionButton).click();
-        cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).type('2.5');
+        cy.getBySel(dataCy.plans.dialogs.exerciseProgression.weightIncrementInput).focus().type('2.5');
         cy.getBySel(dataCy.plans.dialogs.exerciseProgression.saveButton).click();
         cy.getBySel(dataCy.plans.dialogs.exerciseProgression.content).should('not.exist');
         cy.getBySel(dataCy.plans.planEdit.exercises.editProgressionButton).should('contain.text', '2.5 kg');
