@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
+import { WorkoutPreferencesService } from '@shared/services/workout-preferences.service';
 import { AutoHideScrollbarDirective } from '@shared/utils/directives/auto-hide-scrollbar.directive';
 import { SessionExerciseViewModel, SessionSetViewModel, SessionWarmupSetViewModel } from '../../../../models/session-page.viewmodel';
 import { calculateWarmupSets } from '../../utils/warmup.utils';
@@ -25,6 +26,8 @@ export interface WarmupRampChange {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SessionSetListComponent {
+  private readonly preferences = inject(WorkoutPreferencesService);
+
   private readonly exerciseSignal = signal<SessionExerciseViewModel | null>(null);
   private readonly startedSignal = signal<boolean>(false);
   private readonly readOnlySignal = signal<boolean>(false);
@@ -70,7 +73,7 @@ export class SessionSetListComponent {
   });
 
   readonly warmupState = computed<WarmupDisplayState>(() => {
-    if (this.readOnlySignal() || this.startedSignal() || this.warmupSets().length === 0) {
+    if (!this.preferences.warmupSetsEnabled() || this.readOnlySignal() || this.startedSignal() || this.warmupSets().length === 0) {
       return 'dismissed';
     }
     return this.expanded() ? 'expanded' : 'collapsed';

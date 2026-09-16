@@ -1,18 +1,30 @@
 <txg-main-layout title="Settings" [loadingSignal]="isLoadingSignal">
-  @if (viewModel(); as viewModel) {
-    @if (viewModel.error) {
-      <div class="txg-page-fill p-4">
-        <txg-notice
-          [descriptionText]="viewModel.error!"
-          [isError]="true">
-        </txg-notice>
-      </div>
-    } @else if (!viewModel.isLoading || initialLoadFinished()) {
-      <div class="p-4 h-full">
-        <div class="grid grid-cols-1 gap-6">
-          <txg-workout-settings-card>
-          </txg-workout-settings-card>
+  <txg-settings-tabs
+    [viewMode]="viewMode()"
+    (viewModeChanged)="onViewModeChanged($event)">
+  </txg-settings-tabs>
 
+  <div class="pt-[var(--txg-settings-content-offset)]">
+    @if (viewMode() === 'workout') {
+      <div class="p-4 grid grid-cols-1 gap-3" data-cy="settings-workout-view">
+        <txg-session-settings-card>
+        </txg-session-settings-card>
+
+        <p class="flex items-center gap-2 px-2 text-sm text-on-surface-variant">
+          <mat-icon class="!text-lg !w-auto !h-auto">info</mat-icon>
+          These settings are saved on this device only.
+        </p>
+      </div>
+    } @else if (viewModel(); as viewModel) {
+      @if (viewModel.error) {
+        <div class="txg-page-fill p-4">
+          <txg-notice
+            [descriptionText]="viewModel.error!"
+            [isError]="true">
+          </txg-notice>
+        </div>
+      } @else if (!viewModel.isLoading || initialLoadFinished()) {
+        <div class="p-4 grid grid-cols-1 gap-6" data-cy="settings-user-view">
           <txg-profile-settings-card
             [profile]="viewModel.profile"
             (profileSaved)="onProfileSaved($event)">
@@ -26,7 +38,7 @@
             (googleDisconnected)="onGoogleDisconnected()">
           </txg-account-settings-card>
         </div>
-      </div>
+      }
     }
-  }
+  </div>
 </txg-main-layout>

@@ -9,7 +9,6 @@ const initialSettingsPageViewModel: SettingsPageViewModel = {
   profile: {
     firstName: null,
     email: null,
-    aiSuggestionsRemaining: null,
   },
   account: {
     googleLinked: null,
@@ -50,7 +49,6 @@ export class SettingsPageFacade {
                 profile: {
                   firstName: profile.first_name,
                   email: user.email ?? null,
-                  aiSuggestionsRemaining: profile.ai_suggestions_remaining
                 }
               }));
             } else {

@@ -234,7 +234,6 @@ export interface Database {
       profiles: {
         Row: {
           active_plan_id: string | null
-          ai_suggestions_remaining: number
           created_at: string | null
           first_name: string
           id: string
@@ -242,7 +241,6 @@ export interface Database {
         }
         Insert: {
           active_plan_id?: string | null
-          ai_suggestions_remaining?: number
           created_at?: string | null
           first_name: string
           id: string
@@ -250,7 +248,6 @@ export interface Database {
         }
         Update: {
           active_plan_id?: string | null
-          ai_suggestions_remaining?: number
           created_at?: string | null
           first_name?: string
           id?: string

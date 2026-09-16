@@ -94,11 +94,11 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **UX/Accessibility/Security**: Series are exercise-scoped, so a line spans training plans under the "All plans" filter; empty and error states offer a corrective action; RLS and an explicit `user_id` filter scope all data to the authenticated user.
 
 ### 2.12 Settings View
-- **Route**: `/settings`
-- **Main Goal**: Allow profile editing, password changes, and logout.
-- **Key Info**: Email (read-only or editable), First name, Save button, Logout button. Also the destination of the password-reset callback (see 2.4), which arrives with a `changePassword` action to prompt the user for a new password.
-- **Key Components**: `ReactiveForm`, `MatInput`, `MatButton`, `HttpInterceptor` auto token refresh.
-- **UX/Accessibility/Security**: Confirm dialog on logout, inline validation, HTTPS.
+- **Route**: `/settings?view=workout|user`
+- **Main Goal**: Adjust how workouts are presented on this device, and manage the profile and account.
+- **Key Info**: Two tabs, split by where a setting lives. **Workout** holds device-local toggles kept in `localStorage` (plate calculator, warmup sets), written on change with no Save step, and says they are saved on this device only; it never waits on the network. **User** holds what follows the user across devices: First name and read-only Email with a Save button, then Google linking, Change Password and Sign Out. The tab comes from `?view`, then the last tab used, then Workout, and switching replaces the URL rather than adding history. Also the destination of the password-reset callback (see 2.5), which opens the User tab with a `changePassword` action to prompt the user for a new password; linking Google lands on the User tab too.
+- **Key Components**: `mat-tab-nav-bar` (as in History), `MatSlideToggle`, `ReactiveForm`, `MatInput`, `MatButton`, `WorkoutPreferencesService`.
+- **UX/Accessibility/Security**: Inline validation, HTTPS; the plate inventory is edited from the session's plate calculator, not here.
 
 ## 3. User Journey Map
 
@@ -117,7 +117,8 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 8. **Progress**:
    - Tap Progress ➔ `/progress` ➔ review the weight-over-time chart of the active plan ➔ toggle exercises, or widen the plan/date filters.
 9. **Settings**:
-   - Tap Settings ➔ `/settings` ➔ update profile, change password, or log out.
+   - Tap Settings ➔ `/settings` ➔ Workout tab: switch the plate calculator or warmup sets on or off for this device.
+   - User tab: update profile, link Google, change password, or log out.
 
 ## 4. Layout and Navigation Structure
 

@@ -134,7 +134,6 @@ Retrieves the profile information for the authenticated user.
         "id": "uuid",
         "first_name": "John",
         "active_plan_id": "uuid | null",
-        "ai_suggestions_remaining": 0,
         "created_at": "timestamp",
         "updated_at": "timestamp"
       }
@@ -165,7 +164,6 @@ Creates or updates the profile information for the authenticated user (upsert be
         "id": "uuid",
         "first_name": "John",
         "active_plan_id": "uuid | null",
-        "ai_suggestions_remaining": 0,
         "created_at": "timestamp",
         "updated_at": "timestamp" // updated
       }

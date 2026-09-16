@@ -108,7 +108,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
       cy.login();
       cy.visit('auth/callback?type=reset-password');
 
-      cy.url().should('include', '/settings');
+      cy.url().should('include', '/settings').and('include', 'view=user');
       cy.getBySel(dataCy.settings.profile.emailInput).invoke('val').as('email');
       cy.getBySel(dataCy.settings.account.changePasswordDialog.content).should('be.visible');
       cy.getBySel(dataCy.settings.account.changePasswordDialog.newPasswordInput).type('Password123!');
@@ -155,6 +155,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     it('signs a user out and returns them to the welcome screen', { tags: ['AUTH-11'] }, () => {
       cy.login();
       cy.navigateTo('settings');
+      cy.getBySel(dataCy.settings.tabs.user).click();
       cy.getBySel(dataCy.settings.account.signOutButton).click();
 
       cy.url().should('include', '/auth');
@@ -177,6 +178,7 @@ describe('Authentication', { tags: ['@auth'] }, () => {
         cy.url().then((ephemeralUserPlanUrl) => {
           cy.navigateBack();
           cy.navigateTo('settings');
+          cy.getBySel(dataCy.settings.tabs.user).click();
           cy.getBySel(dataCy.settings.account.signOutButton).click();
           cy.url().should('include', '/auth');
 
@@ -235,11 +237,13 @@ describe('Authentication', { tags: ['@auth'] }, () => {
     it('preserves the existing profile of an auto-linked user on the oauth callback', { tags: ['AUTH-15'] }, () => {
       cy.login();
       cy.navigateTo('settings');
+      cy.getBySel(dataCy.settings.tabs.user).click();
       cy.getBySel(dataCy.settings.profile.nameInput).invoke('val').should('not.be.empty').then((firstName) => {
         cy.visit('/auth/callback?type=oauth');
         cy.url().should('include', '/home');
 
         cy.navigateTo('settings');
+        cy.getBySel(dataCy.settings.tabs.user).click();
         cy.getBySel(dataCy.settings.profile.nameInput).should('have.value', firstName as unknown as string);
       });
     });

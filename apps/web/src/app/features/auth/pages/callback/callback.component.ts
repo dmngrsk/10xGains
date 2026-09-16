@@ -46,7 +46,7 @@ export class CallbackComponent implements OnInit {
             }
           });
         } else if (type === 'reset-password') {
-          this.router.navigate(['/settings'], { state: { action: 'changePassword' } });
+          this.router.navigate(['/settings'], { queryParams: { view: 'user' }, state: { action: 'changePassword' } });
         } else if (type === 'oauth' || type === 'oauth-link') {
           // An abandoned or failed OAuth dance still lands here, just without a session.
           if (!auth.isAuthenticated) {
@@ -57,7 +57,7 @@ export class CallbackComponent implements OnInit {
 
           if (type === 'oauth-link') {
             this.snackBar.open('Google account connected.', 'Close', { duration: 5000 });
-            this.router.navigate(['/settings']);
+            this.router.navigate(['/settings'], { queryParams: { view: 'user' } });
             return;
           }
 

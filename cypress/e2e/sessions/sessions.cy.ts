@@ -150,7 +150,33 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('opens the plate calculator on the next set, and re-solves the bar as the weight and rack change', { tags: ['SESS-07'] }, () => {
+    it('hides warmup sets behind a setting, and brings them back', { tags: ['SESS-07'] }, () => {
+      const openSettings = () => {
+        cy.navigateBack();
+        cy.navigateTo('settings');
+      };
+      const openSession = () => {
+        cy.navigateTo('home');
+        cy.getBySel(dataCy.sessions.sessionCard.navigateButton).click();
+      };
+
+      cy.getBySel(dataCy.sessions.warmup.toggle).should('have.length', 2);
+
+      openSettings();
+      cy.getBySel(dataCy.settings.workout.warmupSetsToggle).click();
+      openSession();
+
+      cy.getBySel(dataCy.sessions.set.bubble).should('have.length.greaterThan', 0);
+      cy.getBySel(dataCy.sessions.warmup.toggle).should('not.exist');
+
+      openSettings();
+      cy.getBySel(dataCy.settings.workout.warmupSetsToggle).click();
+      openSession();
+
+      cy.getBySel(dataCy.sessions.warmup.toggle).should('have.length', 2);
+    });
+
+    it('opens the plate calculator on the next set, and re-solves the bar as the weight and rack change', { tags: ['SESS-08'] }, () => {
       const plateCalculator = dataCy.sessions.dialogs.plateCalculator;
 
       // The seeded session prescribes 100 kg of squat first, which is 40 kg a side.
@@ -180,7 +206,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(plateCalculator.content).should('not.exist');
     });
 
-    it('hides the plate calculator behind a setting, and brings it back', { tags: ['SESS-08'] }, () => {
+    it('hides the plate calculator behind a setting, and brings it back', { tags: ['SESS-09'] }, () => {
       const openSettings = () => {
         cy.navigateBack();
         cy.navigateTo('settings');
@@ -206,7 +232,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.plateCalculatorButton).should('be.visible');
     });
 
-    it('allows a user to complete a session', { tags: ['SESS-09'] }, () => {
+    it('allows a user to complete a session', { tags: ['SESS-10'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).each((sb: JQuery<HTMLElement>) => cy.wrap(sb).click()); // Complete all sets
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('not.exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -217,7 +243,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 102.5 kg'); // Progression rules applied
     });
 
-    it('finishes a session at a date and time picked from the finish options', { tags: ['SESS-10'] }, () => {
+    it('finishes a session at a date and time picked from the finish options', { tags: ['SESS-11'] }, () => {
       const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
       const yesterdayTyped = new Intl.DateTimeFormat('en-US').format(yesterday);
       const yesterdayShort = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(yesterday);
@@ -250,7 +276,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.history.sessionCard).first().should('contain.text', yesterdayLong);
     });
 
-    it('confirms an early finish taken from the finish options', { tags: ['SESS-11'] }, () => {
+    it('confirms an early finish taken from the finish options', { tags: ['SESS-12'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
 
@@ -270,7 +296,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.url().should('include', '/home');
     });
 
-    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-12'] }, () => {
+    it('prompts for confirmation when completing a session with unfinished sets', { tags: ['SESS-13'] }, () => {
       cy.getBySel(dataCy.sessions.set.bubble).first().click(); // Complete only one set
       cy.getBySel(dataCy.sessions.set.bubble).filter('[data-cy-set-status="PENDING"]').should('exist');
       cy.getBySel(dataCy.sessions.completeButton).click();
@@ -290,7 +316,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.home.sessionCard).should('contain.text', 'Squat: 3x5 @ 100 kg'); // Progression rules not applied due to incomplete sets
     });
 
-    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-13'] }, () => {
+    it('allows a user to add a session note via the notes dialog and see it after reopening', { tags: ['SESS-14'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.title).should('be.visible').and('contain.text', 'Notes');
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Felt strong on squats today.');
@@ -303,7 +329,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', 'Felt strong on squats today.');
     });
 
-    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-14'] }, () => {
+    it('keeps the notes dialog open on a click outside, and discards the edit on Cancel', { tags: ['SESS-15'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).type('Typed then clicked away.');
 
@@ -320,7 +346,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Cancel discarded it
     });
 
-    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-15'] }, () => {
+    it('shows the same plan note in other sessions of the same plan', { tags: ['SESS-16'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Switch to low-bar next cycle.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
@@ -340,7 +366,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', ''); // Session notes are per-session
     });
 
-    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-16'] }, () => {
+    it('never shows a plan note in a session belonging to a different plan', { tags: ['SESS-17'] }, () => {
       cy.getBySel(dataCy.sessions.notesButton).click();
       cy.getBySel(dataCy.sessions.dialogs.notes.planInput).type('Note for the first plan only.');
       cy.getBySel(dataCy.sessions.dialogs.notes.saveButton).click();
@@ -366,7 +392,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       cy.getBySel(dataCy.sessions.dialogs.notes.sessionInput).should('have.value', '');
     });
 
-    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-17'] }, () => {
+    it('prevents access to another user\'s session notes (RLS check)', { tags: ['SESS-18'] }, () => {
       let userId1: string;
       let userId2: string;
 
@@ -383,6 +409,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
         cy.url().then((ephemeralUserSessionUrl) => {
           cy.navigateBack();
           cy.navigateTo('settings');
+          cy.getBySel(dataCy.settings.tabs.user).click();
           cy.getBySel(dataCy.settings.account.signOutButton).click();
           cy.url().should('include', '/auth');
 
@@ -404,7 +431,7 @@ describe('Session Tracking', { tags: ['@sessions'] }, () => {
       });
     });
 
-    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-18'] }, () => {
+    it('leaves an earlier session of the same day untouched when a later one is edited', { tags: ['SESS-19'] }, () => {
       // Session sets are grouped by plan_exercise_id, which every session trained from the same
       // plan day shares. Editing a set used to pull in the sets of previous sessions of that day,
       // renumber the merged list and write it back - silently rewriting, and deleting, history.
