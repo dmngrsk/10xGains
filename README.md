@@ -215,6 +215,7 @@ The current MVP scope includes:
 - **Active Workout Session Tracking**: Real-time tracking of exercises with clickable set markers, detailed editing capabilities, and free-form session and plan notes.
 - **Workout History**: Chronological record of past workout sessions, including access to per-session notes.
 - **Exercise Progress**: Weight-over-time line chart with one line per exercise, defaulting to the active plan and the last 3 months, filterable by training plan (or across all of them) and date range.
+- **Body Measurement Tracking**: Weight and circumference measurements over time on their own chart, with US Navy (tape) and Jackson-Pollock (caliper) body-fat estimates derived from them, and an optional home reminder at a cadence of the user's choosing.
 - **AI-Driven Training Suggestions**: Integrated chat tool offering tailored training plan suggestions and educational resources.
 
 ## Project Status

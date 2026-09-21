@@ -1,6 +1,7 @@
 import { ExerciseProgressDto, PlanDto } from '@txg/shared';
 import { describe, expect, it } from 'vitest';
-import { SERIES_COLOR_TOKENS, formatRepsLabel, mapToExerciseSeriesViewModels } from './progress.mapping';
+import { SERIES_COLOR_TOKENS } from '@shared/utils/charts/series-colors';
+import { formatRepsLabel, mapToExerciseSeriesViewModels } from './progress.mapping';
 
 const PLANS = [
   { id: 'plan-1', name: 'Starting Strength' },

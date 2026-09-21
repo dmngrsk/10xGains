@@ -1,6 +1,13 @@
 <txg-main-layout title="Progress" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center p-4 min-h-[var(--txg-progress-page-viewport)]">
-    @if (viewModel(); as viewModel) {
+  <txg-progress-tabs
+    [viewMode]="viewMode()"
+    (viewModeChanged)="onViewModeChanged($event)">
+  </txg-progress-tabs>
+
+  <div class="flex justify-center p-4 pt-[var(--txg-progress-content-offset)] min-h-[var(--txg-progress-page-viewport)]">
+    @if (viewMode() === 'body') {
+      <txg-measurements-view class="w-full" data-cy="progress-measurements-view"></txg-measurements-view>
+    } @else if (viewModel(); as viewModel) {
       @if (viewModel.isLoading) {
         <div class="flex justify-center items-center min-h-[var(--txg-progress-page-viewport)]">
           <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="progress-loading-spinner"></mat-progress-spinner>
@@ -34,33 +41,37 @@
           </txg-notice>
         }
       } @else {
-        <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
+        <div class="txg-progress-content flex flex-col gap-4 w-full" data-cy="progress-content">
           <div class="flex flex-col">
             <p class="text-xl font-bold text-primary truncate" data-cy="progress-filter-plan">{{ filterPlanName() }}</p>
             <p class="text-sm text-primary truncate" data-cy="progress-filter-range">{{ filterDateRange() }}</p>
           </div>
+
           <txg-progress-chart
             class="block flex-1 min-h-0"
             [series]="selectedSeries()"
             [showPlanName]="isAllPlansSelected()">
           </txg-progress-chart>
-          <txg-exercise-chip-row
+          <txg-chart-chip-row
             class="block pr-16"
-            [exercises]="viewModel.series"
-            (exerciseToggled)="onExerciseToggled($event)">
-          </txg-exercise-chip-row>
+            [chips]="chips()"
+            dataCyPrefix="progress-exercise-chip-"
+            (chipToggled)="onExerciseToggled($event)">
+          </txg-chart-chip-row>
         </div>
       }
     }
   </div>
 
-  <div class="txg-fab-anchor">
-    <button
-      mat-mini-fab
-      class="txg-fab"
-      (click)="onFilterButtonClicked()"
-      data-cy="progress-filter-button">
-      <mat-icon>filter_list</mat-icon>
-    </button>
-  </div>
+  @if (viewMode() === 'lifts') {
+    <div class="txg-fab-anchor">
+      <button
+        mat-mini-fab
+        class="txg-fab"
+        (click)="onFilterButtonClicked()"
+        data-cy="progress-filter-button">
+        <mat-icon>filter_list</mat-icon>
+      </button>
+    </div>
+  }
 </txg-main-layout>

@@ -1,0 +1,18 @@
+:host ::ng-deep .mat-mdc-card-header-text {
+  margin: 0;
+}
+
+.txg-prompt-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  order: 1;
+  margin-bottom: 0;
+  margin-left: auto;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-primary-container);
+
+  mat-icon {
+    color: var(--mat-sys-on-primary-container);
+  }
+}

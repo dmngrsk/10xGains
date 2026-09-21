@@ -22,6 +22,7 @@ This workspace package (`@txg/api`) contains the main API for the 10xGains appli
   - [Sessions API](#sessions-api)
   - [Session Sets API](#session-sets-api)
   - [Progress API](#progress-api)
+  - [Measurements API](#measurements-api)
   - [Health Check API](#health-check-api)
 
 ## Architecture
@@ -114,6 +115,38 @@ State values are fixed, and mirrored in `@txg/shared` as `SESSION_STATUSES` / `S
 
 The progress charts count only `COMPLETED` sets of a `COMPLETED` session (see [Progress API](#progress-api)); completing a session also advances or deloads each exercise's weight progression based on its set outcomes.
 
+### Validation errors
+
+A request that fails validation returns `400 Bad Request`, with the problems under `details.errors` keyed by the field at fault:
+
+```json
+{
+  "error": "Invalid request body",
+  "status": 400,
+  "code": "INVALID_COMMAND_BODY",
+  "details": {
+    "errors": { "date_of_birth": ["Date of birth must be a real calendar date"] },
+    "received": { "date_of_birth": "2026-02-31" }
+  }
+}
+```
+
+A fault in the body as a whole has no field to key it by, so it is reported under `_errors` - an empty body where at least one field is required, an array outside its allowed length, or rows that conflict with each other:
+
+```json
+{
+  "error": "Invalid request body",
+  "status": 400,
+  "code": "INVALID_COMMAND_BODY",
+  "details": {
+    "errors": { "_errors": ["Request body must contain at least one field to update."] },
+    "received": {}
+  }
+}
+```
+
+`code` is `INVALID_COMMAND_BODY`, `INVALID_QUERY_PARAMS` or `INVALID_PATH_PARAMS`, by where the fault was found.
+
 ## API Documentation
 
 ### Profiles API
@@ -127,13 +160,19 @@ Retrieves the profile information for the authenticated user.
 -   **Authorization**: Bearer token required. The `{userId}` in the path MUST match the authenticated user's ID.
 -   **URL Path Parameter**:
     -   `userId` (UUID): The ID of the profile to retrieve.
--   **Response (200 OK)**: The `ProfileDto` object.
+-   **Response (200 OK)**: The `ProfileDto` object. The body-composition fields are all nullable, and null until the user sets them in Settings.
     ```json
     {
       "data": {
         "id": "uuid",
         "first_name": "John",
         "active_plan_id": "uuid | null",
+        "date_of_birth": "1994-03-04",
+        "height_cm": 183,
+        "sex": "MALE",
+        "body_fat_method": "NAVY",
+        "measurement_frequency_days": 7,
+        "tracked_measurement_types": ["BODY_WEIGHT", "NECK", "WAIST"],
         "created_at": "timestamp",
         "updated_at": "timestamp"
       }
@@ -150,27 +189,39 @@ Creates or updates the profile information for the authenticated user (upsert be
 -   **Authorization**: Bearer token required. The `{userId}` in the path MUST match the authenticated user's ID.
 -   **URL Path Parameter**:
     -   `userId` (UUID): The ID of the profile to update or create.
--   **Request Body**: `UpsertProfileCommand` (at least one of `first_name` or `active_plan_id` must be provided)
+-   **Request Body**: `UpsertProfileCommand` (at least one field must be provided; a field left out keeps its current value, and `null` clears it)
     ```json
     {
-      "first_name": "string (optional)",
-      "active_plan_id": "uuid | null (optional)"
+      "first_name": "string (optional, max 100 chars)",
+      "active_plan_id": "uuid | null (optional)",
+      "date_of_birth": "YYYY-MM-DD | null (optional)",
+      "height_cm": "number, 50-300 | null (optional)",
+      "sex": "MALE | FEMALE | null (optional)",
+      "body_fat_method": "NAVY | JP3 | JP7 | MANUAL | null (optional)",
+      "measurement_frequency_days": "integer, 1-365 | null (optional)",
+      "tracked_measurement_types": "MeasurementType[] | null (optional)"
     }
     ```
--   **Response (200 OK/201 Created)**: The created or updated `ProfileDto` object.
+-   **Response (200 OK)**: The created or updated `ProfileDto` object.
     ```json
     {
       "data": {
         "id": "uuid",
         "first_name": "John",
         "active_plan_id": "uuid | null",
+        "date_of_birth": "1994-03-04",
+        "height_cm": 183,
+        "sex": "MALE",
+        "body_fat_method": "NAVY",
+        "measurement_frequency_days": 7,
+        "tracked_measurement_types": ["BODY_WEIGHT", "NECK", "WAIST"],
         "created_at": "timestamp",
         "updated_at": "timestamp" // updated
       }
     }
     ```
 -   **Responses (Error)**:
-    -   `400 Bad Request`: If the request body is invalid (e.g., missing both fields, invalid UUID format).
+    -   `400 Bad Request`: If the request body is invalid (e.g., empty, invalid UUID format, a date that does not exist such as `2026-02-31`, a height outside 50-300, or a type outside the measurement catalog).
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `404 Not Found`: If the requested `{userId}` is not the authenticated user's own, or the referenced `active_plan_id` does not belong to them.
     -   `500 Internal Server Error`: For other server-side issues during the upsert operation.
@@ -641,8 +692,24 @@ An archived day keeps its `order_index` and siblings are not renumbered around i
     -   `planId` (UUID, required): The ID of the plan.
     -   `dayId` (UUID, required): The ID of the plan day.
 -   **Request Body**: `ArchivePlanDayCommand`
-    -   `archived` (boolean, required): `true` to archive, `false` to restore.
--   **Response (200 OK)**: The updated `PlanDayDto`, whose `archived_at` is a timestamp or `null`.
+    ```json
+    {
+      "archived": "boolean (required) - true to archive, false to restore"
+    }
+    ```
+-   **Response (200 OK)**: The updated `PlanDayDto`, whose `archived_at` is a timestamp or `null`. The day alone, without its exercises.
+    ```json
+    {
+      "data": {
+        "id": "uuid",
+        "plan_id": "uuid",
+        "name": "Day 1: Push",
+        "description": "Chest, Shoulders, Triceps",
+        "order_index": 1,
+        "archived_at": "timestamp | null"
+      }
+    }
+    ```
 -   **Response (400 Bad Request)**: If the path parameters or body are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the plan or day is not found or not accessible.
@@ -813,8 +880,23 @@ Archives or restores an exercise within a training day. See `POST /api/plans/{pl
     -   `dayId` (UUID, required): The ID of the plan day.
     -   `exerciseId` (UUID, required): The ID of the plan exercise entry (`plan_exercises.id`).
 -   **Request Body**: `ArchivePlanExerciseCommand`
-    -   `archived` (boolean, required): `true` to archive, `false` to restore.
--   **Response (200 OK)**: The updated `PlanExerciseDto`, whose `archived_at` is a timestamp or `null`.
+    ```json
+    {
+      "archived": "boolean (required) - true to archive, false to restore"
+    }
+    ```
+-   **Response (200 OK)**: The updated `PlanExerciseDto`, whose `archived_at` is a timestamp or `null`. The exercise entry alone, without its sets.
+    ```json
+    {
+      "data": {
+        "id": "uuid",
+        "plan_day_id": "uuid",
+        "exercise_id": "uuid", // References the global exercises table
+        "order_index": 1,
+        "archived_at": "timestamp | null"
+      }
+    }
+    ```
 -   **Response (400 Bad Request)**: If the path parameters or body are invalid.
 -   **Response (401 Unauthorized)**: If the authentication token is missing or invalid.
 -   **Response (404 Not Found)**: If the plan, day, or specific plan exercise is not found or not accessible.
@@ -1655,6 +1737,183 @@ The underlying read *is* paginated internally. PostgREST caps any single respons
     -   `400 Bad Request`: If query parameters are invalid (e.g. a malformed UUID or date).
     -   `401 Unauthorized`: If the authentication token is invalid or missing.
     -   `500 Internal Server Error`: For unexpected server issues.
+
+### Measurements API
+
+Body measurements over time: the data behind the Progress page's Body tab. Unlike everything else here, a measurement descends from neither a plan nor a session — it is a time series keyed on the user and a date alone.
+
+Four properties of the table shape these endpoints:
+
+-   **`measured_on` is a `date`.** A weigh-in's time of day is noise, unlike `sessions.session_date` where it is signal. Filters are therefore plain `YYYY-MM-DD` values, not the ISO datetimes the rest of the API takes.
+-   **One row per type per day.** `unique (user_id, measured_on, type)` makes re-logging a type on a day an *edit*, so `POST` upserts on that key rather than failing.
+-   **A derived body fat is never stored.** It is computed on read from the tape or caliper readings by the formulas below, so correcting an input cannot leave a stale figure behind. The one exception is `BODY_FAT`, the percentage a user reads off a scale or a scan and types in under the `MANUAL` method — a reading, not an estimate. A profile names one method, so a stored figure and a derived one never appear together; splitting manual entry into four provenance types was tried first and collapsed into this single type once nothing else was entered by hand.
+-   **Units are a property of the type**, not of the app: kg for `BODY_WEIGHT`, cm for the circumferences, mm for the `SKINFOLD_*` caliper sites, percent for `BODY_FAT`. The unit is presentation, so `MEASUREMENT_TYPE_META` lives in the web app; `MEASUREMENT_TYPES` in `@txg/shared` is the catalog itself.
+
+#### GET /api/measurements
+
+Returns the user's measurement rows.
+
+-   **Authorization**: Bearer token required.
+-   **URL Query Parameters**:
+    -   `types` (optional, comma-separated): Restrict to these measurement types.
+    -   `date_from` / `date_to` (optional, `YYYY-MM-DD`): Inclusive bounds. Rejected with `400 Bad Request` if `date_from` is later than `date_to`.
+    -   `limit` (optional, number, default 1000, max 1000), `offset` (optional, number). Both are PostgREST's `max_rows`: a larger limit would be silently truncated to it, so it is rejected with `400 Bad Request` instead. Clients wanting a whole history page through `offset`.
+    -   `sort` (optional, `column.asc|desc`, default `measured_on.desc`): `measured_on`, `type` or `created_at`. Rows are always tie-broken by `type`, so `limit=1` is deterministic when several types share a date — which is how the home page reads just the latest round.
+-   **Response (200 OK)**: An array of `MeasurementDto` objects, with `totalCount`.
+    ```json
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "user_id": "uuid",
+          "measured_on": "2026-09-15",
+          "type": "WAIST",
+          "value": 88.9,
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        },
+        {
+          "id": "uuid",
+          "user_id": "uuid",
+          "measured_on": "2026-09-15",
+          "type": "BODY_WEIGHT",
+          "value": 79.2,
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        }
+        // ... other measurements
+      ],
+      "totalCount": 130
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If a type is outside the catalog, a date is malformed or does not exist, `date_from` is later than `date_to`, or `limit` exceeds 1000.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### POST /api/measurements
+
+Records a round of measurements. The body is an **array**: the table is tall, so one round of measuring is several rows, and half a round is not a useful state to persist.
+
+Upserts on `(user_id, measured_on, type)`, so re-sending a type for a day it already has updates it in place rather than returning a conflict.
+
+-   **Authorization**: Bearer token required.
+-   **Request Body**: An array of 1–50 `CreateMeasurementCommand` objects. `value` is in the type's own unit and must be greater than zero.
+    ```json
+    [
+      { "measured_on": "2026-09-15", "type": "BODY_WEIGHT", "value": 79.2 },
+      { "measured_on": "2026-09-15", "type": "NECK", "value": 38.2 },
+      { "measured_on": "2026-09-15", "type": "WAIST", "value": 88.9 }
+    ]
+    ```
+-   **Response (201 Created)**: An array of the stored `MeasurementDto` objects, in the order sent.
+    ```json
+    {
+      "data": [
+        {
+          "id": "uuid",
+          "user_id": "uuid",
+          "measured_on": "2026-09-15",
+          "type": "BODY_WEIGHT",
+          "value": 79.2,
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        }
+        // ... one per row sent
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If the array is empty or longer than 50, a row is invalid (a type outside the catalog, a date that does not exist, a value of zero or less), or a type is repeated for the same date within the request. An empty or oversized array and a repeated type are faults in the body as a whole, so they are reported under `_errors` (see [Validation errors](#validation-errors)).
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### PUT /api/measurements/{measurementId}
+
+Updates one reading's `value`. Only the value is editable: moving a row to another date or type would collide with the unique constraint against whatever is already there, so that is a delete and a create.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `measurementId` (UUID): The ID of the reading to update.
+-   **Request Body**: `UpdateMeasurementCommand`
+    ```json
+    {
+      "value": "number (required, greater than zero)"
+    }
+    ```
+-   **Response (200 OK)**: The updated `MeasurementDto` object.
+    ```json
+    {
+      "data": {
+        "id": "uuid",
+        "user_id": "uuid",
+        "measured_on": "2026-09-15",
+        "type": "WAIST",
+        "value": 89.4,
+        "created_at": "timestamp",
+        "updated_at": "timestamp" // updated
+      }
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `measurementId` is not a UUID or the value is not greater than zero.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `404 Not Found`: If the reading does not exist or is not the authenticated user's own.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### DELETE /api/measurements/{measurementId}
+
+Deletes one reading.
+
+-   **Authorization**: Bearer token required.
+-   **URL Path Parameter**:
+    -   `measurementId` (UUID): The ID of the reading to delete.
+-   **Response (204 No Content)**: Empty response body.
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If `measurementId` is not a UUID.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `404 Not Found`: If the reading does not exist or is not the authenticated user's own.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
+
+#### GET /api/measurements/body-fat-estimates
+
+Returns derived body-fat estimates, computed per request from the measurements that feed them and **never stored**. Storing them would go stale the moment an input was corrected, and would collide with a manually entered scan on the same date.
+
+A separate endpoint rather than an `?include_derived=true` flag on the collection: an estimate is a different shape from a measurement row, whereas the existing `?include_archived=true` precedent returns more rows of the *same* shape.
+
+Every estimate the data supports is returned, regardless of which method the user selected in Settings. That setting decides what the log dialog asks for and which series is selected by default, never what exists — filtering by it would erase a year of tape estimates the day someone switched methods, and the switch cannot be backfilled.
+
+A date is estimated when at least one of a method's inputs was recorded on it; the rest are filled from the most recent earlier reading, within that type's own window (`MEASUREMENT_LOOKBACK_DAYS` in `services/body-composition` — 90 days for circumferences, 7 for caliper sites). Requiring every input on one date would leave the series nearly empty, because the input that moves is the one just measured while the neck is always weeks old. Such a point carries `carried_forward: true` so a client can draw it differently.
+
+Three methods are computed here, each a separate series:
+
+-   `NAVY` — from `NECK`, `WAIST` (and `HIPS` for the female variant), plus `profiles.height_cm`.
+-   `JP3` — Jackson-Pollock 3-site, from `SKINFOLD_CHEST`/`SKINFOLD_ABDOMEN`/`SKINFOLD_THIGH` (male) or `SKINFOLD_TRICEPS`/`SKINFOLD_SUPRAILIAC`/`SKINFOLD_THIGH` (female).
+-   `JP7` — Jackson-Pollock 7-site, from all seven caliper sites.
+
+A fourth method, `MANUAL`, computes nothing: the user records a `BODY_FAT` reading and that row *is* the series, so this endpoint never returns estimates for it.
+
+The three computed methods require `profiles.sex`, which selects each formula's coefficients; without it the response is empty. `NAVY` additionally requires `profiles.height_cm`, which is a setting rather than a measurement and so never carries a date. The Jackson-Pollock equations additionally take age as a term, so they also require `profiles.date_of_birth` — and age is computed **at each measurement date**, not today, because a series spans birthdays and using today's age would restate every past point.
+
+The Jackson-Pollock equations predict body *density*, which the Siri equation converts to a percentage; the Navy equations yield a percentage directly. A result outside a plausible human range is reported as no estimate rather than as a number, because the regressions were fitted to a normal range of bodies and unusual inputs drive them to values nobody holds.
+
+-   **Authorization**: Bearer token required.
+-   **URL Query Parameters**:
+    -   `date_from` / `date_to` (optional, `YYYY-MM-DD`): Inclusive bounds, applied *after* estimating, because a date at the start of the window is routinely estimated from a neck measured before it.
+-   **Response (200 OK)**: An array of `BodyFatEstimateDto` objects, ascending by date and then by method.
+    ```json
+    {
+      "data": [
+        { "measured_on": "2026-09-01", "method": "JP7", "value": 14, "carried_forward": false },
+        { "measured_on": "2026-09-01", "method": "NAVY", "value": 26.8, "carried_forward": false },
+        { "measured_on": "2026-09-08", "method": "NAVY", "value": 26.1, "carried_forward": true }
+      ]
+    }
+    ```
+-   **Responses (Error)**:
+    -   `400 Bad Request`: If a date is malformed or does not exist, or `date_from` is later than `date_to`.
+    -   `401 Unauthorized`: If the authentication token is invalid or missing.
+    -   `500 Internal Server Error`: If an unexpected server error occurs.
 
 ### Health Check API
 

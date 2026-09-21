@@ -32,11 +32,11 @@ export class ApiService {
     return from(this.requestAll<T>(url, pageSize));
   }
 
-  public post<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
+  public post<TReq, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     return from(this.request<T>('POST', url, body));
   }
 
-  public put<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
+  public put<TReq, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     return from(this.request<T>('PUT', url, body));
   }
 
@@ -44,11 +44,11 @@ export class ApiService {
     return from(this.request<null>('DELETE', url));
   }
 
-  public patch<TReq extends Record<string, unknown>, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
+  public patch<TReq, T>(url: string, body: TReq): Observable<ApiServiceResponse<T>> {
     return from(this.request<T>('PATCH', url, body));
   }
 
-  private async request<T>(method: string, url: string, body?: Record<string, unknown>): Promise<ApiServiceResponse<T>> {
+  private async request<T>(method: string, url: string, body?: unknown): Promise<ApiServiceResponse<T>> {
     const headers: Record<string, string> = {};
 
     const { data: { session } } = await this.supabaseService.client.auth.getSession();

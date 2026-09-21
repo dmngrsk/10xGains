@@ -31,6 +31,8 @@ Such configs are imported in `src/app/app.routes.ts` with the following syntax f
 
 Additionally, each feature folder includes a `shared/` directory for storing mutual files and an `api/` directory for services that connect to the backend, together with their associated contract models.
 
+One feature deliberately has **no** `routes.ts`: `features/measurements/` is a tab of `/progress` rather than a route of its own, so the progress page imports and hosts it. It is still its own feature folder, because that keeps a growing CRUD surface out of the progress feature and makes promoting it to a route later a routing change rather than a refactor. Cross-feature imports like that are normal here (`home` imports from `sessions`, `progress` imports from `measurements`).
+
 ## Backend Access
 
 - Use dedicated `*.service.ts` data services for backend communication in components (implement them when necessary), rather than directly using `@supabase/supabase-js`.

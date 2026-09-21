@@ -1,6 +1,7 @@
 import { authSelectors } from './auth';
 import { historySelectors } from './history';
 import { homeSelectors } from './home';
+import { measurementsSelectors } from './measurements';
 import { plansSelectors } from './plans';
 import { progressSelectors } from './progress';
 import { sessionsSelectors } from './sessions';
@@ -11,6 +12,7 @@ export const dataCy = {
   auth: authSelectors,
   history: historySelectors,
   home: homeSelectors,
+  measurements: measurementsSelectors,
   plans: plansSelectors,
   progress: progressSelectors,
   sessions: sessionsSelectors,

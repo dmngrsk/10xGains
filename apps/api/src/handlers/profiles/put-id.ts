@@ -1,9 +1,10 @@
 import { z } from 'zod';
 import type { Context } from 'hono';
+import { BODY_FAT_METHODS, MEASUREMENT_TYPES, SEXES } from '@txg/shared';
 import { createSuccessData, handleRepositoryError } from '../../utils/api-helpers';
 import type { ProfileDto, UpsertProfileCommand } from '@txg/shared';
 import type { AppContext } from '../../context';
-import { validateCommandBody, validatePathParams } from "../../utils/validation";
+import { calendarDate, validateCommandBody, validatePathParams } from "../../utils/validation";
 
 const PATH_SCHEMA = z.object({
   userId: z.string().uuid('Invalid userId format'),
@@ -12,6 +13,12 @@ const PATH_SCHEMA = z.object({
 const COMMAND_SCHEMA = z.object({
   first_name: z.string().max(100, 'First name must not exceed 100 characters').optional(),
   active_plan_id: z.string().uuid({ message: 'Invalid UUID format for active plan ID.' }).nullable().optional(),
+  date_of_birth: calendarDate('Date of birth').nullable().optional(),
+  body_fat_method: z.enum(BODY_FAT_METHODS).nullable().optional(),
+  height_cm: z.number().min(50).max(300).nullable().optional(),
+  sex: z.enum(SEXES).nullable().optional(),
+  measurement_frequency_days: z.number().int().min(1).max(365).nullable().optional(),
+  tracked_measurement_types: z.array(z.enum(MEASUREMENT_TYPES)).max(MEASUREMENT_TYPES.length).nullable().optional(),
 }).refine(data => Object.keys(data).length > 0, {
   message: "Request body must contain at least one field to update."
 });

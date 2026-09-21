@@ -15,18 +15,20 @@ import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.
 import { tapIf } from '@shared/utils/operators/tap-if.operator';
 import { AccountSettingsCardComponent } from './components/account-settings-card/account-settings-card.component';
 import { ChangePasswordDialogComponent } from './components/dialogs/change-password-dialog/change-password-dialog.component';
+import { MeasurementsSettingsCardComponent, MeasurementsSettingsSaved } from './components/measurements-settings-card/measurements-settings-card.component';
 import { ProfileSettingsCardComponent } from './components/profile-settings-card/profile-settings-card.component';
 import { SessionSettingsCardComponent } from './components/session-settings-card/session-settings-card.component';
 import { SettingsTabsComponent } from './components/settings-tabs/settings-tabs.component';
 import { SettingsPageFacade } from './settings-page.facade';
 
 const VIEW_MODE_STORAGE_KEY = 'txg.settings.view-mode';
-const VIEW_MODES: SettingsViewMode[] = ['workout', 'user'];
+const VIEW_MODES: SettingsViewMode[] = ['workout', 'measurements', 'user'];
 
 @Component({
   selector: 'txg-settings-page',
   standalone: true,
   imports: [
+    MeasurementsSettingsCardComponent,
     CommonModule,
     MainLayoutComponent,
     MatDialogModule,
@@ -125,6 +127,14 @@ export class SettingsPageComponent implements OnInit {
         this.router.navigate(['/auth']);
       }),
       tapIf(success => !success, () => this.snackBar.open('Failed to sign out.', 'Close', { duration: 3000 }))
+    ).subscribe();
+  }
+
+  onMeasurementSettingsSaved(settings: MeasurementsSettingsSaved): void {
+    this.facade.saveMeasurementSettings(settings).pipe(
+      take(1),
+      tapIf(success => success, () => this.snackBar.open('Measurement settings saved.', 'Close', { duration: 3000 })),
+      tapIf(success => !success, () => this.snackBar.open('Failed to save measurement settings.', 'Close', { duration: 3000 }))
     ).subscribe();
   }
 

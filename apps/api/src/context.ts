@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@txg/shared';
 import type { PlanRepository } from './repositories/plan.repository';
 import type { ExerciseRepository } from './repositories/exercise.repository';
+import type { MeasurementRepository } from './repositories/measurement.repository';
 import type { ProfileRepository } from './repositories/profile.repository';
 import type { ProgressRepository } from './repositories/progress.repository';
 import type { SessionRepository } from './repositories/session.repository';
@@ -44,6 +45,7 @@ export type AppContext = {
     startTime: number;
     planRepository: PlanRepository;
     exerciseRepository: ExerciseRepository;
+    measurementRepository: MeasurementRepository;
     profileRepository: ProfileRepository;
     progressRepository: ProgressRepository;
     sessionRepository: SessionRepository;

@@ -1,4 +1,5 @@
 import { exercisesTasks } from './tasks/exercises';
+import { measurementsTasks } from './tasks/measurements';
 import { plansTasks } from './tasks/plans';
 import { profilesTasks } from './tasks/profiles';
 import { sessionsTasks } from './tasks/sessions';
@@ -8,6 +9,7 @@ import { usersTasks } from './tasks/users';
 // `on('task', tasks)`. Each task name follows the `scope:action` convention.
 export const tasks = {
   ...exercisesTasks,
+  ...measurementsTasks,
   ...plansTasks,
   ...profilesTasks,
   ...sessionsTasks,

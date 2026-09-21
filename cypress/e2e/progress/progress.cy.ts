@@ -1,3 +1,4 @@
+import { exerciseChips } from '../../support/helpers/progress.helpers';
 import { dataCy } from '../../support/selectors';
 
 /**
@@ -51,26 +52,26 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
 
     it('renders the chart with one chip per exercise of the plan', { tags: ['PROG-01'] }, () => {
       cy.getBySel(dataCy.progress.chartCanvas).should('be.visible');
-      cy.getBySel(dataCy.progress.exerciseChip).should('have.length', 3);
+      exerciseChips().should('have.length', 3);
 
-      cy.getBySel(dataCy.progress.exerciseChip).eq(0).should('contain.text', 'Squat');
-      cy.getBySel(dataCy.progress.exerciseChip).eq(1).should('contain.text', 'Bench Press');
-      cy.getBySel(dataCy.progress.exerciseChip).eq(2).should('contain.text', 'Deadlift');
+      exerciseChips().eq(0).should('contain.text', 'Squat');
+      exerciseChips().eq(1).should('contain.text', 'Bench Press');
+      exerciseChips().eq(2).should('contain.text', 'Deadlift');
 
       cy.getBySel(dataCy.progress.filterRange).should('contain.text', 'All time');
     });
 
     it('toggles a series when its exercise chip is clicked', { tags: ['PROG-02'] }, () => {
-      cy.getBySel(dataCy.progress.exerciseChip).first().should('have.class', 'mat-mdc-chip-selected');
+      exerciseChips().first().should('have.class', 'mat-mdc-chip-selected');
 
-      cy.getBySel(dataCy.progress.exerciseChip).first().click();
-      cy.getBySel(dataCy.progress.exerciseChip).first().should('not.have.class', 'mat-mdc-chip-selected');
+      exerciseChips().first().click();
+      exerciseChips().first().should('not.have.class', 'mat-mdc-chip-selected');
       cy.getBySel(dataCy.progress.chartCanvas).should('be.visible');
 
-      cy.getBySel(dataCy.progress.exerciseChip).first().click();
-      cy.getBySel(dataCy.progress.exerciseChip).first().should('have.class', 'mat-mdc-chip-selected');
+      exerciseChips().first().click();
+      exerciseChips().first().should('have.class', 'mat-mdc-chip-selected');
     });
-
+    
     it('allows widening the scope to all training plans', { tags: ['PROG-03'] }, () => {
       cy.getBySel(dataCy.progress.filterPlan).should('contain.text', 'Test Training Plan');
 
@@ -82,7 +83,7 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
       cy.getBySel(dataCy.progress.filterDialog.applyFiltersButton).click();
 
       cy.getBySel(dataCy.progress.filterPlan).should('contain.text', 'All plans');
-      cy.getBySel(dataCy.progress.exerciseChip).should('have.length', 3);
+      exerciseChips().should('have.length', 3);
 
       // Reopening must still show the choice: a mat-select clears its trigger if the
       // selected option's value is null, which would blank the field out.
@@ -91,17 +92,17 @@ describe('Exercise Progress', { tags: ['@progress'] }, () => {
     });
 
     it('narrows the plotted series to the filtered date range', { tags: ['PROG-04'] }, () => {
-      cy.getBySel(dataCy.progress.exerciseChip).should('have.length', 3);
+      exerciseChips().should('have.length', 3);
 
       cy.getBySel(dataCy.progress.filterButton).click();
       cy.getBySel(dataCy.shared.dateRange.startInput).clear().type(WORKOUT_A_ONLY_FROM);
       cy.getBySel(dataCy.shared.dateRange.endInput).clear().type(WORKOUT_A_ONLY_TO);
       cy.getBySel(dataCy.progress.filterDialog.applyFiltersButton).click();
 
-      cy.getBySel(dataCy.progress.exerciseChip).should('have.length', 2);
-      cy.getBySel(dataCy.progress.exerciseChip).should('contain.text', 'Squat');
-      cy.getBySel(dataCy.progress.exerciseChip).should('contain.text', 'Bench Press');
-      cy.getBySel(dataCy.progress.exerciseChip).should('not.contain.text', 'Deadlift');
+      exerciseChips().should('have.length', 2);
+      exerciseChips().should('contain.text', 'Squat');
+      exerciseChips().should('contain.text', 'Bench Press');
+      exerciseChips().should('not.contain.text', 'Deadlift');
     });
   });
 

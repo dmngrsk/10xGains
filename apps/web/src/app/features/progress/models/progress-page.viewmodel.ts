@@ -33,3 +33,5 @@ export interface ProgressPageViewModel {
   isLoading: boolean;
   error: string | null;
 }
+
+export type ProgressViewMode = 'lifts' | 'body';

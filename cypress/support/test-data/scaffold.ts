@@ -1,5 +1,14 @@
 import { PostgrestResponse, SupabaseClient } from '@supabase/supabase-js';
 import { REQUIRED_EXERCISES } from './exercises';
+import {
+  SCAFFOLD_BODY_COMPOSITION,
+  SCAFFOLD_TRACKED_TYPES,
+  generateMeasurementHistory,
+} from './measurements';
+
+interface ScaffoldOptions {
+  measurements?: boolean;
+}
 
 /**
  * Generates comprehensive test data for a user including exercises, plans, and session history
@@ -7,7 +16,8 @@ import { REQUIRED_EXERCISES } from './exercises';
  */
 export async function scaffoldTestUserData(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
+  { measurements: withMeasurements = false }: ScaffoldOptions = {}
 ): Promise<PostgrestResponse<unknown>> {
   // Step 1: Ensure exercises exist and get their IDs
   const [squatId, benchPressId, deadliftId] = await ensureExercisesExist(supabase);
@@ -143,6 +153,12 @@ export async function scaffoldTestUserData(
     id: userId,
     first_name: 'Test User',
     active_plan_id: planId,
+    date_of_birth: withMeasurements ? SCAFFOLD_BODY_COMPOSITION.dateOfBirth : null,
+    height_cm: withMeasurements ? SCAFFOLD_BODY_COMPOSITION.heightCm : null,
+    sex: withMeasurements ? SCAFFOLD_BODY_COMPOSITION.sex : null,
+    body_fat_method: withMeasurements ? SCAFFOLD_BODY_COMPOSITION.method : null,
+    measurement_frequency_days: SCAFFOLD_BODY_COMPOSITION.frequencyDays,
+    tracked_measurement_types: withMeasurements ? SCAFFOLD_TRACKED_TYPES : null,
     created_at: planCreatedAtISOString,
     updated_at: planCreatedAtISOString
   }];
@@ -152,6 +168,9 @@ export async function scaffoldTestUserData(
     userId, planId, planCreatedAt, dayAId, dayBId, 
     squatExerciseAId, benchPressExerciseId, squatExerciseBId, deadliftExerciseId
   );
+
+  // Step 9: Create body measurements
+  const measurements = withMeasurements ? generateMeasurementHistory(userId) : [];
 
   const batchOperations = [
     { table_name: 'plans', records: plans },
@@ -164,9 +183,19 @@ export async function scaffoldTestUserData(
     { table_name: 'session_sets', records: sessionSets }
   ];
      
-  return await supabase!.rpc('replace_collections_batch', {
+  const batchResponse = await supabase!.rpc('replace_collections_batch', {
     p_operations: batchOperations.filter(op => op.records.length > 0)
   });
+
+  if (batchResponse.error) {
+    return batchResponse;
+  }
+
+  await supabase!.from('measurements').delete().eq('user_id', userId);
+
+  return measurements.length > 0
+    ? await supabase!.from('measurements').insert(measurements).select()
+    : batchResponse;
 }
 
 // Cache for exercise IDs to avoid repeated queries in the same test run

@@ -12,6 +12,7 @@
   - Plan Exercise Progressions    -> Tables<"public", "plan_exercise_progressions">
   - Sessions                      -> Tables<"public", "sessions">
   - Session Sets                  -> Tables<"public", "session_sets">
+  - Measurements                  -> Tables<"public", "measurements">
 
   The command models represent the payloads for create/update operations as per API plan.
 
@@ -38,7 +39,16 @@ export interface SortingQueryOptions {
 // 1. Profile DTO and Command
 export type ProfileDto = Database["public"]["Tables"]["profiles"]["Row"];
 
-export type UpsertProfileCommand = Partial<Pick<ProfileDto, "first_name" | "active_plan_id">>;
+export type UpsertProfileCommand = Partial<Pick<ProfileDto,
+  | "first_name"
+  | "active_plan_id"
+  | "date_of_birth"
+  | "height_cm"
+  | "body_fat_method"
+  | "sex"
+  | "measurement_frequency_days"
+  | "tracked_measurement_types"
+>>;
 
 // 2. Exercise DTO and Commands (Global Resource)
 export type ExerciseDto = Database["public"]["Tables"]["exercises"]["Row"];
@@ -192,4 +202,38 @@ export interface ExerciseProgressDto {
   exercise_id: string;
   exercise_name: string;
   points: ExerciseProgressPointDto[];
+}
+
+// 10. Measurement DTO and Commands
+export type MeasurementDto = Database["public"]["Tables"]["measurements"]["Row"];
+
+/**
+ * One reading. Creates are sent as an array: the table is tall, so a single round of measuring
+ * is several rows, and half a round is not a useful state to persist.
+ */
+export type CreateMeasurementCommand = Pick<
+  Database["public"]["Tables"]["measurements"]["Insert"],
+  "measured_on" | "type" | "value"
+>;
+
+/**
+ * Only the reading itself is editable. Moving a row to another date or type would collide with
+ * `unique (user_id, measured_on, type)` against whatever is already there, so that is a delete
+ * and a create rather than an update.
+ */
+export type UpdateMeasurementCommand = Required<Pick<
+  Database["public"]["Tables"]["measurements"]["Update"],
+  "value"
+>>;
+
+/**
+ * A derived body-fat figure. Never a row: estimates are computed per request from the
+ * measurements that feed them, so correcting an input cannot leave a stale estimate behind, and
+ * an estimate cannot collide with a manually entered scan on the same date.
+ */
+export interface BodyFatEstimateDto {
+  measured_on: string;
+  method: NonNullable<ProfileDto["body_fat_method"]>;
+  value: number;
+  carried_forward: boolean;
 }

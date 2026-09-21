@@ -1,0 +1,16 @@
+:host ::ng-deep input[type='number'] {
+  appearance: textfield;
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    appearance: none;
+    margin: 0;
+  }
+}
+
+.txg-stepper {
+  --mdc-icon-button-state-layer-size: 40px;
+
+  margin-top: 0.375rem;
+  color: var(--mat-sys-primary);
+}

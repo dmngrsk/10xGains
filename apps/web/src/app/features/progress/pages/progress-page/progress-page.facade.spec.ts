@@ -195,5 +195,12 @@ describe('ProgressPageFacade', () => {
       facade.toggleExercise('ex-2');
       expect(facade.viewModel().series.find(s => s.exerciseId === 'ex-2')!.selected).toBe(true);
     });
+
+    it('should refuse to turn off the last selected exercise', () => {
+      facade.toggleExercise('ex-1');
+      facade.toggleExercise('ex-2');
+
+      expect(facade.viewModel().series.map(s => s.selected)).toEqual([false, true]);
+    });
   });
 });

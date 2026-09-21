@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { describe, it, expect } from 'vitest';
-import { optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateOptionalCommandBody, withCoherentDateRange, withCompletedAtConsistency } from './validation';
+import { calendarDate, optionalCount, optionalCsvList, optionalIsoDate, optionalLimit, optionalOffset, optionalSort, validateOptionalCommandBody, withCoherentDateRange, withCompletedAtConsistency } from './validation';
 
 const UUID_A = '1f6a2c3e-9b4d-4e8f-a1b2-c3d4e5f6a7b8';
 const UUID_B = '2a7b3d4f-0c5e-4f9a-b2c3-d4e5f6a7b8c9';
@@ -373,5 +373,80 @@ describe('validateOptionalCommandBody', () => {
 
     expect(error).toBeDefined();
     expect(responses[0]!.status).toBe(400);
+  });
+});
+
+describe('calendarDate', () => {
+  const schema = calendarDate();
+
+  it.each(['2026-09-20', '2024-02-29', '2026-12-31', '0023-01-01'])(
+    'should accept %s',
+    (value) => {
+      expect(schema.safeParse(value).success).toBe(true);
+    }
+  );
+
+  it.each([
+    ['a day that does not exist', '2026-02-31'],
+    ['a leap day in a common year', '2025-02-29'],
+    ['a thirteenth month', '2026-13-01'],
+    ['a zero month', '2026-00-10'],
+    ['a zero day', '2026-09-00'],
+  ])('should reject %s, which Postgres would fail on', (_label, value) => {
+    // Shape alone let these through to the database, which answered with a 500 rather than a 400.
+    expect(schema.safeParse(value).success).toBe(false);
+  });
+
+  it.each([
+    ['a datetime', '2026-09-20T10:00:00Z'],
+    ['an unpadded month', '2026-9-20'],
+    ['prose', 'yesterday'],
+  ])('should reject %s', (_label, value) => {
+    expect(schema.safeParse(value).success).toBe(false);
+  });
+
+  it('should name the field in its message', () => {
+    const result = calendarDate('Date of birth').safeParse('nope');
+
+    expect(result.error!.issues[0]!.message).toBe('Date of birth must be in YYYY-MM-DD format');
+  });
+});
+
+describe('validateOptionalCommandBody error payload', () => {
+  const contextWithBody = (body: string) => {
+    const responses: { data: { details?: { errors?: Record<string, string[]> } }; status: number }[] = [];
+    const c = {
+      req: { text: () => Promise.resolve(body) },
+      json: (data: unknown, status: number) => {
+        responses.push({ data: data as { details?: { errors?: Record<string, string[]> } }, status });
+        return { status } as unknown as Response;
+      },
+    };
+    return { c: c as never, responses };
+  };
+
+  const errorsOf = (response: { data: { details?: { errors?: Record<string, string[]> } } }) =>
+    response.data.details?.errors ?? {};
+
+  it('should report an issue raised on the body itself, which has no field path', async () => {
+    // `.min()` on an array body, and any superRefine without an explicit path, land in
+    // `formErrors`. Reporting only `fieldErrors` sent these back as `errors: {}`.
+    const schema = z.array(z.string()).min(1, 'At least one measurement is required');
+    const { c, responses } = contextWithBody('[]');
+
+    const { error } = await validateOptionalCommandBody(c, schema);
+
+    expect(error).toBeDefined();
+    expect(errorsOf(responses[0]!)['_errors']).toContain('At least one measurement is required');
+  });
+
+  it('should still report field issues by name', async () => {
+    const schema = z.object({ first_name: z.string() });
+    const { c, responses } = contextWithBody('{"first_name":7}');
+
+    await validateOptionalCommandBody(c, schema);
+
+    expect(errorsOf(responses[0]!)['first_name']).toBeDefined();
+    expect(errorsOf(responses[0]!)['_errors']).toBeUndefined();
   });
 });

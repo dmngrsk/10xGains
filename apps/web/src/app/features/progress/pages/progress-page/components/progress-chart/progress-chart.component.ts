@@ -20,6 +20,7 @@ import {
 import { startOfDay } from 'date-fns';
 import { BaseChartDirective, provideCharts } from 'ng2-charts';
 import { ExerciseSeriesViewModel } from '@features/progress/models/progress-page.viewmodel';
+import { getThemeColor } from '@shared/utils/charts/theme-color';
 import { toUtcDate } from '@shared/utils/dates/utc-date';
 
 const FALLBACK_SERIES_COLOR = '#49454f';
@@ -88,11 +89,11 @@ export class ProgressChartComponent implements OnChanges {
   private selectedDayLineColor = FALLBACK_SERIES_COLOR;
 
   ngOnChanges(): void {
-    const surfaceColor = this.getThemeColor('--mat-sys-surface', FALLBACK_SURFACE_COLOR);
+    const surfaceColor = getThemeColor('--mat-sys-surface', FALLBACK_SURFACE_COLOR);
 
     this.chartData = {
       datasets: this.series.map(s => {
-        const color = this.getThemeColor(s.colorToken, FALLBACK_SERIES_COLOR);
+        const color = getThemeColor(s.colorToken, FALLBACK_SERIES_COLOR);
         const fillColor = (context: ScriptableContext<'line'>) =>
           (context.raw as ProgressChartDataPoint | undefined)?.completed === false ? surfaceColor : color;
 
@@ -124,8 +125,8 @@ export class ProgressChartComponent implements OnChanges {
   }
 
   private buildOptions(): ChartOptions<'line'> {
-    const textColor = this.getThemeColor('--mat-sys-on-surface-variant', '#49454f');
-    const gridColor = this.getThemeColor('--mat-sys-outline-variant', '#cac4d0');
+    const textColor = getThemeColor('--mat-sys-on-surface-variant', '#49454f');
+    const gridColor = getThemeColor('--mat-sys-outline-variant', '#cac4d0');
     this.selectedDayLineColor = textColor;
 
     return {
@@ -188,11 +189,4 @@ export class ProgressChartComponent implements OnChanges {
     };
   }
 
-  private getThemeColor(token: string, fallback: string): string {
-    if (typeof document === 'undefined') {
-      return fallback;
-    }
-    const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-    return value || fallback;
-  }
 }

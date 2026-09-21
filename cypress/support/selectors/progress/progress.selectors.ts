@@ -1,14 +1,17 @@
 export const progressSelectors = {
   content: 'progress-content',
+  tabs: {
+    body: 'progress-tab-body',
+  },
+  measurementsView: 'progress-measurements-view',
   chartCanvas: 'progress-chart-canvas',
-  exerciseChip: 'progress-exercise-chip',
+  chipRow: 'progress-exercise-chip-row',
   filterButton: 'progress-filter-button',
   filterPlan: 'progress-filter-plan',
   filterRange: 'progress-filter-range',
   emptyNotice: 'progress-empty-notice',
   noDataNotice: 'progress-no-data-notice',
   errorNotice: 'progress-error-notice',
-  loadingSpinner: 'progress-loading-spinner',
   filterDialog: {
     planSelect: 'progress-filter-dialog-plan-select',
     applyFiltersButton: 'progress-filter-dialog-apply-filters-button',

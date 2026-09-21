@@ -689,6 +689,12 @@ describe('Plan Mapping Functions', () => {
         active_plan_id: 'tp-1',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        date_of_birth: null,
+        body_fat_method: null,
+        sex: null,
+        height_cm: null,
+        measurement_frequency_days: null,
+        tracked_measurement_types: null,
       };
       mockExercises = [
         { id: 'e-1', name: 'Bench Press', description: 'Chest exercise' },
@@ -835,6 +841,12 @@ describe('Plan Mapping Functions', () => {
         active_plan_id: 'tp-vm-rt',
         created_at: new Date('2023-01-01T00:00:00.000Z').toISOString(),
         updated_at: new Date('2023-01-01T00:00:00.000Z').toISOString(),
+        date_of_birth: null,
+        body_fat_method: null,
+        sex: null,
+        height_cm: null,
+        measurement_frequency_days: null,
+        tracked_measurement_types: null,
       };
 
       mockExercises = [

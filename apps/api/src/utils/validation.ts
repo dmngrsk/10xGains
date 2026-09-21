@@ -82,8 +82,31 @@ export function optionalSort(
   );
 }
 
-/** A date-only query value, with no time component. */
+/**
+ * The shape of a bare calendar day, `YYYY-MM-DD`. Shape only - use `calendarDate()` to validate
+ * one, which also checks the day exists.
+ */
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * A bare calendar day, `YYYY-MM-DD`.
+ *
+ * Used where the API takes a date rather than the ISO datetimes the rest of it uses -
+ * `measurements.measured_on` and `profiles.date_of_birth` are `date` columns, and widening a
+ * bound to an instant would put a timezone back into a value that deliberately has none.
+ *
+ * The shape check alone is not enough: `2026-02-31` matches the pattern, and Postgres rejects it
+ * with an error the API surfaced as a 500 - a client mistake reported as a server fault, the same
+ * failure `optionalSort` guards against.
+ *
+ * @param {string} [label] - How the value is named in the validation message, e.g. 'Date of birth'.
+ * @returns A schema accepting a real calendar day.
+ */
+export function calendarDate(label: string = 'Date') {
+  return z.string()
+    .regex(DATE_ONLY_PATTERN, `${label} must be in YYYY-MM-DD format`)
+    .refine(isRealCalendarDate, `${label} must be a real calendar date`);
+}
 
 /**
  * An optional query parameter holding an ISO 8601 datetime.
@@ -242,6 +265,28 @@ export function withCompletedAtConsistency<Output extends CompletedAtOutput, Def
 }
 
 /**
+ * Flattens a Zod error into the `errors` payload the 400 responses carry.
+ *
+ * `flatten().fieldErrors` alone drops every issue whose path is empty - which is where checks on
+ * the body as a whole land: `.min()`/`.max()` on an array body, and any `superRefine` that does
+ * not set an explicit `path`. Those came back as `errors: {}` with nothing to read. Zod's own
+ * `format()` names that bucket `_errors`, so it is named the same here.
+ *
+ * @param {z.ZodError} error - The failed parse.
+ * @returns {Record<string, string[]>} Field errors, plus `_errors` when the body itself failed.
+ */
+function toValidationErrors(error: z.ZodError): Record<string, string[]> {
+  const { formErrors, fieldErrors } = error.flatten();
+  const errors: Record<string, string[]> = { ...fieldErrors } as Record<string, string[]>;
+
+  if (formErrors.length > 0) {
+    errors['_errors'] = formErrors;
+  }
+
+  return errors;
+}
+
+/**
  * Validates the path parameters of a request against a Zod schema.
  *
  * It uses a Zod schema to parse and validate the path parameters from the request context.
@@ -265,7 +310,7 @@ export function validatePathParams<T extends z.ZodTypeAny, U extends z.infer<T>>
       400,
       'Invalid path parameters',
       {
-        errors: validation.error.flatten().fieldErrors,
+        errors: toValidationErrors(validation.error),
         received: pathParams
       },
       'INVALID_PATH_PARAMS'
@@ -303,7 +348,7 @@ export function validateQueryParams<T extends z.ZodTypeAny, U extends z.infer<T>
       400,
       'Invalid query parameters',
       {
-        errors: validation.error.flatten().fieldErrors,
+        errors: toValidationErrors(validation.error),
         received: queryParams
       },
       'INVALID_QUERY_PARAMS'
@@ -413,7 +458,7 @@ function validateParsedBody<T extends z.ZodTypeAny, U = z.infer<T>>(
       400,
       'Invalid request body',
       {
-        errors: validation.error.flatten().fieldErrors,
+        errors: toValidationErrors(validation.error),
         received: rawBody
       },
       'INVALID_COMMAND_BODY'
@@ -426,4 +471,22 @@ function validateParsedBody<T extends z.ZodTypeAny, U = z.infer<T>>(
 
 function isAbsent(val: unknown): boolean {
   return val === undefined || val === null || val === '';
+}
+
+/**
+ * Whether a `YYYY-MM-DD` string names a day that exists.
+ *
+ * Built with `setUTCFullYear` rather than `Date.UTC`, which maps a two-digit year onto 1900+ and
+ * would reject `0023-01-01` for the wrong reason. Overflow is what is being detected: the 31st of
+ * February rolls into March, so the parts no longer read back as they were written.
+ */
+function isRealCalendarDate(value: string): boolean {
+  const [year, month, day] = value.split('-').map(Number);
+
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day;
 }

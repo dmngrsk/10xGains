@@ -1,0 +1,65 @@
+<h2 mat-dialog-title>Log measurements</h2>
+
+<mat-dialog-content>
+  <p class="text-sm text-secondary mb-4">
+    Prefilled with your last readings. Change what you measured today — anything you leave alone
+    stays as it was, on the date you took it.
+  </p>
+
+  <form [formGroup]="form" class="flex flex-col">
+    <mat-form-field appearance="outline" class="w-full">
+      <mat-label>Date</mat-label>
+      <input matInput type="date" formControlName="measuredOn" data-cy="log-measurement-date">
+    </mat-form-field>
+
+    @for (group of groups; track group.instrument) {
+      <div class="mt-2 mb-3">
+        <span class="text-sm font-medium text-primary">{{ group.instrument }}</span>
+        <span class="block text-sm text-secondary">{{ group.hint }}</span>
+      </div>
+
+      <div formArrayName="values" class="flex flex-col">
+        @for (field of group.fields; track field.type) {
+          <div class="flex items-start gap-1">
+            <mat-form-field appearance="outline" class="grow min-w-0">
+              <mat-label>{{ field.shortLabel }}</mat-label>
+              <input
+                matInput
+                type="number"
+                inputmode="decimal"
+                [step]="stepFor(field)"
+                [formControlName]="controlIndex(field)"
+                [attr.data-cy]="'log-measurement-' + field.type">
+              <span matTextSuffix>{{ field.unit }}</span>
+            </mat-form-field>
+
+            <button
+              mat-icon-button
+              type="button"
+              class="txg-stepper shrink-0"
+              [attr.aria-label]="'Decrease ' + field.label"
+              (click)="adjust(field, -1)"
+              [attr.data-cy]="'log-measurement-down-' + field.type">
+              <mat-icon>remove</mat-icon>
+            </button>
+
+            <button
+              mat-icon-button
+              type="button"
+              class="txg-stepper shrink-0"
+              [attr.aria-label]="'Increase ' + field.label"
+              (click)="adjust(field, 1)"
+              [attr.data-cy]="'log-measurement-up-' + field.type">
+              <mat-icon>add</mat-icon>
+            </button>
+          </div>
+        }
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()" data-cy="log-measurement-cancel">Cancel</button>
+  <button mat-flat-button color="primary" (click)="onSave()" data-cy="log-measurement-save">Save</button>
+</mat-dialog-actions>

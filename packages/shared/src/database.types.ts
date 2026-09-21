@@ -44,6 +44,87 @@ export interface Database {
         }
         Relationships: []
       }
+      measurements: {
+        Row: {
+          created_at: string
+          id: string
+          measured_on: string
+          type:
+            | "BODY_WEIGHT"
+            | "BODY_FAT"
+            | "NECK"
+            | "CHEST"
+            | "WAIST"
+            | "HIPS"
+            | "THIGH"
+            | "CALF"
+            | "BICEPS"
+            | "FOREARM"
+            | "SKINFOLD_CHEST"
+            | "SKINFOLD_ABDOMEN"
+            | "SKINFOLD_THIGH"
+            | "SKINFOLD_TRICEPS"
+            | "SKINFOLD_SUBSCAPULAR"
+            | "SKINFOLD_SUPRAILIAC"
+            | "SKINFOLD_MIDAXILLARY"
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          measured_on: string
+          type:
+            | "BODY_WEIGHT"
+            | "BODY_FAT"
+            | "NECK"
+            | "CHEST"
+            | "WAIST"
+            | "HIPS"
+            | "THIGH"
+            | "CALF"
+            | "BICEPS"
+            | "FOREARM"
+            | "SKINFOLD_CHEST"
+            | "SKINFOLD_ABDOMEN"
+            | "SKINFOLD_THIGH"
+            | "SKINFOLD_TRICEPS"
+            | "SKINFOLD_SUBSCAPULAR"
+            | "SKINFOLD_SUPRAILIAC"
+            | "SKINFOLD_MIDAXILLARY"
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          measured_on?: string
+          type?:
+            | "BODY_WEIGHT"
+            | "BODY_FAT"
+            | "NECK"
+            | "CHEST"
+            | "WAIST"
+            | "HIPS"
+            | "THIGH"
+            | "CALF"
+            | "BICEPS"
+            | "FOREARM"
+            | "SKINFOLD_CHEST"
+            | "SKINFOLD_ABDOMEN"
+            | "SKINFOLD_THIGH"
+            | "SKINFOLD_TRICEPS"
+            | "SKINFOLD_SUBSCAPULAR"
+            | "SKINFOLD_SUPRAILIAC"
+            | "SKINFOLD_MIDAXILLARY"
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       plan_days: {
         Row: {
           archived_at: string | null
@@ -234,23 +315,41 @@ export interface Database {
       profiles: {
         Row: {
           active_plan_id: string | null
+          body_fat_method: "NAVY" | "JP3" | "JP7" | "MANUAL" | null
           created_at: string | null
+          date_of_birth: string | null
           first_name: string
+          height_cm: number | null
           id: string
+          measurement_frequency_days: number | null
+          sex: "MALE" | "FEMALE" | null
+          tracked_measurement_types: string[] | null
           updated_at: string | null
         }
         Insert: {
           active_plan_id?: string | null
+          body_fat_method?: "NAVY" | "JP3" | "JP7" | "MANUAL" | null
           created_at?: string | null
+          date_of_birth?: string | null
           first_name: string
+          height_cm?: number | null
           id: string
+          measurement_frequency_days?: number | null
+          sex?: "MALE" | "FEMALE" | null
+          tracked_measurement_types?: string[] | null
           updated_at?: string | null
         }
         Update: {
           active_plan_id?: string | null
+          body_fat_method?: "NAVY" | "JP3" | "JP7" | "MANUAL" | null
           created_at?: string | null
+          date_of_birth?: string | null
           first_name?: string
+          height_cm?: number | null
           id?: string
+          measurement_frequency_days?: number | null
+          sex?: "MALE" | "FEMALE" | null
+          tracked_measurement_types?: string[] | null
           updated_at?: string | null
         }
         Relationships: [

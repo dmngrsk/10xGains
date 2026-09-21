@@ -10,7 +10,7 @@
         <txg-session-settings-card>
         </txg-session-settings-card>
 
-        <p class="flex items-center gap-2 px-2 text-sm text-on-surface-variant">
+        <p class="flex items-center gap-2 px-2 text-sm text-secondary">
           <mat-icon class="!text-lg !w-auto !h-auto">info</mat-icon>
           These settings are saved on this device only.
         </p>
@@ -24,6 +24,14 @@
           </txg-notice>
         </div>
       } @else if (!viewModel.isLoading || initialLoadFinished()) {
+        @if (viewMode() === 'measurements') {
+          <div class="p-4 grid grid-cols-1 gap-6" data-cy="settings-measurements-view">
+            <txg-measurements-settings-card
+              [measurements]="viewModel.measurements"
+              (measurementsSaved)="onMeasurementSettingsSaved($event)">
+            </txg-measurements-settings-card>
+          </div>
+        } @else {
         <div class="p-4 grid grid-cols-1 gap-6" data-cy="settings-user-view">
           <txg-profile-settings-card
             [profile]="viewModel.profile"
@@ -38,6 +46,7 @@
             (googleDisconnected)="onGoogleDisconnected()">
           </txg-account-settings-card>
         </div>
+        }
       }
     }
   </div>

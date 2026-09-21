@@ -1,0 +1,36 @@
+:host {
+  --txg-chip-height: 32px;
+  --txg-chip-pitch: 40px;
+  --txg-chip-rows: 3;
+}
+
+.txg-chart-chip-row__scroller {
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+:host ::ng-deep .mdc-evolution-chip-set__chips {
+  flex-wrap: nowrap;
+}
+
+:host(.txg-chart-chip-row--wrapped) {
+  .txg-chart-chip-row__scroller {
+    max-height: calc(var(--txg-chip-rows) * var(--txg-chip-pitch));
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 0;
+  }
+
+  ::ng-deep {
+    .mdc-evolution-chip-set__chips {
+      flex-wrap: wrap;
+    }
+
+    .mat-mdc-standard-chip {
+      --mdc-chip-container-height: var(--txg-chip-height);
+
+      height: var(--txg-chip-height);
+      min-height: var(--txg-chip-height);
+    }
+  }
+}

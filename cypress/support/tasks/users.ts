@@ -103,7 +103,7 @@ export async function ensureUserScaffolded(
     );
   }
 
-  const { error: scaffoldError } = await scaffoldTestUserData(supabase, userId);
+  const { error: scaffoldError } = await scaffoldTestUserData(supabase, userId, { measurements: role === 'dev' });
 
   if (scaffoldError) {
     console.error(`Error scaffolding ${role} user data:`, scaffoldError);
