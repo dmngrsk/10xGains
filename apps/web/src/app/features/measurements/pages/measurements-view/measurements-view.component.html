@@ -29,6 +29,15 @@
       (buttonClicked)="onFilterClicked()"
       data-cy="measurements-empty-range-notice">
     </txg-notice>
+  } @else if (viewModel.estimateBlockedReason; as reason) {
+    <txg-notice
+      iconName="straighten"
+      titleText="No Body-Fat Estimate Yet"
+      [descriptionText]="reason"
+      buttonText="Open Settings"
+      (buttonClicked)="onOpenSettingsClicked()"
+      data-cy="measurements-estimate-blocked">
+    </txg-notice>
   } @else {
     <div class="flex flex-col gap-4 w-full flex-1 min-h-0" data-cy="measurements-content">
       <div class="flex flex-col">
@@ -45,18 +54,6 @@
         <p class="text-sm text-secondary py-8 text-center" data-cy="measurements-nothing-selected">
           Pick a measurement below to chart it.
         </p>
-      }
-
-      @if (viewModel.estimateBlockedReason; as reason) {
-        <div class="flex items-start gap-2 rounded-2xl bg-surface-container p-3" data-cy="measurements-estimate-blocked">
-          <mat-icon class="!text-lg !w-auto !h-auto text-secondary mt-0.5">info</mat-icon>
-          <div class="flex flex-col gap-2 items-start">
-            <span class="text-sm text-secondary">{{ reason }}</span>
-            <button mat-stroked-button (click)="onOpenSettingsClicked()" data-cy="measurements-open-settings">
-              Open Settings
-            </button>
-          </div>
-        </div>
       }
 
       <txg-chart-chip-row

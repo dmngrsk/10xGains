@@ -319,8 +319,10 @@ export function describeEstimateBlocker(
     return null;
   }
 
+  // No method is a choice ("None"), not a gap to fill: the notice replaces the chart, so naming
+  // it as missing would hide the chart from everyone who is not tracking body fat.
   if (!profile?.body_fat_method) {
-    return 'Choose a body-fat method in Settings to see an estimate.';
+    return null;
   }
 
   // Nothing is derived under MANUAL, so there is no estimate to be missing - the figure is either

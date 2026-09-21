@@ -53,8 +53,9 @@
             [showPlanName]="isAllPlansSelected()">
           </txg-progress-chart>
           <txg-chart-chip-row
-            class="block pr-16"
+            class="block pr-16 bg-surface"
             [chips]="chips()"
+            [wrap]="true"
             dataCyPrefix="progress-exercise-chip-"
             (chipToggled)="onExerciseToggled($event)">
           </txg-chart-chip-row>

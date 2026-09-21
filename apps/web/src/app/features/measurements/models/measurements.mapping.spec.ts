@@ -154,6 +154,10 @@ describe('describeEstimateBlocker', () => {
     expect(describeEstimateBlocker(profile(), [], [estimate('2026-09-01', 26.8)])).toBeNull();
   });
 
+  it('says nothing when no method is chosen', () => {
+    expect(describeEstimateBlocker(profile({ body_fat_method: null }), [], [])).toBeNull();
+  });
+
   it('names the missing sex first', () => {
     const reason = describeEstimateBlocker(profile({ sex: null }), [], []);
 
