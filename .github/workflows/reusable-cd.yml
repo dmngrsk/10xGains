@@ -248,9 +248,19 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          ENVIRONMENT: ${{ inputs.environment }}
         run: |
           supabase link --project-ref ${{ needs.infrastructure.outputs.supabase_project_ref }}
-          supabase db push
+
+          if [ "$ENVIRONMENT" = "staging" ]; then
+            # Staging is rebuilt from an empty database on every deploy, so each migration is proven to
+            # apply cleanly from scratch; the E2E job re-creates its test users. Anything but an exact
+            # match takes the non-destructive path.
+            supabase db reset --linked --no-seed --yes
+          else
+            supabase db push
+          fi
+          
           supabase db test --linked
 
   backend-api:
