@@ -1,11 +1,13 @@
 <div class="txg-chart-frame">
-  <canvas
-    baseChart
-    type="line"
-    [data]="chartData"
-    [options]="chartOptions"
-    [plugins]="chartPlugins"
-    [legend]="false"
-    data-cy="progress-chart-canvas">
-  </canvas>
+  @if (rendered()) {
+    <canvas
+      baseChart
+      type="line"
+      [data]="chartData"
+      [options]="chartOptions"
+      [plugins]="chartPlugins"
+      [legend]="false"
+      data-cy="progress-chart-canvas">
+    </canvas>
+  }
 </div>

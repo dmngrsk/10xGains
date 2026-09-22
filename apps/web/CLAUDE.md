@@ -50,6 +50,7 @@ One feature deliberately has **no** `routes.ts`: `features/measurements/` is a t
 - A time-scaled axis needs a date adapter: `import 'chartjs-adapter-date-fns';` in the chart component.
 - Derive chart colors from the Material 3 system variables (`--mat-sys-on-surface-variant`, `--mat-sys-outline-variant`, …) so charts follow the app theme instead of hardcoding light-theme colors.
 - The canvas sizes itself to its container, so give that container a definite height. Inside a flex column, that means `flex-1 min-h-0` — a fixed height wastes screen space on tall viewports.
+- Create the canvas one render late (`afterNextRender` flipping a signal that gates it with `@if`), inside the shared `.txg-chart-frame`. ng2-charts builds the chart during the first render, before siblings such as a chip row below it have laid out, so Chart.js measures too much space and depends on a later resize — which some phones never apply.
 
 ## Tailwind CSS
 

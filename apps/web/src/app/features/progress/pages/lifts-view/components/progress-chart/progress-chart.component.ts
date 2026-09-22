@@ -1,6 +1,6 @@
 import 'chartjs-adapter-date-fns';
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, OnChanges, afterNextRender, signal } from '@angular/core';
 import {
   Chart,
   ChartData,
@@ -87,6 +87,12 @@ export class ProgressChartComponent implements OnChanges {
   readonly chartPlugins: Plugin<'line'>[] = [this.createSelectedDayLinePlugin()];
 
   private selectedDayLineColor = FALLBACK_SERIES_COLOR;
+
+  readonly rendered = signal(false);
+
+  constructor() {
+    afterNextRender(() => this.rendered.set(true));
+  }
 
   ngOnChanges(): void {
     const surfaceColor = getThemeColor('--mat-sys-surface', FALLBACK_SURFACE_COLOR);
