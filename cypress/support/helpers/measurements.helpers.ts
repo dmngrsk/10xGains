@@ -19,7 +19,7 @@ interface MeasurementChart {
 }
 
 interface ChartWindow {
-  Chart: { getChart(canvas: HTMLCanvasElement): MeasurementChart };
+  Chart: { getChart(canvas: HTMLCanvasElement): MeasurementChart | undefined };
 }
 
 /** The body-composition columns, as `measurements:getProfile` returns them. */
@@ -62,11 +62,21 @@ export function readBodyComposition(assert: (profile: BodyCompositionProfile) =>
     cy.task<BodyCompositionProfile>('measurements:getProfile', { userId }).should(assert));
 }
 
-/** Leaves you on the Body tab of /progress. */
+/**
+ * Leaves you on the Body tab of /progress, loaded.
+ *
+ * Waits for whichever state the load settles in, so that a check for something's absence afterwards
+ * means something: while the tab is still loading, nothing it might show exists yet.
+ */
 export function openMeasurementsTab() {
   cy.navigateTo('progress');
   cy.getBySel(dataCy.progress.tabs.body).click();
   cy.getBySel(dataCy.progress.measurementsView).should('exist');
+  cy.get([
+    dataCy.measurements.content,
+    dataCy.measurements.noDataNotice,
+    dataCy.measurements.estimateBlocked,
+  ].map(selector => `[data-cy="${selector}"]`).join(', ')).should('exist');
 }
 
 /** Leaves you on the Measurements tab of /settings. */
@@ -144,14 +154,19 @@ export function saveMeasurementSettings() {
   cy.wait('@saveProfile');
 }
 
-/** Reads a plotted series off the live chart, since a canvas has no text to assert against. */
+/**
+ * Reads a plotted series off the live chart, since a canvas has no text to assert against.
+ *
+ * Retried until the chart exists and holds the series: Chart.js draws after the data arrives, and
+ * a one-off read raced it whenever the API was slower than a local one.
+ */
 export function plottedSeries(labelFragment: string, run: (lastValue: string) => void) {
-  return cy.window().then((win: unknown) => {
-    const chart = (win as ChartWindow).Chart.getChart(
-      Cypress.$(`[data-cy="${dataCy.measurements.chartCanvas}"]`)[0] as HTMLCanvasElement
-    );
-    const series = chart.data.datasets.find(d => d.label.includes(labelFragment));
+  return cy.window().should((win: unknown) => {
+    const canvas = Cypress.$(`[data-cy="${dataCy.measurements.chartCanvas}"]`)[0] as HTMLCanvasElement | undefined;
+    const chart = canvas ? (win as ChartWindow).Chart.getChart(canvas) : undefined;
+    expect(chart, 'the chart has been drawn').to.not.equal(undefined);
 
+    const series = chart!.data.datasets.find(d => d.label.includes(labelFragment));
     expect(series, `${labelFragment} is plotted`).to.not.equal(undefined);
     run(series!.data[series!.data.length - 1].y.toFixed(1));
   });
