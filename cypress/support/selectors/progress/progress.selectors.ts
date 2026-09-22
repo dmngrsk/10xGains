@@ -7,8 +7,6 @@ export const progressSelectors = {
   chartCanvas: 'progress-chart-canvas',
   chipRow: 'progress-exercise-chip-row',
   filterButton: 'progress-filter-button',
-  filterPlan: 'progress-filter-plan',
-  filterRange: 'progress-filter-range',
   emptyNotice: 'progress-empty-notice',
   noDataNotice: 'progress-no-data-notice',
   errorNotice: 'progress-error-notice',

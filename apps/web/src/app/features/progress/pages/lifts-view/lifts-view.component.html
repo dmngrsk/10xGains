@@ -33,11 +33,6 @@
     }
   } @else {
     <div class="flex flex-col gap-4 w-full flex-1 min-h-0" data-cy="progress-content">
-      <div class="flex flex-col">
-        <p class="text-xl font-bold text-primary truncate" data-cy="progress-filter-plan">{{ filterPlanName() }}</p>
-        <p class="text-sm text-primary truncate" data-cy="progress-filter-range">{{ filterDateRange() }}</p>
-      </div>
-
       <txg-progress-chart
         class="block flex-1 min-h-0"
         [series]="selectedSeries()"

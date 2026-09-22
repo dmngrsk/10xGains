@@ -11,7 +11,6 @@ import { ProgressFiltersViewModel, ProgressPageViewModel } from '@features/progr
 import { ChartChipRowComponent } from '@shared/ui/components/chart-chip-row/chart-chip-row.component';
 import type { ChartChipViewModel } from '@shared/ui/components/chart-chip-row/chart-chip-row.component';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
-import { formatDateRangeSummary } from '@shared/utils/dates/date-range-presets';
 import { ProgressFilterDialogComponent } from './components/dialogs/progress-filter-dialog/progress-filter-dialog.component';
 import { ProgressChartComponent } from './components/progress-chart/progress-chart.component';
 import { LiftsViewFacade } from './lifts-view.facade';
@@ -51,15 +50,6 @@ export class LiftsViewComponent implements OnInit {
     selected: s.selected,
   })));
   readonly isAllPlansSelected = computed(() => this.viewModel().filters.selectedPlanId === null);
-
-  readonly filterPlanName = computed(() => {
-    const filters = this.viewModel().filters;
-    return filters.selectedPlanId
-      ? filters.availablePlans.find(p => p.id === filters.selectedPlanId)?.name ?? 'Unknown plan'
-      : 'All plans';
-  });
-
-  readonly filterDateRange = computed(() => formatDateRangeSummary(this.viewModel().filters.dateRange));
 
   readonly noDataAtAll = computed(() => {
     const { series, filters } = this.viewModel();

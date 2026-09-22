@@ -16,7 +16,6 @@ import {
 import { ChartChipRowComponent } from '@shared/ui/components/chart-chip-row/chart-chip-row.component';
 import type { ChartChipViewModel } from '@shared/ui/components/chart-chip-row/chart-chip-row.component';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
-import { formatDateRangeSummary } from '@shared/utils/dates/date-range-presets';
 import { LogMeasurementDialogComponent } from './components/dialogs/log-measurement-dialog/log-measurement-dialog.component';
 import { MeasurementFilterDialogComponent } from './components/dialogs/measurement-filter-dialog/measurement-filter-dialog.component';
 import { MeasurementChartComponent } from './components/measurement-chart/measurement-chart.component';
@@ -50,7 +49,6 @@ export class MeasurementsViewComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly viewModel: Signal<MeasurementsViewModel> = this.facade.viewModel;
-  readonly filterSummary = computed(() => formatDateRangeSummary(this.viewModel().filters.dateRange));
   readonly selectedSeries = computed(() => this.viewModel().series.filter(s => s.selected));
 
   readonly chips = computed<ChartChipViewModel[]>(() => this.viewModel().series.map(s => ({

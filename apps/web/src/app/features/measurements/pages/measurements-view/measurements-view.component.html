@@ -40,11 +40,6 @@
     </txg-notice>
   } @else {
     <div class="flex flex-col gap-4 w-full flex-1 min-h-0" data-cy="measurements-content">
-      <div class="flex flex-col">
-        <p class="text-xl font-bold text-primary truncate">Body Measurements</p>
-        <p class="text-sm text-primary truncate" data-cy="measurements-filter-range">{{ filterSummary() }}</p>
-      </div>
-
       @if (hasSelection()) {
         <txg-measurement-chart
           class="block flex-1 min-h-0"
