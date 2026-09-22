@@ -1,0 +1,9 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: var(--txg-progress-content-height);
+}
+
+txg-measurement-chart {
+  min-height: 8rem;
+}

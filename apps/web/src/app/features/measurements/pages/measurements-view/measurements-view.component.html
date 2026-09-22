@@ -1,0 +1,86 @@
+@if (viewModel(); as viewModel) {
+  @if (viewModel.isLoading) {
+    <div class="flex justify-center items-center min-h-[var(--txg-progress-page-viewport)]">
+      <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="measurements-loading-spinner"></mat-progress-spinner>
+    </div>
+  } @else if (viewModel.error) {
+    <txg-notice
+      [descriptionText]="viewModel.error!"
+      buttonText="Try Again"
+      (buttonClicked)="onRetryClicked()"
+      [isError]="true"
+      data-cy="measurements-error-notice">
+    </txg-notice>
+  } @else if (viewModel.series.length === 0 && !viewModel.hasAnyMeasurement) {
+    <txg-notice
+      iconName="straighten"
+      titleText="No Measurements Yet"
+      descriptionText="Log your first round and your progress will chart here."
+      buttonText="Log Measurements"
+      (buttonClicked)="openLogDialog()"
+      data-cy="measurements-no-data-notice">
+    </txg-notice>
+  } @else if (viewModel.series.length === 0) {
+    <txg-notice
+      iconName="filter_list"
+      titleText="Nothing In This Range"
+      descriptionText="No measurements fall inside the dates you have filtered to."
+      buttonText="Edit Filters"
+      (buttonClicked)="onFilterClicked()"
+      data-cy="measurements-empty-range-notice">
+    </txg-notice>
+  } @else if (viewModel.estimateBlockedReason; as reason) {
+    <txg-notice
+      iconName="straighten"
+      titleText="No Body-Fat Estimate Yet"
+      [descriptionText]="reason"
+      buttonText="Open Settings"
+      (buttonClicked)="onOpenSettingsClicked()"
+      data-cy="measurements-estimate-blocked">
+    </txg-notice>
+  } @else {
+    <div class="flex flex-col gap-4 w-full flex-1 min-h-0" data-cy="measurements-content">
+      @if (hasSelection()) {
+        <txg-measurement-chart
+          class="block flex-1 min-h-0"
+          [series]="selectedSeries()">
+        </txg-measurement-chart>
+      } @else {
+        <p class="text-sm text-secondary py-8 text-center" data-cy="measurements-nothing-selected">
+          Pick a measurement below to chart it.
+        </p>
+      }
+
+      <txg-chart-chip-row
+        class="block pr-16 bg-surface"
+        [chips]="chips()"
+        [wrap]="true"
+        dataCyPrefix="measurement-chip-"
+        (chipToggled)="onSeriesToggled($event)">
+      </txg-chart-chip-row>
+    </div>
+  }
+}
+
+@if (viewModel().hasAnyMeasurement && !viewModel().isLoading && !viewModel().error) {
+  <div class="txg-fab-anchor flex flex-col gap-3">
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      type="button"
+      matTooltip="Change filters"
+      (click)="onFilterClicked()"
+      data-cy="measurements-filter-button">
+      <mat-icon>filter_list</mat-icon>
+    </button>
+    <button
+      mat-mini-fab
+      class="txg-fab"
+      type="button"
+      matTooltip="Log a new round"
+      (click)="openLogDialog()"
+      data-cy="measurements-log-button">
+      <mat-icon>add</mat-icon>
+    </button>
+  </div>
+}

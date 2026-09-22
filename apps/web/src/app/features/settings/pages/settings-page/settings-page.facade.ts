@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { EMPTY, Observable, catchError, finalize, map, switchMap, tap, first, of, from } from 'rxjs';
-import { UpsertProfileCommand } from '@txg/shared';
+import { MeasurementType, ProfileDto, UpsertProfileCommand } from '@txg/shared';
+import { MeasurementsService } from '@features/measurements/api/measurements.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
+import { MeasurementsSettingsSaved } from './components/measurements-settings-card/measurements-settings-card.component';
 import { SettingsPageViewModel } from '../../models/settings-page.viewmodel';
 
 const initialSettingsPageViewModel: SettingsPageViewModel = {
@@ -14,6 +16,15 @@ const initialSettingsPageViewModel: SettingsPageViewModel = {
     googleLinked: null,
     identityCount: 0,
   },
+  measurements: {
+    heightCm: null,
+    dateOfBirth: null,
+    bodyFatMethod: null,
+    sex: null,
+    frequencyDays: null,
+    trackedTypes: null,
+    loggedTypes: [],
+  },
   isLoading: false,
   error: null,
 };
@@ -24,6 +35,7 @@ const initialSettingsPageViewModel: SettingsPageViewModel = {
 export class SettingsPageFacade {
   private readonly authService = inject(AuthService);
   private readonly profileService = inject(ProfileService);
+  private readonly measurementsService = inject(MeasurementsService);
 
   readonly viewModel = signal<SettingsPageViewModel>(initialSettingsPageViewModel);
 
@@ -41,7 +53,11 @@ export class SettingsPageFacade {
 
         return this.profileService.getProfile(user.id).pipe(
           map(response => response.data),
-          tap(profile => {
+          switchMap(profile => this.loggedTypesFor(profile).pipe(
+            map(loggedTypes => ({ profile, loggedTypes }))
+          )),
+        ).pipe(
+          tap(({ profile, loggedTypes }) => {
             if (profile) {
               this.viewModel.update(vm => ({
                 ...vm,
@@ -49,7 +65,16 @@ export class SettingsPageFacade {
                 profile: {
                   firstName: profile.first_name,
                   email: user.email ?? null,
-                }
+                },
+                measurements: {
+                  heightCm: profile.height_cm,
+                  dateOfBirth: profile.date_of_birth,
+                  bodyFatMethod: profile.body_fat_method,
+                  sex: profile.sex,
+                  frequencyDays: profile.measurement_frequency_days,
+                  trackedTypes: profile.tracked_measurement_types as MeasurementType[] | null,
+                  loggedTypes,
+                },
               }));
             } else {
               this.viewModel.update(s => ({ ...s, isLoading: false, profile: initialSettingsPageViewModel.profile }));
@@ -161,6 +186,54 @@ export class SettingsPageFacade {
         this.viewModel.update(s => ({ ...s, isLoading: false, error: errorMessage }));
         return of(false);
       })
+    );
+  }
+
+  saveMeasurementSettings(settings: MeasurementsSettingsSaved): Observable<boolean> {
+    const currentUser = this.authService.currentUser();
+    this.viewModel.update(s => ({ ...s, isLoading: true, error: null }));
+
+    const command: UpsertProfileCommand = {
+      date_of_birth: settings.dateOfBirth,
+      height_cm: settings.heightCm,
+      body_fat_method: settings.bodyFatMethod,
+      sex: settings.sex,
+      measurement_frequency_days: settings.frequencyDays,
+      tracked_measurement_types: settings.trackedTypes,
+    };
+
+    return this.profileService.upsertProfile(currentUser!.id, command).pipe(
+      tap(() => {
+        this.viewModel.update(vm => ({
+          ...vm,
+          isLoading: false,
+          measurements: {
+            heightCm: settings.heightCm,
+            dateOfBirth: settings.dateOfBirth,
+            bodyFatMethod: settings.bodyFatMethod,
+            sex: settings.sex,
+            frequencyDays: settings.frequencyDays,
+            trackedTypes: settings.trackedTypes,
+            loggedTypes: vm.measurements.loggedTypes,
+          },
+        }));
+      }),
+      map(() => true),
+      catchError(err => {
+        this.viewModel.update(s => ({ ...s, isLoading: false, error: err.message || 'Failed to save measurement settings.' }));
+        return of(false);
+      })
+    );
+  }
+
+  private loggedTypesFor(profile: ProfileDto | null): Observable<MeasurementType[]> {
+    const tracked = profile?.tracked_measurement_types;
+    if (tracked && tracked.length > 0) {
+      return of([] as MeasurementType[]);
+    }
+
+    return this.measurementsService.getAllMeasurements().pipe(
+      map(response => [...new Set((response.data ?? []).map(row => row.type))])
     );
   }
 }

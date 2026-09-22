@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, computed, Signal } from '@angular/core';
-import { MatDividerModule } from '@angular/material/divider';
 import { Router } from '@angular/router';
 import { SessionCardComponent } from '@features/sessions/components/session-card/session-card.component';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
 import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { NoticeComponent } from '@shared/ui/components/notice/notice.component';
+import { PromptCardComponent } from '@shared/ui/components/prompt-card/prompt-card.component';
 import { MainLayoutComponent } from '@shared/ui/layouts/main-layout/main-layout.component';
 import { HomePageFacade } from './home-page.facade';
 
@@ -14,10 +14,10 @@ import { HomePageFacade } from './home-page.facade';
   standalone: true,
   imports: [
     CommonModule,
-    MatDividerModule,
     MainLayoutComponent,
     SessionCardComponent,
-    NoticeComponent
+    NoticeComponent,
+    PromptCardComponent
   ],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,6 +34,18 @@ export class HomePageComponent implements OnInit {
   readonly activeSession: Signal<SessionCardViewModel | null> = computed(() => {
     const sessions = this.viewModel().sessions;
     return sessions && sessions.length > 0 ? sessions[0] : null;
+  });
+
+  readonly hasMeasurementPrompt: Signal<boolean> = computed(() => !!this.viewModel().measurementPrompt);
+
+  readonly measurementPromptDays: Signal<string | null> = computed(() => {
+    const days = this.viewModel().measurementPrompt?.daysSinceLast ?? null;
+    return days === null ? null : `${days} ${days === 1 ? 'day' : 'days'}`;
+  });
+
+  readonly measurementPromptCadence: Signal<string> = computed(() => {
+    const prompt = this.viewModel().measurementPrompt;
+    return prompt ? describeCadence(prompt.frequencyDays) : '';
   });
 
   get greetingText(): string {
@@ -60,4 +72,21 @@ export class HomePageComponent implements OnInit {
   onSessionAbandoned(): void {
     this.facade.abandonSession();
   }
+
+  onMeasurementsNavigated(): void {
+    this.router.navigate(['/progress'], { queryParams: { view: 'body' } });
+  }
+}
+
+function describeCadence(frequencyDays: number): string {
+  if (frequencyDays === 7) {
+    return 'weekly';
+  }
+  if (frequencyDays === 14) {
+    return 'fortnightly';
+  }
+  if (frequencyDays === 28) {
+    return 'monthly';
+  }
+  return `every ${frequencyDays} days`;
 }

@@ -8,6 +8,11 @@ import { handleDeleteExerciseById } from '../handlers/exercises/delete-id';
 import { handleGetProfile } from '../handlers/profiles/get-id';
 import { handleUpsertProfile } from '../handlers/profiles/put-id';
 import { handleGetExerciseProgress } from '../handlers/progress/get-exercises';
+import { handleGetMeasurements } from '../handlers/measurements/get';
+import { handleCreateMeasurements } from '../handlers/measurements/post';
+import { handleUpdateMeasurementById } from '../handlers/measurements/put-id';
+import { handleDeleteMeasurementById } from '../handlers/measurements/delete-id';
+import { handleGetBodyFatEstimates } from '../handlers/measurements/get-body-fat-estimates';
 import { handleGetPlans } from '../handlers/plans/get';
 import { handleCreatePlan } from '../handlers/plans/post';
 import { handleGetPlanById } from '../handlers/plans/get-id';
@@ -65,6 +70,16 @@ function createProfileRoutes(): Hono<AppContext> {
   return new Hono<AppContext>()
     .get('/:userId', requiredAuthMiddleware, handleGetProfile)
     .put('/:userId', requiredAuthMiddleware, handleUpsertProfile);
+}
+
+// /api/measurements
+function createMeasurementRoutes(): Hono<AppContext> {
+  return new Hono<AppContext>()
+    .get('/', requiredAuthMiddleware, handleGetMeasurements)
+    .post('/', requiredAuthMiddleware, handleCreateMeasurements)
+    .put('/:measurementId', requiredAuthMiddleware, handleUpdateMeasurementById)
+    .delete('/:measurementId', requiredAuthMiddleware, handleDeleteMeasurementById)
+    .get('/body-fat-estimates', requiredAuthMiddleware, handleGetBodyFatEstimates);
 }
 
 // /api/plans
@@ -174,6 +189,7 @@ const routes = new Hono<AppContext>();
 
 routes.route('/exercises', createExerciseRoutes());
 routes.route('/profiles', createProfileRoutes());
+routes.route('/measurements', createMeasurementRoutes());
 routes.route('/plans', createPlanRoutes());
 routes.route('/progress', createProgressRoutes());
 routes.route('/sessions', createSessionRoutes());

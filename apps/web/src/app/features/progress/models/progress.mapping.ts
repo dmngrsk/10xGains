@@ -1,16 +1,7 @@
 import { ExerciseProgressDto, PlanDto } from '@txg/shared';
+import { seriesColorToken } from '@shared/utils/charts/series-colors';
 import { ExerciseSeriesViewModel } from './progress-page.viewmodel';
 
-const SERIES_COLOR_COUNT = 10;
-
-/**
- * The custom properties holding the categorical palette for exercise series; the colors
- * themselves live in `styles.scss` next to the rest of the design tokens.
- */
-export const SERIES_COLOR_TOKENS = Array.from(
-  { length: SERIES_COLOR_COUNT },
-  (_, index) => `--txg-chart-series-${index + 1}`
-);
 
 /**
  * Formats the reps of every set of one exercise in one session.
@@ -77,7 +68,7 @@ export function mapToExerciseSeriesViewModels(
   return sortedDtos.map((dto, index) => ({
     exerciseId: dto.exercise_id,
     exerciseName: dto.exercise_name,
-    colorToken: SERIES_COLOR_TOKENS[index % SERIES_COLOR_TOKENS.length],
+    colorToken: seriesColorToken(index),
     selected: isSelected(dto.exercise_id),
     points: dto.points.map(point => ({
       date: point.session_date,

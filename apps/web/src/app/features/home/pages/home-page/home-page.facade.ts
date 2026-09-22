@@ -1,8 +1,9 @@
 import { inject, signal, computed, Injectable, DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, forkJoin, of } from 'rxjs';
-import { SessionDto, ExerciseDto, PlanDto } from '@txg/shared';
+import { MEASUREMENT_TYPES } from '@txg/shared';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
+import { MeasurementsService } from '@features/measurements/api/measurements.service';
 import { PlanService } from '@features/plans/api/plan.service';
 import { SessionService, GetSessionsParams } from '@features/sessions/api/session.service';
 import { SessionCardViewModel } from '@features/sessions/models/session-card.viewmodel';
@@ -12,7 +13,11 @@ import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { SessionNotificationService } from '@shared/services/session-notification.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
+import { calendarDaysBetween, isMeasurementDue, todayAsCalendarDate } from '@shared/utils/dates/calendar-date';
 import { HomePageViewModel } from '../../models/home-page.viewmodel';
+import type { SessionDto, ExerciseDto, MeasurementType, PlanDto } from '@txg/shared';
+
+const PROMPT_TYPES: MeasurementType[] = [...MEASUREMENT_TYPES];
 
 const initialState: HomePageViewModel = {
   isLoading: true,
@@ -20,6 +25,7 @@ const initialState: HomePageViewModel = {
   name: null,
   activePlanId: null,
   sessions: [],
+  measurementPrompt: null,
 };
 
 @Injectable({
@@ -28,6 +34,7 @@ const initialState: HomePageViewModel = {
 export class HomePageFacade {
   private readonly authService = inject(AuthService);
   private readonly exerciseService = inject(ExerciseService);
+  private readonly measurementsService = inject(MeasurementsService);
   private readonly planService = inject(PlanService);
   private readonly profileService = inject(ProfileService);
   private readonly sessionService = inject(SessionService);
@@ -62,6 +69,7 @@ export class HomePageFacade {
 
         const profile = profileResponse.data!;
         this.viewModel.update(state => ({ ...state, name: profile.first_name, activePlanId: profile.active_plan_id }));
+        this.loadMeasurementPrompt(profile.measurement_frequency_days);
         if (!profile.active_plan_id) {
           this.viewModel.update(state => ({ ...state, isLoading: false, sessions: [] }));
           return of({ sessions: [], plan: null, exercises: [] });
@@ -153,5 +161,38 @@ export class HomePageFacade {
     }
 
     void this.sessionNotifications.clear();
+  }
+
+  private loadMeasurementPrompt(frequencyDays: number | null): void {
+    if (frequencyDays === null || frequencyDays === undefined) {
+      this.viewModel.update(state => ({ ...state, measurementPrompt: null }));
+      return;
+    }
+
+    this.measurementsService.getMeasurements({
+      types: PROMPT_TYPES,
+      limit: 1,
+      sort: 'measured_on.desc',
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      map(response => ({ lastMeasuredOn: response.data?.[0]?.measured_on ?? null, failed: false })),
+      catchError((error: Error) => {
+        console.error('Error loading the measurement prompt:', error);
+        return of({ lastMeasuredOn: null as string | null, failed: true });
+      })
+    ).subscribe(({ lastMeasuredOn, failed }) => {
+      const today = todayAsCalendarDate();
+      const due = !failed && isMeasurementDue(lastMeasuredOn, frequencyDays, today);
+
+      this.viewModel.update(state => ({
+        ...state,
+        measurementPrompt: due
+          ? {
+              daysSinceLast: lastMeasuredOn ? calendarDaysBetween(lastMeasuredOn, today) : null,
+              frequencyDays,
+            }
+          : null,
+      }));
+    });
   }
 }

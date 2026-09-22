@@ -49,11 +49,12 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 ### 2.6 Home Dashboard
 - **Route**: `/home`
 - **Main Goal**: Display the next pending or in-progress session and two recent historical sessions.
-- **Key Info**: Three `MatCard` tiles:
+- **Key Info**: Four `MatCard` tiles:
   1. Next session (date, list of exercises formatted as `Exercise | NxM min–max kg`).
-  2. Last session summary or "No training sessions found."
-  3. Second-last session summary or placeholder.
-- **Key Components**: `MatCard`, `Flex/Grid` (Tailwind), Skeleton loaders for loading state, inline CTA for empty state.
+  2. Measurement prompt, only when a round is overdue by the reminder cadence set in Settings (whole days, local date); not dismissible, cleared by logging a round.
+  3. Last session summary or "No training sessions found."
+  4. Second-last session summary or placeholder.
+- **Key Components**: `MatCard`, `txg-prompt-card` for the measurement prompt, `Flex/Grid` (Tailwind), Skeleton loaders for loading state, inline CTA for empty state.
 - **UX/Accessibility/Security**: High contrast text, swipe or tap navigations.
 
 ### 2.7 Plans List
@@ -87,17 +88,18 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 - **UX/Accessibility/Security**: Secure RLS filter parameters.
 
 ### 2.11 Progress View
-- **Route**: `/progress`
-- **Main Goal**: Visualize strength progression as a weight-over-time line chart, with one line per exercise.
-- **Key Info**: Time-scaled chart of the top completed set per session; a scrollable chip row selecting which exercises are plotted; a sticky actions bar summarizing the active filters. Defaults to the user's active plan over the last 3 months, with all of its exercises plotted. Point tooltips show `Exercise: <weight> kg – <reps>` (reps collapse to `5x5` when uniform, else `5/5/4/0/0`), plus the plan name when "All plans" is selected.
-- **Key Components**: Chart.js line chart via `ng2-charts` (`BaseChartDirective`), `MatChipListbox` for the exercise toggles, `MatDialog` filter with plan and date-range-preset `MatSelect`s, `txg-notice` for empty/error states.
+- **Route**: `/progress?view=lifts|body`
+- **Main Goal**: Chart strength progression (**Lifts**) and body measurements (**Body**) under one tab strip.
+- **Key Info (Lifts)**: Time-scaled chart of the top completed set per session; a chip row selecting which exercises are plotted, wrapping to at most three rows. Defaults to the user's active plan over the last 3 months, with all of its exercises plotted. Point tooltips show `Exercise: <weight> kg – <reps>` (reps collapse to `5x5` when uniform, else `5/5/4/0/0`), plus the plan name when "All plans" is selected.
+- **Key Info (Body)**: Time-scaled chart of the measurements tracked in Settings, plus the chosen method's body-fat estimate (dashed; hollow where an input was carried forward from an earlier date). At most two units are plotted at once, one per axis; selecting a third drops the oldest. Defaults to the last year. Chips use short labels in Settings order, wrap to at most three rows, and the selection is remembered per body-fat method; the last selected chip cannot be turned off. When the chosen method's estimate cannot be computed, a notice naming the missing input replaces the chart. A "Log measurements" FAB opens a dialog grouped by instrument (scale, tape, calipers); re-logging a type on the same date edits it.
+- **Key Components**: `mat-tab-nav-bar` for the tabs, Chart.js line charts via `ng2-charts` (`BaseChartDirective`; `txg-measurement-chart` for Body), `txg-chart-chip-row` for the toggles, `MatDialog` for the filters and the log dialog, `txg-notice` for empty/error states.
 - **UX/Accessibility/Security**: Series are exercise-scoped, so a line spans training plans under the "All plans" filter; empty and error states offer a corrective action; RLS and an explicit `user_id` filter scope all data to the authenticated user.
 
 ### 2.12 Settings View
-- **Route**: `/settings?view=workout|user`
+- **Route**: `/settings?view=workout|measurements|user`
 - **Main Goal**: Adjust how workouts are presented on this device, and manage the profile and account.
-- **Key Info**: Two tabs, split by where a setting lives. **Workout** holds device-local toggles kept in `localStorage` (plate calculator, warmup sets), written on change with no Save step, and says they are saved on this device only; it never waits on the network. **User** holds what follows the user across devices: First name and read-only Email with a Save button, then Google linking, Change Password and Sign Out. The tab comes from `?view`, then the last tab used, then Workout, and switching replaces the URL rather than adding history. Also the destination of the password-reset callback (see 2.5), which opens the User tab with a `changePassword` action to prompt the user for a new password; linking Google lands on the User tab too.
-- **Key Components**: `mat-tab-nav-bar` (as in History), `MatSlideToggle`, `ReactiveForm`, `MatInput`, `MatButton`, `WorkoutPreferencesService`.
+- **Key Info**: Three tabs, split by where a setting lives. **Workout** holds device-local toggles kept in `localStorage` (plate calculator, warmup sets), written on change with no Save step, and says they are saved on this device only; it never waits on the network. **Measurements** holds the body-fat method (None, Manual, US Navy, Jackson-Pollock 3 or 7) with only the profile fields it reads, the reminder cadence, and a checklist of tracked measurements in which the method's own inputs are locked on. **User** holds what follows the user across devices: First name and read-only Email with a Save button, then Google linking, Change Password and Sign Out. The tab comes from `?view`, then the last tab used, then Workout, and switching replaces the URL rather than adding history. Also the destination of the password-reset callback (see 2.5), which opens the User tab with a `changePassword` action to prompt the user for a new password; linking Google lands on the User tab too.
+- **Key Components**: `mat-tab-nav-bar` (as in History), `MatSlideToggle`, `ReactiveForm`, `MatInput`, `MatSelect`, `MatChipListbox`, `MatButton`, `WorkoutPreferencesService`.
 - **UX/Accessibility/Security**: Inline validation, HTTPS; the plate inventory is edited from the session's plate calculator, not here.
 
 ## 3. User Journey Map
@@ -115,9 +117,12 @@ Global services (AuthGuard, HttpInterceptor, shared state services) manage authe
 7. **History & Filter**:
    - Tap History ➔ `/history` ➔ open filter panel, apply filters, page results.
 8. **Progress**:
-   - Tap Progress ➔ `/progress` ➔ review the weight-over-time chart of the active plan ➔ toggle exercises, or widen the plan/date filters.
+   - Tap Progress ➔ `/progress` ➔ Lifts tab: review the weight-over-time chart of the active plan ➔ toggle exercises, or widen the plan/date filters.
+   - Body tab: review body measurements and body-fat estimates ➔ tap **Log measurements** for the round ➔ re-log a date to correct it.
+   - From Home, when a round is overdue: tap the prompt ➔ Progress › Body.
 9. **Settings**:
    - Tap Settings ➔ `/settings` ➔ Workout tab: switch the plate calculator or warmup sets on or off for this device.
+   - Measurements tab: choose a body-fat method, a reminder cadence, and what to track.
    - User tab: update profile, link Google, change password, or log out.
 
 ## 4. Layout and Navigation Structure

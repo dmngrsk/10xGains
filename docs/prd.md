@@ -34,7 +34,12 @@ Many users face an overwhelming number of available training plans, which create
    - Default the chart to the user's currently active training plan and the last 3 months, with filters for other plans (or all plans) and wider date ranges.
    - Allow users to choose which exercises are plotted.
 
-6. AI Integration:
+6. Body Measurement Tracking:
+   - Allow users to record body measurements (weight, circumferences) over time and chart them, with at most two units plotted at once.
+   - Estimate body fat from tape measurements (US Navy) or caliper measurements (Jackson-Pollock, 3- or 7-site), computed on read so that correcting an input never leaves a stale figure behind. The chosen method decides what the user is asked for, not which estimates exist.
+   - Prompt the user on the home page when a measurement round is overdue, at a cadence they choose.
+
+7. AI Integration:
    - Integrate a chat-based AI tool within the training plan creation view to offer tailored training plan suggestions.
    - Allow users to refine AI suggestions through manual customization.
    - Enable the AI to lookup and embed external educational resources, presenting brief summaries and direct links during the conversation.
@@ -46,8 +51,8 @@ MVP Scope:
 
 Exclusions:
    - AI progress tracking features such as monitoring improvements and providing progress-based suggestions.
-   - Detailed body metrics tracking (e.g., weight, measurements, body fat percentage calculations).
    - Gamification elements such as in-app achievements or rewards.
+   - Goals or targets against a measurement, and any coupling between body weight and training load (bodyweight-loaded exercises, DOTS/Wilks).
 
 ## 5. User Stories
 
@@ -110,6 +115,16 @@ US-006: Exercise Progress Visualization
   - Only completed sets from completed sessions contribute data points.
   - An informative empty state is shown when no data matches the current filters.
   - Accessing the progress page is not possible without signing in to the system (US-001).
+
+US-007: Body Measurement Tracking
+- Title: Track Body Measurements and Estimate Body Fat
+- Description: As a user, I want to record my body measurements over time and see an estimate of my body fat, so that I can tell whether the training is changing my body and not just my lifts.
+- Acceptance Criteria:
+  - A measurements view charts the user's recorded measurements over time, with a chip per measurement and at most two units plotted at once.
+  - Logging a measurement type again for a day it already has updates that day rather than adding a second reading.
+  - With a height and a formula variant set, a body-fat estimate is derived from the neck and waist; with a date of birth and caliper readings, a Jackson-Pollock estimate is derived too. When an estimate cannot be computed, the view states which precondition is missing.
+  - The user can choose how often to be reminded, and the home page prompts them once that many whole days have passed since their last round.
+  - Accessing measurements is not possible without signing in to the system (US-001).
 
 ## 6. Success Metrics
 - 90% of users should be able to create a personalized training plan that meets their needs.

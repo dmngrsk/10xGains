@@ -9,6 +9,7 @@ import { mapToExerciseSeriesViewModels } from '@features/progress/models/progres
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
 import { resetOnUserChange } from '@shared/utils/auth/reset-on-user-change';
+import { wouldEmptySelection } from '@shared/utils/charts/series-selection';
 import { presetToRange } from '@shared/utils/dates/date-range-presets';
 
 const initialProgressPageViewModel: ProgressPageViewModel = {
@@ -25,7 +26,7 @@ const initialProgressPageViewModel: ProgressPageViewModel = {
 @Injectable({
   providedIn: 'root',
 })
-export class ProgressPageFacade {
+export class LiftsViewFacade {
   private readonly progressService = inject(ProgressService);
   private readonly planService = inject(PlanService);
   private readonly profileService = inject(ProfileService);
@@ -39,7 +40,7 @@ export class ProgressPageFacade {
     resetOnUserChange(() => this.clearUserScopedState());
   }
 
-  loadProgressPageData(): void {
+  loadLiftsViewData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
 
     const user = this.currentUser();
@@ -135,10 +136,18 @@ export class ProgressPageFacade {
   }
 
   toggleExercise(exerciseId: string): void {
-    this.viewModel.update(vm => ({
-      ...vm,
-      series: vm.series.map(s => s.exerciseId === exerciseId ? { ...s, selected: !s.selected } : s)
-    }));
+    this.viewModel.update(vm => {
+      const target = vm.series.find(s => s.exerciseId === exerciseId);
+      if (wouldEmptySelection(vm.series, target)) {
+        return vm;
+      }
+
+      return {
+        ...vm,
+        series: vm.series.map(s =>
+          s.exerciseId === exerciseId ? { ...s, selected: !s.selected } : s),
+      };
+    });
   }
 
   private clearUserScopedState(): void {

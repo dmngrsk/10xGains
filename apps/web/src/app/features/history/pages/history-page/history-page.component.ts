@@ -63,7 +63,6 @@ export class HistoryPageComponent implements OnInit {
   private readonly navigationHistory = inject(NavigationHistoryService);
 
   readonly viewModel: Signal<HistoryPageViewModel> = this.facade.viewModel;
-  readonly isLoadingSignal: Signal<boolean> = computed(() => this.viewModel().isLoading);
   readonly listedSessions: Signal<SessionCardViewModel[]> = computed(() =>
     this.viewModel().notesOnly ? this.viewModel().noteSessions : this.viewModel().sessions);
   readonly hasMoreSessions: Signal<boolean> = computed(() =>

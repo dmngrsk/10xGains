@@ -4,7 +4,6 @@ export const historySelectors = {
   sessionNavigateButton: 'session-card-navigate-button',
   notesButton: 'session-card-notes-button',
   loadMoreSentinel: 'history-load-more-sentinel',
-  loadMoreSpinner: 'history-load-more-spinner',
   filterButton: 'history-filter-button',
   notesToggleButton: 'history-notes-toggle-button',
   emptyNotice: 'history-empty-notice',

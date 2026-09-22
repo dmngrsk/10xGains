@@ -28,6 +28,7 @@ export class SettingsTabsComponent {
 
   readonly tabs: SettingsTab[] = [
     { mode: 'workout', label: 'Workout', icon: 'fitness_center', dataCy: 'settings-tab-workout' },
+    { mode: 'measurements', label: 'Measurements', icon: 'straighten', dataCy: 'settings-tab-measurements' },
     { mode: 'user', label: 'User', icon: 'person', dataCy: 'settings-tab-user' },
   ];
 

@@ -1,5 +1,17 @@
 :host {
+  --txg-progress-content-offset: calc(var(--txg-tabs-bar-height) + 1rem);
+  --txg-progress-content-pad: 1rem;
+
   --txg-progress-page-viewport: calc(
-    100vh - var(--txg-top-bar-height) - var(--txg-bottom-nav-height) - 0.25rem
+    100vh - var(--txg-top-bar-height) - var(--txg-tabs-bar-height) - var(--txg-bottom-nav-height) - 0.25rem
+  );
+
+  --txg-progress-content-height: calc(
+    100vh
+    - var(--txg-top-bar-height)
+    - var(--txg-bottom-nav-height)
+    - var(--txg-progress-content-offset)
+    - var(--txg-progress-content-pad)
+    - 0.25rem
   );
 }

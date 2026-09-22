@@ -1,66 +1,14 @@
-<txg-main-layout title="Progress" [loadingSignal]="isLoadingSignal">
-  <div class="flex justify-center p-4 min-h-[var(--txg-progress-page-viewport)]">
-    @if (viewModel(); as viewModel) {
-      @if (viewModel.isLoading) {
-        <div class="flex justify-center items-center min-h-[var(--txg-progress-page-viewport)]">
-          <mat-progress-spinner mode="indeterminate" diameter="60" data-cy="progress-loading-spinner"></mat-progress-spinner>
-        </div>
-      } @else if (viewModel.error) {
-        <txg-notice
-          [descriptionText]="viewModel.error!"
-          buttonText="Try Again"
-          (buttonClicked)="onErrorButtonClicked()"
-          [isError]="true"
-          data-cy="progress-error-notice">
-        </txg-notice>
-      } @else if (viewModel.series.length === 0) {
-        @if (noDataAtAll()) {
-          <txg-notice
-            iconName="stacked_line_chart"
-            titleText="No Progress Yet"
-            descriptionText="Complete a few workouts to see your progress here."
-            buttonText="Go to Home"
-            (buttonClicked)="onGoHomeClicked()"
-            data-cy="progress-no-data-notice">
-          </txg-notice>
-        } @else {
-          <txg-notice
-            iconName="search_off"
-            titleText="No Progress Data Found"
-            descriptionText="It looks like there is no progress data matching your current filters."
-            buttonText="Edit Filters"
-            (buttonClicked)="onFilterButtonClicked()"
-            data-cy="progress-empty-notice">
-          </txg-notice>
-        }
-      } @else {
-        <div class="flex flex-col gap-4 w-full" data-cy="progress-content">
-          <div class="flex flex-col">
-            <p class="text-xl font-bold text-primary truncate" data-cy="progress-filter-plan">{{ filterPlanName() }}</p>
-            <p class="text-sm text-primary truncate" data-cy="progress-filter-range">{{ filterDateRange() }}</p>
-          </div>
-          <txg-progress-chart
-            class="block flex-1 min-h-0"
-            [series]="selectedSeries()"
-            [showPlanName]="isAllPlansSelected()">
-          </txg-progress-chart>
-          <txg-exercise-chip-row
-            class="block pr-16"
-            [exercises]="viewModel.series"
-            (exerciseToggled)="onExerciseToggled($event)">
-          </txg-exercise-chip-row>
-        </div>
-      }
-    }
-  </div>
+<txg-main-layout title="Progress">
+  <txg-progress-tabs
+    [viewMode]="viewMode()"
+    (viewModeChanged)="onViewModeChanged($event)">
+  </txg-progress-tabs>
 
-  <div class="txg-fab-anchor">
-    <button
-      mat-mini-fab
-      class="txg-fab"
-      (click)="onFilterButtonClicked()"
-      data-cy="progress-filter-button">
-      <mat-icon>filter_list</mat-icon>
-    </button>
+  <div class="flex justify-center p-4 pt-[var(--txg-progress-content-offset)] min-h-[var(--txg-progress-page-viewport)]">
+    @if (viewMode() === 'body') {
+      <txg-measurements-view class="w-full" data-cy="progress-measurements-view"></txg-measurements-view>
+    } @else {
+      <txg-lifts-view class="w-full"></txg-lifts-view>
+    }
   </div>
 </txg-main-layout>

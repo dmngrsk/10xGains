@@ -1,0 +1,129 @@
+<mat-card data-cy="measurements-settings-card">
+  <mat-card-header>
+    <mat-card-title class="!font-medium !text-primary">Body Composition</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content class="mt-7 !pb-6">
+    <form [formGroup]="form">
+      <div class="flex flex-col">
+        <span class="font-medium text-primary">Body-fat method</span>
+        <span class="text-sm text-secondary">
+          How your body fat is estimated, and which measurements that takes
+        </span>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full mt-3">
+        <mat-label>Method</mat-label>
+        <mat-select formControlName="bodyFatMethod" (selectionChange)="onMethodChanged()" data-cy="measurements-method">
+          <mat-option [value]="null">None</mat-option>
+          <mat-option value="MANUAL">Manual (scale or scan)</mat-option>
+          <mat-option value="NAVY">US Navy (tape)</mat-option>
+          <mat-option value="JP3">Jackson-Pollock 3 (calipers)</mat-option>
+          <mat-option value="JP7">Jackson-Pollock 7 (calipers)</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      @if (requirements().sex) {
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Sex</mat-label>
+          <mat-select formControlName="sex" (selectionChange)="onMethodChanged()" data-cy="measurements-variant">
+            <mat-option [value]="null">Not set</mat-option>
+            <mat-option value="MALE">Male</mat-option>
+            <mat-option value="FEMALE">Female</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <p class="-mt-3 mb-4 text-sm text-secondary">
+          Selects which formula coefficients apply, and nothing else. The caliper methods read
+          different sites for each.
+        </p>
+      }
+
+      @if (requirements().height) {
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Height</mat-label>
+          <input matInput type="number" inputmode="decimal" step="0.1" formControlName="heightCm" data-cy="measurements-height">
+          <span matTextSuffix>cm</span>
+        </mat-form-field>
+        <p class="-mt-3 mb-4 text-sm text-secondary">
+          Read by the US Navy formula. Set once here, and used for every estimate.
+        </p>
+      }
+
+      @if (requirements().age) {
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Date of birth</mat-label>
+          <input matInput type="date" formControlName="dateOfBirth" data-cy="measurements-dob">
+        </mat-form-field>
+        <p class="-mt-3 text-sm text-secondary">
+          Read by the caliper formulas, which take your age as a term.
+        </p>
+      }
+
+      <mat-divider class="!my-5"></mat-divider>
+
+      <div class="flex flex-col">
+        <span class="font-medium text-primary">Measurement reminder</span>
+        <span class="text-sm text-secondary">How often the home page asks you for a new round</span>
+      </div>
+
+      <mat-chip-listbox class="txg-chips mt-3" data-cy="measurements-frequency">
+        @for (option of frequencyOptions; track option.label) {
+          <mat-chip-option
+            [selected]="form.value.frequencyDays === option.days"
+            (selectionChange)="onFrequencySelected(option.days, $event)"
+            [attr.data-cy]="'measurements-frequency-' + option.label.toLowerCase()">
+            {{ option.label }}
+          </mat-chip-option>
+        }
+      </mat-chip-listbox>
+
+      <mat-divider class="!my-5"></mat-divider>
+
+      <div class="flex flex-col">
+        <span class="font-medium text-primary">What you track</span>
+        <span class="text-sm text-secondary">
+          Decides what the Body chart offers and what a round asks you for. Your method's own
+          inputs are ticked and held there, since an estimate missing one is no estimate at all;
+          everything else is yours to choose.
+        </span>
+      </div>
+
+      @for (group of visibleGroups(); track group.label) {
+        <div class="mt-4">
+          <span class="text-sm font-medium text-primary">{{ group.label }}</span>
+          <span class="block text-sm text-secondary mb-1">{{ group.hint }}</span>
+
+          <div class="flex flex-col">
+            @for (item of group.types; track item.type) {
+              <mat-checkbox
+                [checked]="isTracked(item.type)"
+                [disabled]="isReadByMethod(item.type)"
+                (change)="onTrackedToggled(item.type)"
+                [attr.data-cy]="'measurements-track-' + item.type">
+                <span class="text-sm">
+                  {{ item.label }}
+                  <span class="text-secondary">
+                    ({{ item.unit }})@if (isReadByMethod(item.type)) {<span>&nbsp;— required</span>}
+                  </span>
+                </span>
+              </mat-checkbox>
+            }
+          </div>
+        </div>
+      }
+    </form>
+  </mat-card-content>
+
+  <mat-card-actions class="mb-2">
+    <button
+      class="w-full"
+      mat-flat-button
+      color="primary"
+      type="submit"
+      [disabled]="form.invalid"
+      (click)="onSaved()"
+      data-cy="measurements-settings-save">
+      Save Settings
+    </button>
+  </mat-card-actions>
+</mat-card>

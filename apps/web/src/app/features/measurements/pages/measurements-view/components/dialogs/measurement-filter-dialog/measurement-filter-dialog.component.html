@@ -1,0 +1,23 @@
+<h2 mat-dialog-title>Filter Measurements</h2>
+
+<mat-dialog-content class="!pt-4">
+  <div class="p-1">
+    <txg-date-range-field
+      [value]="dateRange"
+      (valueChange)="onDateRangeChanged($event)"
+      (validityChange)="onDateRangeValidityChanged($event)">
+    </txg-date-range-field>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancelled()" type="button">Cancel</button>
+  <button
+    mat-flat-button
+    (click)="onFiltersApplied()"
+    type="submit"
+    [disabled]="!dateRangeValid"
+    data-cy="measurement-filter-dialog-apply">
+    Apply Filters
+  </button>
+</mat-dialog-actions>

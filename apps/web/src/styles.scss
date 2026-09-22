@@ -186,6 +186,22 @@ $material-color-role-tokens: (
   scrollbar-gutter: stable both-edges;
 }
 
+/*
+ * The box a Chart.js canvas fills. The canvas is taken out of flow, so it never holds its frame
+ * open: Chart.js gives it a fixed pixel height, and a canvas left in flow keeps that height when
+ * a sibling below it grows - a chip row wrapping onto a second line, say - and draws under it.
+ */
+.txg-chart-frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+
+  canvas {
+    position: absolute;
+    inset: 0;
+  }
+}
+
 /* Hide scrollbars dynamically - to be used with txgAutoHideScrollbar directive */
 .txg-auto-hide-scrollbar {
   scrollbar-width: none; // For Firefox

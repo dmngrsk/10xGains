@@ -1,4 +1,4 @@
-import { format, subMonths } from 'date-fns';
+import { subMonths } from 'date-fns';
 
 /**
  * The preset ranges offered by the shared date range field. Each preset sets a start date and
@@ -47,33 +47,4 @@ export function presetToRange(preset: DateRangePreset, now: Date): { dateFrom: s
     case 'ALL':
       return { dateFrom: null, dateTo: null };
   }
-}
-
-/**
- * Formats a date range for a filter summary. A preset shows its full label; a custom range
- * shows the dates ("Mar 12, 2026 – Jul 15, 2026"), collapsing to "Since …" / "Until …" when
- * one bound is open, and to the "All time" label when both are.
- *
- * @param value The date range to summarize.
- * @returns A human-readable summary of the range.
- */
-export function formatDateRangeSummary(value: DateRangeValue): string {
-  if (value.preset) {
-    return DATE_RANGE_PRESET_LABELS[value.preset];
-  }
-
-  const from = value.dateFrom ? format(new Date(value.dateFrom), 'MMM d, yyyy') : null;
-  const to = value.dateTo ? format(new Date(value.dateTo), 'MMM d, yyyy') : null;
-
-  if (from && to) {
-    return `${from} – ${to}`;
-  }
-  if (from) {
-    return `Since ${from}`;
-  }
-  if (to) {
-    return `Until ${to}`;
-  }
-
-  return DATE_RANGE_PRESET_LABELS['ALL'];
 }

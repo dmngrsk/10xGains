@@ -1,4 +1,4 @@
-<txg-main-layout title="Session History" [loadingSignal]="isLoadingSignal">
+<txg-main-layout title="Session History">
   <txg-history-tabs
     [viewMode]="viewModel().viewMode"
     (viewModeChanged)="onViewModeChanged($event)">
@@ -45,24 +45,26 @@
     </div>
   </div>
 
-  <div class="txg-fab-anchor flex flex-col gap-3">
-    @if (viewModel().viewMode === 'list') {
+  @if (!viewModel().isLoading && !viewModel().error) {
+    <div class="txg-fab-anchor flex flex-col gap-3">
+      @if (viewModel().viewMode === 'list') {
+        <button
+          mat-mini-fab
+          class="txg-fab"
+          [class.txg-fab-active]="viewModel().notesOnly"
+          [matTooltip]="viewModel().notesOnly ? 'Showing the sessions with notes' : 'Show only the sessions with notes'"
+          (click)="onNotesOnlyToggled()"
+          data-cy="history-notes-toggle-button">
+          <mat-icon>sticky_note_2</mat-icon>
+        </button>
+      }
       <button
         mat-mini-fab
         class="txg-fab"
-        [class.txg-fab-active]="viewModel().notesOnly"
-        [matTooltip]="viewModel().notesOnly ? 'Showing the sessions with notes' : 'Show only the sessions with notes'"
-        (click)="onNotesOnlyToggled()"
-        data-cy="history-notes-toggle-button">
-        <mat-icon>sticky_note_2</mat-icon>
+        (click)="onFilterButtonClicked()"
+        data-cy="history-filter-button">
+        <mat-icon>filter_list</mat-icon>
       </button>
-    }
-    <button
-      mat-mini-fab
-      class="txg-fab"
-      (click)="onFilterButtonClicked()"
-      data-cy="history-filter-button">
-      <mat-icon>filter_list</mat-icon>
-    </button>
-  </div>
+    </div>
+  }
 </txg-main-layout>

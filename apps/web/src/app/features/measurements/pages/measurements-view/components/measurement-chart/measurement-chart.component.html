@@ -1,0 +1,11 @@
+<div class="txg-chart-frame">
+  @if (rendered()) {
+    <canvas
+      baseChart
+      [type]="'line'"
+      [data]="chartData"
+      [options]="chartOptions"
+      data-cy="measurement-chart-canvas">
+    </canvas>
+  }
+</div>

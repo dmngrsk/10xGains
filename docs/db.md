@@ -6,6 +6,12 @@
 - id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE
 - first_name: VARCHAR(255) NOT NULL
 - active_plan_id: UUID NULL REFERENCES plans(id)
+- date_of_birth: DATE NULL  -- Age at a measurement date, which the Jackson-Pollock formulas take as a term; see §6
+- height_cm: NUMERIC(4,1) NULL CHECK (height_cm BETWEEN 50 AND 300)  -- The one US Navy term that is a setting rather than a round of measuring; see §6
+- body_fat_method: VARCHAR(20) NULL CHECK (body_fat_method IN ('NAVY', 'JP3', 'JP7', 'MANUAL'))  -- A prompting preference, not a filter; see §6
+- sex: VARCHAR(10) NULL CHECK (sex IN ('MALE', 'FEMALE'))  -- Selects formula coefficients
+- measurement_frequency_days: SMALLINT NULL CHECK (measurement_frequency_days BETWEEN 1 AND 365)  -- Home reminder cadence; NULL = never prompt
+- tracked_measurement_types: TEXT[] NULL  -- What the Body chart offers and the log dialog asks for; NULL = unset, client infers from what is logged. A set, so it is validated by the API against the type catalog rather than by a check constraint
 - created_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 - updated_at: TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
@@ -83,10 +89,21 @@
 - status: VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'COMPLETED', 'FAILED', 'SKIPPED'))
 - completed_at: TIMESTAMP WITHOUT TIME ZONE NULL
 
+### 1.10. measurements
+- id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+- user_id: UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
+- measured_on: DATE NOT NULL  -- The day, not the moment; see §6
+- type: VARCHAR(30) NOT NULL CHECK (type IN ('BODY_WEIGHT', 'BODY_FAT', 'NECK', 'CHEST', 'WAIST', 'HIPS', 'THIGH', 'CALF', 'BICEPS', 'FOREARM', 'SKINFOLD_CHEST', 'SKINFOLD_ABDOMEN', 'SKINFOLD_THIGH', 'SKINFOLD_TRICEPS', 'SKINFOLD_SUBSCAPULAR', 'SKINFOLD_SUPRAILIAC', 'SKINFOLD_MIDAXILLARY'))  -- Caliper sites are millimetres; see §6
+- value: NUMERIC(7,3) NOT NULL CHECK (value > 0)  -- In the canonical unit of its type: kg, cm or mm
+- created_at: TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+- updated_at: TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP  -- Maintained by the shared update_updated_at_column() trigger
+- UNIQUE(user_id, measured_on, type)  -- One reading per type per day: re-logging is an edit, not an append
+
 ## 2. Relationships Between Tables
 
 - User authentication is managed by Supabase Auth (`auth.users`)
 - Each user (`auth.users`) has one profile (`profiles`) with additional profile data
+- Each user (`auth.users`) can have many measurements (`measurements`). This is the only user data that descends from neither a plan nor a session: a time series keyed on the user and a date alone
 - Each user (`auth.users`) can have many plans (`plans`), and each plan belongs to a single user
 - Each plan (`plans`) contains multiple days (`plan_days`), each with a specific order
 - Each day (`plan_days`) contains multiple entries in the junction table `plan_exercises`, which defines the exercises and their order
@@ -108,6 +125,7 @@
 - Index on `plan_exercise_progressions(plan_id, exercise_id)` for efficient progression lookup
 - Index on `sessions(user_id, session_date)` for efficient queries of a user's sessions
 - Index on `session_sets(session_id)` for optimized lookup of sets for a given session
+- Index on `measurements(user_id, type, measured_on)` - the shape of every series read
 - Partial indexes on `plan_days(plan_id)` and `plan_exercises(plan_day_id)` `WHERE archived_at IS NULL`, since every editor read and every session creation filters on that predicate
 - The ordering uniqueness constraints on `plan_days` and `plan_exercises` are partial unique *indexes* over the live rows only, not constraints over all rows: an archived row keeps its `order_index` while the live rows renumber around it
 

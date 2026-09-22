@@ -10,7 +10,6 @@ export const authSelectors = {
     errorMessage: 'login-error-message',
     signUpButton: 'login-sign-up-button',
     resetPasswordButton: 'login-reset-password-button',
-    chooseMethodButton: 'login-choose-method-button',
   },
   register: {
     emailInput: 'register-email-input',

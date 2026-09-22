@@ -1,0 +1,24 @@
+<mat-card class="flex flex-col">
+  <mat-card-header>
+    @if (iconName) {
+      <span mat-card-avatar class="txg-prompt-card__icon">
+        <mat-icon>{{ iconName }}</mat-icon>
+      </span>
+    }
+    <mat-card-title class="!text-xl !font-medium text-primary">{{ titleText }}</mat-card-title>
+  </mat-card-header>
+  <mat-card-content class="flex-grow my-4">
+    <ng-content></ng-content>
+  </mat-card-content>
+  @if (buttonText) {
+    <mat-card-actions class="mt-auto mb-2">
+      <button
+        mat-raised-button
+        class="w-full"
+        (click)="onButtonClicked()"
+        [attr.data-cy]="buttonDataCy">
+        {{ buttonText }}
+      </button>
+    </mat-card-actions>
+  }
+</mat-card>

@@ -31,6 +31,8 @@ Such configs are imported in `src/app/app.routes.ts` with the following syntax f
 
 Additionally, each feature folder includes a `shared/` directory for storing mutual files and an `api/` directory for services that connect to the backend, together with their associated contract models.
 
+One feature deliberately has **no** `routes.ts`: `features/measurements/` is a tab of `/progress` rather than a route of its own, so the progress page imports and hosts it. It is still its own feature folder, because that keeps a growing CRUD surface out of the progress feature and makes promoting it to a route later a routing change rather than a refactor. Cross-feature imports like that are normal here (`home` imports from `sessions`, `progress` imports from `measurements`).
+
 ## Backend Access
 
 - Use dedicated `*.service.ts` data services for backend communication in components (implement them when necessary), rather than directly using `@supabase/supabase-js`.
@@ -48,6 +50,7 @@ Additionally, each feature folder includes a `shared/` directory for storing mut
 - A time-scaled axis needs a date adapter: `import 'chartjs-adapter-date-fns';` in the chart component.
 - Derive chart colors from the Material 3 system variables (`--mat-sys-on-surface-variant`, `--mat-sys-outline-variant`, …) so charts follow the app theme instead of hardcoding light-theme colors.
 - The canvas sizes itself to its container, so give that container a definite height. Inside a flex column, that means `flex-1 min-h-0` — a fixed height wastes screen space on tall viewports.
+- Create the canvas one render late (`afterNextRender` flipping a signal that gates it with `@if`), inside the shared `.txg-chart-frame`. ng2-charts builds the chart during the first render, before siblings such as a chip row below it have laid out, so Chart.js measures too much space and depends on a later resize — which some phones never apply.
 
 ## Tailwind CSS
 

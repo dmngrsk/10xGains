@@ -63,14 +63,20 @@ The following features and components are within the scope of testing:
     *   Accessing and editing session notes of completed sessions from the history view, including the note indicator on history entries.
 *   **Exercise Progress:**
     *   Weight-over-time chart, scoped to the active plan and the last 3 months by default.
-    *   Filtering by training plan (including "All plans", which spans plans) and by date-range preset, from the filter FAB, with the selected plan and date range heading the chart and the chips below it.
+    *   Filtering by training plan (including "All plans", which spans plans) and by date-range preset, from the filter FAB.
     *   Toggling which exercise series are plotted via the chip row.
     *   Aggregation correctness: top completed set per session, reps of every set (failed ones included).
+*   **Body Measurements:**
+    *   Logging a round of measurements from the Body tab of the Progress page, grouped by instrument (scale, tape, calipers), and correcting a reading by re-logging that type on the same date.
+    *   Charting the tracked measurements over time, at most two units at once, with the selected chips remembered per body-fat method.
+    *   Body-fat estimates derived on read by the US Navy and Jackson-Pollock 3/7 formulas, and a figure typed in by hand under the Manual method.
+    *   Body-composition settings (method, sex, height, date of birth, reminder cadence, tracked measurements) on the Measurements tab of Settings.
+    *   The overdue-measurement prompt on the home page.
 *   **Home & Settings:**
     *   Dashboard view displaying the current active session or prompts.
     *   User profile management (updating name).
     *   Account management (password change, sign-out).
-    *   Settings tabs (Workout, User): resolving the tab from the URL, then the remembered tab, then Workout.
+    *   Settings tabs (Workout, Measurements, User): resolving the tab from the URL, then the remembered tab, then Workout.
     *   Device-local workout preferences (plate calculator, warmup sets).
 *   **Core Shared Components & Utilities:**
     *   API services (`api.service.ts`, `plan.service.ts`, etc.) and data mapping logic (`*.mapping.ts`).
@@ -78,8 +84,8 @@ The following features and components are within the scope of testing:
     *   `KeyedDebouncerService` for API call optimization in the session page.
     *   UI layouts, dialogs, and notice components.
 *   **Backend (Azure Functions API, `apps/api`):**
-    *   All API handlers for `exercises`, `plans`, `sessions`, `profiles`, and `progress`.
-    *   Business logic, including Zod schema validation and the pure services: session creation (`resolveNextPlanDayId`, `cancelOutstandingSessions`, `buildSessionSets`), session completion (`assertSessionCompletable`, `skipPendingSets`, the row-flattening helpers), `resolveExerciseProgressions`, `aggregateExerciseProgress`, and `insertAndNormalizeOrder`. Repositories are I/O only and are covered by the E2E suite against a real database, not by mocked unit tests.
+    *   All API handlers for `exercises`, `plans`, `sessions`, `profiles`, `progress`, and `measurements`.
+    *   Business logic, including Zod schema validation and the pure services: session creation (`resolveNextPlanDayId`, `cancelOutstandingSessions`, `buildSessionSets`), session completion (`assertSessionCompletable`, `skipPendingSets`, the row-flattening helpers), `resolveExerciseProgressions`, `aggregateExerciseProgress`, `estimateBodyFatSeries` (with the US Navy, Jackson-Pollock and Siri formulas it composes), and `insertAndNormalizeOrder`. Repositories are I/O only and are covered by the E2E suite against a real database, not by mocked unit tests.
     *   Database interactions, including RPC calls for reordering logic.
 *   **Static Code Analysis & Tooling:**
     *   Adherence to ESLint rules enforced by pre-commit hooks.
@@ -206,6 +212,16 @@ This is a non-exhaustive list of high-priority test scenarios. Tests marked "Yes
 | *&nbsp;&nbsp;errors* | PROG-06 | An error notice is displayed if the progress data fails to load. | High | No |
 |  | PROG-07 | On error, a user can click the retry button to reload the progress data. | High | No |
 | *&nbsp;&nbsp;tooltips* | PROG-08 | Pressing the chart activates every point of the pressed day: a scaffold day shared by Squat and Deadlift activates both points at the same day `x`. | Medium | No |
+| **Measurements**<br>*&nbsp;&nbsp;logging a round* | MEAS-01 | A user with nothing logged can record a round from the empty state, and it is charted and stored for today. | Critical | No |
+|  | MEAS-02 | Logging a type again on a date that already has it edits that reading rather than adding a second one. | High | No |
+| *&nbsp;&nbsp;the chart* | MEAS-03 | The last selected chip refuses to turn off, and still looks selected. | Medium | No |
+|  | MEAS-04 | With every tape site tracked, the chip row scrolls downwards and the chart, chips and page all fit one viewport. | Medium | No |
+| *&nbsp;&nbsp;settings* | MEAS-05 | The body-fat method, sex, reminder cadence and the method's own tracked inputs survive a reload and reach the database. | High | No |
+| *&nbsp;&nbsp;body-fat methods* | MEAS-06 | The US Navy worked example (183 cm, 38.6 cm neck, 102.1 cm waist) plots as 26.8%. | Critical | No |
+|  | MEAS-07 | A Navy estimate blocked for want of a height builds once the height is saved in Settings, which stores it on the profile rather than as a measurement. | High | No |
+|  | MEAS-08 | The Jackson-Pollock 7 worked example (seven sites summing to 94 mm at age 32) plots as 14.0%. | Critical | No |
+|  | MEAS-09 | Under the Manual method, a body-fat figure typed into the log dialog is stored as a reading and charted as entered. | High | No |
+| *&nbsp;&nbsp;reminders* | MEAS-10 | Once a round is overdue on the chosen cadence, the home page prompts for one and leads to the Body tab. | Medium | No |
 
 ---
 

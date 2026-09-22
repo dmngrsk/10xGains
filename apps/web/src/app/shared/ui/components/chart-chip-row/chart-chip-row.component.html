@@ -1,0 +1,21 @@
+<div
+  txgAutoHideScrollbar
+  class="txg-chart-chip-row__scroller"
+  [attr.data-cy]="dataCyPrefix + 'row'">
+  <mat-chip-listbox class="txg-chips" multiple>
+    @for (chip of chips; track chip.id) {
+      <mat-chip-option
+        [selected]="chip.selected"
+        (selectionChange)="onSelectionChanged(chip.id, $event)"
+        [attr.data-cy]="dataCyPrefix + chip.id">
+        <span class="inline-flex items-center gap-1.5">
+          <span
+            class="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+            [style.background-color]="'var(' + chip.colorToken + ')'">
+          </span>
+          {{ chip.label }}
+        </span>
+      </mat-chip-option>
+    }
+  </mat-chip-listbox>
+</div>

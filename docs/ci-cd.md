@@ -172,6 +172,7 @@ Everything below is Terraform, under `infra/` — see `infra/README.md` for the 
 2. **Deployment Safety**
    - Required approvals via technical environments
    - Full E2E testing on staging
+   - Staging deploys run one at a time (`cd-staging` concurrency group), since each resets the database
    - Smoke testing on production
    - Database migrations run before application deployment
 

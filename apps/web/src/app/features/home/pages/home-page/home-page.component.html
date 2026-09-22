@@ -8,6 +8,10 @@
         </txg-notice>
       </div>
     } @else if (!viewModel.activePlanId) {
+      <div class="pt-4">
+        <ng-container *ngTemplateOutlet="measurementPrompt"></ng-container>
+      </div>
+
       <div class="txg-page-fill">
         <txg-notice
           iconName="rocket_launch"
@@ -33,7 +37,13 @@
             data-cy="home-session-card">
           </txg-session-card>
         </div>
+
+        <ng-container *ngTemplateOutlet="measurementPrompt"></ng-container>
       } @else {
+        <div class="pt-4">
+          <ng-container *ngTemplateOutlet="measurementPrompt"></ng-container>
+        </div>
+
         <div class="txg-page-fill">
           <txg-notice
             iconName="event_busy"
@@ -47,3 +57,26 @@
     }
   }
 </txg-main-layout>
+
+<ng-template #measurementPrompt>
+  @if (hasMeasurementPrompt()) {
+    <div class="px-4 pb-4">
+      <txg-prompt-card
+        iconName="straighten"
+        titleText="Time to measure"
+        buttonText="Log measurements"
+        buttonDataCy="home-measurement-prompt-button"
+        (buttonClicked)="onMeasurementsNavigated()"
+        data-cy="home-measurement-prompt">
+        <p class="text-sm">
+          @if (measurementPromptDays(); as days) {
+            It has been <strong>{{ days }}</strong> since your last measurements.
+          } @else {
+            You have not logged any measurements yet.
+          }
+          You asked to be reminded {{ measurementPromptCadence() }}.
+        </p>
+      </txg-prompt-card>
+    </div>
+  }
+</ng-template>

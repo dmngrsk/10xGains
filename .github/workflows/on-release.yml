@@ -22,6 +22,9 @@ jobs:
   cd-staging:
     name: CD Staging
     uses: ./.github/workflows/reusable-cd.yml
+    concurrency:
+      group: cd-staging
+      cancel-in-progress: false
     needs: [ci-staging]
     with:
       environment: staging

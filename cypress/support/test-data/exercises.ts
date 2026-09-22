@@ -4,7 +4,7 @@
  */
 
 /** The exercises the scaffolded training plan is built from. */
-export const SCAFFOLD_PLAN_EXERCISES = ['Squat', 'Bench Press', 'Deadlift'] as const;
+const SCAFFOLD_PLAN_EXERCISES = ['Squat', 'Bench Press', 'Deadlift'] as const;
 
 /**
  * The exercise the plan specs add to a day (PLAN-04, PLAN-06). No scaffolded session trains it -

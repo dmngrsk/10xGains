@@ -1,8 +1,10 @@
 export const settingsSelectors = {
   tabs: {
     workout: 'settings-tab-workout',
+    measurements: 'settings-tab-measurements',
     user: 'settings-tab-user',
   },
+  measurementsView: 'settings-measurements-view',
   profile: {
     nameInput: 'settings-profile-name-input',
     emailInput: 'settings-profile-email-input',
@@ -13,10 +15,7 @@ export const settingsSelectors = {
     warmupSetsToggle: 'settings-warmup-sets-toggle',
   },
   account: {
-    changePasswordButton: 'settings-change-password-button',
     signOutButton: 'settings-sign-out-button',
-    connectGoogleButton: 'settings-connect-google-button',
-    disconnectGoogleButton: 'settings-disconnect-google-button',
     changePasswordDialog: {
       content: 'settings-change-password-dialog-content',
       newPasswordInput: 'settings-change-password-dialog-new-password-input',

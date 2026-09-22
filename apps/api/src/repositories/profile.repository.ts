@@ -87,6 +87,24 @@ export class ProfileRepository {
       active_plan_id: command.active_plan_id !== undefined
         ? command.active_plan_id
         : existingProfile?.active_plan_id ?? null,
+      date_of_birth: command.date_of_birth !== undefined
+        ? command.date_of_birth
+        : existingProfile?.date_of_birth ?? null,
+      body_fat_method: command.body_fat_method !== undefined
+        ? command.body_fat_method
+        : existingProfile?.body_fat_method ?? null,
+      sex: command.sex !== undefined
+        ? command.sex
+        : existingProfile?.sex ?? null,
+      height_cm: command.height_cm !== undefined
+        ? command.height_cm
+        : existingProfile?.height_cm ?? null,
+      measurement_frequency_days: command.measurement_frequency_days !== undefined
+        ? command.measurement_frequency_days
+        : existingProfile?.measurement_frequency_days ?? null,
+      tracked_measurement_types: command.tracked_measurement_types !== undefined
+        ? command.tracked_measurement_types
+        : existingProfile?.tracked_measurement_types ?? null,
       created_at: existingProfile?.created_at ?? new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
