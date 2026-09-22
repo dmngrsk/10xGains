@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ProgressFiltersViewModel, ProgressPageViewModel } from '@features/progress/models/progress-page.viewmodel';
@@ -24,6 +25,7 @@ import { LiftsViewFacade } from './lifts-view.facade';
     MatDialogModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatTooltipModule,
     ChartChipRowComponent,
     NoticeComponent,
     ProgressChartComponent,

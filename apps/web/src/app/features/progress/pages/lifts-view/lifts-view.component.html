@@ -49,12 +49,18 @@
   }
 }
 
-<div class="txg-fab-anchor">
-  <button
-    mat-mini-fab
-    class="txg-fab"
-    (click)="onFilterButtonClicked()"
-    data-cy="progress-filter-button">
-    <mat-icon>filter_list</mat-icon>
-  </button>
-</div>
+@if (viewModel(); as viewModel) {
+  @if (!viewModel.isLoading && !viewModel.error && !noDataAtAll()) {
+    <div class="txg-fab-anchor">
+      <button
+        mat-mini-fab
+        class="txg-fab"
+        type="button"
+        matTooltip="Change filters"
+        (click)="onFilterButtonClicked()"
+        data-cy="progress-filter-button">
+        <mat-icon>filter_list</mat-icon>
+      </button>
+    </div>
+  }
+}
