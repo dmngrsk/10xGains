@@ -26,7 +26,7 @@ const initialProgressPageViewModel: ProgressPageViewModel = {
 @Injectable({
   providedIn: 'root',
 })
-export class ProgressPageFacade {
+export class LiftsViewFacade {
   private readonly progressService = inject(ProgressService);
   private readonly planService = inject(PlanService);
   private readonly profileService = inject(ProfileService);
@@ -40,7 +40,7 @@ export class ProgressPageFacade {
     resetOnUserChange(() => this.clearUserScopedState());
   }
 
-  loadProgressPageData(): void {
+  loadLiftsViewData(): void {
     this.viewModel.update(vm => ({ ...vm, isLoading: true, error: null }));
 
     const user = this.currentUser();

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanService } from '@features/plans/api/plan.service';
 import { ProfileService } from '@shared/api/profile.service';
 import { AuthService } from '@shared/services/auth.service';
-import { ProgressPageFacade } from './progress-page.facade';
+import { LiftsViewFacade } from './lifts-view.facade';
 import { ProgressService } from '../../api/progress.service';
 
 const PLANS = [
@@ -23,8 +23,8 @@ function makeDto(exerciseId: string, exerciseName: string): ExerciseProgressDto 
   };
 }
 
-describe('ProgressPageFacade', () => {
-  let facade: ProgressPageFacade;
+describe('LiftsViewFacade', () => {
+  let facade: LiftsViewFacade;
   let getExerciseProgressMock: ReturnType<typeof vi.fn>;
   let getProfileMock: ReturnType<typeof vi.fn>;
 
@@ -38,21 +38,21 @@ describe('ProgressPageFacade', () => {
 
     TestBed.configureTestingModule({
       providers: [
-        ProgressPageFacade,
+        LiftsViewFacade,
         { provide: ProgressService, useValue: { getExerciseProgress: getExerciseProgressMock } },
         { provide: PlanService, useValue: { getPlans: () => of({ data: PLANS, error: null }) } },
         { provide: ProfileService, useValue: { getProfile: getProfileMock } },
         { provide: AuthService, useValue: { currentUser: () => user, currentUser$: of(user) } },
       ],
     });
-    facade = TestBed.inject(ProgressPageFacade);
+    facade = TestBed.inject(LiftsViewFacade);
   };
 
-  describe('loadProgressPageData', () => {
+  describe('loadLiftsViewData', () => {
     beforeEach(() => configure('plan-2'));
 
     it('should default the plan filter to the active plan from the profile', () => {
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       expect(facade.viewModel().filters.selectedPlanId).toBe('plan-2');
       expect(getExerciseProgressMock).toHaveBeenCalledWith(
@@ -62,7 +62,7 @@ describe('ProgressPageFacade', () => {
 
     it('should request the last 3 months by default', () => {
       const now = Date.now();
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       const params = getExerciseProgressMock.mock.calls[0][0];
       const threeMonthsMs = 92 * 24 * 60 * 60 * 1000;
@@ -71,7 +71,7 @@ describe('ProgressPageFacade', () => {
     });
 
     it('should select all exercises by default', () => {
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       expect(facade.viewModel().series).toHaveLength(2);
       expect(facade.viewModel().series.every(s => s.selected)).toBe(true);
@@ -81,7 +81,7 @@ describe('ProgressPageFacade', () => {
     it('should surface an error when loading progress fails', () => {
       getExerciseProgressMock.mockReturnValue(throwError(() => new Error('boom')));
 
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       expect(facade.viewModel().error).toContain('Failed to load exercise progress');
       expect(facade.viewModel().isLoading).toBe(false);
@@ -89,11 +89,11 @@ describe('ProgressPageFacade', () => {
     });
   });
 
-  describe('loadProgressPageData without a signed-in user', () => {
+  describe('loadLiftsViewData without a signed-in user', () => {
     it('should surface an error instead of throwing', () => {
       configure('plan-1', null);
 
-      expect(() => facade.loadProgressPageData()).not.toThrow();
+      expect(() => facade.loadLiftsViewData()).not.toThrow();
 
       expect(facade.viewModel().error).toContain('Please sign in again');
       expect(facade.viewModel().isLoading).toBe(false);
@@ -102,11 +102,11 @@ describe('ProgressPageFacade', () => {
     });
   });
 
-  describe('loadProgressPageData without a usable active plan', () => {
+  describe('loadLiftsViewData without a usable active plan', () => {
     it('should fall back to all plans when the profile has no active plan', () => {
       configure(null);
 
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       expect(facade.viewModel().filters.selectedPlanId).toBeNull();
       expect(getExerciseProgressMock).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe('ProgressPageFacade', () => {
     it('should fall back to all plans when the active plan no longer exists', () => {
       configure('plan-deleted');
 
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
 
       expect(facade.viewModel().filters.selectedPlanId).toBeNull();
     });
@@ -126,7 +126,7 @@ describe('ProgressPageFacade', () => {
   describe('updateFilters', () => {
     beforeEach(() => {
       configure('plan-1');
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
     });
 
     it('should re-select all exercises when the plan filter changes', () => {
@@ -183,7 +183,7 @@ describe('ProgressPageFacade', () => {
   describe('toggleExercise', () => {
     beforeEach(() => {
       configure('plan-1');
-      facade.loadProgressPageData();
+      facade.loadLiftsViewData();
     });
 
     it('should flip only the toggled series', () => {
