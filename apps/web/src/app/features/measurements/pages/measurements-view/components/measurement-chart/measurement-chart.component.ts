@@ -43,11 +43,7 @@ interface MeasurementChartPoint {
     provideCharts({ registerables: [LineController, LineElement, PointElement, LinearScale, TimeScale, Tooltip] }),
   ],
   templateUrl: './measurement-chart.component.html',
-  styles: [`
-    :host { display: block; }
-    .txg-chart-frame { position: relative; width: 100%; height: 100%; }
-    .txg-chart-frame canvas { position: absolute; inset: 0; }
-  `],
+  styles: [`:host { display: block; }`],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MeasurementChartComponent implements OnChanges {
